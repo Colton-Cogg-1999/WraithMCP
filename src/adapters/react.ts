@@ -80,25 +80,40 @@ function extractClassLiteralsFromExpr(expr: t.Expression | t.JSXEmptyExpression)
   return out;
 }
 
+function unwrapTsExpression(expr: t.Expression): t.Expression {
+  let curr: t.Expression = expr;
+  while (
+    t.isTSAsExpression(curr) ||
+    t.isTSSatisfiesExpression(curr) ||
+    t.isTSNonNullExpression(curr) ||
+    t.isParenthesizedExpression(curr)
+  ) {
+    curr = curr.expression;
+  }
+  return curr;
+}
+
 function collectJsxExprStrings(
   expr: t.Expression | t.JSXEmptyExpression,
   out: Array<{ text: string; line: number; col: number }>
 ): void {
-  if (t.isStringLiteral(expr)) {
-    if (isLikelyUserFacingText(expr.value)) {
+  if (t.isJSXEmptyExpression(expr)) return;
+  const unwrapped = unwrapTsExpression(expr);
+  if (t.isStringLiteral(unwrapped)) {
+    if (isLikelyUserFacingText(unwrapped.value)) {
       out.push({
-        text: normalizeWhitespace(expr.value),
-        line: expr.loc?.start.line ?? 1,
-        col: expr.loc?.start.column ?? 0,
+        text: normalizeWhitespace(unwrapped.value),
+        line: unwrapped.loc?.start.line ?? 1,
+        col: unwrapped.loc?.start.column ?? 0,
       });
     }
-  } else if (t.isConditionalExpression(expr)) {
-    collectJsxExprStrings(expr.consequent, out);
-    collectJsxExprStrings(expr.alternate, out);
-  } else if (t.isLogicalExpression(expr)) {
-    if (expr.operator === "&&" || expr.operator === "||" || expr.operator === "??") {
-      collectJsxExprStrings(expr.right, out);
-      if (expr.operator !== "&&") collectJsxExprStrings(expr.left, out);
+  } else if (t.isConditionalExpression(unwrapped)) {
+    collectJsxExprStrings(unwrapped.consequent, out);
+    collectJsxExprStrings(unwrapped.alternate, out);
+  } else if (t.isLogicalExpression(unwrapped)) {
+    if (unwrapped.operator === "&&" || unwrapped.operator === "||" || unwrapped.operator === "??") {
+      collectJsxExprStrings(unwrapped.right, out);
+      if (unwrapped.operator !== "&&") collectJsxExprStrings(unwrapped.left, out);
     }
   }
 }
@@ -257,14 +272,34 @@ export function scanJsTsFile(
 
   // Track translator variable -> namespace (e.g. const t = useTranslations('nav') -> { t: 'nav' })
   const translatorNamespaces = new Map<string, string>();
+  // Track useState setter -> state variable name (e.g. setErr -> err)
+  const useStateSetters = new Map<string, string>();
+  // Track variables whose values flow into JSX children or user-facing JSX props
+  const jsxRenderedVars = new Set<string>();
   const lines = sourceCode.split(/\r?\n/);
   const getSnippet = (line: number) => (lines[line - 1] ?? "").trim().slice(0, 120);
 
-  // First pass: find translator bindings
+  // First pass: find translator bindings, useState pairs, and identifiers flowing into JSX
   traverse(ast, {
     VariableDeclarator(p) {
       const init = p.node.init;
       if (!init) return;
+
+      // const [err, setErr] = useState(...) or React.useState(...)
+      if (t.isArrayPattern(p.node.id) && p.node.id.elements.length >= 2 && t.isCallExpression(init)) {
+        const isUseState =
+          (t.isIdentifier(init.callee) && init.callee.name === "useState") ||
+          (t.isMemberExpression(init.callee) &&
+            t.isIdentifier(init.callee.property) &&
+            init.callee.property.name === "useState");
+        if (isUseState) {
+          const stateEl = p.node.id.elements[0];
+          const setterEl = p.node.id.elements[1];
+          if (t.isIdentifier(stateEl) && t.isIdentifier(setterEl)) {
+            useStateSetters.set(setterEl.name, stateEl.name);
+          }
+        }
+      }
 
       // const t = useTranslations("home") or await getTranslations("home")
       const call = t.isAwaitExpression(init) ? init.argument : init;
@@ -310,6 +345,55 @@ export function scanJsTsFile(
           }
         }
       }
+    },
+
+    JSXExpressionContainer(p) {
+      // Only consider JSX child expressions or user-facing JSX props (skip className, variant, onClick, etc.)
+      if (t.isJSXAttribute(p.parent)) {
+        if (!t.isJSXIdentifier(p.parent.name) || !isUserFacingPropName(p.parent.name.name)) {
+          return;
+        }
+      }
+      const expr = p.node.expression;
+      if (t.isJSXEmptyExpression(expr)) return;
+
+      const collectRenderedIdentifiers = (node: t.Expression): void => {
+        const u = unwrapTsExpression(node);
+        if (t.isIdentifier(u)) {
+          jsxRenderedVars.add(u.name);
+        } else if (t.isLogicalExpression(u)) {
+          if (u.operator === "&&") {
+            collectRenderedIdentifiers(u.right);
+          } else {
+            collectRenderedIdentifiers(u.left);
+            collectRenderedIdentifiers(u.right);
+          }
+        } else if (t.isConditionalExpression(u)) {
+          collectRenderedIdentifiers(u.consequent);
+          collectRenderedIdentifiers(u.alternate);
+        } else if (t.isCallExpression(u)) {
+          // Array.prototype.map/filter rendering items in JSX: `STEPS.map((s) => <li>{s}</li>)`
+          if (
+            t.isMemberExpression(u.callee) &&
+            t.isIdentifier(u.callee.property) &&
+            (u.callee.property.name === "map" || u.callee.property.name === "flatMap")
+          ) {
+            let rootObj: t.Expression = u.callee.object;
+            while (
+              t.isCallExpression(rootObj) &&
+              t.isMemberExpression(rootObj.callee) &&
+              t.isExpression(rootObj.callee.object)
+            ) {
+              rootObj = rootObj.callee.object;
+            }
+            if (t.isIdentifier(rootObj)) {
+              jsxRenderedVars.add(rootObj.name);
+            }
+          }
+        }
+      };
+
+      collectRenderedIdentifiers(expr);
     },
   });
 
@@ -439,15 +523,62 @@ export function scanJsTsFile(
     },
 
     VariableDeclarator(p) {
-      // Next.js `export const metadata = { title: "...", description: "..." }`
-      // and module-level user message maps like `ERROR_MESSAGES = { network: "Check your internet..." }`
-      if (!t.isIdentifier(p.node.id) || !p.node.init || !t.isObjectExpression(p.node.init)) return;
+      if (!t.isIdentifier(p.node.id) || !p.node.init) return;
       const varName = p.node.id.name;
+      const unwrappedInit = unwrapTsExpression(p.node.init);
+
+      // 1. String literals / conditionals / logical fallbacks in variable initializers flowing into JSX
+      if (
+        jsxRenderedVars.has(varName) &&
+        (t.isStringLiteral(unwrappedInit) ||
+          t.isConditionalExpression(unwrappedInit) ||
+          t.isLogicalExpression(unwrappedInit))
+      ) {
+        const found: Array<{ text: string; line: number; col: number }> = [];
+        collectJsxExprStrings(unwrappedInit, found);
+        const comp = findEnclosingComponent(p);
+        for (const f of found) {
+          hardcodedStrings.push({
+            file: relFile,
+            line: f.line + lineOffset,
+            column: f.col,
+            text: f.text,
+            kind: "jsx-text",
+            component: comp,
+            snippet: getSnippet(f.line),
+          });
+        }
+        return;
+      }
+
+      // 2. `as const` / string arrays rendered in JSX (e.g. `const STEPS = ["Shipping", ...] as const`)
+      if (jsxRenderedVars.has(varName) && t.isArrayExpression(unwrappedInit)) {
+        const comp = findEnclosingComponent(p) ?? varName;
+        for (const el of unwrappedInit.elements) {
+          if (el && t.isStringLiteral(el) && isLikelyUserFacingText(el.value)) {
+            const line = (el.loc?.start.line ?? 1) + lineOffset;
+            hardcodedStrings.push({
+              file: relFile,
+              line,
+              column: el.loc?.start.column ?? 0,
+              text: normalizeWhitespace(el.value),
+              kind: "jsx-text",
+              component: comp,
+              snippet: getSnippet(el.loc?.start.line ?? 1),
+            });
+          }
+        }
+        return;
+      }
+
+      // 3. Next.js `export const metadata = { title: "...", description: "..." }`
+      // and module-level user message maps like `ERROR_MESSAGES = { network: "Check your internet..." }`
+      if (!t.isObjectExpression(unwrappedInit)) return;
       const isMetadata = varName === "metadata";
       const isMessageMap = /(?:MESSAGE|ERROR|LABEL|COPY|TEXT|TITLE|PROMPT|ALERT)/i.test(varName);
       if (!isMetadata && !isMessageMap) return;
 
-      for (const prop of p.node.init.properties) {
+      for (const prop of unwrappedInit.properties) {
         if (!t.isObjectProperty(prop) || !t.isStringLiteral(prop.value)) continue;
         const propName = t.isIdentifier(prop.key)
           ? prop.key.name
@@ -650,6 +781,27 @@ export function scanJsTsFile(
               kind: "toast",
               component: findEnclosingComponent(p),
               snippet: getSnippet(p.node.loc?.start.line ?? 1),
+            });
+          }
+        }
+      }
+      // 4. String arguments passed to React useState setters whose state variable is rendered in JSX
+      if (t.isIdentifier(callee) && useStateSetters.has(callee.name) && p.node.arguments[0]) {
+        const stateVar = useStateSetters.get(callee.name)!;
+        const arg0 = p.node.arguments[0];
+        if (jsxRenderedVars.has(stateVar) && t.isExpression(arg0)) {
+          const found: Array<{ text: string; line: number; col: number }> = [];
+          collectJsxExprStrings(arg0, found);
+          const comp = findEnclosingComponent(p);
+          for (const f of found) {
+            hardcodedStrings.push({
+              file: relFile,
+              line: f.line + lineOffset,
+              column: f.col,
+              text: f.text,
+              kind: "jsx-text",
+              component: comp,
+              snippet: getSnippet(f.line),
             });
           }
         }

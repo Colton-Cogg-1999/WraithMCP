@@ -101,11 +101,14 @@ export const USER_FACING_ATTRIBUTES = new Set([
   "closeLabel",
   "buttonText",
   "tooltip",
+  "hint",
+  "caption",
+  "summary",
 ]);
 
 export function isUserFacingPropName(name: string): boolean {
   if (USER_FACING_ATTRIBUTES.has(name)) return true;
-  return /(?:Label|Title|Text|Message|Heading|Description|Placeholder)$/.test(name);
+  return /(?:Label|Title|Text|Message|Heading|Description|Placeholder|Hint|Caption)$/.test(name);
 }
 
 const TECHNICAL_TOKEN_RE =

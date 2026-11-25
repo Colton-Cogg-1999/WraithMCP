@@ -87,13 +87,16 @@ This creates `.polyglot/config.json`, seeds staleness baselines for any existing
 | **Rails** | Built-in I18n | Lossless YAML (`yaml` CST, `lineWidth: 0`, nested `config/locales/**`) | `%{x}`, `%<name>fmt`, plural subkeys (refuses scalar overwrite) | ERB & Ruby scanner (incl. lazy `t(".key")` & helpers) |
 | **Django** | Gettext | Lossless PO (comments/refs preserved, clears `#, fuzzy`, respects `Plural-Forms`) | `%(x)s`, `{x}`, positional `%s`, `msgid`-based source (works with standard `makemessages` layout) | Django template & Python scanner (`blocktrans` → `%(var)s`) |
 
+- **Hardcoded-string detection is heuristic.** Static AST/template scanning catches common JSX, attribute, variable-initializer, array, state-setter, and template patterns while suppressing technical strings (URLs, SQL, headers, loggers), but it cannot guarantee 100% recall on arbitrary dynamic indirection or custom helpers. Combine `polyglot scan` with `polyglot pseudo` visual inspection to catch anything missed statically.
+- **Deterministic checks do not verify linguistic accuracy.** `polyglot check` returns `PASS`, `FAIL`, or `INCONCLUSIVE` for structural, placeholder, plural, glossary, staleness, and scanner checks — it does not prove native fluency.
+
 ### Documents
 
 - **DOCX (`.docx`):** Byte-preserving OOXML splice engine — never deserializes into a lossy DOM.
   - Merges adjacent `<w:r>` runs with identical `<w:rPr>` formatting while keeping bookmark and comment-range anchors intact.
   - Handles body, tables, headers/footers, footnotes/endnotes, comments, text boxes (deduplicating `mc:Fallback`), inline content controls (`w:sdt`), smart tags (`w:smartTag`/`w:customXml`), hyperlinks (including `HYPERLINK` complex fields), and tracked insertions (`w:ins`).
   - Protects tracked deletions (`w:del`), dynamic fields (`PAGE`, `DATE`), and drawings; strips XML-invalid control characters; enforces ZIP decompression limits.
-  - Incremental batch translation persists state in `.polyglot/documents.json` so multi-page translations retain earlier batches; unchanged round-trips are byte-identical.
+  - Incremental batch translation persists content-hashed segment records in `.polyglot/documents.json` so insertions/deletions/reordering never shift translations onto the wrong paragraph, source edits surface as `stale_source`, and manual reviewer edits in the target document survive subsequent batches; unchanged round-trips are byte-identical.
 - **Markdown / MDX (`.md`, `.mdx`):** Paragraph-level segmentation (preserves soft-wrapped prose & CRLF), skips fenced/indented code blocks, link-reference URLs, and multi-line MDX `import`/`export` blocks, and protects inline code, URLs, and MDX `{expressions}` via `<x/>`/`<g>` tags.
 
 ---
@@ -118,7 +121,8 @@ polyglot mcp
 All 11 tools declare MCP behavioural `annotations` (`readOnlyHint`, `destructiveHint`, `idempotentHint`, `openWorldHint`), `outputSchema`, and return `structuredContent`:
 
 - **Read-only (`readOnlyHint: true`):** `status`, `scan`, `prepare`, `check`, `report`
-- **Mutating (`readOnlyHint: false`):** `apply`, `memory` (discriminated union per action), `pseudo`, `review`, `escalate`, `import`
+- **Mutating (`readOnlyHint: false`, `destructiveHint: false`):** `memory` (discriminated union per action), `review`
+- **Mutating / Overwriting (`readOnlyHint: false`, `destructiveHint: true`):** `apply`, `pseudo`, `escalate`, `import`
 - **Prompt:** `/localize`
 
 ---
