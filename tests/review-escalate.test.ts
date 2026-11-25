@@ -221,8 +221,8 @@ describe("Milestone 4: Cross-Model Review, Human Escalation, Advisory Memory, La
     const prompts = await client.listPrompts();
     expect(prompts.prompts.some((p) => p.name === "localize")).toBe(true);
 
-    // Call check on 150 missing keys -> default pagination caps returned issues at 25!
-    const checkRes = await client.callTool({ name: "check", arguments: { rootDir: dir } });
+    // Call check (skipScan=true to isolate catalog pagination) on 150 missing keys -> default pagination caps returned issues at 25!
+    const checkRes = await client.callTool({ name: "check", arguments: { rootDir: dir, skipScan: true } });
     const text = (checkRes.content as Array<{ type: string; text: string }>)[0].text;
     const parsed = JSON.parse(text);
     expect(parsed.errorCount).toBe(150);
