@@ -56,6 +56,13 @@ const MUTATING_ANNOTATIONS = {
   openWorldHint: false,
 } as const;
 
+const DESTRUCTIVE_MUTATING_ANNOTATIONS = {
+  readOnlyHint: false,
+  destructiveHint: true,
+  idempotentHint: false,
+  openWorldHint: false,
+} as const;
+
 const StatusOutputSchema = z
   .object({
     initialized: z.boolean(),
@@ -156,26 +163,21 @@ export function createPolyglotMcpServer(options: McpServerOptions = {}): McpServ
     {
       title: "Scan Source & Documents",
       description:
-        "Detect framework & i18n setup; find hardcoded strings, concatenations, sentence fragments, parse failures, glossary candidates, and documents. Returns compact paginated summary.",
+        "Read-only scan: detect framework & i18n setup; find hardcoded strings, concatenations, sentence fragments, parse failures, glossary candidates, and documents. Returns compact paginated summary.",
       inputSchema: {
         rootDir: z.string().optional(),
         fileFilter: z.string().optional().describe("Optional substring filter on relative file paths."),
-        saveUsage: z
-          .boolean()
-          .optional()
-          .default(false)
-          .describe("If true, persist scanned key usage sites to .polyglot/usage.json (default false to remain read-only)."),
         offset: z.number().int().nonnegative().optional().default(0),
         limit: z.number().int().min(1).max(100).optional().default(25),
       },
       outputSchema: ScanOutputSchema,
       annotations: READ_ONLY_ANNOTATIONS,
     },
-    async ({ rootDir, fileFilter, saveUsage, offset, limit }) => {
+    async ({ rootDir, fileFilter, offset, limit }) => {
       const result = scanProject({
         rootDir: safeRoot(rootDir),
         fileFilter,
-        saveUsage,
+        saveUsage: false,
         offset,
         limit,
       });
@@ -258,7 +260,7 @@ export function createPolyglotMcpServer(options: McpServerOptions = {}): McpServ
         strictGlossary: z.boolean().optional().default(true),
       },
       outputSchema: GenericObjectOutputSchema,
-      annotations: MUTATING_ANNOTATIONS,
+      annotations: DESTRUCTIVE_MUTATING_ANNOTATIONS,
     },
     async ({ rootDir, targetLocale, document, targetFile, translations, strictGlossary }) => {
       const root = safeRoot(rootDir);
@@ -429,7 +431,7 @@ export function createPolyglotMcpServer(options: McpServerOptions = {}): McpServ
         format: z.enum(["auto", "csv", "tbx", "tmx", "locales"]).optional().default("auto"),
       },
       outputSchema: GenericObjectOutputSchema,
-      annotations: MUTATING_ANNOTATIONS,
+      annotations: DESTRUCTIVE_MUTATING_ANNOTATIONS,
     },
     async ({ rootDir, file, format }) => {
       const res = importAsset(safeRoot(rootDir), { file, format });
@@ -448,7 +450,7 @@ export function createPolyglotMcpServer(options: McpServerOptions = {}): McpServ
         pseudoLocale: z.string().optional().default("en-x-pseudo"),
       },
       outputSchema: GenericObjectOutputSchema,
-      annotations: MUTATING_ANNOTATIONS,
+      annotations: DESTRUCTIVE_MUTATING_ANNOTATIONS,
     },
     async ({ rootDir, pseudoLocale }) => {
       const res = generatePseudoLocale(safeRoot(rootDir), pseudoLocale);
@@ -537,7 +539,7 @@ export function createPolyglotMcpServer(options: McpServerOptions = {}): McpServ
         file: z.string().optional().describe("Workspace-relative path to reviewer corrections (.csv, .xlsx, or .json)."),
       },
       outputSchema: GenericObjectOutputSchema,
-      annotations: MUTATING_ANNOTATIONS,
+      annotations: DESTRUCTIVE_MUTATING_ANNOTATIONS,
     },
     async (args) => {
       const root = safeRoot(args.rootDir);
