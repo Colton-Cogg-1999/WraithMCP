@@ -1,5 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
+import { canonicalizeLocaleTag, isRealPathWithinRoot } from "../core/security.js";
 
 export function walkFiles(
   rootDir: string,
@@ -8,11 +9,39 @@ export function walkFiles(
   extensions: Set<string>
 ): string[] {
   const ignoreSet = new Set(ignore);
+  const absRoot = path.resolve(rootDir);
   const results: string[] = [];
+  const visitedDirs = new Set<string>();
 
   function visit(absPath: string) {
     if (!fs.existsSync(absPath)) return;
-    const stat = fs.statSync(absPath);
+    let lstat: fs.Stats;
+    try {
+      lstat = fs.lstatSync(absPath);
+    } catch {
+      return;
+    }
+
+    // Never follow symlinks pointing outside the project root, and prevent symlink loops
+    if (lstat.isSymbolicLink()) {
+      if (!isRealPathWithinRoot(absRoot, absPath)) return;
+    }
+
+    let realPath: string;
+    try {
+      realPath = fs.realpathSync(absPath);
+    } catch {
+      return;
+    }
+    if (!isRealPathWithinRoot(absRoot, realPath)) return;
+
+    let stat: fs.Stats;
+    try {
+      stat = fs.statSync(realPath);
+    } catch {
+      return;
+    }
+
     if (stat.isFile()) {
       const ext = path.extname(absPath).toLowerCase();
       if (extensions.has(ext) || extensions.has(path.basename(absPath).toLowerCase())) {
@@ -22,6 +51,9 @@ export function walkFiles(
     }
     if (!stat.isDirectory()) return;
 
+    if (visitedDirs.has(realPath)) return;
+    visitedDirs.add(realPath);
+
     const entries = fs.readdirSync(absPath, { withFileTypes: true }).sort((a, b) =>
       a.name.localeCompare(b.name)
     );
@@ -29,14 +61,16 @@ export function walkFiles(
       if (ignoreSet.has(entry.name)) continue;
       if (entry.name.startsWith(".") && entry.name !== ".polyglot") continue;
       const child = path.join(absPath, entry.name);
-      const rel = path.relative(rootDir, child).replace(/\\/g, "/");
+      const rel = path.relative(absRoot, child).replace(/\\/g, "/");
       if (ignoreSet.has(rel)) continue;
       visit(child);
     }
   }
 
   for (const sp of sourcePaths) {
-    visit(path.resolve(rootDir, sp));
+    const resolved = path.resolve(absRoot, sp);
+    if (!isRealPathWithinRoot(absRoot, resolved)) continue;
+    visit(resolved);
   }
   return [...new Set(results)].sort();
 }
@@ -160,18 +194,19 @@ export function getAllDependencies(pkg: Record<string, unknown> | null): Record<
 
 /**
  * Discover JSON locale files inside candidate directories.
- * Supports both flat `<dir>/<locale>.json` (next-intl, vue-i18n, paraglide)
+ * Supports flat `<dir>/<locale>.json` (including underscore variants like `pt_BR.json`),
  * and nested `<dir>/<locale>/<namespace>.json` (react-i18next).
  */
 export function discoverJsonLocaleFiles(
   rootDir: string,
   candidateDirs: string[]
 ): { localesDir: string | null; localeFiles: Record<string, string[]> } {
-  const localePattern = /^[a-z]{2,3}(?:-[A-Za-z]{2,4})?(?:-[A-Za-z0-9]{2,8})*$/;
+  const localePattern = /^[a-z]{2,3}(?:[-_][A-Za-z]{2,4})?(?:[-_][A-Za-z0-9]{2,8})*$/;
 
   for (const rel of candidateDirs) {
     const abs = path.resolve(rootDir, rel);
     if (!fs.existsSync(abs) || !fs.statSync(abs).isDirectory()) continue;
+    if (!isRealPathWithinRoot(rootDir, abs)) continue;
 
     const entries = fs.readdirSync(abs, { withFileTypes: true }).sort((a, b) =>
       a.name.localeCompare(b.name)
@@ -182,18 +217,22 @@ export function discoverJsonLocaleFiles(
       if (entry.isFile() && entry.name.endsWith(".json")) {
         const stem = entry.name.slice(0, -5);
         if (localePattern.test(stem) || stem === "en-x-pseudo" || stem === "pseudo") {
-          localeFiles[stem] = localeFiles[stem] ?? [];
-          localeFiles[stem].push(path.join(abs, entry.name));
+          const canon = stem === "en-x-pseudo" || stem === "pseudo" ? stem : canonicalizeLocaleTag(stem);
+          localeFiles[canon] = localeFiles[canon] ?? [];
+          localeFiles[canon].push(path.join(abs, entry.name));
         }
       } else if (entry.isDirectory()) {
         if (localePattern.test(entry.name) || entry.name === "en-x-pseudo" || entry.name === "pseudo") {
+          const childDir = path.join(abs, entry.name);
+          if (!isRealPathWithinRoot(rootDir, childDir)) continue;
           const nested = fs
-            .readdirSync(path.join(abs, entry.name))
+            .readdirSync(childDir)
             .filter((f) => f.endsWith(".json"))
             .sort()
-            .map((f) => path.join(abs, entry.name, f));
+            .map((f) => path.join(childDir, f));
           if (nested.length > 0) {
-            localeFiles[entry.name] = [...(localeFiles[entry.name] ?? []), ...nested];
+            const canon = entry.name === "en-x-pseudo" || entry.name === "pseudo" ? entry.name : canonicalizeLocaleTag(entry.name);
+            localeFiles[canon] = [...(localeFiles[canon] ?? []), ...nested];
           }
         }
       }

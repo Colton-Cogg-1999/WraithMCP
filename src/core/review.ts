@@ -3,6 +3,7 @@ import path from "node:path";
 import { detectProjectAdapter, loadLocaleCatalog } from "../adapters/registry.js";
 import { GlossaryHit, matchGlossaryTerms } from "./glossary.js";
 import { getLocaleConventions } from "./locales.js";
+import { atomicWriteFileSync, resolveConfinedPath, validateLocaleTag } from "./security.js";
 import { PolyglotStore, sha256Short } from "./store.js";
 import { ReviewCategory, ReviewFinding, ReviewSeverity, UsageSite } from "./types.js";
 
@@ -55,6 +56,10 @@ export function packageReviewJob(
     outputPath?: string;
   }
 ): ReviewJobPackage {
+  validateLocaleTag(options.targetLocale, "targetLocale");
+  const resolvedOutPath = options.outputPath
+    ? resolveConfinedPath(rootDir, options.outputPath, { label: "review outputPath" })
+    : undefined;
   const store = new PolyglotStore(rootDir);
   const config = store.readConfig();
   const glossary = store.readGlossary();
@@ -144,11 +149,9 @@ Return ONLY valid JSON matching outputSchema, then ingest via \`polyglot review 
     totalItems: items.length,
   };
 
-  if (options.outputPath) {
-    const abs = path.resolve(store.rootDir, options.outputPath);
-    fs.mkdirSync(path.dirname(abs), { recursive: true });
-    fs.writeFileSync(abs, JSON.stringify(pkg, null, 2) + "\n", "utf8");
-    pkg.outputPath = path.relative(store.rootDir, abs).replace(/\\/g, "/");
+  if (resolvedOutPath) {
+    atomicWriteFileSync(resolvedOutPath, JSON.stringify(pkg, null, 2) + "\n");
+    pkg.outputPath = path.relative(store.rootDir, resolvedOutPath).replace(/\\/g, "/");
   }
 
   return pkg;
@@ -183,6 +186,7 @@ export function ingestReviewResults(
     findings: IngestFindingInput[];
   }
 ): IngestReviewResult {
+  validateLocaleTag(input.targetLocale, "targetLocale");
   const store = new PolyglotStore(rootDir);
   const reviewsFile = store.readReviews();
   const recordsFile = store.readRecords();

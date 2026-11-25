@@ -1,6 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { parse as parseSfc } from "@vue/compiler-sfc";
+import { resolveConfinedPath, validateLocaleTag } from "../core/security.js";
 import { UsageSite } from "../core/types.js";
 import { JsonFormatAdapter } from "../formats/json.js";
 import { scanJsTsFile } from "./react.js";
@@ -280,15 +281,18 @@ export class VueNuxtAdapter implements ScannerAdapter {
   }
 
   resolveTargetLocaleFile(
-    _rootDir: string,
+    rootDir: string,
     sourceLocale: string,
     targetLocale: string,
     sourceFile: string
   ): string {
-    const dir = path.dirname(sourceFile);
-    if (path.basename(sourceFile) === `${sourceLocale}.json`) {
-      return path.join(dir, `${targetLocale}.json`);
-    }
-    return path.join(path.dirname(dir), targetLocale, path.basename(sourceFile));
+    const safeLocale = validateLocaleTag(targetLocale, "targetLocale");
+    const confinedSource = resolveConfinedPath(rootDir, sourceFile, { label: "sourceFile" });
+    const dir = path.dirname(confinedSource);
+    const candidate =
+      path.basename(confinedSource) === `${sourceLocale}.json`
+        ? path.join(dir, `${safeLocale}.json`)
+        : path.join(path.dirname(dir), safeLocale, path.basename(confinedSource));
+    return resolveConfinedPath(rootDir, candidate, { label: "targetLocaleFile" });
   }
 }

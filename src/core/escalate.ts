@@ -1,9 +1,16 @@
 import fs from "node:fs";
 import path from "node:path";
-import { strFromU8, strToU8, unzipSync, zipSync } from "fflate";
+import { strFromU8, strToU8, zipSync } from "fflate";
 import { applyTranslations } from "./apply.js";
 import { parseCsv } from "./importers.js";
 import { generateReport } from "./report.js";
+import {
+  atomicWriteFileSync,
+  isValidLocaleTag,
+  resolveConfinedPath,
+  safeUnzipSync,
+  validateLocaleTag,
+} from "./security.js";
 import { PolyglotStore } from "./store.js";
 
 export interface EscalationRow {
@@ -166,7 +173,7 @@ function colRefToIndex(ref: string): number {
 
 /** Parse rows back out of an .xlsx file (supports both inlineStr and sharedStrings). */
 export function parseXlsxBuffer(buf: Uint8Array): string[][] {
-  const files = unzipSync(buf);
+  const files = safeUnzipSync(buf);
   const sharedStrings: string[] = [];
   if (files["xl/sharedStrings.xml"]) {
     const ssXml = strFromU8(files["xl/sharedStrings.xml"]);
@@ -338,10 +345,15 @@ export function exportEscalation(
   }));
 
   if (options?.locale) {
+    validateLocaleTag(options.locale, "locale");
     rows = rows.filter((r) => r.locale === options.locale);
   }
 
-  const outDir = path.resolve(store.rootDir, options?.outputDir ?? ".polyglot/escalations");
+  const outDir = resolveConfinedPath(
+    store.rootDir,
+    options?.outputDir ?? ".polyglot/escalations",
+    { label: "escalate outputDir" }
+  );
   fs.mkdirSync(outDir, { recursive: true });
   const formats = options?.formats ?? ["csv", "xlsx", "html"];
   const filesWritten: string[] = [];
@@ -351,20 +363,26 @@ export function exportEscalation(
       HEADERS.join(","),
       ...rows.map((r) => HEADERS.map((h) => csvEscape(r[h])).join(",")),
     ];
-    const csvPath = path.join(outDir, "polyglot-review.csv");
-    fs.writeFileSync(csvPath, "\uFEFF" + lines.join("\n") + "\n", "utf8");
+    const csvPath = resolveConfinedPath(store.rootDir, path.join(outDir, "polyglot-review.csv"), {
+      label: "csv export",
+    });
+    atomicWriteFileSync(csvPath, "\uFEFF" + lines.join("\n") + "\n");
     filesWritten.push(path.relative(store.rootDir, csvPath).replace(/\\/g, "/"));
   }
 
   if (formats.includes("xlsx")) {
-    const xlsxPath = path.join(outDir, "polyglot-review.xlsx");
-    fs.writeFileSync(xlsxPath, buildXlsxBuffer(rows));
+    const xlsxPath = resolveConfinedPath(store.rootDir, path.join(outDir, "polyglot-review.xlsx"), {
+      label: "xlsx export",
+    });
+    atomicWriteFileSync(xlsxPath, buildXlsxBuffer(rows));
     filesWritten.push(path.relative(store.rootDir, xlsxPath).replace(/\\/g, "/"));
   }
 
   if (formats.includes("html")) {
-    const htmlPath = path.join(outDir, "polyglot-review.html");
-    fs.writeFileSync(htmlPath, buildReviewHtml(rows), "utf8");
+    const htmlPath = resolveConfinedPath(store.rootDir, path.join(outDir, "polyglot-review.html"), {
+      label: "html export",
+    });
+    atomicWriteFileSync(htmlPath, buildReviewHtml(rows));
     filesWritten.push(path.relative(store.rootDir, htmlPath).replace(/\\/g, "/"));
   }
 
@@ -389,7 +407,7 @@ export function importEscalationCorrections(
   filePath: string
 ): ImportCorrectionsResult {
   const store = new PolyglotStore(rootDir);
-  const abs = path.resolve(store.rootDir, filePath);
+  const abs = resolveConfinedPath(store.rootDir, filePath, { label: "corrections file" });
   const ext = path.extname(abs).toLowerCase();
 
   let rawObjects: Array<Record<string, string>> = [];
@@ -421,27 +439,37 @@ export function importEscalationCorrections(
     }
   }
 
-  // Group non-empty corrections by locale
+  // Group non-empty corrections by locale; reject untrusted invalid locale values immediately
   const byLocale = new Map<
     string,
     Array<{ key: string; value: string; notes?: string }>
   >();
+  const errors: Array<{ key: string; locale: string; message: string }> = [];
+  let rejectedCount = 0;
+
   for (const row of rawObjects) {
     const locale = (row.locale ?? "").trim();
     const key = (row.key ?? "").trim();
     const corrected = (row.corrected_translation ?? row.correction ?? "").trim();
     const notes = (row.reviewer_notes ?? row.notes ?? "").trim() || undefined;
     if (!locale || !key || !corrected) continue;
+    if (!isValidLocaleTag(locale)) {
+      rejectedCount++;
+      errors.push({
+        key,
+        locale,
+        message: `Rejected untrusted invalid locale "${locale}" in reviewer file.`,
+      });
+      continue;
+    }
     const list = byLocale.get(locale) ?? [];
     list.push({ key, value: corrected, notes });
     byLocale.set(locale, list);
   }
 
   let appliedCount = 0;
-  let rejectedCount = 0;
   let resolvedReviews = 0;
   const localesUpdated: string[] = [];
-  const errors: Array<{ key: string; locale: string; message: string }> = [];
 
   const reviewsFile = store.readReviews();
   const recordsFile = store.readRecords();

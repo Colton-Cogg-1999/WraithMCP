@@ -17,6 +17,7 @@ import { generatePseudoLocale } from "../core/pseudo-locale.js";
 import { generateReport } from "../core/report.js";
 import { ingestReviewResults, packageReviewJob } from "../core/review.js";
 import { scanProject } from "../core/scan.js";
+import { resolveMcpRootDir } from "../core/security.js";
 import { getProjectStatus } from "../core/status.js";
 import {
   CheckIssueCode,
@@ -43,11 +44,14 @@ Keep defaults zero-question: infer brand names and terminology, record assumptio
 
 export interface McpServerOptions {
   rootDir?: string;
+  authorizedRoots?: string[];
 }
 
 export function createPolyglotMcpServer(options: McpServerOptions = {}): McpServer {
   ensureBootstrapped();
   const defaultRoot = options.rootDir ?? process.cwd();
+  const safeRoot = (requested?: string) =>
+    resolveMcpRootDir(defaultRoot, requested, options.authorizedRoots);
 
   const server = new McpServer(
     {
@@ -66,7 +70,7 @@ export function createPolyglotMcpServer(options: McpServerOptions = {}): McpServ
       rootDir: z.string().optional().describe("Project root directory (defaults to current working directory)."),
     },
     async ({ rootDir }) => {
-      const status = getProjectStatus(rootDir ?? defaultRoot);
+      const status = getProjectStatus(safeRoot(rootDir));
       return mcpTextResult(status);
     }
   );
@@ -82,7 +86,7 @@ export function createPolyglotMcpServer(options: McpServerOptions = {}): McpServ
     },
     async ({ rootDir, fileFilter, offset, limit }) => {
       const result = scanProject({
-        rootDir: rootDir ?? defaultRoot,
+        rootDir: safeRoot(rootDir),
         fileFilter,
         offset,
         limit,
@@ -104,9 +108,10 @@ export function createPolyglotMcpServer(options: McpServerOptions = {}): McpServ
       limit: z.number().int().min(1).max(100).optional().default(20),
     },
     async ({ rootDir, targetLocale, document, keys, includeTranslated, offset, limit }) => {
+      const root = safeRoot(rootDir);
       if (document) {
         return mcpTextResult(
-          prepareDocument(rootDir ?? defaultRoot, {
+          prepareDocument(root, {
             documentPath: document,
             targetLocale,
             offset,
@@ -115,7 +120,7 @@ export function createPolyglotMcpServer(options: McpServerOptions = {}): McpServ
         );
       }
       const result = prepareBatch({
-        rootDir: rootDir ?? defaultRoot,
+        rootDir: root,
         targetLocale,
         keys,
         includeTranslated,
@@ -147,11 +152,12 @@ export function createPolyglotMcpServer(options: McpServerOptions = {}): McpServ
       strictGlossary: z.boolean().optional().default(true),
     },
     async ({ rootDir, targetLocale, document, targetFile, translations, strictGlossary }) => {
+      const root = safeRoot(rootDir);
       if (document) {
         if (!targetFile) {
           return mcpTextResult({ error: "targetFile is required when applying document translations" }, true);
         }
-        const docRes = applyDocumentTranslations(rootDir ?? defaultRoot, {
+        const docRes = applyDocumentTranslations(root, {
           sourceFile: document,
           targetFile,
           targetLocale,
@@ -160,12 +166,12 @@ export function createPolyglotMcpServer(options: McpServerOptions = {}): McpServ
         return mcpTextResult(docRes, !docRes.ok);
       }
       const result = applyTranslations({
-        rootDir: rootDir ?? defaultRoot,
+        rootDir: root,
         targetLocale,
         translations,
         strictGlossary,
       });
-      return mcpTextResult(result, !result.ok && result.appliedCount === 0);
+      return mcpTextResult(result, !result.ok);
     }
   );
 
@@ -184,7 +190,7 @@ export function createPolyglotMcpServer(options: McpServerOptions = {}): McpServ
     },
     async ({ rootDir, locale, severity, code, file, skipScan, offset, limit }) => {
       const res = runCheck({
-        rootDir: rootDir ?? defaultRoot,
+        rootDir: safeRoot(rootDir),
         locale,
         severity: severity as CheckSeverity | undefined,
         code: code as CheckIssueCode | undefined,
@@ -230,7 +236,7 @@ export function createPolyglotMcpServer(options: McpServerOptions = {}): McpServ
       context: z.string().optional(),
     },
     async (args) => {
-      const root = args.rootDir ?? defaultRoot;
+      const root = safeRoot(args.rootDir);
       if (args.action === "lookup") {
         if (!args.query) return mcpTextResult({ error: "query is required for lookup" }, true);
         return mcpTextResult(
@@ -292,7 +298,7 @@ export function createPolyglotMcpServer(options: McpServerOptions = {}): McpServ
       format: z.enum(["auto", "csv", "tbx", "tmx", "locales"]).optional().default("auto"),
     },
     async ({ rootDir, file, format }) => {
-      const res = importAsset(rootDir ?? defaultRoot, { file, format });
+      const res = importAsset(safeRoot(rootDir), { file, format });
       return mcpTextResult(res);
     }
   );
@@ -305,7 +311,7 @@ export function createPolyglotMcpServer(options: McpServerOptions = {}): McpServ
       pseudoLocale: z.string().optional().default("en-x-pseudo"),
     },
     async ({ rootDir, pseudoLocale }) => {
-      const res = generatePseudoLocale(rootDir ?? defaultRoot, pseudoLocale);
+      const res = generatePseudoLocale(safeRoot(rootDir), pseudoLocale);
       return mcpTextResult(res);
     }
   );
@@ -347,7 +353,7 @@ export function createPolyglotMcpServer(options: McpServerOptions = {}): McpServ
         .optional(),
     },
     async (args) => {
-      const root = args.rootDir ?? defaultRoot;
+      const root = safeRoot(args.rootDir);
       if (args.action === "package") {
         const pkg = packageReviewJob(root, {
           targetLocale: args.targetLocale,
@@ -383,7 +389,7 @@ export function createPolyglotMcpServer(options: McpServerOptions = {}): McpServ
       file: z.string().optional().describe("Path to reviewer corrections file (.csv, .xlsx, or .json) for import."),
     },
     async (args) => {
-      const root = args.rootDir ?? defaultRoot;
+      const root = safeRoot(args.rootDir);
       if (args.action === "export") {
         const res = exportEscalation(root, {
           outputDir: args.outputDir,
@@ -412,7 +418,7 @@ export function createPolyglotMcpServer(options: McpServerOptions = {}): McpServ
       format: z.enum(["both", "json", "markdown"]).optional().default("both"),
     },
     async ({ rootDir, format }) => {
-      const rep = generateReport(rootDir ?? defaultRoot);
+      const rep = generateReport(safeRoot(rootDir));
       if (format === "markdown") return mcpTextResult(rep.markdown);
       if (format === "json") {
         const { markdown: _md, ...rest } = rep;

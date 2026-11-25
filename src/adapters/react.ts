@@ -3,6 +3,7 @@ import path from "node:path";
 import { parse as babelParse } from "@babel/parser";
 import _traverse, { type NodePath } from "@babel/traverse";
 import * as t from "@babel/types";
+import { resolveConfinedPath, validateLocaleTag } from "../core/security.js";
 import { UsageSite } from "../core/types.js";
 import { JsonFormatAdapter } from "../formats/json.js";
 import { PlaceholderSyntax } from "../formats/types.js";
@@ -621,21 +622,23 @@ export class ReactNextAdapter implements ScannerAdapter {
   }
 
   resolveTargetLocaleFile(
-    _rootDir: string,
+    rootDir: string,
     sourceLocale: string,
     targetLocale: string,
     sourceFile: string
   ): string {
-    const dir = path.dirname(sourceFile);
-    const base = path.basename(sourceFile);
+    const safeLocale = validateLocaleTag(targetLocale, "targetLocale");
+    const confinedSource = resolveConfinedPath(rootDir, sourceFile, { label: "sourceFile" });
+    const dir = path.dirname(confinedSource);
+    const base = path.basename(confinedSource);
+    let candidate: string;
     if (base === `${sourceLocale}.json`) {
-      return path.join(dir, `${targetLocale}.json`);
+      candidate = path.join(dir, `${safeLocale}.json`);
+    } else if (path.basename(dir) === sourceLocale) {
+      candidate = path.join(path.dirname(dir), safeLocale, base);
+    } else {
+      candidate = path.join(dir, `${safeLocale}.json`);
     }
-    // Nested `<localesDir>/<sourceLocale>/<ns>.json`
-    const parentBase = path.basename(dir);
-    if (parentBase === sourceLocale) {
-      return path.join(path.dirname(dir), targetLocale, base);
-    }
-    return path.join(dir, `${targetLocale}.json`);
+    return resolveConfinedPath(rootDir, candidate, { label: "targetLocaleFile" });
   }
 }

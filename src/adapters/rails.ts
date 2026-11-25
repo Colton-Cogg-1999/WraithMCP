@@ -1,5 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
+import { resolveConfinedPath, validateLocaleTag } from "../core/security.js";
 import { UsageSite } from "../core/types.js";
 import { RailsYamlFormatAdapter } from "../formats/yaml.js";
 import {
@@ -264,21 +265,25 @@ export class RailsAdapter implements ScannerAdapter {
   }
 
   resolveTargetLocaleFile(
-    _rootDir: string,
+    rootDir: string,
     sourceLocale: string,
     targetLocale: string,
     sourceFile: string
   ): string {
-    const dir = path.dirname(sourceFile);
-    const base = path.basename(sourceFile);
+    const safeLocale = validateLocaleTag(targetLocale, "targetLocale");
+    const confinedSource = resolveConfinedPath(rootDir, sourceFile, { label: "sourceFile" });
+    const dir = path.dirname(confinedSource);
+    const base = path.basename(confinedSource);
     const ext = path.extname(base);
     const stem = base.slice(0, -ext.length);
+    let candidate: string;
     if (stem === sourceLocale) {
-      return path.join(dir, `${targetLocale}${ext}`);
+      candidate = path.join(dir, `${safeLocale}${ext}`);
+    } else if (stem.endsWith(`.${sourceLocale}`)) {
+      candidate = path.join(dir, `${stem.slice(0, -sourceLocale.length)}${safeLocale}${ext}`);
+    } else {
+      candidate = path.join(dir, `${safeLocale}${ext}`);
     }
-    if (stem.endsWith(`.${sourceLocale}`)) {
-      return path.join(dir, `${stem.slice(0, -sourceLocale.length)}${targetLocale}${ext}`);
-    }
-    return path.join(dir, `${targetLocale}${ext}`);
+    return resolveConfinedPath(rootDir, candidate, { label: "targetLocaleFile" });
   }
 }

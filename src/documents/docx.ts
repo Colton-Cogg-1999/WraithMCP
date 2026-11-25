@@ -1,7 +1,8 @@
 import fs from "node:fs";
 import path from "node:path";
-import { strFromU8, strToU8, unzipSync, zipSync } from "fflate";
+import { strFromU8, strToU8, zipSync } from "fflate";
 import { extractInlineTags } from "../core/placeholders.js";
+import { atomicWriteFileSync, safeUnzipSync } from "../core/security.js";
 import {
   DocumentAdapter,
   DocumentApplyResult,
@@ -541,7 +542,7 @@ function parseDocxInternal(filePath: string): {
   parts: string[];
 } {
   const rawZipBytes = fs.readFileSync(filePath);
-  const entries = unzipSync(rawZipBytes);
+  const entries = safeUnzipSync(rawZipBytes);
   const parts = discoverDocxXmlParts(Object.keys(entries));
   const xmlStrings = new Map<string, string>();
   const paragraphs: ExtractedDocxParagraph[] = [];
@@ -732,7 +733,7 @@ export class DocxDocumentAdapter implements DocumentAdapter {
     // If zero splices across all parts -> write exact original bytes (100% byte-identical DOCX!)
     const totalSplices = [...splicesByPart.values()].reduce((acc, arr) => acc + arr.length, 0);
     if (totalSplices === 0) {
-      fs.writeFileSync(targetPath, parsed.rawZipBytes);
+      atomicWriteFileSync(targetPath, parsed.rawZipBytes);
       return {
         ok: true,
         sourceFile: sourcePath,
@@ -757,7 +758,7 @@ export class DocxDocumentAdapter implements DocumentAdapter {
     }
 
     const outBytes = zipSync(updatedEntries, { level: 6 });
-    fs.writeFileSync(targetPath, outBytes);
+    atomicWriteFileSync(targetPath, outBytes);
 
     return {
       ok: true,

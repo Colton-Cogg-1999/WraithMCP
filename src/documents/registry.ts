@@ -4,6 +4,7 @@ import { findFuzzyMatches } from "../core/fuzzy.js";
 import { matchGlossaryTerms } from "../core/glossary.js";
 import { getLocaleConventions } from "../core/locales.js";
 import { DocumentScanSummary } from "../core/scan.js";
+import { resolveConfinedPath, SecurityBoundaryError, validateLocaleTag } from "../core/security.js";
 import { PolyglotStore } from "../core/store.js";
 import { DocxDocumentAdapter } from "./docx.js";
 import { MarkdownDocumentAdapter } from "./markdown.js";
@@ -42,8 +43,48 @@ export function applyDocumentTranslations(
     updates: DocumentTranslationUpdate[];
   }
 ): DocumentApplyResult {
-  const absSource = path.resolve(rootDir, options.sourceFile);
-  const absTarget = path.resolve(rootDir, options.targetFile);
+  let absSource: string;
+  let absTarget: string;
+  try {
+    validateLocaleTag(options.targetLocale, "targetLocale");
+    absSource = resolveConfinedPath(rootDir, options.sourceFile, { label: "sourceFile" });
+    absTarget = resolveConfinedPath(rootDir, options.targetFile, { label: "targetFile" });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    return {
+      ok: false,
+      sourceFile: options.sourceFile,
+      targetFile: options.targetFile,
+      segmentsTotal: 0,
+      segmentsUpdated: 0,
+      byteIdentical: false,
+      errors: [
+        {
+          id: "*",
+          code: err instanceof SecurityBoundaryError ? err.code : "security_error",
+          message,
+        },
+      ],
+    };
+  }
+
+  if (absSource === absTarget) {
+    return {
+      ok: false,
+      sourceFile: options.sourceFile,
+      targetFile: options.targetFile,
+      segmentsTotal: 0,
+      segmentsUpdated: 0,
+      byteIdentical: false,
+      errors: [
+        {
+          id: "*",
+          code: "same_source_and_target",
+          message: "Refused to overwrite source document: targetFile must be different from sourceFile.",
+        },
+      ],
+    };
+  }
   const adapter = getDocumentAdapter(absSource);
   if (!adapter) {
     return {
@@ -100,11 +141,12 @@ export function prepareDocument(
     limit?: number;
   }
 ) {
+  validateLocaleTag(options.targetLocale, "targetLocale");
   const store = new PolyglotStore(rootDir);
   const config = store.readConfig();
   const glossary = store.readGlossary();
   const memory = store.readMemory();
-  const abs = path.resolve(rootDir, options.documentPath);
+  const abs = resolveConfinedPath(rootDir, options.documentPath, { label: "documentPath" });
   const extracted = extractDocument(abs);
 
   const offset = Math.max(0, options.offset ?? 0);

@@ -1,6 +1,8 @@
 import crypto from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
+import { ZodError } from "zod";
+import { atomicWriteFileSync } from "./security.js";
 import {
   AssumptionsFile,
   AssumptionsFileSchema,
@@ -87,14 +89,30 @@ export class PolyglotStore {
     if (!fs.existsSync(p)) {
       return ConfigSchema.parse({});
     }
-    const raw = JSON.parse(fs.readFileSync(p, "utf8"));
-    return ConfigSchema.parse(raw);
+    let raw: unknown;
+    try {
+      raw = JSON.parse(fs.readFileSync(p, "utf8"));
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      throw new Error(`Invalid JSON in .polyglot/config.json: ${msg}`);
+    }
+    try {
+      return ConfigSchema.parse(raw);
+    } catch (err) {
+      if (err instanceof ZodError) {
+        const details = err.issues
+          .map((i) => `${i.path.join(".") || "(root)"}: ${i.message}`)
+          .join("; ");
+        throw new Error(`Invalid .polyglot/config.json: ${details}`);
+      }
+      throw err;
+    }
   }
 
   writeConfig(config: PolyglotConfig): void {
     this.ensureDir();
     const parsed = ConfigSchema.parse(config);
-    fs.writeFileSync(this.filePath("config.json"), stableJson(parsed), "utf8");
+    atomicWriteFileSync(this.filePath("config.json"), stableJson(parsed));
   }
 
   readGlossary(): GlossaryFile {
@@ -225,7 +243,11 @@ export class PolyglotStore {
       .filter(Boolean);
     const out: MemoryEntry[] = [];
     for (const line of lines) {
-      out.push(MemoryEntrySchema.parse(JSON.parse(line)));
+      try {
+        out.push(MemoryEntrySchema.parse(JSON.parse(line)));
+      } catch {
+        // Tolerate individual corrupt lines rather than disabling all tools
+      }
     }
     return out;
   }
@@ -245,7 +267,7 @@ export class PolyglotStore {
       )
     );
     const body = sorted.map((e) => JSON.stringify(e)).join("\n") + (sorted.length ? "\n" : "");
-    fs.writeFileSync(this.filePath("memory.jsonl"), body, "utf8");
+    atomicWriteFileSync(this.filePath("memory.jsonl"), body);
   }
 
   appendMemory(newEntries: MemoryEntry[]): number {

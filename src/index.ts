@@ -1,4 +1,5 @@
 export * from "./core/types.js";
+export * from "./core/security.js";
 export * from "./core/store.js";
 export * from "./core/locales.js";
 export * from "./core/init.js";

@@ -4,6 +4,7 @@ import { LayoutRiskFinding } from "../adapters/types.js";
 import { applyTranslations } from "./apply.js";
 import { getLocaleConventions } from "./locales.js";
 import { pseudoLocalizeString } from "./pseudo.js";
+import { validateLocaleTag } from "./security.js";
 import { PolyglotStore } from "./store.js";
 
 export interface PseudoLocaleResult {
@@ -22,6 +23,7 @@ export function generatePseudoLocale(
   rootDir: string,
   pseudoLocale = "en-x-pseudo"
 ): PseudoLocaleResult {
+  validateLocaleTag(pseudoLocale, "pseudoLocale");
   const store = new PolyglotStore(rootDir);
   const config = store.readConfig();
   const { adapter, detection } = detectProjectAdapter(

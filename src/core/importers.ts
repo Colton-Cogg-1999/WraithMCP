@@ -1,6 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { detectProjectAdapter, loadLocaleCatalog } from "../adapters/registry.js";
+import { resolveConfinedPath } from "./security.js";
 import { PolyglotStore, sha256Short } from "./store.js";
 import { MemoryEntry } from "./types.js";
 
@@ -89,7 +90,7 @@ export interface ImportResult {
 export function importGlossaryCsv(rootDir: string, filePath: string): ImportResult {
   const store = new PolyglotStore(rootDir);
   const config = store.readConfig();
-  const abs = path.resolve(rootDir, filePath);
+  const abs = resolveConfinedPath(rootDir, filePath, { label: "glossary CSV file" });
   const rows = parseCsv(fs.readFileSync(abs, "utf8"));
   if (rows.length < 2) {
     return {
@@ -168,7 +169,7 @@ export function importGlossaryCsv(rootDir: string, filePath: string): ImportResu
 export function importGlossaryTbx(rootDir: string, filePath: string): ImportResult {
   const store = new PolyglotStore(rootDir);
   const config = store.readConfig();
-  const abs = path.resolve(rootDir, filePath);
+  const abs = resolveConfinedPath(rootDir, filePath, { label: "TBX file" });
   const xml = fs.readFileSync(abs, "utf8");
 
   const entryRe = /<(?:termEntry|conceptEntry)\b[^>]*>([\s\S]*?)<\/(?:termEntry|conceptEntry)>/gi;
@@ -242,7 +243,7 @@ export function importGlossaryTbx(rootDir: string, filePath: string): ImportResu
 export function importMemoryTmx(rootDir: string, filePath: string): ImportResult {
   const store = new PolyglotStore(rootDir);
   const config = store.readConfig();
-  const abs = path.resolve(rootDir, filePath);
+  const abs = resolveConfinedPath(rootDir, filePath, { label: "TMX file" });
   const xml = fs.readFileSync(abs, "utf8");
 
   const headerSrcMatch = /srclang=["']([^"']+)["']/i.exec(xml);

@@ -1,5 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
+import { resolveConfinedPath, validateLocaleTag } from "../core/security.js";
 import { UsageSite } from "../core/types.js";
 import { GettextPoFormatAdapter } from "../formats/po.js";
 import {
@@ -324,20 +325,33 @@ export class DjangoAdapter implements ScannerAdapter {
   }
 
   resolveTargetLocaleFile(
-    _rootDir: string,
+    rootDir: string,
     sourceLocale: string,
     targetLocale: string,
     sourceFile: string
   ): string {
-    const srcDirToken = `${path.sep}${toDjangoLocaleDir(sourceLocale)}${path.sep}`;
-    const tgtDirToken = `${path.sep}${toDjangoLocaleDir(targetLocale)}${path.sep}`;
-    if (sourceFile.includes(srcDirToken)) {
-      return sourceFile.replace(srcDirToken, tgtDirToken);
+    const safeLocale = validateLocaleTag(targetLocale, "targetLocale");
+    const confinedSource = resolveConfinedPath(rootDir, sourceFile, { label: "sourceFile" });
+    const absRoot = fs.realpathSync(path.resolve(rootDir));
+    const relFromRoot = path.relative(absRoot, confinedSource);
+
+    // Rewrite ONLY the <locale>/LC_MESSAGES segment inside the repo-relative path (never touch parent dirs like /clients/en/shop)
+    const tgtDir = toDjangoLocaleDir(safeLocale);
+    const lcPattern = new RegExp(
+      `(^|[\\\\/])${toDjangoLocaleDir(sourceLocale).replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}([\\\\/]LC_MESSAGES[\\\\/])`
+    );
+    let candidateRel: string;
+    if (lcPattern.test(relFromRoot)) {
+      candidateRel = relFromRoot.replace(lcPattern, `$1${tgtDir}$2`);
+    } else {
+      // Handle standard makemessages layout where sourceFile is itself a target .po (e.g. locale/fr/LC_MESSAGES/django.po)
+      const genericLcPattern = /(^|[\\/])[^\\/]+([\\/]LC_MESSAGES[\\/])/;
+      if (genericLcPattern.test(relFromRoot)) {
+        candidateRel = relFromRoot.replace(genericLcPattern, `$1${tgtDir}$2`);
+      } else {
+        candidateRel = path.join("locale", tgtDir, "LC_MESSAGES", path.basename(confinedSource));
+      }
     }
-    // Fallback: sibling locale/<target>/LC_MESSAGES/django.po
-    const lcDir = path.dirname(sourceFile);
-    const langDir = path.dirname(lcDir);
-    const localeRoot = path.dirname(langDir);
-    return path.join(localeRoot, toDjangoLocaleDir(targetLocale), "LC_MESSAGES", path.basename(sourceFile));
+    return resolveConfinedPath(rootDir, candidateRel, { label: "targetLocaleFile" });
   }
 }

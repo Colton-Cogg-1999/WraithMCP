@@ -3,6 +3,7 @@ import { detectProjectAdapter, loadLocaleCatalog } from "../adapters/registry.js
 import { FormatWriteUpdate } from "../formats/types.js";
 import { checkGlossaryCompliance } from "./glossary.js";
 import { validateTranslationString } from "./placeholders.js";
+import { resolveConfinedPath, SecurityBoundaryError, validateLocaleTag } from "./security.js";
 import { PolyglotStore, sha256Short } from "./store.js";
 import { MemoryEntry, RecordOrigin } from "./types.js";
 
@@ -41,6 +42,22 @@ export interface ApplyResult {
 }
 
 export function applyTranslations(options: ApplyOptions): ApplyResult {
+  // Enforce locale tag safety BEFORE reading/mutating anything
+  try {
+    validateLocaleTag(options.targetLocale, "targetLocale");
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    return {
+      ok: false,
+      targetLocale: options.targetLocale,
+      appliedCount: 0,
+      rejectedCount: options.translations.length,
+      filesWritten: [],
+      errors: [{ key: "*", code: err instanceof SecurityBoundaryError ? err.code : "invalid_locale", message }],
+      warnings: [],
+    };
+  }
+
   const store = new PolyglotStore(options.rootDir);
   const config = store.readConfig();
   const glossary = store.readGlossary();
@@ -155,11 +172,15 @@ export function applyTranslations(options: ApplyOptions): ApplyResult {
   >();
 
   for (const v of validItems) {
-    const targetFile = adapter.resolveTargetLocaleFile(
+    const targetFile = resolveConfinedPath(
       store.rootDir,
-      config.sourceLocale,
-      options.targetLocale,
-      v.sourceFile
+      adapter.resolveTargetLocaleFile(
+        store.rootDir,
+        config.sourceLocale,
+        options.targetLocale,
+        v.sourceFile
+      ),
+      { label: "targetLocaleFile" }
     );
     const useNamespacePrefix =
       srcFiles.length > 1 && path.basename(path.dirname(v.sourceFile)) === config.sourceLocale;
