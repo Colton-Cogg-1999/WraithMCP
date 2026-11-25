@@ -3,8 +3,8 @@ import { findFuzzyMatches, FuzzyMatch } from "./fuzzy.js";
 import { GlossaryHit, matchGlossaryTerms } from "./glossary.js";
 import { getLocaleConventions, LocaleConventions } from "./locales.js";
 import { extractPlaceholders } from "./placeholders.js";
-import { PolyglotStore, sha256Short } from "./store.js";
-import { UsageSite } from "./types.js";
+import { computeContextFingerprint, PolyglotStore, sha256Short } from "./store.js";
+import { UsageFile, UsageSite } from "./types.js";
 
 export type PrepareReason = "missing" | "stale_source" | "context_changed" | "requested" | "flagged";
 
@@ -90,6 +90,23 @@ export function prepareBatch(options: PrepareOptions): PrepareResult {
     };
   }
 
+  // Compute live usage sites read-only so prepare always reflects current component context
+  let liveUsage: UsageFile = usage;
+  const scanRes = adapter.scanSource(store.rootDir, {
+    sourcePaths: config.paths.source,
+    ignore: config.paths.ignore,
+    i18nLibrary: config.i18nLibrary ?? detection.i18nLibrary,
+  });
+  if (Object.keys(scanRes.usageByKey).length > 0) {
+    liveUsage = { version: 1, keys: {} };
+    for (const [k, sites] of Object.entries(scanRes.usageByKey)) {
+      liveUsage.keys[k] = {
+        fingerprint: computeContextFingerprint(sites),
+        sites,
+      };
+    }
+  }
+
   const srcFiles = detection.localeFiles[config.sourceLocale] ?? [];
   const tgtFiles = detection.localeFiles[options.targetLocale] ?? [];
   const srcCatalog = loadLocaleCatalog(adapter, srcFiles, config.sourceLocale);
@@ -106,7 +123,7 @@ export function prepareBatch(options: PrepareOptions): PrepareResult {
     const currentHash = sha256Short(
       srcEntry.plurals ? JSON.stringify(srcEntry.plurals) : srcEntry.value
     );
-    const currentFp = usage.keys[key]?.fingerprint ?? "";
+    const currentFp = liveUsage.keys[key]?.fingerprint ?? "";
 
     let reason: PrepareReason | null = null;
     if (!tgtEntry || tgtEntry.value.trim() === "") {
@@ -136,7 +153,7 @@ export function prepareBatch(options: PrepareOptions): PrepareResult {
       limit: 3,
     });
 
-    const currentSites = (usage.keys[key]?.sites ?? []).slice(0, 3);
+    const currentSites = (liveUsage.keys[key]?.sites ?? []).slice(0, 3);
     const currentContextStr = currentSites[0]
       ? `${currentSites[0].component ?? currentSites[0].file}${currentSites[0].element ? ` <${currentSites[0].element}>` : ""}`
       : "";

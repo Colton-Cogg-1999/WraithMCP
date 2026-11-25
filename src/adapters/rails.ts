@@ -215,7 +215,7 @@ export class RailsAdapter implements ScannerAdapter {
     return {
       framework: "rails",
       i18nLibrary: "rails-i18n",
-      confidence: 0.95,
+      confidence: Object.keys(localeFiles).length > 0 ? 0.98 : 0.95,
       localesDir: fs.existsSync(localesDirAbs) ? localesDirRel : null,
       localeFiles,
       placeholderSyntaxes: ["percent-brace"],
@@ -228,7 +228,10 @@ export class RailsAdapter implements ScannerAdapter {
     options: { sourcePaths: string[]; ignore: string[] }
   ): ScanSourceResult {
     const files = walkFiles(rootDir, options.sourcePaths, options.ignore, RAILS_EXTS).filter(
-      (f) => !f.includes("/spec/") && !f.includes("/test/") && !f.includes("/db/")
+      (f) => {
+        const rel = path.relative(rootDir, f).replace(/\\/g, "/");
+        return !rel.startsWith("spec/") && !rel.startsWith("test/") && !rel.startsWith("db/");
+      }
     );
 
     const hardcodedStrings: HardcodedStringFinding[] = [];

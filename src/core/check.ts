@@ -1,9 +1,18 @@
+import fs from "node:fs";
+import path from "node:path";
 import { detectProjectAdapter, loadLocaleCatalog } from "../adapters/registry.js";
 import { checkGlossaryCompliance } from "./glossary.js";
 import { getLocaleConventions } from "./locales.js";
 import { validateTranslationString } from "./placeholders.js";
+import { scanDocumentsInProject } from "../documents/registry.js";
 import { computeContextFingerprint, PolyglotStore, sha256Short } from "./store.js";
-import { CheckIssue, CheckIssueCode, CheckSeverity, UsageFile } from "./types.js";
+import {
+  CheckIssue,
+  CheckIssueCode,
+  CheckOutcome,
+  CheckSeverity,
+  UsageFile,
+} from "./types.js";
 
 export interface CheckOptions {
   rootDir: string;
@@ -17,8 +26,22 @@ export interface CheckOptions {
   skipScan?: boolean;
 }
 
+export interface VerificationCoverage {
+  adapterId: string | null;
+  filesScanned: number;
+  skippedFiles: Array<{ file: string; reason: string }>;
+  parseFailures: Array<{ file: string; error: string }>;
+  unsupportedConstructs: Array<{ file?: string; key?: string; description: string }>;
+  executedChecks: string[];
+  documentsChecked: number;
+  documentsUnchecked: number;
+}
+
 export interface CheckSummary {
+  outcome: CheckOutcome;
   passed: boolean;
+  inconclusiveReasons: string[];
+  disclaimer: string;
   framework: string;
   sourceLocale: string;
   targetLocales: string[];
@@ -28,6 +51,7 @@ export interface CheckSummary {
   infoCount: number;
   countsByCode: Record<string, number>;
   countsByLocale: Record<string, { errors: number; warnings: number }>;
+  coverage: VerificationCoverage;
   issues: {
     items: CheckIssue[];
     total: number;
@@ -145,17 +169,40 @@ export function runCheck(options: CheckOptions): CheckSummary {
 
   let totalSourceKeys = 0;
   let orphanedKeys = 0;
+  let filesScanned = 0;
+  const skippedFiles: Array<{ file: string; reason: string }> = [];
+  const parseFailures: Array<{ file: string; error: string }> = [];
+  const unsupportedConstructs: Array<{ file?: string; key?: string; description: string }> = [];
+  const executedChecks: string[] = [];
+  const inconclusiveReasons: string[] = [];
+  let documentsChecked = 0;
+  let documentsUnchecked = 0;
 
   let liveUsage: UsageFile = prevUsage;
+  const dynamicNamespaces = new Set<string>();
 
   if (adapter) {
-    // 1. Source scan: hardcoded strings, concatenations, and live key usage sites
+    // 1. Source scan: hardcoded strings, concatenations, and live key usage sites (READ-ONLY: never mutates .polyglot/usage.json)
     if (!options.skipScan) {
+      executedChecks.push("source_scan");
       const scanRes = adapter.scanSource(store.rootDir, {
         sourcePaths: config.paths.source,
         ignore: config.paths.ignore,
         i18nLibrary: config.i18nLibrary ?? detection.i18nLibrary,
       });
+      filesScanned = scanRes.filesScanned;
+      if (scanRes.skippedFiles) skippedFiles.push(...scanRes.skippedFiles);
+      for (const ns of scanRes.dynamicKeyNamespaces ?? []) dynamicNamespaces.add(ns);
+
+      for (const pf of scanRes.parseFailures ?? []) {
+        parseFailures.push(pf);
+        issues.push({
+          code: "source_parse_error",
+          severity: "error",
+          file: pf.file,
+          message: `Failed to parse "${pf.file}": ${pf.error}`,
+        });
+      }
 
       for (const h of scanRes.hardcodedStrings) {
         issues.push({
@@ -200,30 +247,52 @@ export function runCheck(options: CheckOptions): CheckSummary {
             sites,
           };
         }
-        if (store.exists()) {
-          store.writeUsage(liveUsage);
-        }
       }
     }
 
-    // 2. Load source & target locale catalogs
+    // 2. Load source & target locale catalogs with per-file error isolation
     const srcFiles = detection.localeFiles[config.sourceLocale] ?? [];
     const srcCatalog = loadLocaleCatalog(adapter, srcFiles, config.sourceLocale);
+    for (const err of srcCatalog.errors) {
+      const rel = path.relative(store.rootDir, err.file).replace(/\\/g, "/");
+      parseFailures.push({ file: rel, error: err.error });
+      issues.push({
+        code: "locale_parse_error",
+        severity: "error",
+        locale: err.locale,
+        file: rel,
+        message: `Failed to parse source locale file "${rel}": ${err.error}`,
+      });
+    }
+    for (const u of srcCatalog.unsupportedConstructs) {
+      unsupportedConstructs.push({
+        file: path.relative(store.rootDir, u.file).replace(/\\/g, "/"),
+        key: u.key,
+        description: u.description,
+      });
+    }
     totalSourceKeys = srcCatalog.entries.size;
+    if (totalSourceKeys > 0) {
+      executedChecks.push("catalog_parity", "placeholders", "plurals", "glossary", "staleness");
+    }
 
-    // 3. Orphaned keys check (only when usage tracking actually found keys in source)
+    // 3. Orphaned keys check (suppress when dynamic keys cover that namespace)
     const usedKeySet = new Set(Object.keys(liveUsage.keys));
-    if (usedKeySet.size > 0) {
+    if (usedKeySet.size > 0 && !dynamicNamespaces.has("*")) {
+      executedChecks.push("orphan_keys");
       for (const key of srcCatalog.entries.keys()) {
-        if (!usedKeySet.has(key)) {
-          orphanedKeys++;
-          issues.push({
-            code: "orphaned_key",
-            severity: "warning",
-            key,
-            message: `Key "${key}" exists in ${config.sourceLocale} locale file but was not found in scanned source files.`,
-          });
-        }
+        if (usedKeySet.has(key)) continue;
+        const coveredByDynamic = [...dynamicNamespaces].some(
+          (ns) => ns !== "" && (key === ns || key.startsWith(`${ns}.`))
+        );
+        if (coveredByDynamic) continue;
+        orphanedKeys++;
+        issues.push({
+          code: "orphaned_key",
+          severity: "warning",
+          key,
+          message: `Key "${key}" exists in ${config.sourceLocale} locale file but was not found in scanned source files.`,
+        });
       }
     }
 
@@ -237,6 +306,28 @@ export function runCheck(options: CheckOptions): CheckSummary {
 
       const tgtFiles = detection.localeFiles[locale] ?? [];
       const tgtCatalog = loadLocaleCatalog(adapter, tgtFiles, locale);
+      for (const err of tgtCatalog.errors) {
+        const rel = path.relative(store.rootDir, err.file).replace(/\\/g, "/");
+        parseFailures.push({ file: rel, error: err.error });
+        issues.push({
+          code: "locale_parse_error",
+          severity: "error",
+          locale,
+          file: rel,
+          message: `Failed to parse ${locale} locale file "${rel}": ${err.error}`,
+        });
+      }
+      for (const u of tgtCatalog.unsupportedConstructs) {
+        unsupportedConstructs.push({
+          file: path.relative(store.rootDir, u.file).replace(/\\/g, "/"),
+          key: u.key,
+          description: u.description,
+        });
+      }
+      // If target files failed to parse, don't generate cascading false missing_key errors for that broken file
+      if (tgtCatalog.errors.length > 0 && tgtCatalog.entries.size === 0) {
+        continue;
+      }
       const conv = getLocaleConventions(locale);
 
       // Track same-source-text inconsistency across keys in this locale
@@ -409,7 +500,71 @@ export function runCheck(options: CheckOptions): CheckSummary {
     }
   }
 
-  // 5. Open verified review findings
+  // 5. Configured documents verification
+  const configuredDocs =
+    config.paths.documents.length > 0
+      ? scanDocumentsInProject(store.rootDir, config.paths.documents)
+      : [];
+
+  if (configuredDocs.length > 0) {
+    executedChecks.push("documents");
+    const docStatePath = store.filePath("documents.json");
+    let docState: Record<string, Record<string, { targetFile?: string; translatedSegments?: number; totalSegments?: number }>> = {};
+    if (fs.existsSync(docStatePath)) {
+      try {
+        docState = JSON.parse(fs.readFileSync(docStatePath, "utf8"))?.documents ?? {};
+      } catch {
+        docState = {};
+      }
+    }
+
+    for (const doc of configuredDocs) {
+      if (targetLocales.length === 0) {
+        documentsUnchecked++;
+        inconclusiveReasons.push(`Document "${doc.file}" is configured, but no targetLocales are set.`);
+        continue;
+      }
+      documentsChecked++;
+      for (const locale of targetLocales) {
+        const entry = docState[doc.file]?.[locale];
+        const ext = path.extname(doc.file);
+        const stem = doc.file.slice(0, -ext.length);
+        const defaultTarget = path.join(store.rootDir, `${stem}.${locale}${ext}`);
+        const recordedTarget = entry?.targetFile
+          ? path.join(store.rootDir, entry.targetFile)
+          : defaultTarget;
+
+        if (!fs.existsSync(recordedTarget)) {
+          issues.push({
+            code: "missing_document_translation",
+            severity: "error",
+            locale,
+            file: doc.file,
+            message: `[${locale}] Configured document "${doc.file}" (${doc.segments} segments) has no translated output file.`,
+          });
+        } else if (
+          entry &&
+          entry.totalSegments !== undefined &&
+          entry.translatedSegments !== undefined &&
+          entry.translatedSegments < entry.totalSegments
+        ) {
+          issues.push({
+            code: "missing_document_translation",
+            severity: "error",
+            locale,
+            file: doc.file,
+            message: `[${locale}] Configured document "${doc.file}" has only ${entry.translatedSegments}/${entry.totalSegments} segments translated.`,
+          });
+        }
+      }
+    }
+  } else if (config.paths.documents.length > 0) {
+    inconclusiveReasons.push(
+      `paths.documents configured (${config.paths.documents.join(", ")}), but no supported .docx/.md/.mdx files were found.`
+    );
+  }
+
+  // 6. Open verified review findings
   for (const rev of reviews.reviews) {
     if (rev.status === "open" && rev.verified) {
       issues.push({
@@ -421,6 +576,18 @@ export function runCheck(options: CheckOptions): CheckSummary {
         details: { reviewId: rev.id, suggestion: rev.suggestion },
       });
     }
+  }
+
+  // 7. Determine coverage sufficiency (fail closed: INCONCLUSIVE when nothing verifiable was checked)
+  if (!adapter && configuredDocs.length === 0) {
+    inconclusiveReasons.push(
+      detection.notes[0] ??
+        "No supported framework adapter or configured documents were detected; cannot verify localization."
+    );
+  } else if (adapter && totalSourceKeys === 0 && filesScanned === 0 && configuredDocs.length === 0) {
+    inconclusiveReasons.push(
+      `Detected ${detection.framework}, but found 0 source keys and scanned 0 source files.`
+    );
   }
 
   // Sort deterministically: error > warning > info, then code, locale, file, key
@@ -452,6 +619,10 @@ export function runCheck(options: CheckOptions): CheckSummary {
     }
   }
 
+  const outcome: CheckOutcome =
+    errorCount > 0 ? "FAIL" : inconclusiveReasons.length > 0 ? "INCONCLUSIVE" : "PASS";
+  const passed = outcome === "PASS";
+
   // Apply user filters for paginated output
   let filtered = issues;
   if (options.locale) filtered = filtered.filter((i) => i.locale === options.locale);
@@ -463,7 +634,11 @@ export function runCheck(options: CheckOptions): CheckSummary {
   const limit = Math.max(1, Math.min(options.limit ?? 25, 100));
 
   return {
-    passed: errorCount === 0,
+    outcome,
+    passed,
+    inconclusiveReasons,
+    disclaimer:
+      "Deterministic checks verify catalog parity, placeholders, plurals, glossary rules, and static scanner heuristics; they do not guarantee linguistic accuracy or native fluency.",
     framework: detection.framework,
     sourceLocale: config.sourceLocale,
     targetLocales,
@@ -473,6 +648,16 @@ export function runCheck(options: CheckOptions): CheckSummary {
     infoCount,
     countsByCode,
     countsByLocale,
+    coverage: {
+      adapterId: adapter?.id ?? null,
+      filesScanned,
+      skippedFiles,
+      parseFailures,
+      unsupportedConstructs,
+      executedChecks,
+      documentsChecked,
+      documentsUnchecked,
+    },
     issues: {
       items: filtered.slice(offset, offset + limit),
       total: filtered.length,

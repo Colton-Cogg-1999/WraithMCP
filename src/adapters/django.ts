@@ -284,11 +284,17 @@ export class DjangoAdapter implements ScannerAdapter {
     options: { sourcePaths: string[]; ignore: string[] }
   ): ScanSourceResult {
     const files = walkFiles(rootDir, options.sourcePaths, options.ignore, DJANGO_EXTS).filter(
-      (f) =>
-        !f.endsWith("manage.py") &&
-        !f.includes("/migrations/") &&
-        !f.includes("/tests/") &&
-        !f.endsWith("settings.py")
+      (f) => {
+        const rel = path.relative(rootDir, f).replace(/\\/g, "/");
+        return (
+          rel !== "manage.py" &&
+          !rel.includes("/migrations/") &&
+          !rel.startsWith("migrations/") &&
+          !rel.includes("/tests/") &&
+          !rel.startsWith("tests/") &&
+          !rel.endsWith("settings.py")
+        );
+      }
     );
 
     const hardcodedStrings: HardcodedStringFinding[] = [];

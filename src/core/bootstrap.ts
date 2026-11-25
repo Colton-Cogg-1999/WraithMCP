@@ -20,6 +20,7 @@ export function ensureBootstrapped(): void {
     runQuickCheck: (rootDir) => {
       const res = runCheck({ rootDir, limit: 1 });
       return {
+        outcome: res.outcome,
         passed: res.passed,
         errorCount: res.errorCount,
         warningCount: res.warningCount,

@@ -176,16 +176,21 @@ export function createCli(): Command {
       if (opts.json) {
         const { metrics: _m, ...out } = res;
         console.log(JSON.stringify(out, null, 2));
-      } else if (res.passed) {
+      } else if (res.outcome === "PASS") {
         console.log(
-          `✓ clean · 0 errors · ${res.warningCount} warning(s) (${res.totalSourceKeys} keys across ${res.targetLocales.length} target locale(s))`
+          `PASS · 0 errors · ${res.warningCount} warning(s) (${res.totalSourceKeys} keys across ${res.targetLocales.length} target locale(s), ${res.coverage.filesScanned} source file(s) scanned)`
         );
         for (const iss of res.issues.items) {
           console.log(`  [${iss.severity}] ${iss.code}: ${iss.message}`);
         }
+      } else if (res.outcome === "INCONCLUSIVE") {
+        console.log(`INCONCLUSIVE · insufficient coverage to pass verification`);
+        for (const r of res.inconclusiveReasons) {
+          console.log(`  - ${r}`);
+        }
       } else {
         console.log(
-          `✗ ${res.errorCount} error(s) · ${res.warningCount} warning(s)`
+          `FAIL · ${res.errorCount} error(s) · ${res.warningCount} warning(s)`
         );
         for (const iss of res.issues.items) {
           const loc = iss.file ? `${iss.file}:${iss.line ?? 1} ` : "";
@@ -196,8 +201,10 @@ export function createCli(): Command {
         }
       }
 
-      if (!res.passed) {
+      if (res.outcome === "FAIL") {
         process.exitCode = 1;
+      } else if (res.outcome === "INCONCLUSIVE") {
+        process.exitCode = 2;
       }
     });
 

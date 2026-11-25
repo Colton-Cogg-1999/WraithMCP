@@ -10,6 +10,10 @@ export interface LocaleEntry {
   value: string;
   /** Optional plural variants for formats that store plurals as subkeys (Rails YAML, PO) */
   plurals?: Record<string, string>;
+  /** True if this entry is a gettext #, fuzzy entry (ignored at runtime by Django/gettext) */
+  fuzzy?: boolean;
+  /** Optional gettext Plural-Forms metadata parsed from PO header */
+  pluralForms?: { nplurals: number; pluralExpr?: string };
   /** Optional translator or extracted comment */
   comment?: string;
   /** Source file where this entry lives */
@@ -22,6 +26,10 @@ export interface LocaleFileData {
   locale: string;
   filePath: string;
   entries: Map<string, LocaleEntry>;
+  /** Optional gettext Plural-Forms parsed from PO file header */
+  pluralForms?: { nplurals: number; pluralExpr?: string };
+  /** Optional list of unsupported constructs encountered in the file */
+  unsupportedConstructs?: Array<{ key?: string; description: string }>;
 }
 
 export interface FormatWriteUpdate {

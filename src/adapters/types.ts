@@ -42,12 +42,21 @@ export interface LayoutRiskFinding {
   snippet: string;
 }
 
+export interface ParseFailure {
+  file: string;
+  error: string;
+}
+
 export interface ScanSourceResult {
   filesScanned: number;
   hardcodedStrings: HardcodedStringFinding[];
   concatenations: ConcatenationFinding[];
   usageByKey: Record<string, UsageSite[]>;
   layoutRisks?: LayoutRiskFinding[];
+  parseFailures?: ParseFailure[];
+  /** Namespaces or "*" where dynamic translation keys were encountered (prevents false orphan claims) */
+  dynamicKeyNamespaces?: string[];
+  skippedFiles?: Array<{ file: string; reason: string }>;
 }
 
 export interface ScannerAdapter {

@@ -9,6 +9,7 @@ export interface ProjectContextHooks {
     localesPath?: string
   ) => { adapter: ScannerAdapter | null; detection: FrameworkDetection };
   runQuickCheck?: (rootDir: string) => {
+    outcome: "PASS" | "FAIL" | "INCONCLUSIVE";
     passed: boolean;
     errorCount: number;
     warningCount: number;
@@ -97,6 +98,7 @@ export function getProjectStatus(rootDir: string): ProjectStatus {
       orphanedKeys: quick.orphanedKeys,
       documents: config.paths.documents,
       locales,
+      checkOutcome: quick.outcome,
       checkPassed: quick.passed,
       errorCount: quick.errorCount,
       warningCount: quick.warningCount,

@@ -1,6 +1,6 @@
 import path from "node:path";
 import { detectProjectAdapter, loadLocaleCatalog } from "../adapters/registry.js";
-import { ConcatenationFinding, HardcodedStringFinding } from "../adapters/types.js";
+import { ConcatenationFinding, HardcodedStringFinding, ParseFailure } from "../adapters/types.js";
 import { inferGlossaryCandidates, InferredGlossaryCandidate } from "./glossary.js";
 import { computeContextFingerprint, PolyglotStore } from "./store.js";
 import { UsageFile } from "./types.js";
@@ -32,8 +32,10 @@ export interface ScanResult {
     hardcodedStrings: number;
     concatenations: number;
     trackedKeys: number;
+    parseFailures: number;
     documents: number;
   };
+  parseFailures: ParseFailure[];
   hardcodedStrings: {
     items: HardcodedStringFinding[];
     total: number;
@@ -72,6 +74,7 @@ export function scanProject(options: ScanOptions): ScanResult {
   let filesScanned = 0;
   let hardcodedStrings: HardcodedStringFinding[] = [];
   let concatenations: ConcatenationFinding[] = [];
+  let parseFailures: ParseFailure[] = [];
   let usageByKey: Record<string, UsageFile["keys"][string]["sites"]> = {};
   let sourceKeys = 0;
   const sourceValues: string[] = [];
@@ -85,6 +88,7 @@ export function scanProject(options: ScanOptions): ScanResult {
     filesScanned = scanRes.filesScanned;
     hardcodedStrings = scanRes.hardcodedStrings;
     concatenations = scanRes.concatenations;
+    parseFailures = scanRes.parseFailures ?? [];
     usageByKey = scanRes.usageByKey;
 
     const srcFiles = detection.localeFiles[config.sourceLocale] ?? [];
@@ -130,6 +134,10 @@ export function scanProject(options: ScanOptions): ScanResult {
       ? documentScannerHook(store.rootDir, config.paths.documents)
       : [];
 
+  const parseNotes = parseFailures.map(
+    (pf) => `Parse failure in ${pf.file}: ${pf.error}`
+  );
+
   return {
     framework: detection.framework,
     i18nLibrary: config.i18nLibrary ?? detection.i18nLibrary,
@@ -142,8 +150,10 @@ export function scanProject(options: ScanOptions): ScanResult {
       hardcodedStrings: hardcodedStrings.length,
       concatenations: concatenations.length,
       trackedKeys: Object.keys(usageByKey).length,
+      parseFailures: parseFailures.length,
       documents: documents.length,
     },
+    parseFailures: parseFailures.slice(0, limit),
     hardcodedStrings: {
       items: filteredHardcoded.slice(offset, offset + limit),
       total: filteredHardcoded.length,
@@ -160,6 +170,9 @@ export function scanProject(options: ScanOptions): ScanResult {
     },
     glossaryCandidates,
     documents,
-    notes: detection.notes.map((n) => n.replace(store.rootDir + path.sep, "")),
+    notes: [
+      ...detection.notes.map((n) => n.replace(store.rootDir + path.sep, "")),
+      ...parseNotes,
+    ],
   };
 }

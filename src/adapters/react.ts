@@ -12,6 +12,7 @@ import {
   FrameworkDetection,
   HardcodedStringFinding,
   LayoutRiskFinding,
+  ParseFailure,
   ScannerAdapter,
   ScanSourceResult,
 } from "./types.js";
@@ -142,11 +143,15 @@ export function scanJsTsFile(
   concatenations: ConcatenationFinding[];
   usageByKey: Record<string, UsageSite[]>;
   layoutRisks: LayoutRiskFinding[];
+  parseFailures: ParseFailure[];
+  dynamicKeyNamespaces: string[];
 } {
   const hardcodedStrings: HardcodedStringFinding[] = [];
   const concatenations: ConcatenationFinding[] = [];
   const usageByKey: Record<string, UsageSite[]> = {};
   const layoutRisks: LayoutRiskFinding[] = [];
+  const parseFailures: ParseFailure[] = [];
+  const dynamicKeyNamespaces = new Set<string>();
   const lineOffset = options?.lineOffset ?? 0;
 
   let ast: t.File;
@@ -163,8 +168,26 @@ export function scanJsTsFile(
       ],
       errorRecovery: true,
     });
-  } catch {
-    return { hardcodedStrings, concatenations, usageByKey, layoutRisks };
+    const astErrors = (ast as unknown as { errors?: Array<{ message?: string }> }).errors;
+    if (Array.isArray(astErrors) && astErrors.length > 0) {
+      parseFailures.push({
+        file: relFile,
+        error: astErrors[0]?.message ?? "Syntax error during Babel parse",
+      });
+    }
+  } catch (err) {
+    parseFailures.push({
+      file: relFile,
+      error: err instanceof Error ? err.message : String(err),
+    });
+    return {
+      hardcodedStrings,
+      concatenations,
+      usageByKey,
+      layoutRisks,
+      parseFailures,
+      dynamicKeyNamespaces: [],
+    };
   }
 
   // Track translator variable -> namespace (e.g. const t = useTranslations('nav') -> { t: 'nav' })
@@ -528,7 +551,14 @@ export function scanJsTsFile(
     },
   });
 
-  return { hardcodedStrings, concatenations, usageByKey, layoutRisks };
+  return {
+    hardcodedStrings,
+    concatenations,
+    usageByKey,
+    layoutRisks,
+    parseFailures,
+    dynamicKeyNamespaces: [...dynamicKeyNamespaces],
+  };
 }
 
 export class ReactNextAdapter implements ScannerAdapter {
@@ -592,13 +622,24 @@ export class ReactNextAdapter implements ScannerAdapter {
     options: { sourcePaths: string[]; ignore: string[]; i18nLibrary?: string | null }
   ): ScanSourceResult {
     const files = walkFiles(rootDir, options.sourcePaths, options.ignore, REACT_EXTS).filter(
-      (f) => !f.endsWith(".d.ts") && !f.includes(".test.") && !f.includes(".spec.") && !f.includes("next.config.")
+      (f) => {
+        const rel = path.relative(rootDir, f).replace(/\\/g, "/");
+        return (
+          !rel.endsWith(".d.ts") &&
+          !rel.includes(".test.") &&
+          !rel.includes(".spec.") &&
+          !rel.includes("next.config.") &&
+          !rel.startsWith("audit/")
+        );
+      }
     );
 
     const hardcodedStrings: HardcodedStringFinding[] = [];
     const concatenations: ConcatenationFinding[] = [];
     const usageByKey: Record<string, UsageSite[]> = {};
     const layoutRisks: LayoutRiskFinding[] = [];
+    const parseFailures: ParseFailure[] = [];
+    const dynamicKeyNamespaces = new Set<string>();
 
     for (const absFile of files) {
       const relFile = path.relative(rootDir, absFile).replace(/\\/g, "/");
@@ -607,6 +648,8 @@ export class ReactNextAdapter implements ScannerAdapter {
       hardcodedStrings.push(...res.hardcodedStrings);
       concatenations.push(...res.concatenations);
       layoutRisks.push(...res.layoutRisks);
+      parseFailures.push(...res.parseFailures);
+      for (const ns of res.dynamicKeyNamespaces) dynamicKeyNamespaces.add(ns);
       for (const [k, sites] of Object.entries(res.usageByKey)) {
         usageByKey[k] = [...(usageByKey[k] ?? []), ...sites];
       }
@@ -618,6 +661,8 @@ export class ReactNextAdapter implements ScannerAdapter {
       concatenations,
       usageByKey,
       layoutRisks,
+      parseFailures,
+      dynamicKeyNamespaces: [...dynamicKeyNamespaces],
     };
   }
 

@@ -243,7 +243,10 @@ export class SvelteKitAdapter implements ScannerAdapter {
     options: { sourcePaths: string[]; ignore: string[] }
   ): ScanSourceResult {
     const files = walkFiles(rootDir, options.sourcePaths, options.ignore, SVELTE_EXTS).filter(
-      (f) => !f.endsWith(".d.ts") && !f.includes(".test.") && !f.includes("svelte.config.")
+      (f) => {
+        const rel = path.relative(rootDir, f).replace(/\\/g, "/");
+        return !rel.endsWith(".d.ts") && !rel.includes(".test.") && !rel.includes(".spec.") && !rel.includes("svelte.config.");
+      }
     );
 
     const hardcodedStrings: HardcodedStringFinding[] = [];

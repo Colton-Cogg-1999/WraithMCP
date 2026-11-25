@@ -210,6 +210,7 @@ export const ReviewsFileSchema = z.object({
 export type ReviewsFile = z.infer<typeof ReviewsFileSchema>;
 
 export type CheckSeverity = "error" | "warning" | "info";
+export type CheckOutcome = "PASS" | "FAIL" | "INCONCLUSIVE";
 
 export type CheckIssueCode =
   | "missing_key"
@@ -219,10 +220,13 @@ export type CheckIssueCode =
   | "icu_syntax_error"
   | "missing_plural_category"
   | "extra_plural_category"
+  | "plural_structure_mismatch"
   | "inline_tag_mismatch"
   | "glossary_inconsistency"
   | "dnt_violation"
+  | "glossary_flagged"
   | "untranslated"
+  | "fuzzy_translation"
   | "hardcoded_string"
   | "string_concatenation"
   | "length_expansion_risk"
@@ -230,7 +234,12 @@ export type CheckIssueCode =
   | "rtl_layout_risk"
   | "stale_source"
   | "context_changed"
-  | "open_review_finding";
+  | "manual_edit_detected"
+  | "open_review_finding"
+  | "locale_parse_error"
+  | "source_parse_error"
+  | "missing_document_translation"
+  | "inconclusive_coverage";
 
 export interface CheckIssue {
   code: CheckIssueCode;
@@ -266,6 +275,7 @@ export interface ProjectStatus {
   orphanedKeys: number;
   documents: string[];
   locales: LocaleStatus[];
+  checkOutcome?: CheckOutcome;
   checkPassed: boolean;
   errorCount: number;
   warningCount: number;
