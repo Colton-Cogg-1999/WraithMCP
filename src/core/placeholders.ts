@@ -210,10 +210,21 @@ function hasVueRawAtError(text: string): boolean {
   return stripped.includes("@");
 }
 
+function splitVuePipeBranches(text: string): string[] {
+  const sentinel = "\uE000VUE_ESCAPED_PIPE\uE001";
+  const escaped: string[] = [];
+  const masked = text.replace(/\{['"]\|['"]\}/g, (m) => {
+    escaped.push(m);
+    return `${sentinel}${escaped.length - 1}${sentinel}`;
+  });
+  if (!masked.includes("|")) return [text];
+  return masked.split("|").map((part) =>
+    part.replace(new RegExp(`${sentinel}(\\d+)${sentinel}`, "g"), (_, idx) => escaped[Number(idx)] ?? "")
+  );
+}
+
 function countVuePipeBranches(text: string): number {
-  const stripped = text.replace(/\{['"]\|['"]\}/g, "");
-  if (!stripped.includes("|")) return 1;
-  return stripped.split("|").length;
+  return splitVuePipeBranches(text).length;
 }
 
 export function extractPlaceholders(
@@ -404,9 +415,16 @@ export function validateTranslationString(
   }
 
   // 4. Placeholder occurrence counts for non-plural/select messages
+  const isVueSingleBrace =
+    syntaxes.includes("single-brace") &&
+    !syntaxes.includes("icu") &&
+    !syntaxes.includes("python-printf");
+  const isVuePipePlural = isVueSingleBrace && src.vuePipeBranches >= 2;
+
   for (const name of src.names) {
     if (src.plurals[name] || src.selects[name]) continue;
     if (Object.keys(src.plurals).length > 0 || Object.keys(src.selects).length > 0) continue;
+    if (isVuePipePlural) continue;
     if (tgt.counts[name] !== undefined && tgt.counts[name] !== src.counts[name]) {
       problems.push({
         code: "placeholder_mismatch",
@@ -499,7 +517,7 @@ export function validateTranslationString(
       message: `Linked message references mismatch. Expected [${src.linkedMessages.join(", ")}], got [${tgt.linkedMessages.join(", ")}].`,
     });
   }
-  if (syntaxes.includes("single-brace") && !syntaxes.includes("icu") && !syntaxes.includes("python-printf")) {
+  if (isVueSingleBrace) {
     const requiredCount = getPluralCategories(targetLocale, "cardinal").length;
     if (src.vuePipeBranches >= 2 && tgt.vuePipeBranches < requiredCount) {
       problems.push({
@@ -518,6 +536,62 @@ export function validateTranslationString(
         code: "placeholder_mismatch",
         message: `Unescaped '@' in vue-i18n translation causes a linked-message compile error (escape as {'@'}).`,
       });
+    }
+
+    // N8: Validate placeholders PER pipe branch rather than summing counts across the whole message
+    if (src.vuePipeBranches >= 2 && tgt.vuePipeBranches >= 2) {
+      const srcBranches = splitVuePipeBranches(sourceText).map((b) => extractPlaceholders(b, syntaxes));
+      const tgtBranches = splitVuePipeBranches(targetText).map((b) => extractPlaceholders(b, syntaxes));
+
+      const maxCountByName = new Map<string, number>();
+      for (const sb of srcBranches) {
+        for (const [name, cnt] of Object.entries(sb.counts)) {
+          maxCountByName.set(name, Math.max(maxCountByName.get(name) ?? 0, cnt));
+        }
+      }
+      // Placeholders present in EVERY source branch must appear in EVERY target branch
+      const requiredInEveryBranch = src.names.filter((name) =>
+        srcBranches.every((sb) => (sb.counts[name] ?? 0) > 0)
+      );
+      // Placeholders present in the general plural (last) source branch must appear in plural target branches
+      const lastSrcBranch = srcBranches[srcBranches.length - 1];
+      const requiredInPluralBranch = lastSrcBranch ? lastSrcBranch.names : [];
+
+      for (let i = 0; i < tgtBranches.length; i++) {
+        const tb = tgtBranches[i];
+        const isLastBranch = i === tgtBranches.length - 1;
+        const isPluralQuantityBranch = isLastBranch || i >= 2;
+
+        // Reject per-branch over-repetition (e.g. `{count} {count}` when source uses `{count}` once per branch)
+        for (const [name, cnt] of Object.entries(tb.counts)) {
+          const maxAllowed = maxCountByName.get(name);
+          if (maxAllowed !== undefined && cnt > maxAllowed) {
+            problems.push({
+              code: "placeholder_mismatch",
+              message: `vue-i18n pipe branch #${i + 1} repeats placeholder "${name}" ${cnt} time(s), expected at most ${maxAllowed}.`,
+              details: { branch: i, name, expectedMax: maxAllowed, actual: cnt },
+            });
+          }
+        }
+
+        const missingInBranch = new Set<string>();
+        for (const name of requiredInEveryBranch) {
+          if ((tb.counts[name] ?? 0) === 0) missingInBranch.add(name);
+        }
+        if (isPluralQuantityBranch) {
+          for (const name of requiredInPluralBranch) {
+            if ((tb.counts[name] ?? 0) === 0) missingInBranch.add(name);
+          }
+        }
+        if (missingInBranch.size > 0) {
+          const list = [...missingInBranch].sort();
+          problems.push({
+            code: "placeholder_mismatch",
+            message: `vue-i18n pipe branch #${i + 1} is missing placeholder(s) {${list.join("}, {")}}.`,
+            details: { branch: i, missing: list },
+          });
+        }
+      }
     }
   }
 
