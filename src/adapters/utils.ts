@@ -84,6 +84,9 @@ export const USER_FACING_ATTRIBUTES = new Set([
   "aria-placeholder",
   "aria-roledescription",
   "label",
+  "description",
+  "heading",
+  "subtitle",
   "helperText",
   "helper-text",
   "errorMessage",
@@ -91,9 +94,19 @@ export const USER_FACING_ATTRIBUTES = new Set([
   "emptyText",
   "empty-text",
   "confirmText",
+  "confirmLabel",
   "cancelText",
+  "cancelLabel",
+  "submitLabel",
+  "closeLabel",
+  "buttonText",
   "tooltip",
 ]);
+
+export function isUserFacingPropName(name: string): boolean {
+  if (USER_FACING_ATTRIBUTES.has(name)) return true;
+  return /(?:Label|Title|Text|Message|Heading|Description|Placeholder)$/.test(name);
+}
 
 const TECHNICAL_TOKEN_RE =
   /^(?:https?:\/\/|mailto:|tel:|\/[a-z0-9/_-]*|#[0-9a-fA-F]{3,8}|[a-z]+(?:-[a-z0-9]+){2,}|[a-z0-9_]+\.[a-z0-9_]+|[\d\s.,:%$€£¥+\-*/=<>!?()[\]{}|\\/@#^&~`'";:]+)$/;

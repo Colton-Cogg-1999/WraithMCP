@@ -85,6 +85,19 @@ function walkVueTemplate(
         surrounding: [],
       });
     }
+    // Direct string literal inside mustache interpolation: {{ 'Recent activity' }}
+    const literalMatch = /^\s*(['"])([^'"]+)\1\s*$/.exec(expr);
+    if (literalMatch && isLikelyUserFacingText(literalMatch[2])) {
+      out.hardcoded.push({
+        file: relFile,
+        line,
+        column: col,
+        text: normalizeWhitespace(literalMatch[2]),
+        kind: "template-text",
+        component: componentName,
+        snippet,
+      });
+    }
     if (/['"][^'"]*\p{L}{2,}[^'"]*['"]\s*\+|\+\s*['"][^'"]*\p{L}{2,}[^'"]*['"]/u.test(expr)) {
       out.concats.push({
         file: relFile,
@@ -103,6 +116,19 @@ function walkVueTemplate(
       // Attribute === 6
       if (prop.type === 6 && prop.name && prop.value?.content) {
         const pLine = prop.loc?.start.line ?? line;
+        // vue-i18n <i18n-t keypath="terms">
+        if (prop.name === "keypath" && (node.tag === "i18n-t" || node.tag === "i18n")) {
+          const key = prop.value.content.trim();
+          out.usageByKey[key] = out.usageByKey[key] ?? [];
+          out.usageByKey[key].push({
+            file: relFile,
+            line: pLine,
+            component: componentName,
+            element: node.tag,
+            surrounding: [],
+          });
+          continue;
+        }
         if (prop.name === "class") {
           for (const risk of inspectLayoutClasses(prop.value.content)) {
             out.layoutRisks.push({
@@ -128,9 +154,24 @@ function walkVueTemplate(
           });
         }
       }
-      // Directive === 7 (e.g. :placeholder="$t('search')")
+      // Directive === 7 (e.g. :placeholder="$t('search')", v-t="'save'")
       if (prop.type === 7 && prop.exp?.content) {
-        for (const m of prop.exp.content.matchAll(/(?:\$t|\bt)\(\s*['"]([^'"]+)['"]/g)) {
+        const expText = prop.exp.content.trim();
+        if (prop.name === "t") {
+          const vtMatch = /^['"]([^'"]+)['"]$/.exec(expText) ?? /path\s*:\s*['"]([^'"]+)['"]/.exec(expText);
+          if (vtMatch) {
+            const key = vtMatch[1];
+            out.usageByKey[key] = out.usageByKey[key] ?? [];
+            out.usageByKey[key].push({
+              file: relFile,
+              line: prop.loc?.start.line ?? line,
+              component: componentName,
+              element: node.tag,
+              surrounding: [],
+            });
+          }
+        }
+        for (const m of expText.matchAll(/(?:\$t|\bt)\(\s*['"]([^'"]+)['"]/g)) {
           const key = m[1];
           out.usageByKey[key] = out.usageByKey[key] ?? [];
           out.usageByKey[key].push({

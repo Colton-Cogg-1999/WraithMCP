@@ -29,6 +29,19 @@ function offsetToLine(src: string, idx: number): number {
   return line;
 }
 
+function resolveRailsLazyKey(relFile: string, rawKey: string): string {
+  if (!rawKey.startsWith(".")) return rawKey;
+  // Rails lazy lookup: app/views/users/index.html.erb + ".title" -> "users.index.title"
+  // Partials strip leading underscore: app/views/users/_form.html.erb -> "users.form.title"
+  const norm = relFile.replace(/\\/g, "/");
+  const m = /(?:^|\/)app\/views\/(.+?)(?:\.[a-z0-9]+)*\.erb$/i.exec(norm);
+  if (!m) return rawKey.slice(1);
+  const segments = m[1]
+    .split("/")
+    .map((seg) => (seg.startsWith("_") ? seg.slice(1) : seg));
+  return `${segments.join(".")}${rawKey}`;
+}
+
 function scanErbTemplate(
   relFile: string,
   source: string,
@@ -42,12 +55,14 @@ function scanErbTemplate(
   const lines = source.split(/\r?\n/);
   const comp = path.basename(relFile, ".html.erb");
 
-  // 1. Scan ERB tags <% ... %> / <%= ... %> for I18n.t / t(...) and Ruby string concatenations
+  // 1. Scan ERB tags <% ... %> / <%= ... %> for I18n.t / t(...), view helper strings, and concatenations
   for (const m of source.matchAll(/<%[=-]?([\s\S]*?)%>/g)) {
     const code = m[1];
     const line = offsetToLine(source, m.index ?? 0);
+    const snippet = (lines[line - 1] ?? "").trim().slice(0, 120);
+
     for (const tm of code.matchAll(/(?:\bI18n\.t|\bt)\s*\(?\s*['"]([^'"]+)['"]/g)) {
-      const key = tm[1];
+      const key = resolveRailsLazyKey(relFile, tm[1]);
       out.usageByKey[key] = out.usageByKey[key] ?? [];
       out.usageByKey[key].push({
         file: relFile,
@@ -57,6 +72,41 @@ function scanErbTemplate(
         surrounding: [],
       });
     }
+
+    // Rails view helpers with hardcoded UI strings: link_to, button_to, f.submit, f.label, submit_tag, label_tag
+    const helperRe =
+      /\b(?:link_to|button_to|submit_tag|button_tag|[a-zA-Z_]\w*\.(?:submit|button))\s*(?:\(\s*|\s+)(['"])([^'"]+)\1/g;
+    for (const hm of code.matchAll(helperRe)) {
+      const txt = normalizeWhitespace(hm[2]);
+      if (isLikelyUserFacingText(txt)) {
+        out.hardcoded.push({
+          file: relFile,
+          line,
+          column: 0,
+          text: txt,
+          kind: "ruby-string",
+          component: comp,
+          snippet,
+        });
+      }
+    }
+    const labelHelperRe =
+      /\b(?:[a-zA-Z_]\w*\.label|label_tag)\s*(?:\(\s*|\s+):?[a-zA-Z0-9_]+\s*,\s*(['"])([^'"]+)\1/g;
+    for (const lm of code.matchAll(labelHelperRe)) {
+      const txt = normalizeWhitespace(lm[2]);
+      if (isLikelyUserFacingText(txt)) {
+        out.hardcoded.push({
+          file: relFile,
+          line,
+          column: 0,
+          text: txt,
+          kind: "ruby-string",
+          component: comp,
+          snippet,
+        });
+      }
+    }
+
     if (/"[^"]*\p{L}{2,}[^"]*#\{[^}]+\}[^"]*"/u.test(code) || /['"][^'"]*\p{L}{2,}[^'"]*['"]\s*\+/u.test(code)) {
       out.concats.push({
         file: relFile,
@@ -198,17 +248,15 @@ export class RailsAdapter implements ScannerAdapter {
     const localeFiles: Record<string, string[]> = {};
 
     if (fs.existsSync(localesDirAbs) && fs.statSync(localesDirAbs).isDirectory()) {
-      const files = fs
-        .readdirSync(localesDirAbs)
-        .filter((f) => f.endsWith(".yml") || f.endsWith(".yaml"))
-        .sort();
-      for (const f of files) {
+      // Walk nested config/locales/** directories (standard Rails structure: config/locales/models/en.yml)
+      const ymlFiles = walkFiles(rootDir, [localesDirRel], [".git", "node_modules"], new Set([".yml", ".yaml"]));
+      for (const full of ymlFiles) {
+        const f = path.basename(full);
         const stem = f.replace(/\.(?:yml|yaml)$/, "");
-        // Support both `en.yml` and `views.en.yml`
         const parts = stem.split(".");
         const locale = parts[parts.length - 1];
         localeFiles[locale] = localeFiles[locale] ?? [];
-        localeFiles[locale].push(path.join(localesDirAbs, f));
+        localeFiles[locale].push(full);
       }
     }
 

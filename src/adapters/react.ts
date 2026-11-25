@@ -21,9 +21,9 @@ import {
   getAllDependencies,
   inspectLayoutClasses,
   isLikelyUserFacingText,
+  isUserFacingPropName,
   normalizeWhitespace,
   readPackageJson,
-  USER_FACING_ATTRIBUTES,
   walkFiles,
 } from "./utils.js";
 
@@ -36,7 +36,72 @@ const traverse: TraverseFn =
 
 const REACT_EXTS = new Set([".tsx", ".jsx", ".ts", ".js", ".mjs"]);
 const TOAST_CALLEES = new Set(["toast", "alert", "confirm", "notify"]);
-const TOAST_METHODS = new Set(["success", "error", "info", "warning", "loading", "message", "custom"]);
+const TOAST_METHODS = new Set(["success", "error", "info", "warning", "loading", "message", "custom", "alert", "confirm"]);
+const LOGGER_CALLEES = new Set(["console", "logger", "log", "pino", "winston", "debug"]);
+const ZOD_VALIDATION_METHODS = new Set(["email", "min", "max", "length", "regex", "url", "uuid", "nonempty", "refine", "superRefine"]);
+const SQL_QUERY_RE = /^\s*(?:SELECT|INSERT\s+INTO|UPDATE|DELETE\s+FROM|CREATE\s+TABLE|ALTER\s+TABLE|WITH)\b/i;
+const AUTH_HEADER_PREFIX_RE = /^(?:Bearer|Basic|Token|Digest|ApiKey)\s+$/i;
+const CLASS_HELPER_CALLEES = new Set(["cn", "clsx", "classNames", "classnames", "twMerge", "cva"]);
+
+function extractClassLiteralsFromExpr(expr: t.Expression | t.JSXEmptyExpression): string[] {
+  const out: string[] = [];
+  if (t.isStringLiteral(expr)) {
+    out.push(expr.value);
+  } else if (t.isTemplateLiteral(expr)) {
+    for (const q of expr.quasis) {
+      if (q.value.cooked) out.push(q.value.cooked);
+    }
+    for (const e of expr.expressions) {
+      if (t.isExpression(e)) out.push(...extractClassLiteralsFromExpr(e));
+    }
+  } else if (t.isCallExpression(expr)) {
+    const callee = expr.callee;
+    const isHelper = t.isIdentifier(callee) && CLASS_HELPER_CALLEES.has(callee.name);
+    if (isHelper) {
+      for (const arg of expr.arguments) {
+        if (t.isExpression(arg)) out.push(...extractClassLiteralsFromExpr(arg));
+      }
+    }
+  } else if (t.isLogicalExpression(expr)) {
+    out.push(...extractClassLiteralsFromExpr(expr.left), ...extractClassLiteralsFromExpr(expr.right));
+  } else if (t.isConditionalExpression(expr)) {
+    out.push(...extractClassLiteralsFromExpr(expr.consequent), ...extractClassLiteralsFromExpr(expr.alternate));
+  } else if (t.isArrayExpression(expr)) {
+    for (const el of expr.elements) {
+      if (el && t.isExpression(el)) out.push(...extractClassLiteralsFromExpr(el));
+    }
+  } else if (t.isObjectExpression(expr)) {
+    for (const prop of expr.properties) {
+      if (t.isObjectProperty(prop) && t.isStringLiteral(prop.key)) {
+        out.push(prop.key.value);
+      }
+    }
+  }
+  return out;
+}
+
+function collectJsxExprStrings(
+  expr: t.Expression | t.JSXEmptyExpression,
+  out: Array<{ text: string; line: number; col: number }>
+): void {
+  if (t.isStringLiteral(expr)) {
+    if (isLikelyUserFacingText(expr.value)) {
+      out.push({
+        text: normalizeWhitespace(expr.value),
+        line: expr.loc?.start.line ?? 1,
+        col: expr.loc?.start.column ?? 0,
+      });
+    }
+  } else if (t.isConditionalExpression(expr)) {
+    collectJsxExprStrings(expr.consequent, out);
+    collectJsxExprStrings(expr.alternate, out);
+  } else if (t.isLogicalExpression(expr)) {
+    if (expr.operator === "&&" || expr.operator === "||" || expr.operator === "??") {
+      collectJsxExprStrings(expr.right, out);
+      if (expr.operator !== "&&") collectJsxExprStrings(expr.left, out);
+    }
+  }
+}
 
 function getJsxTagName(opening: t.JSXOpeningElement): string {
   if (t.isJSXIdentifier(opening.name)) return opening.name.name;
@@ -225,10 +290,16 @@ export function scanJsTsFile(
         }
       }
 
-      // const { t } = useTranslation("common")
+      // const { t } = useTranslation("common") or useTranslation(["common", "auth"])
       if (calleeName === "useTranslation" && t.isObjectPattern(p.node.id)) {
         const arg0 = call.arguments[0];
-        const ns = arg0 && t.isStringLiteral(arg0) ? arg0.value : "";
+        let ns = "";
+        if (arg0 && t.isStringLiteral(arg0)) {
+          ns = arg0.value;
+        } else if (arg0 && t.isArrayExpression(arg0)) {
+          const first = arg0.elements[0];
+          if (first && t.isStringLiteral(first)) ns = first.value;
+        }
         for (const prop of p.node.id.properties) {
           if (
             t.isObjectProperty(prop) &&
@@ -329,26 +400,115 @@ export function scanJsTsFile(
       });
     },
 
+    JSXExpressionContainer(p) {
+      // Only inspect JSX child expressions (not JSXAttribute values, which JSXAttribute handles)
+      if (t.isJSXAttribute(p.parent)) return;
+      const found: Array<{ text: string; line: number; col: number }> = [];
+      collectJsxExprStrings(p.node.expression, found);
+      const comp = findEnclosingComponent(p);
+      for (const f of found) {
+        hardcodedStrings.push({
+          file: relFile,
+          line: f.line + lineOffset,
+          column: f.col,
+          text: f.text,
+          kind: "jsx-text",
+          component: comp,
+          snippet: getSnippet(f.line),
+        });
+      }
+    },
+
+    AssignmentPattern(p) {
+      // Component default props: { heading = "No projects yet", description = "..." }
+      if (t.isIdentifier(p.node.left) && t.isStringLiteral(p.node.right)) {
+        if (isUserFacingPropName(p.node.left.name) && isLikelyUserFacingText(p.node.right.value)) {
+          const line = (p.node.right.loc?.start.line ?? 1) + lineOffset;
+          hardcodedStrings.push({
+            file: relFile,
+            line,
+            column: p.node.right.loc?.start.column ?? 0,
+            text: normalizeWhitespace(p.node.right.value),
+            kind: "attribute",
+            attribute: p.node.left.name,
+            component: findEnclosingComponent(p),
+            snippet: getSnippet(p.node.right.loc?.start.line ?? 1),
+          });
+        }
+      }
+    },
+
+    VariableDeclarator(p) {
+      // Next.js `export const metadata = { title: "...", description: "..." }`
+      // and module-level user message maps like `ERROR_MESSAGES = { network: "Check your internet..." }`
+      if (!t.isIdentifier(p.node.id) || !p.node.init || !t.isObjectExpression(p.node.init)) return;
+      const varName = p.node.id.name;
+      const isMetadata = varName === "metadata";
+      const isMessageMap = /(?:MESSAGE|ERROR|LABEL|COPY|TEXT|TITLE|PROMPT|ALERT)/i.test(varName);
+      if (!isMetadata && !isMessageMap) return;
+
+      for (const prop of p.node.init.properties) {
+        if (!t.isObjectProperty(prop) || !t.isStringLiteral(prop.value)) continue;
+        const propName = t.isIdentifier(prop.key)
+          ? prop.key.name
+          : t.isStringLiteral(prop.key)
+            ? prop.key.value
+            : "";
+        if (isMetadata && !["title", "description", "applicationName"].includes(propName)) continue;
+        if (!isLikelyUserFacingText(prop.value.value)) continue;
+        const line = (prop.value.loc?.start.line ?? 1) + lineOffset;
+        hardcodedStrings.push({
+          file: relFile,
+          line,
+          column: prop.value.loc?.start.column ?? 0,
+          text: normalizeWhitespace(prop.value.value),
+          kind: "attribute",
+          attribute: propName || varName,
+          component: varName,
+          snippet: getSnippet(prop.value.loc?.start.line ?? 1),
+        });
+      }
+    },
+
+    LogicalExpression(p) {
+      // Fallback user message in helper functions: `ERROR_MESSAGES[code] ?? "Unknown error"`
+      if (p.node.operator !== "??" && p.node.operator !== "||") return;
+      if (p.findParent((anc) => t.isJSXExpressionContainer(anc.node))) return;
+      if (!t.isStringLiteral(p.node.right)) return;
+      const txt = normalizeWhitespace(p.node.right.value);
+      if (!isLikelyUserFacingText(txt) || !txt.includes(" ")) return;
+      if (t.isMemberExpression(p.node.left)) {
+        const line = (p.node.right.loc?.start.line ?? 1) + lineOffset;
+        hardcodedStrings.push({
+          file: relFile,
+          line,
+          column: p.node.right.loc?.start.column ?? 0,
+          text: txt,
+          kind: "jsx-text",
+          component: findEnclosingComponent(p),
+          snippet: getSnippet(p.node.right.loc?.start.line ?? 1),
+        });
+      }
+    },
+
     JSXAttribute(p) {
       if (!t.isJSXIdentifier(p.node.name)) return;
       const attrName = p.node.name.name;
 
-      // Inspect className / class for layout truncation & RTL physical-direction risks
+      // Inspect className / class (static strings, template literals, AND cn()/clsx()/twMerge())
       if (attrName === "className" || attrName === "class") {
-        let cls: string | null = null;
+        const classStrings: string[] = [];
         if (t.isStringLiteral(p.node.value)) {
-          cls = p.node.value.value;
-        } else if (
-          t.isJSXExpressionContainer(p.node.value) &&
-          t.isStringLiteral(p.node.value.expression)
-        ) {
-          cls = p.node.value.expression.value;
+          classStrings.push(p.node.value.value);
+        } else if (t.isJSXExpressionContainer(p.node.value)) {
+          classStrings.push(...extractClassLiteralsFromExpr(p.node.value.expression));
         }
-        if (cls) {
+        const combined = classStrings.join(" ").trim();
+        if (combined) {
           const line = (p.node.loc?.start.line ?? 1) + lineOffset;
           const comp = findEnclosingComponent(p);
           const snippet = getSnippet(p.node.loc?.start.line ?? 1);
-          for (const risk of inspectLayoutClasses(cls)) {
+          for (const risk of inspectLayoutClasses(combined)) {
             layoutRisks.push({
               file: relFile,
               line,
@@ -363,7 +523,7 @@ export function scanJsTsFile(
         return;
       }
 
-      if (!USER_FACING_ATTRIBUTES.has(attrName)) return;
+      if (!isUserFacingPropName(attrName)) return;
 
       let literalText: string | null = null;
       if (t.isStringLiteral(p.node.value)) {
@@ -417,29 +577,41 @@ export function scanJsTsFile(
         }
       }
 
-      if (matchedTranslator && p.node.arguments[0] && t.isStringLiteral(p.node.arguments[0])) {
-        const rawKey = p.node.arguments[0].value;
+      if (matchedTranslator && p.node.arguments[0]) {
+        const arg0 = p.node.arguments[0];
         const ns = translatorNamespaces.get(matchedTranslator) ?? "";
-        const fullKey = ns && !rawKey.startsWith(`${ns}.`) ? `${ns}.${rawKey}` : rawKey;
-        usageByKey[fullKey] = usageByKey[fullKey] ?? [];
-        usageByKey[fullKey].push({
-          file: relFile,
-          line,
-          component: findEnclosingComponent(p),
-          element: findEnclosingJsxElement(p),
-          surrounding: extractSurroundingLabels(p),
-        });
+        if (t.isStringLiteral(arg0)) {
+          // Support react-i18next namespace separator `t("common:save")` -> `common.save`
+          const rawKey = arg0.value.includes(":")
+            ? arg0.value.replace(":", ".")
+            : arg0.value;
+          const fullKey =
+            !arg0.value.includes(":") && ns && !rawKey.startsWith(`${ns}.`)
+              ? `${ns}.${rawKey}`
+              : rawKey;
+          usageByKey[fullKey] = usageByKey[fullKey] ?? [];
+          usageByKey[fullKey].push({
+            file: relFile,
+            line,
+            component: findEnclosingComponent(p),
+            element: findEnclosingJsxElement(p),
+            surrounding: extractSurroundingLabels(p),
+          });
+        } else {
+          // Dynamic key usage (e.g. t(item.labelKey), t(code)) -> record namespace uncertainty
+          dynamicKeyNamespaces.add(ns || "*");
+        }
         return;
       }
 
-      // 2. Toast / alert / notification hardcoded strings
+      // 2. Toast / alert / window.alert / notification hardcoded strings
       let isToastCall = false;
       if (t.isIdentifier(callee) && TOAST_CALLEES.has(callee.name)) {
         isToastCall = true;
       } else if (
         t.isMemberExpression(callee) &&
         t.isIdentifier(callee.object) &&
-        TOAST_CALLEES.has(callee.object.name) &&
+        (TOAST_CALLEES.has(callee.object.name) || callee.object.name === "window") &&
         t.isIdentifier(callee.property) &&
         TOAST_METHODS.has(callee.property.name)
       ) {
@@ -459,12 +631,33 @@ export function scanJsTsFile(
             snippet: getSnippet(p.node.loc?.start.line ?? 1),
           });
         }
+        return;
+      }
+
+      // 3. Schema validation messages (e.g. z.string().email("Please enter a valid email address"))
+      if (
+        t.isMemberExpression(callee) &&
+        t.isIdentifier(callee.property) &&
+        ZOD_VALIDATION_METHODS.has(callee.property.name)
+      ) {
+        for (const arg of p.node.arguments) {
+          if (t.isStringLiteral(arg) && isLikelyUserFacingText(arg.value) && arg.value.includes(" ")) {
+            hardcodedStrings.push({
+              file: relFile,
+              line,
+              column: arg.loc?.start.column ?? 0,
+              text: normalizeWhitespace(arg.value),
+              kind: "toast",
+              component: findEnclosingComponent(p),
+              snippet: getSnippet(p.node.loc?.start.line ?? 1),
+            });
+          }
+        }
       }
     },
 
     BinaryExpression(p) {
       if (p.node.operator !== "+") return;
-      // Only inspect outermost '+' chain
       if (t.isBinaryExpression(p.parent) && p.parent.operator === "+") return;
 
       const parts = collectBinaryParts(p.node);
@@ -473,8 +666,21 @@ export function scanJsTsFile(
 
       if (stringParts.length === 0 || dynamicParts.length === 0) return;
 
+      // Suppress HTTP auth headers ("Bearer " + token) and header objects
+      if (stringParts.some((s) => AUTH_HEADER_PREFIX_RE.test(s.value))) return;
+      const parentObjProp = p.findParent((anc) => t.isObjectProperty(anc.node));
+      if (
+        parentObjProp &&
+        t.isObjectProperty(parentObjProp.node) &&
+        t.isIdentifier(parentObjProp.node.key) &&
+        /^(?:authorization|cookie|accept|content-type|x-)/i.test(parentObjProp.node.key.name)
+      ) {
+        return;
+      }
+
       const joined = stringParts.map((s) => s.value).join(" ");
-      // Must look like a human phrase with spaces or letters, not URL/class/path concat
+      if (SQL_QUERY_RE.test(joined)) return;
+
       if (
         isLikelyUserFacingText(joined) &&
         /[a-zA-Z\p{L}]{2,}/u.test(joined) &&
@@ -482,13 +688,13 @@ export function scanJsTsFile(
         !joined.startsWith("http") &&
         stringParts.some((s) => /\s/.test(s.value) || /^[A-Z]/.test(s.value.trim()))
       ) {
-        // Ignore console.log / Error constructor
         const parentCall = p.findParent((anc) => t.isCallExpression(anc.node));
         if (parentCall && t.isCallExpression(parentCall.node)) {
           const c = parentCall.node.callee;
           if (
             t.isMemberExpression(c) &&
-            t.isIdentifier(c.object, { name: "console" })
+            t.isIdentifier(c.object) &&
+            LOGGER_CALLEES.has(c.object.name)
           ) {
             return;
           }
@@ -512,28 +718,36 @@ export function scanJsTsFile(
 
     TemplateLiteral(p) {
       if (p.node.expressions.length === 0) return;
-      // Skip tagged templates (css`...`, sql`...`)
       if (t.isTaggedTemplateExpression(p.parent)) return;
-      // Skip console.* / Error / className / href / src
+
+      // Skip non-user-facing JSX attributes (className, href, src, etc.)
       const parentAttr = p.findParent((anc) => t.isJSXAttribute(anc.node));
       if (
         parentAttr &&
         t.isJSXAttribute(parentAttr.node) &&
         t.isJSXIdentifier(parentAttr.node.name) &&
-        !USER_FACING_ATTRIBUTES.has(parentAttr.node.name.name)
+        !isUserFacingPropName(parentAttr.node.name.name)
       ) {
         return;
       }
+      // Skip logger/console calls (logger.info(`User ${u} signed in`))
       const parentCall = p.findParent((anc) => t.isCallExpression(anc.node));
       if (parentCall && t.isCallExpression(parentCall.node)) {
         const c = parentCall.node.callee;
-        if (t.isMemberExpression(c) && t.isIdentifier(c.object, { name: "console" })) {
+        if (
+          (t.isMemberExpression(c) && t.isIdentifier(c.object) && LOGGER_CALLEES.has(c.object.name)) ||
+          (t.isIdentifier(c) && LOGGER_CALLEES.has(c.name))
+        ) {
           return;
         }
       }
       if (p.findParent((anc) => t.isNewExpression(anc.node))) return;
 
       const quasiText = p.node.quasis.map((q) => q.value.cooked ?? q.value.raw).join(" ");
+      // Skip SQL queries & URL paths
+      if (SQL_QUERY_RE.test(quasiText)) return;
+      if (p.node.quasis[0]?.value.raw.trimStart().startsWith("/")) return;
+
       if (
         isLikelyUserFacingText(quasiText) &&
         p.node.quasis.some((q) => /\p{L}{2,}\s|\s\p{L}{2,}/u.test(q.value.raw))

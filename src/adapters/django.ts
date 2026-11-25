@@ -56,11 +56,12 @@ function scanDjangoTemplate(
     });
   }
 
-  // 2. {% blocktrans %}...{% endblocktrans %} usage sites
+  // 2. {% blocktrans %}...{% endblocktrans %} usage sites: map Django `{{ var }}` -> gettext `%(var)s`
   for (const m of source.matchAll(
     /\{%\s*blocktrans(?:late)?[^%]*%\}([\s\S]*?)\{%\s*endblocktrans(?:late)?\s*%\}/g
   )) {
-    const key = normalizeWhitespace(m[1]);
+    const body = m[1].replace(/\{\{\s*([a-zA-Z0-9_]+)\s*\}\}/g, "%($1)s");
+    const key = normalizeWhitespace(body);
     if (!key) continue;
     const line = offsetToLine(source, m.index ?? 0);
     out.usageByKey[key] = out.usageByKey[key] ?? [];
@@ -73,8 +74,10 @@ function scanDjangoTemplate(
     });
   }
 
-  // Strip Django template tags & blocktrans blocks preserving line breaks so offsets match
+  // Strip <script>, <style>, Django template tags & blocktrans blocks preserving line breaks so offsets match
   const stripped = source
+    .replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, (s) => s.replace(/[^\n]/g, " "))
+    .replace(/<style\b[^>]*>[\s\S]*?<\/style>/gi, (s) => s.replace(/[^\n]/g, " "))
     .replace(
       /\{%\s*blocktrans(?:late)?[^%]*%\}[\s\S]*?\{%\s*endblocktrans(?:late)?\s*%\}/g,
       (s) => s.replace(/[^\n]/g, " ")
@@ -182,6 +185,41 @@ function scanPythonFile(
         element: "python",
         surrounding: [],
       });
+    }
+
+    // Django form/model user-facing kwargs: label="...", help_text="...", verbose_name="...", verbose_name_plural="..."
+    const kwargRe = /\b(label|help_text|verbose_name|verbose_name_plural|empty_label)\s*=\s*(?!_\(|gettext)(['"])([^'"]+)\2/g;
+    for (const km of trimmed.matchAll(kwargRe)) {
+      const txt = normalizeWhitespace(km[3]);
+      if (isLikelyUserFacingText(txt)) {
+        out.hardcoded.push({
+          file: relFile,
+          line: lineNum,
+          column: 0,
+          text: txt,
+          kind: "python-string",
+          attribute: km[1],
+          component: comp,
+          snippet: trimmed.slice(0, 120),
+        });
+      }
+    }
+
+    // Django ValidationError("...") without _()/gettext()
+    const valErrRe = /\bValidationError\s*\(\s*(?!_\(|gettext)(['"])([^'"]+)\1/g;
+    for (const vm of trimmed.matchAll(valErrRe)) {
+      const txt = normalizeWhitespace(vm[2]);
+      if (isLikelyUserFacingText(txt)) {
+        out.hardcoded.push({
+          file: relFile,
+          line: lineNum,
+          column: 0,
+          text: txt,
+          kind: "python-string",
+          component: comp,
+          snippet: trimmed.slice(0, 120),
+        });
+      }
     }
 
     // Django messages.success / messages.error / HttpResponse hardcoded or f-string messages

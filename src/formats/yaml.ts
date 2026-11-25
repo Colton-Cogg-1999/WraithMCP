@@ -1,6 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { Document, isMap, isPair, isScalar, parseDocument, YAMLMap } from "yaml";
+import { atomicWriteFileSync } from "../core/security.js";
 import {
   FormatAdapter,
   FormatWriteUpdate,
@@ -129,10 +130,9 @@ export class RailsYamlFormatAdapter implements FormatAdapter {
       }
     }
 
-    const serialized = doc.toString({ indent: 2 });
+    const serialized = doc.toString({ indent: 2, lineWidth: 0 });
     if (options?.write !== false) {
-      fs.mkdirSync(path.dirname(filePath), { recursive: true });
-      fs.writeFileSync(filePath, serialized, "utf8");
+      atomicWriteFileSync(filePath, serialized);
     }
     return serialized;
   }

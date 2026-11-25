@@ -21,14 +21,36 @@ function flattenObject(
   obj: Record<string, unknown>,
   prefix: string,
   filePath: string,
-  out: Map<string, LocaleEntry>
+  out: Map<string, LocaleEntry>,
+  unsupported?: Array<{ key?: string; description: string }>
 ): void {
   for (const [k, v] of Object.entries(obj)) {
+    // Skip standard JSON Schema meta key ($schema in Paraglide/inlang message files)
+    if (!prefix && k === "$schema") continue;
     const fullKey = prefix ? `${prefix}.${k}` : k;
     if (typeof v === "string") {
       out.set(fullKey, { key: fullKey, value: v, file: filePath });
+    } else if (Array.isArray(v) && v.length > 0 && isPlainObject(v[0]) && isPlainObject((v[0] as Record<string, unknown>).match)) {
+      // Paraglide 2 / inlang-message-format variant array message: [{ selectors, match: { "countPlural=one": "...", "countPlural=other": "..." } }]
+      const variantObj = v[0] as { match: Record<string, unknown> };
+      const plurals: Record<string, string> = {};
+      for (const [mk, mv] of Object.entries(variantObj.match)) {
+        if (typeof mv !== "string") continue;
+        const cat = mk.includes("=") ? mk.split("=").pop()!.trim() : mk;
+        plurals[cat] = mv;
+      }
+      if (Object.keys(plurals).length > 0) {
+        out.set(fullKey, {
+          key: fullKey,
+          value: plurals.other ?? Object.values(plurals)[0] ?? "",
+          plurals,
+          file: filePath,
+        });
+      } else {
+        unsupported?.push({ key: fullKey, description: "Unsupported Paraglide 2 variant message structure." });
+      }
     } else if (isPlainObject(v)) {
-      flattenObject(v, fullKey, filePath, out);
+      flattenObject(v, fullKey, filePath, out, unsupported);
     }
   }
 }
@@ -98,17 +120,23 @@ export class JsonFormatAdapter implements FormatAdapter {
 
   readFile(filePath: string, locale: string): LocaleFileData {
     const entries = new Map<string, LocaleEntry>();
+    const unsupportedConstructs: Array<{ key?: string; description: string }> = [];
     if (!fs.existsSync(filePath)) {
       return { locale, filePath, entries };
     }
-    const raw = fs.readFileSync(filePath, "utf8").trim();
+    const raw = fs.readFileSync(filePath, "utf8").replace(/^\uFEFF/, "").trim();
     if (!raw) return { locale, filePath, entries };
     const parsed = JSON.parse(raw);
     if (!isPlainObject(parsed)) {
       throw new Error(`Locale JSON file must contain a top-level object: ${filePath}`);
     }
-    flattenObject(parsed, "", filePath, entries);
-    return { locale, filePath, entries };
+    flattenObject(parsed, "", filePath, entries, unsupportedConstructs);
+    return {
+      locale,
+      filePath,
+      entries,
+      ...(unsupportedConstructs.length > 0 ? { unsupportedConstructs } : {}),
+    };
   }
 
   applyUpdates(
