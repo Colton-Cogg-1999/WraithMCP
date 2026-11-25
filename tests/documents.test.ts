@@ -230,11 +230,13 @@ const greeting = "Hello world";
     expect(allPlain).toContain("Footnote legal disclaimer.");
     expect(allPlain).toContain("Check this section carefully.");
 
-    // 4. Fields & tracked changes protected as <x .../>
+    // 4. Fields protected as <x .../>; tracked deletion (<w:del>) protected as <x type="tracked-change"/>
+    // while tracked insertion (<w:ins>) is translatable in-place preserving <w:ins> wrapper (P1/Q4)
     const fieldSeg = doc.segments.find((s) => s.plainText.includes("Generated on"))!;
     expect(fieldSeg.tags.filter((t) => t.type === "field")).toHaveLength(2);
     const trackedSeg = doc.segments.find((s) => s.plainText.includes("Approved clause"))!;
-    expect(trackedSeg.tags.filter((t) => t.type === "tracked-change")).toHaveLength(2);
+    expect(trackedSeg.tags.filter((t) => t.type === "tracked-change")).toHaveLength(1);
+    expect(trackedSeg.plainText).toContain("inserted revision");
 
     // MANDATORY ROUND-TRIP TEST: extract -> reinsert unchanged -> 100% BYTE-IDENTICAL DOCX!
     const rtPath = path.join(dir, "contract.roundtrip.docx");
