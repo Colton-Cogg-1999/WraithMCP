@@ -70,10 +70,35 @@ fs.writeFileSync(
   "utf8"
 );
 
-// Node 25.5+ / 26 natively supports `node --build-sea <config>` with zero external tools!
-execFileSync(process.execPath, ["--build-sea", seaConfigPath], { stdio: "inherit" });
+// Prefer an official standalone Node binary when supplied (avoids Arch/distro shared-lib coupling)
+const nodeBin = process.env.POLYGLOT_NODE_BIN || process.execPath;
+execFileSync(nodeBin, ["--build-sea", seaConfigPath], { stdio: "inherit" });
 if (process.platform !== "win32") {
   fs.chmodSync(outBin, 0o755);
+}
+
+// On macOS, SEA binaries must be re-signed (ad-hoc or Developer ID) to execute on Apple Silicon
+if (process.platform === "darwin") {
+  execFileSync("codesign", ["--sign", "-", "--force", outBin], { stdio: "inherit" });
+}
+
+// On Linux, inspect linked shared libraries so non-portable distro builds are never mistaken for portable releases
+if (process.platform === "linux") {
+  try {
+    const lddOut = execFileSync("ldd", [outBin], { encoding: "utf8" });
+    const nonBaseLibs = lddOut
+      .split("\n")
+      .map((l) => l.trim())
+      .filter((l) => l && !/(linux-vdso|ld-linux|libc\.so|libm\.so|libdl\.so|libpthread\.so|librt\.so|libstdc\+\+\.so|libgcc_s\.so)/.test(l));
+    if (nonBaseLibs.length > 0) {
+      console.warn(
+        `WARNING: Host node binary (${nodeBin}) dynamically links ${nonBaseLibs.length} distro-specific shared library(ies). ` +
+          `For portable Linux releases, set POLYGLOT_NODE_BIN to an official nodejs.org standalone Node binary.`
+      );
+    }
+  } catch {
+    // ignore if ldd is unavailable
+  }
 }
 
 const sizeMb = (fs.statSync(outBin).size / (1024 * 1024)).toFixed(1);

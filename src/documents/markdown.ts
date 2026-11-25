@@ -1,6 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { extractInlineTags } from "../core/placeholders.js";
+import { atomicWriteFileSync } from "../core/security.js";
 import {
   DocumentAdapter,
   DocumentApplyResult,
@@ -350,8 +351,7 @@ export class MarkdownDocumentAdapter implements DocumentAdapter {
       output = output.slice(0, rep.start) + rep.text + output.slice(rep.end);
     }
 
-    fs.mkdirSync(path.dirname(targetPath), { recursive: true });
-    fs.writeFileSync(targetPath, output, "utf8");
+    atomicWriteFileSync(targetPath, output);
 
     return {
       ok: true,
