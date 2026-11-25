@@ -75,6 +75,73 @@ export function walkFiles(
   return [...new Set(results)].sort();
 }
 
+const UNSCANNED_TEMPLATE_EXTS = new Set([
+  ".mdx",
+  ".astro",
+  ".hbs",
+  ".handlebars",
+  ".pug",
+  ".ejs",
+  ".jinja",
+  ".jinja2",
+  ".j2",
+  ".njk",
+  ".liquid",
+  ".haml",
+  ".slim",
+  ".twig",
+  ".mustache",
+]);
+
+const REPO_META_MD_FILES = new Set([
+  "readme.md",
+  "agents.md",
+  "claude.md",
+  "changelog.md",
+  "contributing.md",
+  "license.md",
+  "code_of_conduct.md",
+  "security.md",
+  "remediation.md",
+]);
+
+/**
+ * Walk sourcePaths and count content/template file types present on disk that are NOT
+ * scanned by the active framework adapter and NOT already covered by paths.documents.
+ */
+export function detectUnscannedFileTypes(
+  rootDir: string,
+  sourcePaths: string[],
+  ignore: string[],
+  scannedExts: Set<string>,
+  configuredDocRelFiles: Set<string>
+): {
+  unscannedFileTypes: Record<string, number>;
+  unscannedTemplateTypes: Record<string, number>;
+} {
+  const candidateExts = new Set([...UNSCANNED_TEMPLATE_EXTS, ".md", ".markdown"]);
+  const found = walkFiles(rootDir, sourcePaths, ignore, candidateExts);
+  const absRoot = path.resolve(rootDir);
+  const unscannedFileTypes: Record<string, number> = {};
+  const unscannedTemplateTypes: Record<string, number> = {};
+
+  for (const abs of found) {
+    const rel = path.relative(absRoot, abs).replace(/\\/g, "/");
+    if (configuredDocRelFiles.has(rel)) continue;
+    const ext = path.extname(abs).toLowerCase();
+    if (scannedExts.has(ext)) continue;
+    if ((ext === ".md" || ext === ".markdown") && REPO_META_MD_FILES.has(path.basename(abs).toLowerCase())) {
+      continue;
+    }
+    unscannedFileTypes[ext] = (unscannedFileTypes[ext] ?? 0) + 1;
+    if (UNSCANNED_TEMPLATE_EXTS.has(ext)) {
+      unscannedTemplateTypes[ext] = (unscannedTemplateTypes[ext] ?? 0) + 1;
+    }
+  }
+
+  return { unscannedFileTypes, unscannedTemplateTypes };
+}
+
 export const USER_FACING_ATTRIBUTES = new Set([
   "placeholder",
   "title",

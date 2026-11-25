@@ -106,4 +106,21 @@ const state = "active";
     expect(inc.outcome).toBe("INCONCLUSIVE");
     expect(inc.coverage.filesScanned).toBe(0);
   });
+
+  it("reports present-but-unscanned content/template file types in check coverage (N13)", () => {
+    const dir = mkProject({
+      "package.json": JSON.stringify({ dependencies: { next: "15", react: "19", "next-intl": "4" } }),
+      "messages/en.json": JSON.stringify({ title: "Docs" }),
+      "messages/fr.json": JSON.stringify({ title: "Documentation" }),
+      "src/app/layout.tsx": `import { useTranslations } from "next-intl"; export default function L(){ const t = useTranslations(); return <h1>{t("title")}</h1>; }`,
+      "src/app/faq/page.mdx": "# FAQ\n\nFrequently asked questions.\n",
+      "templates/email.hbs": "<h1>Welcome {{name}}</h1>\n",
+    });
+    initProject({ rootDir: dir, sourceLocale: "en", targetLocales: ["fr"], writeAgentRule: false });
+
+    const res = runCheck({ rootDir: dir });
+    expect(res.outcome).toBe("INCONCLUSIVE");
+    expect(res.coverage.unscannedFileTypes[".mdx"]).toBe(1);
+    expect(res.coverage.unscannedFileTypes[".hbs"]).toBe(1);
+  });
 });

@@ -1,6 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { detectProjectAdapter, loadLocaleCatalog, loadSourceCatalog } from "../adapters/registry.js";
+import { detectUnscannedFileTypes } from "../adapters/utils.js";
 import { checkGlossaryCompliance } from "./glossary.js";
 import { getLocaleConventions, getPluralCategories } from "./locales.js";
 import { findMissingAdvisoryPluralCategories, PluralValidationContext, validateTranslationString } from "./placeholders.js";
@@ -32,6 +33,7 @@ export interface VerificationCoverage {
   skippedFiles: Array<{ file: string; reason: string }>;
   parseFailures: Array<{ file: string; error: string }>;
   unsupportedConstructs: Array<{ file?: string; key?: string; description: string }>;
+  unscannedFileTypes: Record<string, number>;
   executedChecks: string[];
   documentsChecked: number;
   documentsUnchecked: number;
@@ -177,6 +179,7 @@ export function runCheck(options: CheckOptions): CheckSummary {
   const inconclusiveReasons: string[] = [];
   let documentsChecked = 0;
   let documentsUnchecked = 0;
+  let unscannedFileTypes: Record<string, number> = {};
 
   let liveUsage: UsageFile = prevUsage;
   let scannedUsageByKey: Record<string, import("./types.js").UsageSite[]> | null = null;
@@ -756,7 +759,37 @@ export function runCheck(options: CheckOptions): CheckSummary {
     }
   }
 
-  // 7. Determine coverage sufficiency (fail closed: INCONCLUSIVE when nothing verifiable was checked)
+  // 7. Determine coverage sufficiency (fail closed: INCONCLUSIVE when nothing verifiable was checked
+  // or when unscanned UI template/MDX files exist under sourcePaths)
+  if (adapter && !options.skipScan) {
+    const adapterExts: Record<string, string[]> = {
+      "react-nextjs": [".tsx", ".jsx", ".ts", ".js", ".mjs"],
+      "vue-nuxt": [".vue", ".ts", ".js"],
+      sveltekit: [".svelte", ".ts", ".js"],
+      rails: [".erb", ".rb"],
+      django: [".html", ".py"],
+    };
+    const scannedExts = new Set(adapterExts[adapter.id] ?? []);
+    const configuredDocSet = new Set(configuredDocs.map((d) => d.file));
+    const unscanned = detectUnscannedFileTypes(
+      store.rootDir,
+      config.paths.source,
+      config.paths.ignore,
+      scannedExts,
+      configuredDocSet
+    );
+    unscannedFileTypes = unscanned.unscannedFileTypes;
+    const templateEntries = Object.entries(unscanned.unscannedTemplateTypes).sort(([a], [b]) =>
+      a.localeCompare(b)
+    );
+    if (templateEntries.length > 0) {
+      const desc = templateEntries.map(([ext, cnt]) => `${cnt} ${ext}`).join(", ");
+      inconclusiveReasons.push(
+        `Unscanned template/content file type(s) found under source paths (${desc}) not covered by the ${detection.framework} scanner${templateEntries.some(([e]) => e === ".mdx") ? " (configure .mdx files in paths.documents to verify them)" : ""}.`
+      );
+    }
+  }
+
   if (!adapter && configuredDocs.length === 0) {
     inconclusiveReasons.push(
       detection.notes[0] ??
@@ -836,6 +869,7 @@ export function runCheck(options: CheckOptions): CheckSummary {
       skippedFiles,
       parseFailures,
       unsupportedConstructs,
+      unscannedFileTypes,
       executedChecks,
       documentsChecked,
       documentsUnchecked,
