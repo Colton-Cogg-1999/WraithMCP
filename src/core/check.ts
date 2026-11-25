@@ -290,25 +290,62 @@ export function runCheck(options: CheckOptions): CheckSummary {
       executedChecks.push("catalog_parity", "placeholders", "plurals", "glossary", "staleness");
     }
 
-    // 3. Source-code key reference check (B4/B5): static keys referenced in code must exist in source catalog
+    // 3. Source-code key reference check (B4/B5, MISS-1/MISS-2): static keys referenced in code must exist in source catalog
+    const resolvedUsedKeys = new Set<string>(Object.keys(liveUsage.keys));
+    const isI18next =
+      pluralModel === "i18next" || detection.placeholderSyntaxes.includes("double-mustache");
+    // When a single namespace file sits under `<locale>/<ns>.json` (e.g. public/locales/en/common.json),
+    // loadLocaleCatalog omits the `<ns>.` prefix, while `useTranslation("common")` prefixes keys with `common.`.
+    const singleFileNamespace =
+      srcCatalog.files.length === 1 &&
+      path.basename(path.dirname(srcCatalog.files[0])) === config.sourceLocale
+        ? path.basename(srcCatalog.files[0], path.extname(srcCatalog.files[0]))
+        : null;
+
+    const I18NEXT_PLURAL_CATS = ["zero", "one", "two", "few", "many", "other"];
+
+    const resolveMatchingCatalogKeys = (usedKey: string): string[] => {
+      const candidates = [usedKey];
+      if (singleFileNamespace && usedKey.startsWith(`${singleFileNamespace}.`)) {
+        candidates.push(usedKey.slice(singleFileNamespace.length + 1));
+      }
+      const matched: string[] = [];
+      for (const cand of candidates) {
+        if (srcCatalog.entries.has(cand)) {
+          matched.push(cand);
+        }
+        if (isI18next) {
+          // i18next plural suffixes (_zero/_one/_two/_few/_many/_other, _ordinal_*) and context suffixes (key_<ctx>, key_<ctx>_<plural>)
+          const prefix = `${cand}_`;
+          for (const catKey of srcCatalog.entries.keys()) {
+            if (!catKey.startsWith(prefix)) continue;
+            const suffix = catKey.slice(prefix.length);
+            if (
+              I18NEXT_PLURAL_CATS.includes(suffix) ||
+              /^ordinal_(?:zero|one|two|few|many|other)$/.test(suffix) ||
+              /^[a-zA-Z0-9-]+(?:_(?:zero|one|two|few|many|other))?$/.test(suffix)
+            ) {
+              matched.push(catKey);
+            }
+          }
+        }
+        if (pluralModel === "rails") {
+          for (const cat of I18NEXT_PLURAL_CATS) {
+            const rk = `${cand}.${cat}`;
+            if (srcCatalog.entries.has(rk)) matched.push(rk);
+          }
+        }
+      }
+      return matched;
+    };
+
     if (!options.skipScan && scannedUsageByKey && Object.keys(scannedUsageByKey).length > 0) {
       executedChecks.push("source_key_references");
-      const isI18next =
-        pluralModel === "i18next" || detection.placeholderSyntaxes.includes("double-mustache");
       for (const [key, sites] of Object.entries(scannedUsageByKey)) {
-        const existsDirectly = srcCatalog.entries.has(key);
-        const existsI18nextPlural =
-          isI18next &&
-          (srcCatalog.entries.has(`${key}_other`) ||
-            srcCatalog.entries.has(`${key}_one`) ||
-            srcCatalog.entries.has(`${key}_zero`));
-        const existsRailsPlural =
-          pluralModel === "rails" &&
-          (srcCatalog.entries.has(`${key}.other`) ||
-            srcCatalog.entries.has(`${key}.one`) ||
-            srcCatalog.entries.has(`${key}.zero`));
+        const matched = resolveMatchingCatalogKeys(key);
+        for (const m of matched) resolvedUsedKeys.add(m);
 
-        if (!existsDirectly && !existsI18nextPlural && !existsRailsPlural) {
+        if (matched.length === 0) {
           const firstSite = sites[0];
           issues.push({
             code: "missing_source_key",
@@ -324,14 +361,18 @@ export function runCheck(options: CheckOptions): CheckSummary {
           });
         }
       }
+    } else {
+      // Even when skipScan is true, resolve plural/context/namespace keys from cached usage
+      for (const key of Object.keys(liveUsage.keys)) {
+        for (const m of resolveMatchingCatalogKeys(key)) resolvedUsedKeys.add(m);
+      }
     }
 
-    // 3b. Orphaned keys check (suppress when dynamic keys cover that namespace)
-    const usedKeySet = new Set(Object.keys(liveUsage.keys));
-    if (usedKeySet.size > 0 && !dynamicNamespaces.has("*")) {
+    // 3b. Orphaned keys check (suppress when dynamic keys cover that namespace or resolved plural/context/namespace matches)
+    if (resolvedUsedKeys.size > 0 && !dynamicNamespaces.has("*")) {
       executedChecks.push("orphan_keys");
       for (const key of srcCatalog.entries.keys()) {
-        if (usedKeySet.has(key)) continue;
+        if (resolvedUsedKeys.has(key)) continue;
         const coveredByDynamic = [...dynamicNamespaces].some(
           (ns) => ns !== "" && (key === ns || key.startsWith(`${ns}.`))
         );
@@ -539,9 +580,25 @@ export function runCheck(options: CheckOptions): CheckSummary {
         }
         const baselineHash = records.sourceBaselines?.[key];
         if (rec && rec.sourceHash !== currentHash) {
-          // N2 / MT2: If the developer updated BOTH source AND target manually, do not block
-          // with a permanent stale_source error; manual_edit_detected already advises re-baselining.
-          if (!targetChangedManually) {
+          // STALE-1 + N2/MT2: A manual edit to the target file ONLY suppresses stale_source if the
+          // target file was modified AT OR AFTER the source file (co-edited together). An earlier
+          // translator tweak (source file modified strictly AFTER target file) must NEVER launder
+          // future source meaning changes!
+          let targetUpdatedAfterSource = false;
+          if (targetChangedManually) {
+            try {
+              const srcFilePath = srcCatalog.keyToFile.get(key) ?? srcEntry.file;
+              const tgtFilePath = tgtCatalog.keyToFile.get(key) ?? tgtEntry.file;
+              if (srcFilePath && tgtFilePath && fs.existsSync(srcFilePath) && fs.existsSync(tgtFilePath)) {
+                const srcMtimeNs = fs.statSync(srcFilePath, { bigint: true }).mtimeNs;
+                const tgtMtimeNs = fs.statSync(tgtFilePath, { bigint: true }).mtimeNs;
+                targetUpdatedAfterSource = tgtMtimeNs >= srcMtimeNs;
+              }
+            } catch {
+              targetUpdatedAfterSource = false;
+            }
+          }
+          if (!targetUpdatedAfterSource) {
             staleByLocale[locale]++;
             issues.push({
               code: "stale_source",

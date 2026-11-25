@@ -270,8 +270,11 @@ export function scanJsTsFile(
     };
   }
 
-  // Track translator variable -> namespace (e.g. const t = useTranslations('nav') -> { t: 'nav' })
+  // Track translator variable -> { namespace, keyPrefix }
+  // e.g. const t = useTranslations('nav') -> { namespace: 'nav', keyPrefix: '' }
+  // e.g. const { t } = useTranslation('common', { keyPrefix: 'nav' }) -> { namespace: 'common', keyPrefix: 'nav' }
   const translatorNamespaces = new Map<string, string>();
+  const translatorKeyPrefixes = new Map<string, string>();
   // Track useState setter -> state variable name (e.g. setErr -> err)
   const useStateSetters = new Map<string, string>();
   // Track variables whose values flow into JSX children or user-facing JSX props
@@ -325,16 +328,35 @@ export function scanJsTsFile(
         }
       }
 
-      // const { t } = useTranslation("common") or useTranslation(["common", "auth"])
+      // const { t } = useTranslation("common") or useTranslation(["common", "auth"], { keyPrefix: "nav" })
       if (calleeName === "useTranslation" && t.isObjectPattern(p.node.id)) {
         const arg0 = call.arguments[0];
+        const arg1 = call.arguments[1];
         let ns = "";
+        let keyPrefix = "";
+
+        const readKeyPrefixFromObj = (obj: t.ObjectExpression): string => {
+          const kpProp = obj.properties.find(
+            (prop): prop is t.ObjectProperty =>
+              t.isObjectProperty(prop) &&
+              t.isIdentifier(prop.key, { name: "keyPrefix" }) &&
+              t.isStringLiteral(prop.value)
+          );
+          return kpProp && t.isStringLiteral(kpProp.value) ? kpProp.value.value : "";
+        };
+
         if (arg0 && t.isStringLiteral(arg0)) {
           ns = arg0.value;
         } else if (arg0 && t.isArrayExpression(arg0)) {
           const first = arg0.elements[0];
           if (first && t.isStringLiteral(first)) ns = first.value;
+        } else if (arg0 && t.isObjectExpression(arg0)) {
+          keyPrefix = readKeyPrefixFromObj(arg0);
         }
+        if (arg1 && t.isObjectExpression(arg1)) {
+          keyPrefix = readKeyPrefixFromObj(arg1) || keyPrefix;
+        }
+
         for (const prop of p.node.id.properties) {
           if (
             t.isObjectProperty(prop) &&
@@ -342,6 +364,7 @@ export function scanJsTsFile(
             t.isIdentifier(prop.value)
           ) {
             translatorNamespaces.set(prop.value.name, ns);
+            if (keyPrefix) translatorKeyPrefixes.set(prop.value.name, keyPrefix);
           }
         }
       }
@@ -711,15 +734,71 @@ export function scanJsTsFile(
       if (matchedTranslator && p.node.arguments[0]) {
         const arg0 = p.node.arguments[0];
         const ns = translatorNamespaces.get(matchedTranslator) ?? "";
+        let keyPrefix = translatorKeyPrefixes.get(matchedTranslator) ?? "";
+        const arg1 = p.node.arguments[1];
+        if (arg1 && t.isObjectExpression(arg1)) {
+          const kpProp = arg1.properties.find(
+            (prop): prop is t.ObjectProperty =>
+              t.isObjectProperty(prop) &&
+              t.isIdentifier(prop.key, { name: "keyPrefix" }) &&
+              t.isStringLiteral(prop.value)
+          );
+          if (kpProp && t.isStringLiteral(kpProp.value)) {
+            keyPrefix = kpProp.value.value;
+          }
+        }
         if (t.isStringLiteral(arg0)) {
+          // Guarded optional lookup: e.g. `t.has("subtitle") && t("subtitle")` or `if (t.has("subtitle")) { t("subtitle") }`
+          const rawLiteral = arg0.value;
+          const isGuardedByHas = Boolean(
+            p.findParent((anc) => {
+              const checkTest = (test: t.Expression | null | undefined): boolean => {
+                if (!test) return false;
+                if (
+                  t.isCallExpression(test) &&
+                  t.isMemberExpression(test.callee) &&
+                  t.isIdentifier(test.callee.property, { name: "has" }) &&
+                  test.arguments[0] &&
+                  t.isStringLiteral(test.arguments[0]) &&
+                  test.arguments[0].value === rawLiteral
+                ) {
+                  return true;
+                }
+                if (t.isLogicalExpression(test)) {
+                  return checkTest(test.left) || checkTest(test.right);
+                }
+                return false;
+              };
+              if (t.isLogicalExpression(anc.node) && anc.node.operator === "&&") {
+                return checkTest(anc.node.left);
+              }
+              if (t.isConditionalExpression(anc.node)) {
+                return checkTest(anc.node.test);
+              }
+              if (t.isIfStatement(anc.node)) {
+                return checkTest(anc.node.test);
+              }
+              return false;
+            })
+          );
+          if (isGuardedByHas) return;
+
           // Support react-i18next namespace separator `t("common:save")` -> `common.save`
-          const rawKey = arg0.value.includes(":")
-            ? arg0.value.replace(":", ".")
-            : arg0.value;
-          const fullKey =
-            !arg0.value.includes(":") && ns && !rawKey.startsWith(`${ns}.`)
-              ? `${ns}.${rawKey}`
-              : rawKey;
+          let fullKey: string;
+          if (rawLiteral.includes(":")) {
+            const [explicitNs, rest] = rawLiteral.split(":", 2);
+            const parts = [explicitNs, keyPrefix, rest].filter(Boolean);
+            fullKey = parts.join(".");
+          } else {
+            const prefixed =
+              keyPrefix && !rawLiteral.startsWith(`${keyPrefix}.`)
+                ? `${keyPrefix}.${rawLiteral}`
+                : rawLiteral;
+            fullKey =
+              ns && !prefixed.startsWith(`${ns}.`)
+                ? `${ns}.${prefixed}`
+                : prefixed;
+          }
           usageByKey[fullKey] = usageByKey[fullKey] ?? [];
           usageByKey[fullKey].push({
             file: relFile,
