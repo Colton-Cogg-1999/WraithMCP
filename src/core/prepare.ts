@@ -23,6 +23,7 @@ export interface PreparedItem {
   reason: PrepareReason;
   placeholders: string[];
   hasPlurals: boolean;
+  advisoryPluralCategories?: Intl.LDMLPluralRule[];
   usageSites: UsageSite[];
   glossaryHits: GlossaryHit[];
   /**
@@ -202,6 +203,7 @@ export function prepareBatch(options: PrepareOptions): PrepareResult {
       };
     });
 
+    const hasPlurals = Object.keys(extracted.plurals).length > 0 || Boolean(srcEntry.plurals);
     allCandidates.push({
       key,
       source: srcEntry.value,
@@ -209,7 +211,10 @@ export function prepareBatch(options: PrepareOptions): PrepareResult {
       currentTarget: tgtEntry?.value,
       reason,
       placeholders: extracted.names,
-      hasPlurals: Object.keys(extracted.plurals).length > 0 || Boolean(srcEntry.plurals),
+      hasPlurals,
+      ...(hasPlurals && conventions.advisoryPluralCategories.length > 0
+        ? { advisoryPluralCategories: conventions.advisoryPluralCategories }
+        : {}),
       usageSites: currentSites,
       glossaryHits,
       fuzzyMatches,

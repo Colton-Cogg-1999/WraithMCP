@@ -3,7 +3,7 @@ import path from "node:path";
 import { detectProjectAdapter, loadLocaleCatalog, loadSourceCatalog } from "../adapters/registry.js";
 import { checkGlossaryCompliance } from "./glossary.js";
 import { getLocaleConventions, getPluralCategories } from "./locales.js";
-import { PluralValidationContext, validateTranslationString } from "./placeholders.js";
+import { findMissingAdvisoryPluralCategories, PluralValidationContext, validateTranslationString } from "./placeholders.js";
 import { evaluateDocumentForCheck, scanDocumentsInProject } from "../documents/registry.js";
 import { computeContextFingerprint, PolyglotStore, sha256Short } from "./store.js";
 import {
@@ -431,6 +431,26 @@ export function runCheck(options: CheckOptions): CheckSummary {
             message: `[${locale}] ${key}: ${p.message}`,
             details: p.details,
           });
+        }
+
+        // N10: Surface optional CLDR advisory plural categories (e.g. 'many' for cs/lt fractions or fr/es/it/pt millions) as info
+        if (pluralModel === "icu") {
+          const advisoryNotes = findMissingAdvisoryPluralCategories(
+            srcEntry.value,
+            tgtEntry.value,
+            locale,
+            detection.placeholderSyntaxes
+          );
+          for (const adv of advisoryNotes) {
+            issues.push({
+              code: "advisory_plural_category",
+              severity: "info",
+              locale,
+              key,
+              message: `[${locale}] ${key}: ICU plural "${adv.variable}" omits optional CLDR advisory category [${adv.missingAdvisory.join(", ")}] (applies to fractions or large numbers like millions).`,
+              details: { variable: adv.variable, advisory: adv.missingAdvisory },
+            });
+          }
         }
 
         // Glossary consistency & DNT (explicit user/imported glossary rules are blocking errors -> O4)

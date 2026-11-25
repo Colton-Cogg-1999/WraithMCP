@@ -221,6 +221,7 @@ export type CheckIssueCode =
   | "placeholder_mismatch"
   | "icu_syntax_error"
   | "missing_plural_category"
+  | "advisory_plural_category"
   | "extra_plural_category"
   | "plural_structure_mismatch"
   | "inline_tag_mismatch"

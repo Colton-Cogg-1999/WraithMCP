@@ -4,7 +4,7 @@ import {
   type MessageFormatElement,
 } from "@formatjs/icu-messageformat-parser";
 import { PlaceholderSyntax } from "../formats/types.js";
-import { getPluralCategories } from "./locales.js";
+import { getAdvisoryPluralCategories, getPluralCategories } from "./locales.js";
 
 export interface ExtractedPluralInfo {
   pluralType: "cardinal" | "ordinal";
@@ -670,4 +670,40 @@ export function validateTranslationString(
   }
 
   return problems;
+}
+
+export interface AdvisoryPluralNote {
+  variable: string;
+  missingAdvisory: Intl.LDMLPluralRule[];
+}
+
+/**
+ * Identify CLDR cardinal plural categories that are advisory (not triggered by integers 0..100,
+ * e.g. `many` for fractions in cs/lt or exact millions in fr/es/it/pt) and absent from an
+ * ICU plural translation. Surfaced as `info`-level guidance in `check` and `prepare`.
+ */
+export function findMissingAdvisoryPluralCategories(
+  sourceText: string,
+  targetText: string,
+  targetLocale: string,
+  syntaxes: readonly PlaceholderSyntax[]
+): AdvisoryPluralNote[] {
+  const advisoryCats = getAdvisoryPluralCategories(targetLocale);
+  if (advisoryCats.length === 0) return [];
+  const src = extractPlaceholders(sourceText, syntaxes);
+  const tgt = extractPlaceholders(targetText, syntaxes);
+  if (tgt.icuError) return [];
+
+  const notes: AdvisoryPluralNote[] = [];
+  for (const [pluralVar, srcPlural] of Object.entries(src.plurals)) {
+    if (srcPlural.pluralType !== "cardinal") continue;
+    const tgtPlural = tgt.plurals[pluralVar];
+    if (!tgtPlural) continue;
+    const tgtOptSet = new Set(tgtPlural.options);
+    const missing = advisoryCats.filter((cat) => !tgtOptSet.has(cat));
+    if (missing.length > 0) {
+      notes.push({ variable: pluralVar, missingAdvisory: missing });
+    }
+  }
+  return notes;
 }
