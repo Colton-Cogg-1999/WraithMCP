@@ -74,8 +74,8 @@ function walkVueTemplate(
   // NodeTypes.INTERPOLATION === 5
   if (node.type === 5 && node.content && typeof node.content !== "string") {
     const expr = typeof node.content.content === "string" ? node.content.content : "";
-    for (const m of expr.matchAll(/(?:\$t|\bt)\(\s*['"]([^'"]+)['"]/g)) {
-      const key = m[1];
+    for (const m of expr.matchAll(/(?:\$t|\bt)\(\s*(['"])([^'"]+)\1\s*(?=[,)])/g)) {
+      const key = m[2];
       out.usageByKey[key] = out.usageByKey[key] ?? [];
       out.usageByKey[key].push({
         file: relFile,
@@ -98,7 +98,10 @@ function walkVueTemplate(
         snippet,
       });
     }
-    if (/['"][^'"]*\p{L}{2,}[^'"]*['"]\s*\+|\+\s*['"][^'"]*\p{L}{2,}[^'"]*['"]/u.test(expr)) {
+    if (
+      !/(?:\$t|\bt)\s*\(/.test(expr) &&
+      /['"][^'"]*\p{L}{2,}[^'"]*['"]\s*\+|\+\s*['"][^'"]*\p{L}{2,}[^'"]*['"]/u.test(expr)
+    ) {
       out.concats.push({
         file: relFile,
         line,
@@ -171,8 +174,8 @@ function walkVueTemplate(
             });
           }
         }
-        for (const m of expText.matchAll(/(?:\$t|\bt)\(\s*['"]([^'"]+)['"]/g)) {
-          const key = m[1];
+        for (const m of expText.matchAll(/(?:\$t|\bt)\(\s*(['"])([^'"]+)\1\s*(?=[,)])/g)) {
+          const key = m[2];
           out.usageByKey[key] = out.usageByKey[key] ?? [];
           out.usageByKey[key].push({
             file: relFile,

@@ -174,8 +174,8 @@ function scanPythonFile(
     const trimmed = rawLine.trim();
     if (trimmed.startsWith("#")) return;
 
-    // gettext / gettext_lazy / _(...) usage sites
-    for (const m of trimmed.matchAll(/(?:\bgettext_lazy|\bgettext|\b_)\s*\(\s*(['"])([^'"]+)\1/g)) {
+    // gettext / gettext_lazy / _(...) usage sites (complete static literals only)
+    for (const m of trimmed.matchAll(/(?:\bgettext_lazy|\bgettext|\b_)\s*\(\s*(['"])([^'"]+)\1\s*(?=[,)])/g)) {
       const key = m[2];
       out.usageByKey[key] = out.usageByKey[key] ?? [];
       out.usageByKey[key].push({

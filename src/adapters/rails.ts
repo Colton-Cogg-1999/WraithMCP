@@ -61,8 +61,9 @@ function scanErbTemplate(
     const line = offsetToLine(source, m.index ?? 0);
     const snippet = (lines[line - 1] ?? "").trim().slice(0, 120);
 
-    for (const tm of code.matchAll(/(?:\bI18n\.t|\bt)\s*\(?\s*['"]([^'"]+)['"]/g)) {
-      const key = resolveRailsLazyKey(relFile, tm[1]);
+    for (const tm of code.matchAll(/(?:\bI18n\.t|\bt)\s*\(?\s*(['"])([^'"]+)\1\s*(?=[,)\n]|$)/g)) {
+      if (tm[2].includes("#{")) continue;
+      const key = resolveRailsLazyKey(relFile, tm[2]);
       out.usageByKey[key] = out.usageByKey[key] ?? [];
       out.usageByKey[key].push({
         file: relFile,
@@ -190,9 +191,10 @@ function scanRubyFile(
     const trimmed = rawLine.trim();
     if (trimmed.startsWith("#")) return;
 
-    // Key usages: I18n.t("key") / t("key")
-    for (const m of trimmed.matchAll(/(?:\bI18n\.t|\bt)\s*\(\s*['"]([^'"]+)['"]/g)) {
-      const key = m[1];
+    // Key usages: I18n.t("key") / t("key") — ignore interpolated/concatenated dynamic keys
+    for (const m of trimmed.matchAll(/(?:\bI18n\.t|\bt)\s*\(\s*(['"])([^'"]+)\1\s*(?=[,)])/g)) {
+      if (m[2].includes("#{")) continue;
+      const key = m[2];
       out.usageByKey[key] = out.usageByKey[key] ?? [];
       out.usageByKey[key].push({
         file: relFile,

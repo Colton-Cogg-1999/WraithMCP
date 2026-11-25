@@ -179,6 +179,7 @@ export function runCheck(options: CheckOptions): CheckSummary {
   let documentsUnchecked = 0;
 
   let liveUsage: UsageFile = prevUsage;
+  let scannedUsageByKey: Record<string, import("./types.js").UsageSite[]> | null = null;
   const dynamicNamespaces = new Set<string>();
 
   if (adapter) {
@@ -191,6 +192,7 @@ export function runCheck(options: CheckOptions): CheckSummary {
         i18nLibrary: config.i18nLibrary ?? detection.i18nLibrary,
       });
       filesScanned = scanRes.filesScanned;
+      scannedUsageByKey = scanRes.usageByKey;
       if (scanRes.skippedFiles) skippedFiles.push(...scanRes.skippedFiles);
       for (const ns of scanRes.dynamicKeyNamespaces ?? []) dynamicNamespaces.add(ns);
 
@@ -285,7 +287,43 @@ export function runCheck(options: CheckOptions): CheckSummary {
       executedChecks.push("catalog_parity", "placeholders", "plurals", "glossary", "staleness");
     }
 
-    // 3. Orphaned keys check (suppress when dynamic keys cover that namespace)
+    // 3. Source-code key reference check (B4/B5): static keys referenced in code must exist in source catalog
+    if (!options.skipScan && scannedUsageByKey && Object.keys(scannedUsageByKey).length > 0) {
+      executedChecks.push("source_key_references");
+      const isI18next =
+        pluralModel === "i18next" || detection.placeholderSyntaxes.includes("double-mustache");
+      for (const [key, sites] of Object.entries(scannedUsageByKey)) {
+        const existsDirectly = srcCatalog.entries.has(key);
+        const existsI18nextPlural =
+          isI18next &&
+          (srcCatalog.entries.has(`${key}_other`) ||
+            srcCatalog.entries.has(`${key}_one`) ||
+            srcCatalog.entries.has(`${key}_zero`));
+        const existsRailsPlural =
+          pluralModel === "rails" &&
+          (srcCatalog.entries.has(`${key}.other`) ||
+            srcCatalog.entries.has(`${key}.one`) ||
+            srcCatalog.entries.has(`${key}.zero`));
+
+        if (!existsDirectly && !existsI18nextPlural && !existsRailsPlural) {
+          const firstSite = sites[0];
+          issues.push({
+            code: "missing_source_key",
+            severity: "error",
+            key,
+            file: firstSite?.file,
+            line: firstSite?.line,
+            message:
+              adapter.id === "django" && totalSourceKeys === 0
+                ? `Marked Django string "${key}" is referenced in code (${firstSite?.file ?? "source"}) but no gettext .po catalog exists yet (run django-admin makemessages).`
+                : `Key "${key}" is referenced in code (${firstSite?.file ?? "source"}) but missing from the "${config.sourceLocale}" source catalog.`,
+            details: { sites: sites.slice(0, 5) },
+          });
+        }
+      }
+    }
+
+    // 3b. Orphaned keys check (suppress when dynamic keys cover that namespace)
     const usedKeySet = new Set(Object.keys(liveUsage.keys));
     if (usedKeySet.size > 0 && !dynamicNamespaces.has("*")) {
       executedChecks.push("orphan_keys");
@@ -684,6 +722,10 @@ export function runCheck(options: CheckOptions): CheckSummary {
     inconclusiveReasons.push(
       detection.notes[0] ??
         "No supported framework adapter or configured documents were detected; cannot verify localization."
+    );
+  } else if (adapter && !options.skipScan && filesScanned === 0 && configuredDocs.length === 0) {
+    inconclusiveReasons.push(
+      `Detected ${detection.framework}, but scanned 0 source files (check paths.source: ${JSON.stringify(config.paths.source)}).`
     );
   } else if (adapter && totalSourceKeys === 0 && filesScanned === 0 && configuredDocs.length === 0) {
     inconclusiveReasons.push(

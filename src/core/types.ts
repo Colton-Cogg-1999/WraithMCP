@@ -214,6 +214,7 @@ export type CheckOutcome = "PASS" | "FAIL" | "INCONCLUSIVE";
 
 export type CheckIssueCode =
   | "missing_key"
+  | "missing_source_key"
   | "extra_key"
   | "orphaned_key"
   | "placeholder_mismatch"
