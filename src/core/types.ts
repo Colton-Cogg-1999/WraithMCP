@@ -119,6 +119,7 @@ export type TranslationRecord = z.infer<typeof TranslationRecordSchema>;
 export const RecordsFileSchema = z.object({
   version: z.literal(1).default(1),
   records: z.record(z.string(), z.record(z.string(), TranslationRecordSchema)).default({}),
+  sourceBaselines: z.record(z.string(), z.string()).default({}),
 });
 export type RecordsFile = z.infer<typeof RecordsFileSchema>;
 

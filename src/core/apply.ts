@@ -264,6 +264,10 @@ function applyTranslationsUnlocked(options: ApplyOptions): ApplyResult {
       if (!records.records[v.input.key]) {
         records.records[v.input.key] = {};
       }
+      if (!records.sourceBaselines) {
+        records.sourceBaselines = {};
+      }
+      records.sourceBaselines[v.input.key] = sourceHash;
       records.records[v.input.key][options.targetLocale] = {
         sourceHash,
         contextFingerprint,

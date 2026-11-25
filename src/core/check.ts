@@ -502,23 +502,42 @@ export function runCheck(options: CheckOptions): CheckSummary {
             message: `[${locale}] ${key}: flagged for re-translation after glossary or review update.`,
           });
         }
-        if (rec && rec.translation && rec.translation !== liveSerializedTarget) {
+        const targetChangedManually = Boolean(
+          rec && rec.translation && rec.translation !== liveSerializedTarget
+        );
+        if (targetChangedManually) {
           issues.push({
             code: "manual_edit_detected",
             severity: "info",
             locale,
             key,
-            message: `[${locale}] ${key}: target file differs from last recorded translation (manual edit detected).`,
+            message: `[${locale}] ${key}: target file differs from last recorded translation (manual edit detected; run \`polyglot import --format locales\` to update baseline).`,
           });
         }
+        const baselineHash = records.sourceBaselines?.[key];
         if (rec && rec.sourceHash !== currentHash) {
+          // N2 / MT2: If the developer updated BOTH source AND target manually, do not block
+          // with a permanent stale_source error; manual_edit_detected already advises re-baselining.
+          if (!targetChangedManually) {
+            staleByLocale[locale]++;
+            issues.push({
+              code: "stale_source",
+              severity: "error",
+              locale,
+              key,
+              message: `[${locale}] ${key}: source text changed since last translation.`,
+            });
+          }
+        } else if (!rec && baselineHash && baselineHash !== currentHash) {
+          // N3 / MT1: Translation was added by hand after init (no record), and source later changed
+          // relative to the recorded source baseline -> report stale_source!
           staleByLocale[locale]++;
           issues.push({
             code: "stale_source",
             severity: "error",
             locale,
             key,
-            message: `[${locale}] ${key}: source text changed since last translation.`,
+            message: `[${locale}] ${key}: source text changed since baseline; hand-added translation needs verification (or run \`polyglot import --format locales\` after updating).`,
           });
         } else if (rec) {
           const currentFp = liveUsage.keys[key]?.fingerprint ?? "";

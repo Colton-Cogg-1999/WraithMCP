@@ -1,4 +1,5 @@
-import { detectProjectAdapter, loadLocaleCatalog, loadSourceCatalog } from "../adapters/registry.js";
+import { detectProjectAdapter, LoadedLocaleCatalog, loadLocaleCatalog, loadSourceCatalog } from "../adapters/registry.js";
+import { PlaceholderSyntax } from "../formats/types.js";
 import { findFuzzyMatches, FuzzyMatch } from "./fuzzy.js";
 import {
   AffectedKeyInfo,
@@ -6,9 +7,92 @@ import {
   GlossaryHit,
   matchGlossaryTerms,
 } from "./glossary.js";
+import { validateTranslationString } from "./placeholders.js";
 import { withWorkspaceLock } from "./security.js";
 import { PolyglotStore, sha256Short } from "./store.js";
-import { AssumptionCategory, GlossaryOrigin } from "./types.js";
+import { AssumptionCategory, GlossaryOrigin, MemoryEntry, PolyglotConfig, RecordsFile } from "./types.js";
+
+/**
+ * Reconcile persisted memory against authoritative live target locale files (L2, N4/MT5):
+ * - Excludes superseded old agent translations whose recorded target was manually overwritten.
+ * - Promotes valid live manual corrections (`origin: "manual"`) so they rank above stale agent text.
+ */
+export function reconcileMemoryWithLiveLocales(
+  store: PolyglotStore,
+  config: PolyglotConfig,
+  memory: readonly MemoryEntry[],
+  targetLocale: string,
+  preloaded?: {
+    records?: RecordsFile;
+    srcCatalog?: LoadedLocaleCatalog;
+    tgtCatalog?: LoadedLocaleCatalog;
+    placeholderSyntaxes?: readonly PlaceholderSyntax[];
+  }
+): MemoryEntry[] {
+  const records = preloaded?.records ?? store.readRecords();
+  let srcCatalog = preloaded?.srcCatalog;
+  let tgtCatalog = preloaded?.tgtCatalog;
+  let syntaxes = preloaded?.placeholderSyntaxes;
+
+  if (!srcCatalog || !tgtCatalog || !syntaxes) {
+    const { adapter, detection } = detectProjectAdapter(
+      store.rootDir,
+      config.framework,
+      config.paths.locales
+    );
+    if (!adapter) return [...memory];
+    const tgtFiles = detection.localeFiles[targetLocale] ?? [];
+    if (tgtFiles.length === 0) return [...memory];
+    srcCatalog = srcCatalog ?? loadSourceCatalog(adapter, detection, config.sourceLocale);
+    tgtCatalog = tgtCatalog ?? loadLocaleCatalog(adapter, tgtFiles, targetLocale);
+    syntaxes = syntaxes ?? detection.placeholderSyntaxes;
+  }
+
+  const activeLivePairs = new Set<string>();
+  const supersededTargets = new Set<string>();
+  const manualAdditions: MemoryEntry[] = [];
+  const now = new Date().toISOString();
+
+  for (const [key, liveTgt] of tgtCatalog.entries) {
+    const liveSrc = srcCatalog.entries.get(key);
+    if (!liveSrc || !liveTgt.value.trim() || liveTgt.fuzzy) continue;
+    activeLivePairs.add(`${liveSrc.value}\0${liveTgt.value}`);
+
+    const rec = records.records[key]?.[targetLocale];
+    const liveSerialized = liveTgt.plurals ? JSON.stringify(liveTgt.plurals) : liveTgt.value;
+    if (rec && rec.translation !== liveSerialized) {
+      supersededTargets.add(`${liveSrc.value}\0${rec.translation}`);
+      // Only promote the live manual edit into suggestions if its placeholders/syntax are valid
+      const problems = validateTranslationString(
+        liveSrc.value,
+        liveTgt.value,
+        targetLocale,
+        syntaxes,
+        { sourcePlurals: liveSrc.plurals, targetPlurals: liveTgt.plurals }
+      );
+      if (problems.length === 0) {
+        manualAdditions.push({
+          sourceLocale: config.sourceLocale,
+          targetLocale,
+          source: liveSrc.value,
+          target: liveTgt.value,
+          origin: "manual",
+          updatedAt: now,
+        });
+      }
+    }
+  }
+
+  const filtered = memory.filter((m) => {
+    const pairKey = `${m.source}\0${m.target}`;
+    if (supersededTargets.has(pairKey) && !activeLivePairs.has(pairKey)) {
+      return false;
+    }
+    return true;
+  });
+
+  return [...manualAdditions, ...filtered];
+}
 
 export interface MemoryLookupResult {
   query: string;
@@ -60,38 +144,10 @@ export function lookupMemory(
     }
   }
 
-  // Reconcile memory against authoritative locale files (L2):
-  // If a recorded agent translation was manually overwritten in the target locale file,
-  // exclude the superseded old target string from fuzzy suggestions!
-  const supersededTargets = new Set<string>();
-  if (options.targetLocale) {
-    const records = store.readRecords();
-    const { adapter, detection } = detectProjectAdapter(
-      store.rootDir,
-      config.framework,
-      config.paths.locales
-    );
-    if (adapter) {
-      const tgtFiles = detection.localeFiles[options.targetLocale] ?? [];
-      if (tgtFiles.length > 0) {
-        const srcCatalog = loadSourceCatalog(adapter, detection, config.sourceLocale);
-        const tgtCatalog = loadLocaleCatalog(adapter, tgtFiles, options.targetLocale);
-        for (const [key, byLocale] of Object.entries(records.records)) {
-          const rec = byLocale[options.targetLocale];
-          const liveTgt = tgtCatalog.entries.get(key);
-          const liveSrc = srcCatalog.entries.get(key);
-          if (rec && liveTgt && liveSrc && liveTgt.value !== rec.translation) {
-            supersededTargets.add(`${liveSrc.value}\0${rec.translation}`);
-          }
-        }
-      }
-    }
-  }
-
-  const activeMemory =
-    supersededTargets.size > 0
-      ? memory.filter((m) => !supersededTargets.has(`${m.source}\0${m.target}`))
-      : memory;
+  // Reconcile memory against authoritative locale files (L2, N4/MT5)
+  const activeMemory = options.targetLocale
+    ? reconcileMemoryWithLiveLocales(store, config, memory, options.targetLocale)
+    : memory;
 
   const fuzzyMatches = options.targetLocale
     ? findFuzzyMatches(options.query, activeMemory, {

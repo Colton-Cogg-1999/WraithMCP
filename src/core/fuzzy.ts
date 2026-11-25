@@ -100,6 +100,22 @@ export interface FuzzyMatch {
   origin: string;
 }
 
+function originPrecedence(origin: string): number {
+  const lower = origin.toLowerCase();
+  if (
+    lower === "manual" ||
+    lower === "human" ||
+    lower === "correction" ||
+    lower === "manual-document"
+  ) {
+    return 0;
+  }
+  if (lower === "imported" || lower === "import-locales" || lower.startsWith("tmx:")) {
+    return 1;
+  }
+  return 2;
+}
+
 export function findFuzzyMatches(
   query: string,
   entries: readonly MemoryEntry[],
@@ -112,7 +128,7 @@ export function findFuzzyMatches(
 ): FuzzyMatch[] {
   const minScore = options.minScore ?? 55;
   const limit = options.limit ?? 5;
-  const matches: FuzzyMatch[] = [];
+  const scored: Array<FuzzyMatch & { updatedAt: string; rank: number }> = [];
 
   for (const entry of entries) {
     if (!localeMatches(entry.targetLocale, options.targetLocale)) continue;
@@ -120,17 +136,41 @@ export function findFuzzyMatches(
 
     const score = lexicalSimilarity(query, entry.source, options.sourceLocale);
     if (score >= minScore) {
-      matches.push({
+      scored.push({
         source: entry.source,
         target: entry.target,
         score,
         context: entry.context,
         origin: entry.origin,
+        updatedAt: entry.updatedAt ?? "",
+        rank: originPrecedence(entry.origin),
       });
     }
   }
 
-  return matches
-    .sort((a, b) => b.score - a.score || a.source.localeCompare(b.source))
-    .slice(0, limit);
+  scored.sort(
+    (a, b) =>
+      b.score - a.score ||
+      a.rank - b.rank ||
+      b.updatedAt.localeCompare(a.updatedAt) ||
+      a.source.localeCompare(b.source)
+  );
+
+  // Deduplicate by (source, target) keeping the highest-precedence/newest entry
+  const seen = new Set<string>();
+  const out: FuzzyMatch[] = [];
+  for (const item of scored) {
+    const key = `${item.source}\0${item.target}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    out.push({
+      source: item.source,
+      target: item.target,
+      score: item.score,
+      context: item.context,
+      origin: item.origin,
+    });
+    if (out.length >= limit) break;
+  }
+  return out;
 }

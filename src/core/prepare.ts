@@ -2,6 +2,7 @@ import { detectProjectAdapter, loadLocaleCatalog, loadSourceCatalog } from "../a
 import { findFuzzyMatches, FuzzyMatch } from "./fuzzy.js";
 import { GlossaryHit, matchGlossaryTerms } from "./glossary.js";
 import { getLocaleConventions, LocaleConventions } from "./locales.js";
+import { reconcileMemoryWithLiveLocales } from "./memory-ops.js";
 import { extractPlaceholders } from "./placeholders.js";
 import { computeContextFingerprint, PolyglotStore, sha256Short } from "./store.js";
 import { UsageFile, UsageSite } from "./types.js";
@@ -110,6 +111,18 @@ export function prepareBatch(options: PrepareOptions): PrepareResult {
   const srcCatalog = loadSourceCatalog(adapter, detection, config.sourceLocale);
   const tgtFiles = detection.localeFiles[options.targetLocale] ?? [];
   const tgtCatalog = loadLocaleCatalog(adapter, tgtFiles, options.targetLocale);
+  const activeMemory = reconcileMemoryWithLiveLocales(
+    store,
+    config,
+    memory,
+    options.targetLocale,
+    {
+      records,
+      srcCatalog,
+      tgtCatalog,
+      placeholderSyntaxes: detection.placeholderSyntaxes,
+    }
+  );
 
   const requestedKeys = options.keys && options.keys.length > 0 ? new Set(options.keys) : null;
   const allCandidates: PreparedItem[] = [];
@@ -123,11 +136,20 @@ export function prepareBatch(options: PrepareOptions): PrepareResult {
       srcEntry.plurals ? JSON.stringify(srcEntry.plurals) : srcEntry.value
     );
     const currentFp = liveUsage.keys[key]?.fingerprint ?? "";
+    const liveSerialized = tgtEntry
+      ? tgtEntry.plurals
+        ? JSON.stringify(tgtEntry.plurals)
+        : tgtEntry.value
+      : "";
+    const targetChangedManually = Boolean(rec && tgtEntry && rec.translation !== liveSerialized);
+    const baselineHash = records.sourceBaselines?.[key];
 
     let reason: PrepareReason | null = null;
     if (!tgtEntry || tgtEntry.value.trim() === "" || tgtEntry.fuzzy) {
       reason = "missing";
-    } else if (rec && rec.sourceHash !== currentHash) {
+    } else if (rec && rec.sourceHash !== currentHash && !targetChangedManually) {
+      reason = "stale_source";
+    } else if (!rec && baselineHash && baselineHash !== currentHash) {
       reason = "stale_source";
     } else if (rec && currentFp && rec.contextFingerprint && rec.contextFingerprint !== currentFp) {
       reason = "context_changed";
@@ -145,7 +167,7 @@ export function prepareBatch(options: PrepareOptions): PrepareResult {
       glossary.entries,
       options.targetLocale
     );
-    const rawFuzzyMatches = findFuzzyMatches(srcEntry.value, memory, {
+    const rawFuzzyMatches = findFuzzyMatches(srcEntry.value, activeMemory, {
       sourceLocale: config.sourceLocale,
       targetLocale: options.targetLocale,
       minScore: 55,

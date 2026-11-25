@@ -358,6 +358,19 @@ export function importExistingLocales(rootDir: string): ImportResult {
   const srcCatalog = loadSourceCatalog(adapter, detection, config.sourceLocale);
   const now = new Date().toISOString();
 
+  if (!records.sourceBaselines) {
+    records.sourceBaselines = {};
+  }
+  let baselinesUpdated = 0;
+  for (const [key, srcEntry] of srcCatalog.entries) {
+    if (!records.sourceBaselines[key]) {
+      records.sourceBaselines[key] = sha256Short(
+        srcEntry.plurals ? JSON.stringify(srcEntry.plurals) : srcEntry.value
+      );
+      baselinesUpdated++;
+    }
+  }
+
   const memoryEntries: MemoryEntry[] = [];
   let recordsImported = 0;
   const localesDetected: string[] = [];
@@ -371,7 +384,7 @@ export function importExistingLocales(rootDir: string): ImportResult {
 
     for (const [key, tgtEntry] of tgtCatalog.entries) {
       const srcEntry = srcCatalog.entries.get(key);
-      if (!srcEntry || !tgtEntry.value.trim()) continue;
+      if (!srcEntry || !tgtEntry.value.trim() || tgtEntry.fuzzy) continue;
 
       const sourceHash = sha256Short(
         srcEntry.plurals ? JSON.stringify(srcEntry.plurals) : srcEntry.value
@@ -383,19 +396,28 @@ export function importExistingLocales(rootDir: string): ImportResult {
 
       if (!records.records[key]) records.records[key] = {};
       const existing = records.records[key][locale];
+      let memoryOrigin = "import-locales";
 
       if (existing) {
-        // L3: If the target translation is unchanged from the existing record, do NOT reset sourceHash (preserves staleness!)
-        // L4: NEVER downgrade reviewStatus (approved/reviewed/flagged) during import!
+        // L3 / MT4: If the target translation is unchanged from the existing record,
+        // NEVER reset sourceHash (prevents laundering staleness on untouched translations).
         if (existing.translation === serializedTarget) {
           continue;
         }
+        // N2 / MT3: Target text WAS updated by hand since the last record -> accept and re-baseline!
+        // L4: NEVER downgrade reviewStatus (approved/reviewed/flagged) during import.
         records.records[key][locale] = {
           ...existing,
+          sourceHash,
+          contextFingerprint: contextFingerprint || existing.contextFingerprint,
           translation: serializedTarget,
+          origin: "human",
           updatedAt: now,
         };
+        records.sourceBaselines[key] = sourceHash;
+        memoryOrigin = "human";
       } else {
+        // N3: Baseline hand-added or pre-existing translations that have no record yet
         records.records[key][locale] = {
           sourceHash,
           contextFingerprint,
@@ -404,6 +426,7 @@ export function importExistingLocales(rootDir: string): ImportResult {
           origin: "imported",
           reviewStatus: "unreviewed",
         };
+        records.sourceBaselines[key] = sourceHash;
       }
       recordsImported++;
 
@@ -412,13 +435,13 @@ export function importExistingLocales(rootDir: string): ImportResult {
         targetLocale: locale,
         source: srcEntry.value,
         target: tgtEntry.value,
-        origin: "import-locales",
+        origin: memoryOrigin,
         updatedAt: now,
       });
     }
   }
 
-  if (recordsImported > 0) {
+  if (recordsImported > 0 || baselinesUpdated > 0) {
     store.writeRecords(records);
   }
   const memoryImported = memoryEntries.length > 0 ? store.appendMemory(memoryEntries) : 0;

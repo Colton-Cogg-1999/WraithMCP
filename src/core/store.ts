@@ -230,9 +230,14 @@ export class PolyglotStore {
     for (const key of Object.keys(parsed.records).sort()) {
       sorted[key] = sortRecordKeys(parsed.records[key]);
     }
+    const sortedBaselines = sortRecordKeys(parsed.sourceBaselines ?? {});
     atomicWriteFileSync(
       this.filePath("records.json"),
-      stableJson({ version: 1, records: sorted })
+      stableJson({
+        version: 1,
+        records: sorted,
+        ...(Object.keys(sortedBaselines).length > 0 ? { sourceBaselines: sortedBaselines } : {}),
+      })
     );
   }
 
