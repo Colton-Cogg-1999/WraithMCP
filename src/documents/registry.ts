@@ -10,6 +10,7 @@ import {
   resolveConfinedPath,
   SecurityBoundaryError,
   validateLocaleTag,
+  withWorkspaceLock,
 } from "../core/security.js";
 import { PolyglotStore, sha256Short } from "../core/store.js";
 import { DocxDocumentAdapter } from "./docx.js";
@@ -450,6 +451,24 @@ export function applyDocumentTranslations(
     };
   }
 
+  return withWorkspaceLock(rootDir, () =>
+    applyDocumentTranslationsUnlocked(rootDir, absSource, absTarget, adapter, options)
+  );
+}
+
+function applyDocumentTranslationsUnlocked(
+  rootDir: string,
+  absSource: string,
+  absTarget: string,
+  adapter: DocumentAdapter,
+  options: {
+    sourceFile: string;
+    targetFile: string;
+    targetLocale: string;
+    updates: DocumentTranslationUpdate[];
+    force?: boolean;
+  }
+): DocumentApplyResult {
   const store = new PolyglotStore(rootDir);
   const relSource = path.relative(store.rootDir, absSource).replace(/\\/g, "/");
   const relTarget = path.relative(store.rootDir, absTarget).replace(/\\/g, "/");

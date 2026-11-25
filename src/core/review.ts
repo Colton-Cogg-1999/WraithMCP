@@ -3,7 +3,7 @@ import path from "node:path";
 import { detectProjectAdapter, loadLocaleCatalog } from "../adapters/registry.js";
 import { GlossaryHit, matchGlossaryTerms } from "./glossary.js";
 import { getLocaleConventions } from "./locales.js";
-import { atomicWriteFileSync, resolveConfinedPath, validateLocaleTag } from "./security.js";
+import { atomicWriteFileSync, resolveConfinedPath, validateLocaleTag, withWorkspaceLock } from "./security.js";
 import { PolyglotStore, sha256Short } from "./store.js";
 import { ReviewCategory, ReviewFinding, ReviewSeverity, UsageSite } from "./types.js";
 
@@ -187,6 +187,17 @@ export function ingestReviewResults(
   }
 ): IngestReviewResult {
   validateLocaleTag(input.targetLocale, "targetLocale");
+  return withWorkspaceLock(rootDir, () => ingestReviewResultsUnlocked(rootDir, input));
+}
+
+function ingestReviewResultsUnlocked(
+  rootDir: string,
+  input: {
+    reviewer?: string;
+    targetLocale: string;
+    findings: IngestFindingInput[];
+  }
+): IngestReviewResult {
   const store = new PolyglotStore(rootDir);
   const reviewsFile = store.readReviews();
   const recordsFile = store.readRecords();

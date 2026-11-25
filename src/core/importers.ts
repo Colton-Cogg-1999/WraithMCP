@@ -1,7 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { detectProjectAdapter, loadLocaleCatalog, loadSourceCatalog } from "../adapters/registry.js";
-import { canonicalizeLocaleTag, resolveConfinedPath } from "./security.js";
+import { canonicalizeLocaleTag, resolveConfinedPath, withWorkspaceLock } from "./security.js";
 import { PolyglotStore, sha256Short } from "./store.js";
 import { MemoryEntry } from "./types.js";
 
@@ -437,34 +437,36 @@ export function importAsset(
   rootDir: string,
   options: { file?: string; format?: "auto" | "csv" | "tbx" | "tmx" | "locales" }
 ): ImportResult {
-  const fmt = options.format ?? "auto";
-  if (fmt === "locales" || (!options.file && fmt === "auto")) {
-    return importExistingLocales(rootDir);
-  }
-  if (!options.file) {
-    throw new Error("Please provide a file path for CSV, TBX, or TMX import.");
-  }
-
-  const ext = path.extname(options.file).toLowerCase();
-  const resolved =
-    fmt !== "auto"
-      ? fmt
-      : ext === ".tmx"
-        ? "tmx"
-        : ext === ".tbx"
-          ? "tbx"
-          : ext === ".csv"
-            ? "csv"
-            : "locales";
-
-  switch (resolved) {
-    case "csv":
-      return importGlossaryCsv(rootDir, options.file);
-    case "tbx":
-      return importGlossaryTbx(rootDir, options.file);
-    case "tmx":
-      return importMemoryTmx(rootDir, options.file);
-    case "locales":
+  return withWorkspaceLock(rootDir, () => {
+    const fmt = options.format ?? "auto";
+    if (fmt === "locales" || (!options.file && fmt === "auto")) {
       return importExistingLocales(rootDir);
-  }
+    }
+    if (!options.file) {
+      throw new Error("Please provide a file path for CSV, TBX, or TMX import.");
+    }
+
+    const ext = path.extname(options.file).toLowerCase();
+    const resolved =
+      fmt !== "auto"
+        ? fmt
+        : ext === ".tmx"
+          ? "tmx"
+          : ext === ".tbx"
+            ? "tbx"
+            : ext === ".csv"
+              ? "csv"
+              : "locales";
+
+    switch (resolved) {
+      case "csv":
+        return importGlossaryCsv(rootDir, options.file);
+      case "tbx":
+        return importGlossaryTbx(rootDir, options.file);
+      case "tmx":
+        return importMemoryTmx(rootDir, options.file);
+      case "locales":
+        return importExistingLocales(rootDir);
+    }
+  });
 }

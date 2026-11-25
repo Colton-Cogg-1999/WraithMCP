@@ -238,6 +238,150 @@ export function atomicWriteFileSync(
   }
 }
 
+const activeWorkspaceLocks = new Map<string, number>();
+
+function sleepSync(ms: number): void {
+  if (ms <= 0) return;
+  const arr = new Int32Array(new SharedArrayBuffer(4));
+  Atomics.wait(arr, 0, 0, ms);
+}
+
+function isPidAlive(pid: number): boolean {
+  if (!Number.isInteger(pid) || pid <= 0) return false;
+  try {
+    process.kill(pid, 0);
+    return true;
+  } catch (err: unknown) {
+    const code = (err as NodeJS.ErrnoException)?.code;
+    return code === "EPERM";
+  }
+}
+
+export interface WorkspaceLockOptions {
+  /** Max time to wait to acquire the lock before throwing (default 15000ms) */
+  timeoutMs?: number;
+  /** Age after which an unowned/abandoned lock file is considered stale (default 30000ms) */
+  staleMs?: number;
+}
+
+/**
+ * Exclusive file lock under `.polyglot/.lock` coordinating concurrent multi-process
+ * read-modify-write operations on locale files and `.polyglot/` state files.
+ * - Re-entrant within the same process.
+ * - Enforces workspace confinement before creating `.polyglot/.lock`.
+ * - Recovers stale locks left behind by crashed processes (dead PID or age > staleMs).
+ */
+export function withWorkspaceLock<T>(
+  rootDir: string,
+  fn: () => T,
+  options?: WorkspaceLockOptions
+): T {
+  const realRoot = safeRealpath(path.resolve(rootDir));
+  const depth = activeWorkspaceLocks.get(realRoot) ?? 0;
+  if (depth > 0) {
+    activeWorkspaceLocks.set(realRoot, depth + 1);
+    try {
+      return fn();
+    } finally {
+      activeWorkspaceLocks.set(realRoot, depth);
+    }
+  }
+
+  const polyglotDir = resolveConfinedPath(realRoot, ".polyglot", {
+    label: ".polyglot directory",
+  });
+  const lockPath = resolveConfinedPath(realRoot, path.join(".polyglot", ".lock"), {
+    label: ".polyglot/.lock",
+  });
+
+  const existedBefore = fs.existsSync(polyglotDir);
+  fs.mkdirSync(polyglotDir, { recursive: true });
+
+  const timeoutMs = options?.timeoutMs ?? 15_000;
+  const staleMs = options?.staleMs ?? 30_000;
+  const start = Date.now();
+  const token = `${process.pid}-${crypto.randomBytes(6).toString("hex")}`;
+  let acquired = false;
+
+  while (!acquired) {
+    try {
+      const fd = fs.openSync(lockPath, "wx", 0o600);
+      try {
+        fs.writeFileSync(
+          fd,
+          JSON.stringify({ pid: process.pid, token, createdAt: Date.now() }) + "\n",
+          "utf8"
+        );
+      } finally {
+        fs.closeSync(fd);
+      }
+      acquired = true;
+    } catch (err: unknown) {
+      const code = (err as NodeJS.ErrnoException)?.code;
+      if (code !== "EEXIST") {
+        throw err;
+      }
+
+      // Check for stale lock (age exceeded OR owning PID no longer alive after brief grace window)
+      try {
+        const stat = fs.statSync(lockPath);
+        const ageMs = Date.now() - stat.mtimeMs;
+        let stale = ageMs > staleMs;
+        if (!stale && ageMs > 500) {
+          try {
+            const raw = fs.readFileSync(lockPath, "utf8").trim();
+            if (raw) {
+              const meta = JSON.parse(raw) as { pid?: number };
+              if (typeof meta.pid === "number" && !isPidAlive(meta.pid)) {
+                stale = true;
+              }
+            }
+          } catch {
+            // Lock may still be mid-write or corrupt; fall back to staleMs timeout
+          }
+        }
+        if (stale) {
+          try {
+            fs.unlinkSync(lockPath);
+          } catch {
+            // Another waiter may have already cleaned it up
+          }
+          continue;
+        }
+      } catch {
+        // Lock was just released between openSync and statSync; retry immediately
+        continue;
+      }
+
+      if (Date.now() - start >= timeoutMs) {
+        throw new Error(
+          `Timed out after ${timeoutMs}ms waiting for workspace lock "${path.relative(realRoot, lockPath)}". If no other Polyglot process is running, delete the lock file and retry.`
+        );
+      }
+      sleepSync(8 + Math.floor(Math.random() * 12));
+    }
+  }
+
+  activeWorkspaceLocks.set(realRoot, 1);
+  try {
+    return fn();
+  } finally {
+    activeWorkspaceLocks.delete(realRoot);
+    try {
+      fs.unlinkSync(lockPath);
+    } catch {
+      // ignore if already removed
+    }
+    if (!existedBefore) {
+      try {
+        fs.rmdirSync(polyglotDir);
+      } catch {
+        // Directory is non-empty (files were intentionally persisted), keep it
+      }
+    }
+  }
+}
+
 export interface ArchiveLimits {
   maxEntries?: number;
   maxEntryBytes?: number;

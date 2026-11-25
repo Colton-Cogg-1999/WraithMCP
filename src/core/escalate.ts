@@ -10,6 +10,7 @@ import {
   resolveConfinedPath,
   safeUnzipSync,
   validateLocaleTag,
+  withWorkspaceLock,
 } from "./security.js";
 import { PolyglotStore } from "./store.js";
 
@@ -403,6 +404,13 @@ export interface ImportCorrectionsResult {
 }
 
 export function importEscalationCorrections(
+  rootDir: string,
+  filePath: string
+): ImportCorrectionsResult {
+  return withWorkspaceLock(rootDir, () => importEscalationCorrectionsUnlocked(rootDir, filePath));
+}
+
+function importEscalationCorrectionsUnlocked(
   rootDir: string,
   filePath: string
 ): ImportCorrectionsResult {

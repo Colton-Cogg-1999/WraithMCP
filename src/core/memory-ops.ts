@@ -6,6 +6,7 @@ import {
   GlossaryHit,
   matchGlossaryTerms,
 } from "./glossary.js";
+import { withWorkspaceLock } from "./security.js";
 import { PolyglotStore, sha256Short } from "./store.js";
 import { AssumptionCategory, GlossaryOrigin } from "./types.js";
 
@@ -141,6 +142,20 @@ export function recordGlossaryTerm(
     origin?: GlossaryOrigin;
   }
 ): UpsertGlossaryResult {
+  return withWorkspaceLock(rootDir, () => recordGlossaryTermUnlocked(rootDir, input));
+}
+
+function recordGlossaryTermUnlocked(
+  rootDir: string,
+  input: {
+    term: string;
+    doNotTranslate?: boolean;
+    caseSensitive?: boolean;
+    translations?: Record<string, string>;
+    notes?: string;
+    origin?: GlossaryOrigin;
+  }
+): UpsertGlossaryResult {
   const store = new PolyglotStore(rootDir);
   const config = store.readConfig();
   // O1: Pass undefined when omitted so upsertGlossaryEntry preserves previous doNotTranslate/caseSensitive!
@@ -241,8 +256,7 @@ export function recordAssumption(
     rationale?: string;
   }
 ) {
-  const store = new PolyglotStore(rootDir);
-  return store.addAssumption(input);
+  return withWorkspaceLock(rootDir, () => new PolyglotStore(rootDir).addAssumption(input));
 }
 
 export function recordMemoryPair(
@@ -256,18 +270,20 @@ export function recordMemoryPair(
     origin?: string;
   }
 ): { added: number; total: number } {
-  const store = new PolyglotStore(rootDir);
-  const config = store.readConfig();
-  const added = store.appendMemory([
-    {
-      sourceLocale: input.sourceLocale ?? config.sourceLocale,
-      targetLocale: input.targetLocale,
-      source: input.source,
-      target: input.target,
-      context: input.context,
-      origin: input.origin ?? "correction",
-      updatedAt: new Date().toISOString(),
-    },
-  ]);
-  return { added, total: store.readMemory().length };
+  return withWorkspaceLock(rootDir, () => {
+    const store = new PolyglotStore(rootDir);
+    const config = store.readConfig();
+    const added = store.appendMemory([
+      {
+        sourceLocale: input.sourceLocale ?? config.sourceLocale,
+        targetLocale: input.targetLocale,
+        source: input.source,
+        target: input.target,
+        context: input.context,
+        origin: input.origin ?? "correction",
+        updatedAt: new Date().toISOString(),
+      },
+    ]);
+    return { added, total: store.readMemory().length };
+  });
 }
