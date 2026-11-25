@@ -10,7 +10,7 @@ import {
   getProjectStatus,
   initProject,
   JsonFormatAdapter,
-  PolyglotStore,
+  WraithStore,
   prepareBatch,
   pseudoLocalizeString,
   runCheck,
@@ -24,7 +24,7 @@ const FIXTURE_DIR = path.resolve("fixtures/nextjs-app");
 const tmpDirs: string[] = [];
 
 function copyFixture(): string {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "polyglot-nextjs-"));
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "wraith-nextjs-"));
   tmpDirs.push(dir);
   fs.cpSync(FIXTURE_DIR, dir, { recursive: true });
   return dir;
@@ -97,7 +97,7 @@ describe("Milestone 2: React / Next.js End-to-End Pipeline", () => {
       targetLocales: ["es-MX", "ru"],
       writeAgentRule: false,
     });
-    const store = new PolyglotStore(dir);
+    const store = new WraithStore(dir);
     store.upsertGlossaryEntry({
       term: "Acme Pulse",
       doNotTranslate: true,
@@ -170,7 +170,7 @@ describe("Milestone 2: React / Next.js End-to-End Pipeline", () => {
       targetLocales: ["es-MX"],
       writeAgentRule: false,
     });
-    const store = new PolyglotStore(dir);
+    const store = new WraithStore(dir);
     store.upsertGlossaryEntry({
       term: "Acme Pulse",
       doNotTranslate: true,
@@ -274,7 +274,7 @@ export function Dashboard({ count, role }: { count: number; role: string }) {
     expect(rep.checkPassed).toBe(true);
     expect(rep.assumptions).toHaveLength(2);
     expect(rep.reviewList.length).toBeGreaterThanOrEqual(1);
-    expect(rep.markdown).toContain("## Polyglot Localization Report");
+    expect(rep.markdown).toContain("## Wraith Localization Report");
     expect(rep.markdown).toContain("Assumptions Made");
   });
 });

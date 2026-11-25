@@ -31,9 +31,9 @@ jobs:
       - name: Smoke test standalone binary
         shell: bash
         run: |
-          BIN=$(ls release/polyglot-* | head -n 1)
+          BIN=$(ls release/wraith-* | head -n 1)
           "$BIN" --version
       - uses: actions/upload-artifact@v4
         with:
-          name: polyglot-${{ matrix.target }}
-          path: release/polyglot-*
+          name: wraith-${{ matrix.target }}
+          path: release/wraith-*

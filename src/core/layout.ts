@@ -6,7 +6,7 @@ import { detectProjectAdapter } from "../adapters/registry.js";
 import { getLocaleConventions } from "./locales.js";
 import { decodeZeroWidthKeyIds, stripZeroWidthKeyIds } from "./pseudo.js";
 import { resolveConfinedPath } from "./security.js";
-import { PolyglotStore } from "./store.js";
+import { WraithStore } from "./store.js";
 import { CheckOutcome, LayoutViewport, UsageSite } from "./types.js";
 
 export type LayoutDefectType =
@@ -128,8 +128,8 @@ export async function defaultPlaywrightLoader(): Promise<unknown> {
   }
   // 2. Discover globally installed `playwright` CLI package via PATH (supports symlinks & .bin wrappers)
   const extraCandidates: string[] = [];
-  if (process.env.POLYGLOT_PLAYWRIGHT_PATH) {
-    extraCandidates.push(process.env.POLYGLOT_PLAYWRIGHT_PATH);
+  if (process.env.WRAITH_PLAYWRIGHT_PATH) {
+    extraCandidates.push(process.env.WRAITH_PLAYWRIGHT_PATH);
   }
   try {
     const whichCmd = process.platform === "win32" ? "where" : "which";
@@ -193,7 +193,7 @@ interface RawBrowserDefect {
  * Returns INCONCLUSIVE (never PASS) when Playwright is not installed or baseUrl is not configured.
  */
 export async function runLayoutCheck(options: LayoutCheckOptions): Promise<LayoutCheckResult> {
-  const store = new PolyglotStore(options.rootDir);
+  const store = new WraithStore(options.rootDir);
   const config = store.readConfig();
   const glossary = store.readGlossary();
   const layoutCfg = config.layout;
@@ -202,7 +202,7 @@ export async function runLayoutCheck(options: LayoutCheckOptions): Promise<Layou
   const routes = options.routes ?? layoutCfg?.routes ?? ["/"];
   const viewports = options.viewports ?? layoutCfg?.viewports ?? DEFAULT_VIEWPORTS;
   const localeUrlPattern = options.localeUrlPattern ?? layoutCfg?.localeUrlPattern ?? "query";
-  const screenshotsDirRel = options.screenshotsDir ?? layoutCfg?.screenshotsDir ?? ".polyglot/screenshots";
+  const screenshotsDirRel = options.screenshotsDir ?? layoutCfg?.screenshotsDir ?? ".wraith/screenshots";
 
   // 1. Fail closed (INCONCLUSIVE) when baseUrl is missing
   if (!baseUrl) {
@@ -210,7 +210,7 @@ export async function runLayoutCheck(options: LayoutCheckOptions): Promise<Layou
       outcome: "INCONCLUSIVE",
       passed: false,
       inconclusiveReason:
-        "No baseUrl configured for rendered layout checks. Start your dev server and pass --url http://localhost:3000 (or set layout.baseUrl in .polyglot/config.json).",
+        "No baseUrl configured for rendered layout checks. Start your dev server and pass --url http://localhost:3000 (or set layout.baseUrl in .wraith/config.json).",
       routesChecked: [],
       localesChecked: [],
       viewportsChecked: viewports,
@@ -221,7 +221,7 @@ export async function runLayoutCheck(options: LayoutCheckOptions): Promise<Layou
       screenshots: [],
       nextSteps: [
         "Start your local dev server (e.g. npm run dev).",
-        "Run `polyglot layout --url http://localhost:3000 --routes /,/settings` or add `layout.baseUrl` to `.polyglot/config.json`.",
+        "Run `wraith layout --url http://localhost:3000 --routes /,/settings` or add `layout.baseUrl` to `.wraith/config.json`.",
       ],
     };
   }
@@ -249,7 +249,7 @@ export async function runLayoutCheck(options: LayoutCheckOptions): Promise<Layou
       screenshots: [],
       nextSteps: [
         "Install Playwright: `npm install -D playwright && npx playwright install chromium`",
-        "Re-run `polyglot layout --url " + baseUrl + "`.",
+        "Re-run `wraith layout --url " + baseUrl + "`.",
       ],
     };
   }
@@ -301,7 +301,7 @@ export async function runLayoutCheck(options: LayoutCheckOptions): Promise<Layou
         findings: [],
         budgetsRecorded: 0,
         screenshots: [],
-        nextSteps: ["Run `npx playwright install chromium` and retry `polyglot layout`."],
+        nextSteps: ["Run `npx playwright install chromium` and retry `wraith layout`."],
       };
     }
     try {
@@ -321,7 +321,7 @@ export async function runLayoutCheck(options: LayoutCheckOptions): Promise<Layou
         budgetsRecorded: 0,
         screenshots: [],
         nextSteps: [
-          "Ensure Chromium can run in this environment (or run `npx playwright install chromium`) and retry `polyglot layout`.",
+          "Ensure Chromium can run in this environment (or run `npx playwright install chromium`) and retry `wraith layout`.",
         ],
       };
     }
@@ -619,8 +619,8 @@ export async function runLayoutCheck(options: LayoutCheckOptions): Promise<Layou
               remediationStep = "mechanical_codemod";
               prescription =
                 d.type === "dir_lang_mismatch"
-                  ? `Run \`polyglot layout --fix\` to add lang and dir="${expectedDir}" to the root <html> element.`
-                  : `Run \`polyglot layout --fix\` to mechanically rewrite fixed width / physical spacing classes on ${site ? `${site.file}:${site.line}` : `<${d.element}>`}.`;
+                  ? `Run \`wraith layout --fix\` to add lang and dir="${expectedDir}" to the root <html> element.`
+                  : `Run \`wraith layout --fix\` to mechanically rewrite fixed width / physical spacing classes on ${site ? `${site.file}:${site.line}` : `<${d.element}>`}.`;
             } else if (d.type === "hardcoded_format") {
               remediationStep = "agent_code_fix";
               prescription = `Replace hardcoded formatting (${d.constraint}) at ${site ? `${site.file}:${site.line}` : `<${d.element}>`} with Intl.NumberFormat(locale) / Intl.DateTimeFormat(locale).`;
@@ -637,12 +637,12 @@ export async function runLayoutCheck(options: LayoutCheckOptions): Promise<Layou
                 approvedAbbreviation = abbrEntry.abbreviations[locale];
                 prescription = `Use approved glossary abbreviation "${approvedAbbreviation}" for "${abbrEntry.term}" and keep the full label in title / aria-label.`;
               } else if (matchedKey && d.clientWidth > 0) {
-                // Step 3: Record width budget into .polyglot/layout.json so prepare & check enforce shorter copy
+                // Step 3: Record width budget into .wraith/layout.json so prepare & check enforce shorter copy
                 const avgCharPx = Math.max(6, d.fontSizePx * 0.56);
                 budgetChars = Math.max(4, Math.floor((d.clientWidth - 8) / avgCharPx));
                 maxWidthPx = d.clientWidth;
                 remediationStep = "copy_budget_retranslate";
-                prescription = `Element <${d.element}> (${d.constraint}) clipped by ${d.overflowPx}px at ${viewport.width}px. Recorded width budget (${budgetChars} chars / ${maxWidthPx}px) for "${matchedKey}" (${locale}) in .polyglot/layout.json — re-run \`prepare\` and shorten translation, or relax CSS if wrapping is acceptable.`;
+                prescription = `Element <${d.element}> (${d.constraint}) clipped by ${d.overflowPx}px at ${viewport.width}px. Recorded width budget (${budgetChars} chars / ${maxWidthPx}px) for "${matchedKey}" (${locale}) in .wraith/layout.json — re-run \`prepare\` and shorten translation, or relax CSS if wrapping is acceptable.`;
                 if (options.saveBudgets !== false) {
                   if (!layoutState.budgets[matchedKey]) layoutState.budgets[matchedKey] = {};
                   layoutState.budgets[matchedKey][locale] = {
@@ -713,18 +713,18 @@ export async function runLayoutCheck(options: LayoutCheckOptions): Promise<Layou
 
   const nextSteps: string[] = [];
   if (findings.some((f) => f.remediationStep === "mechanical_codemod")) {
-    nextSteps.push("Run `polyglot layout --fix` to apply deterministic mechanical codemods.");
+    nextSteps.push("Run `wraith layout --fix` to apply deterministic mechanical codemods.");
   }
   if (findings.some((f) => f.remediationStep === "agent_code_fix")) {
     nextSteps.push("Apply the structured agent code prescriptions for remaining CSS/formatting issues.");
   }
   if (budgetsRecorded > 0) {
     nextSteps.push(
-      `Re-run \`prepare\` for keys with recorded width budgets (${budgetsRecorded} saved in .polyglot/layout.json) and shorten translations to fit.`
+      `Re-run \`prepare\` for keys with recorded width budgets (${budgetsRecorded} saved in .wraith/layout.json) and shorten translations to fit.`
     );
   }
   if (outcome === "FAIL") {
-    nextSteps.push("Re-run `polyglot layout` and `polyglot check` until both return PASS.");
+    nextSteps.push("Re-run `wraith layout` and `wraith check` until both return PASS.");
   }
 
   return {

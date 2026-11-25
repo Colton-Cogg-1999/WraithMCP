@@ -12,7 +12,7 @@ Traditional localization pipelines extract strings, strip their context, transla
 
 1. **Model-free.** Wraith never calls an LLM, MT engine, or any generative/judging model. The user's coding agent is the only engine. No API keys, no provider config.
 2. **Deterministic core.** Everything Wraith does on its own (scanning, checking, matching, file I/O, reporting) is deterministic and works offline.
-3. **State lives in the repo.** All memory is plain, human-readable, diffable files under `.polyglot/`, committed with the code. No database, no server, no cloud, no auth, no dashboard.
+3. **State lives in the repo.** All memory is plain, human-readable, diffable files under `.wraith/`, committed with the code. No database, no server, no cloud, no auth, no dashboard.
 4. **No localization jargon in the default experience.** A developer who has never heard of a TM, termbase, TMX, or MQM must never need to. Expert features exist but are opt-in.
 5. **Not a TMS.** No projects, vendors, jobs, workflows, pricing, user accounts, or web UI.
 6. **Minimal configuration.** Sensible defaults; a short config file. Resist adding options.
@@ -27,9 +27,9 @@ Traditional localization pipelines extract strings, strip their context, transla
 ## 4. Tech stack
 
 - **TypeScript** on Node, distributed two ways:
-  - npm package so `npx polyglot mcp` / `npx polyglot <command>` works.
+  - npm package so `npx wraith mcp` / `npx wraith <command>` works.
   - Standalone compiled executables so Rails/Django users don't need Node.
-- **One codebase, one binary:** the CLI and MCP server are the same program; `polyglot mcp` starts the MCP server (stdio).
+- **One codebase, one binary:** the CLI and MCP server are the same program; `wraith mcp` starts the MCP server (stdio).
 - Official MCP TypeScript SDK.
 - Prefer ecosystem reference libraries (`@formatjs/icu-messageformat-parser`, `Intl.PluralRules`, `Intl.Segmenter`, Babel, `@vue/compiler-sfc`, `svelte/compiler`). No Python dependency in the core.
 
@@ -42,7 +42,7 @@ Traditional localization pipelines extract strings, strip their context, transla
 ## 6. Developer Experience & Quality Cascade
 
 - **MCP tools:** `status`, `scan`, `prepare`, `apply`, `check`, `memory`, `pseudo`, `review`, `escalate`, `import`, `report` + `/localize` prompt + server instructions.
-- **CLI:** `polyglot init | status | scan | check | pseudo | review | escalate | import | report | mcp`.
+- **CLI:** `wraith init | status | scan | check | pseudo | review | escalate | import | report | mcp`.
 - **Checks:** missing/extra/orphaned keys, placeholder/ICU/plural/select/inline-tag integrity, glossary consistency & DNT, untranslated, hardcoded strings & concatenations, length expansion risk, staleness (`stale_source`, `context_changed`, `orphaned`).
 - **Quality cascade:** deterministic checks → cross-model MQM review with false-positive verification pass → human escalation (CSV/XLSX/HTML).
 - **Additional user requirements:**

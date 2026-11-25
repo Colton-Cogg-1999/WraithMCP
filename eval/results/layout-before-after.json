@@ -76,21 +76,21 @@
         "viewport": "375x812",
         "type": "horizontal_overflow",
         "remediationStep": "copy_budget_retranslate",
-        "prescription": "Element <document> (viewport scrollWidth (604px) > innerWidth (375px)) clipped by 229px at 375px. Recorded width budget (40 chars / 375px) for \"brand.welcome\" (en-XA) in .polyglot/layout.json — re-run `prepare` and shorten translation, or relax CSS if wrapping is acceptable."
+        "prescription": "Element <document> (viewport scrollWidth (604px) > innerWidth (375px)) clipped by 229px at 375px. Recorded width budget (40 chars / 375px) for \"brand.welcome\" (en-XA) in .wraith/layout.json — re-run `prepare` and shorten translation, or relax CSS if wrapping is acceptable."
       },
       {
         "locale": "en-XA",
         "viewport": "375x812",
         "type": "horizontal_overflow",
         "remediationStep": "copy_budget_retranslate",
-        "prescription": "Element <button> (width: 95px) clipped by 28px at 375px. Recorded width budget (11 chars / 95px) for \"tight.tabOverview\" (en-XA) in .polyglot/layout.json — re-run `prepare` and shorten translation, or relax CSS if wrapping is acceptable."
+        "prescription": "Element <button> (width: 95px) clipped by 28px at 375px. Recorded width budget (11 chars / 95px) for \"tight.tabOverview\" (en-XA) in .wraith/layout.json — re-run `prepare` and shorten translation, or relax CSS if wrapping is acceptable."
       },
       {
         "locale": "ar-XB",
         "viewport": "375x812",
         "type": "horizontal_overflow",
         "remediationStep": "copy_budget_retranslate",
-        "prescription": "Element <document> (viewport scrollWidth (534px) > innerWidth (375px)) clipped by 159px at 375px. Recorded width budget (40 chars / 375px) for \"brand.welcome\" (ar-XB) in .polyglot/layout.json — re-run `prepare` and shorten translation, or relax CSS if wrapping is acceptable."
+        "prescription": "Element <document> (viewport scrollWidth (534px) > innerWidth (375px)) clipped by 159px at 375px. Recorded width budget (40 chars / 375px) for \"brand.welcome\" (ar-XB) in .wraith/layout.json — re-run `prepare` and shorten translation, or relax CSS if wrapping is acceptable."
       }
     ]
   },

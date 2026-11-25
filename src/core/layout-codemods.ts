@@ -3,7 +3,7 @@ import path from "node:path";
 import { detectProjectAdapter } from "../adapters/registry.js";
 import { walkFiles } from "../adapters/utils.js";
 import { atomicWriteFileSync, resolveConfinedPath } from "./security.js";
-import { PolyglotStore } from "./store.js";
+import { WraithStore } from "./store.js";
 import { FrameworkName } from "./types.js";
 
 export interface CodemodChange {
@@ -167,7 +167,7 @@ const CODEMOD_EXTS = new Set([".tsx", ".jsx", ".vue", ".svelte", ".erb", ".html"
  * those remain structured agent prescriptions.
  */
 export function runLayoutFix(options: LayoutFixOptions): LayoutFixResult {
-  const store = new PolyglotStore(options.rootDir);
+  const store = new WraithStore(options.rootDir);
   const config = store.readConfig();
   const { detection } = detectProjectAdapter(
     store.rootDir,

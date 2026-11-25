@@ -19,7 +19,7 @@ import {
   runQe,
 } from "../src/core/qe.js";
 import { scanDirectionalAssetsInText } from "../src/core/static-layout.js";
-import { PolyglotStore } from "../src/core/store.js";
+import { WraithStore } from "../src/core/store.js";
 import { findTmMatches, readTm, upsertTmEntries } from "../src/core/tm.js";
 import { fromXliffInline, parseXliff2, runTmsExport, runTmsImport, toXliffInline } from "../src/core/tms.js";
 
@@ -274,7 +274,7 @@ describe("TMS round-trip — XLIFF 2.0 / TMX 1.4b / TBX-Basic", () => {
 
   it("exports XLIFF with metadata/notes, TMX and TBX that re-import cleanly; import applies human edits with precedence", async () => {
     const dir = qeProject();
-    const store = new PolyglotStore(dir);
+    const store = new WraithStore(dir);
     // Direct glossary upsert (no propagation → btnSave is not glossary_flagged in Tier 1)
     store.upsertGlossaryEntry({ term: "Save", translations: { de: "Speichern" }, abbreviations: { de: "Spch." }, origin: "user" });
     store.setLayoutBudget("btnSave", "de", { maxWidthPx: 80, budgetChars: 12, element: "button", updatedAt: "2026-01-01T00:00:00Z" });
@@ -319,10 +319,10 @@ describe("TMS round-trip — XLIFF 2.0 / TMX 1.4b / TBX-Basic", () => {
     expect(tmxRes.memoryImported).toBeGreaterThan(0);
     const tbxRes = importGlossaryTbx(fresh, "glossary.tbx");
     expect(tbxRes.glossaryImported).toBe(1);
-    expect(new PolyglotStore(fresh).readGlossary().entries[0].translations.de).toBe("Speichern");
+    expect(new WraithStore(fresh).readGlossary().entries[0].translations.de).toBe("Speichern");
     const tmxText = fs.readFileSync(path.join(dir, "out/all/tm.tmx"), "utf8");
     expect(tmxText).toContain('<tmx version="1.4">');
-    expect(tmxText).toContain('<header creationtool="polyglot"');
+    expect(tmxText).toContain('<header creationtool="wraith"');
     const tbxText = fs.readFileSync(path.join(dir, "out/all/glossary.tbx"), "utf8");
     expect(tbxText).toContain('<martif type="TBX-Basic"');
     expect(tbxText).toContain("Spch.");

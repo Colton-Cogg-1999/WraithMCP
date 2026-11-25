@@ -8,7 +8,7 @@ ensureBootstrapped();
 
 const tmpDirs: string[] = [];
 function makeHeldOutApp(): string {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "polyglot-heldout-"));
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "wraith-heldout-"));
   tmpDirs.push(dir);
   const files: Record<string, string> = {
     "package.json": JSON.stringify({

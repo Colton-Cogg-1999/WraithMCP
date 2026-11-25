@@ -2,12 +2,12 @@ import fs from "node:fs";
 import { z } from "zod";
 import { lexicalSimilarity } from "./fuzzy.js";
 import { atomicWriteFileSync, canonicalizeLocaleTag } from "./security.js";
-import { PolyglotStore } from "./store.js";
+import { WraithStore } from "./store.js";
 
 /**
- * `.polyglot/tm.json` — provenance-aware translation memory.
+ * `.wraith/tm.json` — provenance-aware translation memory.
  *
- * Complements the legacy `.polyglot/memory.jsonl` (written by `apply`). Entries imported from a
+ * Complements the legacy `.wraith/memory.jsonl` (written by `apply`). Entries imported from a
  * human TMS round-trip carry `provenance: "human-reviewed"` and outrank `llm-generated` entries
  * in fuzzy retrieval at equal-or-near similarity.
  */
@@ -33,7 +33,7 @@ export const TmFileSchema = z.object({
 export type TmFile = z.infer<typeof TmFileSchema>;
 
 export function readTm(rootDir: string): TmFile {
-  const store = new PolyglotStore(rootDir);
+  const store = new WraithStore(rootDir);
   const p = store.filePath("tm.json");
   if (!fs.existsSync(p)) return TmFileSchema.parse({});
   try {
@@ -44,7 +44,7 @@ export function readTm(rootDir: string): TmFile {
 }
 
 export function writeTm(rootDir: string, file: TmFile): void {
-  const store = new PolyglotStore(rootDir);
+  const store = new WraithStore(rootDir);
   store.ensureDir();
   const parsed = TmFileSchema.parse(file);
   const entries = [...parsed.entries].sort((a, b) =>
@@ -96,7 +96,7 @@ function baseLang(tag: string): string {
 }
 
 /**
- * Fuzzy TM retrieval over `.polyglot/tm.json` + legacy `memory.jsonl`.
+ * Fuzzy TM retrieval over `.wraith/tm.json` + legacy `memory.jsonl`.
  * Human-reviewed entries win ties and any comparison within 5 similarity points.
  */
 export function findTmMatches(
@@ -114,7 +114,7 @@ export function findTmMatches(
 ): TmMatch[] {
   const minSim = options.minSimilarity ?? 0.5;
   const limit = options.limit ?? 3;
-  const store = new PolyglotStore(rootDir);
+  const store = new WraithStore(rootDir);
   const sourceLocale = store.readConfig().sourceLocale;
   const pool: Array<Omit<TmMatch, "similarity">> = [];
   for (const e of readTm(rootDir).entries) {

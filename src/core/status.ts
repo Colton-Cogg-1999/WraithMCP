@@ -1,4 +1,4 @@
-import { PolyglotStore, sha256Short } from "./store.js";
+import { WraithStore, sha256Short } from "./store.js";
 import { LocaleStatus, ProjectStatus } from "./types.js";
 import type { FrameworkDetection, ScannerAdapter } from "../adapters/types.js";
 
@@ -31,7 +31,7 @@ export function registerStatusHooks(hooks: ProjectContextHooks): void {
 }
 
 export function getProjectStatus(rootDir: string): ProjectStatus {
-  const store = new PolyglotStore(rootDir);
+  const store = new WraithStore(rootDir);
   const initialized = store.exists();
   const config = store.readConfig();
   const glossary = store.readGlossary();

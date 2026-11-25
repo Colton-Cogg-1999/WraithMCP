@@ -12,7 +12,7 @@ import {
   generatePseudoLocale,
   generateReport,
   initProject,
-  PolyglotStore,
+  WraithStore,
   prepareBatch,
   runCheck,
   scanProject,
@@ -20,7 +20,7 @@ import {
 
 ensureBootstrapped();
 
-const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "polyglot-demo-02-"));
+const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "wraith-demo-02-"));
 try {
   fs.cpSync(path.resolve("fixtures/nextjs-app"), tmp, { recursive: true });
 
@@ -29,10 +29,10 @@ try {
 
   const scan = scanProject({ rootDir: tmp });
   console.log(
-    `● polyglot.scan → ${scan.framework}, ${scan.i18nLibrary ?? "no i18n"} · ${scan.counts.hardcodedStrings} hardcoded strings · ${scan.counts.concatenations} concatenations`
+    `● wraith.scan → ${scan.framework}, ${scan.i18nLibrary ?? "no i18n"} · ${scan.counts.hardcodedStrings} hardcoded strings · ${scan.counts.concatenations} concatenations`
   );
 
-  const store = new PolyglotStore(tmp);
+  const store = new WraithStore(tmp);
   store.upsertGlossaryEntry({
     term: "Acme Pulse",
     doNotTranslate: true,
@@ -44,7 +44,7 @@ try {
   store.addAssumption({ category: "tone", locale: "es-MX", summary: 'Used informal "tú" register for es-MX.' });
 
   const prep = prepareBatch({ rootDir: tmp, targetLocale: "es-MX" });
-  console.log(`● polyglot.prepare → ${prep.totalPending} keys ready for es-MX (plurals: ${prep.conventions.pluralCategories.join(", ")})`);
+  console.log(`● wraith.prepare → ${prep.totalPending} keys ready for es-MX (plurals: ${prep.conventions.pluralCategories.join(", ")})`);
 
   applyTranslations({
     rootDir: tmp,
@@ -68,10 +68,10 @@ try {
   });
 
   const before = runCheck({ rootDir: tmp });
-  console.log(`● polyglot.check (before refactor) → ${before.errorCount} errors, ${before.warningCount} warnings`, before.countsByCode);
+  console.log(`● wraith.check (before refactor) → ${before.errorCount} errors, ${before.warningCount} warnings`, before.countsByCode);
 
   const pseudo = generatePseudoLocale(tmp);
-  console.log(`● polyglot.pseudo → generated ${pseudo.keysGenerated} keys in ${pseudo.filesWritten.join(", ")}`);
+  console.log(`● wraith.pseudo → generated ${pseudo.keysGenerated} keys in ${pseudo.filesWritten.join(", ")}`);
 
   const report = generateReport(tmp);
   console.log("\n" + report.markdown);

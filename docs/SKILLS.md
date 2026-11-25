@@ -7,17 +7,17 @@ Skills are Markdown playbooks (`skills/<name>/SKILL.md`, YAML frontmatter `name`
 | [`i18n-prep`](../skills/i18n-prep/SKILL.md) | repo not yet internationalized; hardcoded strings/formatting/RTL hazards | `extract` → `layout_fix` → `check` (hardcoded_formatting, directional_asset, rtl_layout_risk) → patch → `pseudo` en-XA/ar-XB → `layout` + `visual_qa` |
 | [`localize-pr`](../skills/localize-pr/SKILL.md) | translate changed keys in a PR; CI `/localize` | `status` → `prepare` → translate → `apply` → `check` → `qe_audit` → `report` |
 | [`layout-remediation`](../skills/layout-remediation/SKILL.md) | `layout` / `visual_qa` FAIL | reproduce → `layout_fix` → prescribed edits → width budgets via `prepare`/`apply` → verify |
-| [`qe-triage`](../skills/qe-triage/SKILL.md) | score/triage translations; `polyglot qe` exits 1 | `check` → `qe_audit` → ≤1 repair pass → route `needs_review` |
+| [`qe-triage`](../skills/qe-triage/SKILL.md) | score/triage translations; `wraith qe` exits 1 | `check` → `qe_audit` → ≤1 repair pass → route `needs_review` |
 | [`tms-roundtrip`](../skills/tms-roundtrip/SKILL.md) | human linguist review via TMS | `check` → `qe_audit` → `tms_export` → TMS → `tms_import` → `check` |
 
 ## Connect the MCP server
 
-Until `polyglot-mcp` is published, replace `npx polyglot` with `node /absolute/path/to/polyglot/dist/bin.js` (or `polyglot` after `npm link`).
+Until `wraith-mcp` is published, replace `npx wraith` with `node /absolute/path/to/wraith/dist/bin.js` (or `wraith` after `npm link`).
 
 **Claude Code (CLI):**
 
 ```bash
-claude mcp add polyglot -- npx polyglot mcp
+claude mcp add wraith -- npx wraith mcp
 ```
 
 **Project-scoped `.mcp.json`** (Claude Code, checked into the repo):
@@ -25,7 +25,7 @@ claude mcp add polyglot -- npx polyglot mcp
 ```json
 {
   "mcpServers": {
-    "polyglot": { "command": "npx", "args": ["polyglot", "mcp"] }
+    "wraith": { "command": "npx", "args": ["wraith", "mcp"] }
   }
 }
 ```
@@ -35,9 +35,9 @@ claude mcp add polyglot -- npx polyglot mcp
 ```json
 {
   "mcpServers": {
-    "polyglot": {
+    "wraith": {
       "command": "npx",
-      "args": ["polyglot", "-C", "/absolute/path/to/your/app", "mcp"]
+      "args": ["wraith", "-C", "/absolute/path/to/your/app", "mcp"]
     }
   }
 }
@@ -48,12 +48,12 @@ claude mcp add polyglot -- npx polyglot mcp
 **Codex `~/.codex/config.toml`** (documentation only; not validated by Wraith's test suite):
 
 ```toml
-[mcp_servers.polyglot]
+[mcp_servers.wraith]
 command = "npx"
-args = ["polyglot", "mcp"]
+args = ["wraith", "mcp"]
 ```
 
-QE Tier 2 reads `ANTHROPIC_API_KEY` / `GEMINI_API_KEY` / `GOOGLE_API_KEY` / `POLYGLOT_QE_MODEL` from the server's environment; add an `env` block to the MCP config only if you want `qe_audit` to run Tier 2 from the agent.
+QE Tier 2 reads `ANTHROPIC_API_KEY` / `GEMINI_API_KEY` / `GOOGLE_API_KEY` / `WRAITH_QE_MODEL` from the server's environment; add an `env` block to the MCP config only if you want `qe_audit` to run Tier 2 from the agent.
 
 ## Use a skill
 

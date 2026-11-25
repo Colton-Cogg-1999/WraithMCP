@@ -4,7 +4,7 @@ import { applyTranslations } from "./apply.js";
 import { runCheck } from "./check.js";
 import { prepareBatch, PreparedItem } from "./prepare.js";
 import { atomicWriteFileSync } from "./security.js";
-import { PolyglotStore } from "./store.js";
+import { WraithStore } from "./store.js";
 import { findTmMatches, TmMatch } from "./tm.js";
 import { CheckIssue } from "./types.js";
 
@@ -13,7 +13,7 @@ import { CheckIssue } from "./types.js";
  *
  * Tier 1  deterministic gate (0 tokens): check.ts validations + width-budget utilization.
  * Tier 2  three parallel micro-critics (strict JSON) over a fast low-cost model — the ONLY place
- *         Polyglot calls a model, and only when explicitly invoked via `qe` / `qe_audit` with an
+ *         Wraith calls a model, and only when explicitly invoked via `qe` / `qe_audit` with an
  *         API key present. Without a key Tier 2 is skipped and nothing is marked verified.
  * Tier 3  composite risk score, optional single auto-repair pass, escalation.
  * ---------------------------------------------------------------------------------------------- */
@@ -122,7 +122,7 @@ export interface QeOptions {
   /** Explicit client; `null` disables Tier 2. Defaults to resolveQeClient(process.env). */
   client?: QeModelClient | null;
   batchSize?: number;
-  /** Persist to .polyglot/qe-report.json (default true) */
+  /** Persist to .wraith/qe-report.json (default true) */
   write?: boolean;
 }
 
@@ -364,13 +364,13 @@ function geminiClient(apiKey: string, model: string): QeModelClient {
 }
 
 /**
- * Resolve the Tier 2 client from environment. `POLYGLOT_QE_MODEL` overrides the model; provider is
+ * Resolve the Tier 2 client from environment. `WRAITH_QE_MODEL` overrides the model; provider is
  * inferred from the model name (claude-* → Anthropic, gemini-* → Gemini) or from available keys.
  */
 export function resolveQeClient(env: NodeJS.ProcessEnv = process.env): QeModelClient | null {
   const anthropicKey = env.ANTHROPIC_API_KEY;
   const geminiKey = env.GEMINI_API_KEY ?? env.GOOGLE_API_KEY;
-  const requested = env.POLYGLOT_QE_MODEL?.trim();
+  const requested = env.WRAITH_QE_MODEL?.trim();
   if (requested) {
     if (/^gemini/i.test(requested) && geminiKey) return geminiClient(geminiKey, requested);
     if (/^claude/i.test(requested) && anthropicKey) return anthropicClient(anthropicKey, requested);
@@ -618,7 +618,7 @@ function summarize(segments: QeSegmentResult[], llmCalls: number): QeSummary {
 }
 
 export function readQeReport(rootDir: string): QeReportFile | null {
-  const p = new PolyglotStore(rootDir).filePath("qe-report.json");
+  const p = new WraithStore(rootDir).filePath("qe-report.json");
   if (!fs.existsSync(p)) return null;
   try {
     return JSON.parse(fs.readFileSync(p, "utf8")) as QeReportFile;
@@ -628,7 +628,7 @@ export function readQeReport(rootDir: string): QeReportFile | null {
 }
 
 export function writeQeReport(rootDir: string, report: QeReportFile): string {
-  const store = new PolyglotStore(rootDir);
+  const store = new WraithStore(rootDir);
   store.ensureDir();
   const p = store.filePath("qe-report.json");
   atomicWriteFileSync(p, JSON.stringify(report, null, 2) + "\n");
@@ -641,7 +641,7 @@ export function refreshQeSummary(report: QeReportFile): QeReportFile {
 }
 
 export async function runQe(options: QeOptions): Promise<QeResult> {
-  const store = new PolyglotStore(options.rootDir);
+  const store = new WraithStore(options.rootDir);
   const config = store.readConfig();
   const layout = store.readLayout();
   const locales = options.locales && options.locales.length > 0 ? options.locales : config.targetLocales;
@@ -724,17 +724,17 @@ export async function runQe(options: QeOptions): Promise<QeResult> {
 
   const nextSteps: string[] = [];
   if (!client) {
-    nextSteps.push("Tier 2 skipped: set ANTHROPIC_API_KEY or GEMINI_API_KEY (optionally POLYGLOT_QE_MODEL) to score segments that passed Tier 1.");
+    nextSteps.push("Tier 2 skipped: set ANTHROPIC_API_KEY or GEMINI_API_KEY (optionally WRAITH_QE_MODEL) to score segments that passed Tier 1.");
   }
-  if (summary.tier1Escalations > 0) nextSteps.push("Fix Tier 1 failures (run `polyglot check`) — they were escalated without LLM calls.");
+  if (summary.tier1Escalations > 0) nextSteps.push("Fix Tier 1 failures (run `wraith check`) — they were escalated without LLM calls.");
   if (summary.needsReview > 0) {
-    nextSteps.push("Export flagged segments for human review: `polyglot export --only-flagged --include-tm --include-glossary --bundle-screenshots`.");
+    nextSteps.push("Export flagged segments for human review: `wraith export --only-flagged --include-tm --include-glossary --bundle-screenshots`.");
   }
 
   return {
     outcome,
     passed: outcome === "PASS",
-    reportPath: store.filePath("qe-report.json") === reportPath ? ".polyglot/qe-report.json" : reportPath,
+    reportPath: store.filePath("qe-report.json") === reportPath ? ".wraith/qe-report.json" : reportPath,
     model: report.model,
     tier2: report.tier2,
     summary,

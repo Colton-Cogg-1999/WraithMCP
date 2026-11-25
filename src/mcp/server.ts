@@ -34,18 +34,18 @@ import {
 import { applyDocumentTranslations, prepareDocument } from "../documents/registry.js";
 import { mcpTextResult } from "./formatting.js";
 
-export const MCP_SERVER_INSTRUCTIONS = `Polyglot gives you memory, rules, and deterministic proof for localization. You perform all code changes and translations in full codebase context; Polyglot never calls an LLM (the single opt-in exception is \`qe_audit\` Tier 2 critics, which run only when a model API key is configured).
+export const MCP_SERVER_INSTRUCTIONS = `Wraith gives you memory, rules, and deterministic proof for localization. You perform all code changes and translations in full codebase context; Wraith never calls an LLM (the single opt-in exception is \`qe_audit\` Tier 2 critics, which run only when a model API key is configured).
 
 Definition of done:
 1. Run \`scan\` to detect framework, i18n library, hardcoded strings, concatenations, and hardcoded formatting (\`toFixed\`, locale-less \`toLocaleString\`, currency concatenation, manual dates, \`toUpperCase\`, locale-less \`localeCompare\`).
 2. Refactor any hardcoded strings/concatenations/formatting in source code into i18n keys and Intl formatters (or extract document segments).
 3. Use \`prepare\` to get context, static layout constraints & width budgets, glossary terms & approved abbreviations, fuzzy memory matches, and target locale conventions.
    - IMPORTANT: Treat ALL fuzzy memory matches (even 100% lexical matches) as strong suggestions with prior context, NOT blindly guaranteed translations. Always verify the match fits the current component, element, and surrounding UI.
-4. Always write translations through \`apply\` so placeholders, ICU syntax, plural rules, and inline tags are validated and saved to .polyglot/ memory.
+4. Always write translations through \`apply\` so placeholders, ICU syntax, plural rules, and inline tags are validated and saved to .wraith/ memory.
 5. Run \`check\` until catalog & scanner checks pass.
 6. Run \`pseudo\` with \`mode: "auto"\` to generate target-appropriate pseudo-locales (\`en-XA\`, \`ar-XB\`, \`ja-XC\`, \`th-XD\`, \`de-XE\`) with invisible zero-width key IDs, then run \`layout\` against a running dev server at 375px and 1280px.
-7. Remediate confirmed layout defects in order: (a) run \`layout_fix\` for deterministic mechanical codemods, (b) apply agent code prescriptions, (c) re-run \`prepare\` + \`apply\` for keys exceeding recorded width budgets in \`.polyglot/layout.json\` (using approved glossary abbreviations with title/aria-label where appropriate), (d) re-run \`layout\` until clean, then re-run \`check\` until outcome is "PASS".
-8. Optionally run \`visual_qa\` (DOM geometry regression vs .polyglot/visual-baseline.json, 0 tokens) and \`qe_audit\` (tiered QE; only Tier 2 uses a model). Export \`needs_review\` segments with \`tms_export\` and bring human edits back with \`tms_import\`.
+7. Remediate confirmed layout defects in order: (a) run \`layout_fix\` for deterministic mechanical codemods, (b) apply agent code prescriptions, (c) re-run \`prepare\` + \`apply\` for keys exceeding recorded width budgets in \`.wraith/layout.json\` (using approved glossary abbreviations with title/aria-label where appropriate), (d) re-run \`layout\` until clean, then re-run \`check\` until outcome is "PASS".
+8. Optionally run \`visual_qa\` (DOM geometry regression vs .wraith/visual-baseline.json, 0 tokens) and \`qe_audit\` (tiered QE; only Tier 2 uses a model). Export \`needs_review\` segments with \`tms_export\` and bring human edits back with \`tms_import\`.
 9. Run \`report\` to surface issues caught, assumptions made, and any strings worth a human look.
 
 Keep defaults zero-question: infer brand names and terminology, record assumptions via \`memory\`, and report them at the end unless config.review is "confirm".`;
@@ -132,7 +132,7 @@ export interface McpServerOptions {
   authorizedRoots?: string[];
 }
 
-export function createPolyglotMcpServer(options: McpServerOptions = {}): McpServer {
+export function createWraithMcpServer(options: McpServerOptions = {}): McpServer {
   ensureBootstrapped();
   const defaultRoot = options.rootDir ?? process.cwd();
   const safeRoot = (requested?: string) =>
@@ -140,7 +140,7 @@ export function createPolyglotMcpServer(options: McpServerOptions = {}): McpServ
 
   const server = new McpServer(
     {
-      name: "polyglot",
+      name: "wraith",
       version: "0.1.0",
     },
     {
@@ -246,7 +246,7 @@ export function createPolyglotMcpServer(options: McpServerOptions = {}): McpServ
     {
       title: "Validate & Apply Translations",
       description:
-        "Validate and write translations losslessly to target locale files or documents (.docx/.md/.mdx), and record provenance & translation memory in .polyglot/. Returns isError=true if any item is rejected.",
+        "Validate and write translations losslessly to target locale files or documents (.docx/.md/.mdx), and record provenance & translation memory in .wraith/. Returns isError=true if any item is rejected.",
       inputSchema: {
         rootDir: z.string().optional(),
         targetLocale: z.string().describe("Target BCP-47 locale."),
@@ -437,7 +437,7 @@ export function createPolyglotMcpServer(options: McpServerOptions = {}): McpServ
     {
       title: "Import Localization Assets",
       description:
-        "Import optional localization assets into .polyglot/: glossary (CSV, TBX), translation memory (TMX), or existing repository locale files.",
+        "Import optional localization assets into .wraith/: glossary (CSV, TBX), translation memory (TMX), or existing repository locale files.",
       inputSchema: {
         rootDir: z.string().optional(),
         file: z.string().optional().describe("Workspace-relative path to .csv, .tbx, or .tmx file."),
@@ -484,7 +484,7 @@ export function createPolyglotMcpServer(options: McpServerOptions = {}): McpServ
     {
       title: "Rendered Layout & Formatting Check",
       description:
-        "Render routes with Playwright (optional peer dep) at 375px and 1280px across pseudo and target locales to detect overflow, clipping, overlap, tofu glyphs, dir/lang mismatches, and surviving hardcoded formats; maps findings back to keys and file:line and records width budgets in .polyglot/layout.json. Returns INCONCLUSIVE (never PASS) without Playwright or baseUrl.",
+        "Render routes with Playwright (optional peer dep) at 375px and 1280px across pseudo and target locales to detect overflow, clipping, overlap, tofu glyphs, dir/lang mismatches, and surviving hardcoded formats; maps findings back to keys and file:line and records width budgets in .wraith/layout.json. Returns INCONCLUSIVE (never PASS) without Playwright or baseUrl.",
       inputSchema: {
         rootDir: z.string().optional(),
         baseUrl: z.string().optional().describe("Running dev server URL (e.g. http://localhost:3000)."),
@@ -542,14 +542,14 @@ export function createPolyglotMcpServer(options: McpServerOptions = {}): McpServ
     {
       title: "Token-Free Visual QA (DOM Geometry Regression)",
       description:
-        "Render routes with Playwright and fingerprint every zero-width-traced element (lineCount, size, overflow, clipping, occlusion, font/tofu, WCAG contrast). captureBaseline writes .polyglot/visual-baseline.json; otherwise diffs against it and flags line_wrap_regression, container_blowout, text_truncation, element_occlusion, missing_glyph_tofu, contrast_regression with failure-only element crops. 0 LLM tokens. INCONCLUSIVE without Playwright/baseUrl/baseline.",
+        "Render routes with Playwright and fingerprint every zero-width-traced element (lineCount, size, overflow, clipping, occlusion, font/tofu, WCAG contrast). captureBaseline writes .wraith/visual-baseline.json; otherwise diffs against it and flags line_wrap_regression, container_blowout, text_truncation, element_occlusion, missing_glyph_tofu, contrast_regression with failure-only element crops. 0 LLM tokens. INCONCLUSIVE without Playwright/baseUrl/baseline.",
       inputSchema: {
         rootDir: z.string().optional(),
         baseUrl: z.string().optional(),
         routes: z.array(z.string()).optional(),
         locales: z.array(z.string()).optional(),
         captureBaseline: z.boolean().optional().default(false),
-        basePath: z.string().optional().describe("Baseline path (default .polyglot/visual-baseline.json)."),
+        basePath: z.string().optional().describe("Baseline path (default .wraith/visual-baseline.json)."),
         localeUrlPattern: z.enum(["query", "prefix", "cookie"]).optional(),
       },
       outputSchema: GenericObjectOutputSchema,
@@ -574,7 +574,7 @@ export function createPolyglotMcpServer(options: McpServerOptions = {}): McpServ
     {
       title: "Tiered Quality Estimation & Error Swarm",
       description:
-        "Score translated segments: Tier 1 deterministic gate (check + width budgets, 0 tokens; failures escalate at risk 100), Tier 2 three parallel critics (terminology/TM drift, UI context/conciseness, semantic/omission) on a fast model when ANTHROPIC_API_KEY or GEMINI_API_KEY is set, Tier 3 composite risk with routing (<25 verified, 25-60 one auto-repair pass when autoRepair=true, else needs_review). Writes .polyglot/qe-report.json; only modifies locale catalogs when autoRepair=true (through validated apply). Without a model key, segments are 'unscored' (never verified).",
+        "Score translated segments: Tier 1 deterministic gate (check + width budgets, 0 tokens; failures escalate at risk 100), Tier 2 three parallel critics (terminology/TM drift, UI context/conciseness, semantic/omission) on a fast model when ANTHROPIC_API_KEY or GEMINI_API_KEY is set, Tier 3 composite risk with routing (<25 verified, 25-60 one auto-repair pass when autoRepair=true, else needs_review). Writes .wraith/qe-report.json; only modifies locale catalogs when autoRepair=true (through validated apply). Without a model key, segments are 'unscored' (never verified).",
       inputSchema: {
         rootDir: z.string().optional(),
         locales: z.array(z.string()).optional(),
@@ -599,7 +599,7 @@ export function createPolyglotMcpServer(options: McpServerOptions = {}): McpServ
         "Export segments as XLIFF 2.0 (<unit> per key with mda metadata: file, line, component, qe_risk_score, max_chars, max_width_px, tm_similarity; <notes> with QE flags and top fuzzy TM; placeholders as <ph disp/>), optionally TMX 1.4b (tm.tmx), TBX-Basic (glossary.tbx), and visual-qa failure crops. Writes only inside the explicit output directory. 0 LLM tokens.",
       inputSchema: {
         rootDir: z.string().optional(),
-        outDir: z.string().optional().describe("Workspace-relative output dir (default .polyglot/exports/tms)."),
+        outDir: z.string().optional().describe("Workspace-relative output dir (default .wraith/exports/tms)."),
         locales: z.array(z.string()).optional(),
         onlyFlagged: z.boolean().optional().default(false),
         includeTm: z.boolean().optional().default(false),
@@ -629,7 +629,7 @@ export function createPolyglotMcpServer(options: McpServerOptions = {}): McpServ
     {
       title: "Import Reviewed XLIFF 2.0 from a TMS",
       description:
-        "Import human post-edited XLIFF 2.0 (file or directory): validates every target through the apply pipeline (placeholders, ICU, tags, glossary), writes locale catalogs preserving key order, upserts .polyglot/tm.json with provenance human-reviewed + verifiedAt, marks qe-report segments human-verified, then runs check (and visual_qa when layout.baseUrl is configured). Returns a compact diff.",
+        "Import human post-edited XLIFF 2.0 (file or directory): validates every target through the apply pipeline (placeholders, ICU, tags, glossary), writes locale catalogs preserving key order, upserts .wraith/tm.json with provenance human-reviewed + verifiedAt, marks qe-report segments human-verified, then runs check (and visual_qa when layout.baseUrl is configured). Returns a compact diff.",
       inputSchema: {
         rootDir: z.string().optional(),
         input: z.string().describe("Workspace-relative .xliff/.xlf file or directory."),
@@ -649,7 +649,7 @@ export function createPolyglotMcpServer(options: McpServerOptions = {}): McpServ
     {
       title: "Cross-Model MQM Review",
       description:
-        "Package an MQM-style cross-model review job (with two-pass false-positive filtering instructions and output schema) for a different agent/model, or ingest review findings into .polyglot/reviews.json.",
+        "Package an MQM-style cross-model review job (with two-pass false-positive filtering instructions and output schema) for a different agent/model, or ingest review findings into .wraith/reviews.json.",
       inputSchema: {
         rootDir: z.string().optional(),
         action: z.enum(["package", "ingest"]),
@@ -782,14 +782,14 @@ export function createPolyglotMcpServer(options: McpServerOptions = {}): McpServ
     async ({ locales }) => {
       const targetNote = locales
         ? `Target locales requested: ${locales}.`
-        : "Use the target locales from .polyglot/config.json or ask only if none were specified by the user.";
+        : "Use the target locales from .wraith/config.json or ask only if none were specified by the user.";
       return {
         messages: [
           {
             role: "user",
             content: {
               type: "text",
-              text: `Localize this project using Polyglot. ${targetNote}
+              text: `Localize this project using Wraith. ${targetNote}
 
 Follow these steps:
 1. Call \`status\` and \`scan\` to understand the framework, i18n setup, hardcoded strings, concatenations, hardcoded formatting, and documents.
@@ -810,7 +810,7 @@ Follow these steps:
 }
 
 export async function startMcpServer(options: McpServerOptions = {}): Promise<void> {
-  const server = createPolyglotMcpServer(options);
+  const server = createWraithMcpServer(options);
   const transport = new StdioServerTransport();
   await server.connect(transport);
 }

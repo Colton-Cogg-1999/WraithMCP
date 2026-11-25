@@ -16,7 +16,7 @@ ensureBootstrapped();
 
 const tmpDirs: string[] = [];
 function makeDir(): string {
-  const d = fs.mkdtempSync(path.join(os.tmpdir(), "polyglot-docbatch-"));
+  const d = fs.mkdtempSync(path.join(os.tmpdir(), "wraith-docbatch-"));
   tmpDirs.push(d);
   return d;
 }
@@ -75,7 +75,7 @@ describe("P0 Document Batch Safety & Pre-Commit Hook", () => {
     expect(chk.passed).toBe(true);
   });
 
-  it("pre-commit hook executes cleanly in a fresh git repo using POLYGLOT_BIN and omits unsafe fallbacks", () => {
+  it("pre-commit hook executes cleanly in a fresh git repo using WRAITH_BIN and omits unsafe fallbacks", () => {
     const dir = makeDir();
     execFileSync("git", ["init", "-b", "main"], { cwd: dir, stdio: "pipe" });
     execFileSync("git", ["config", "user.email", "test@example.com"], { cwd: dir, stdio: "pipe" });
@@ -93,18 +93,18 @@ describe("P0 Document Batch Safety & Pre-Commit Hook", () => {
 
     const hookText = fs.readFileSync(path.join(dir, ".git/hooks/pre-commit"), "utf8");
     expect(hookText).not.toContain("./dist/bin.js");
-    expect(hookText).not.toContain("polyglot-mcp");
+    expect(hookText).not.toContain("wraith-mcp");
 
     // Create a clean wrapper executable pointing to local dist/bin.js (built in repo)
-    const wrapper = path.join(dir, "polyglot-wrapper.sh");
+    const wrapper = path.join(dir, "wraith-wrapper.sh");
     fs.writeFileSync(wrapper, `#!/usr/bin/env sh\nexec "${process.execPath}" "${path.resolve("dist/bin.js")}" "$@"\n`, { mode: 0o755 });
     fs.chmodSync(wrapper, 0o755);
 
-    execFileSync("git", ["add", "package.json", "messages", "src", ".polyglot"], { cwd: dir, stdio: "pipe" });
+    execFileSync("git", ["add", "package.json", "messages", "src", ".wraith"], { cwd: dir, stdio: "pipe" });
     execFileSync("git", ["commit", "-m", "test clean commit"], {
       cwd: dir,
       stdio: "pipe",
-      env: { ...process.env, POLYGLOT_BIN: wrapper },
+      env: { ...process.env, WRAITH_BIN: wrapper },
     });
   });
 });

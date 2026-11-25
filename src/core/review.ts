@@ -4,7 +4,7 @@ import { detectProjectAdapter, loadLocaleCatalog } from "../adapters/registry.js
 import { GlossaryHit, matchGlossaryTerms } from "./glossary.js";
 import { getLocaleConventions } from "./locales.js";
 import { atomicWriteFileSync, resolveConfinedPath, validateLocaleTag, withWorkspaceLock } from "./security.js";
-import { PolyglotStore, sha256Short } from "./store.js";
+import { WraithStore, sha256Short } from "./store.js";
 import { ReviewCategory, ReviewFinding, ReviewSeverity, UsageSite } from "./types.js";
 
 export const MQM_TAXONOMY = {
@@ -60,7 +60,7 @@ export function packageReviewJob(
   const resolvedOutPath = options.outputPath
     ? resolveConfinedPath(rootDir, options.outputPath, { label: "review outputPath" })
     : undefined;
-  const store = new PolyglotStore(rootDir);
+  const store = new WraithStore(rootDir);
   const config = store.readConfig();
   const glossary = store.readGlossary();
   const usage = store.readUsage();
@@ -109,7 +109,7 @@ Perform TWO passes to eliminate false positives:
 - Pass 1 (MQM Annotation): Compare each translation against its source, UI usage context, glossary, and locale conventions. Annotate genuine defects with category, severity, error span, concise explanation, and corrected suggestion.
 - Pass 2 (Verification Filter): Re-read every candidate finding critically. Drop stylistic preferences where the current translation is already natural and accurate. Only set "verified": true for issues a native speaker would genuinely want fixed.
 
-Return ONLY valid JSON matching outputSchema, then ingest via \`polyglot review --ingest <file>\` or the \`review\` MCP tool.`;
+Return ONLY valid JSON matching outputSchema, then ingest via \`wraith review --ingest <file>\` or the \`review\` MCP tool.`;
 
   const outputSchema = {
     type: "object",
@@ -198,7 +198,7 @@ function ingestReviewResultsUnlocked(
     findings: IngestFindingInput[];
   }
 ): IngestReviewResult {
-  const store = new PolyglotStore(rootDir);
+  const store = new WraithStore(rootDir);
   const reviewsFile = store.readReviews();
   const recordsFile = store.readRecords();
   const reviewer = input.reviewer ?? "cross-model";

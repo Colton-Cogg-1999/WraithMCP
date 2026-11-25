@@ -8,12 +8,12 @@ import {
   EVAL_ROOT,
   JUDGE_CONFIG,
   PILOT_LANGUAGES,
-  POLYGLOT_BIN,
+  WRAITH_BIN,
   RESULTS_DIR,
   SCREENSHOTS_DIR,
 } from "./config.mjs";
 import { atomicWriteJson } from "./lib/cache.mjs";
-import { materializeCapturedFiles, runCodexWithPolyglot } from "./lib/codex.mjs";
+import { materializeCapturedFiles, runCodexWithWraith } from "./lib/codex.mjs";
 import { summarizeLedger } from "./lib/cost.mjs";
 import {
   assertDeepLStageCap,
@@ -41,9 +41,9 @@ import {
   extractGlossaryForLocale,
   extractPilotIcuRawDiagnostics,
   flattenJson,
-  parsePolyglotJson,
-  runPolyglotCli,
-  seedPolyglotProject,
+  parseWraithJson,
+  runWraithCli,
+  seedWraithProject,
   unflattenJson,
 } from "./stages/common.mjs";
 import { runSyntheticStage } from "./stages/synthetic.mjs";
@@ -62,7 +62,7 @@ async function runSetup() {
 
   const setupSummary = {
     completedAt: new Date().toISOString(),
-    polyglotBin: POLYGLOT_BIN,
+    wraithBin: WRAITH_BIN,
     codexModel: CODEX_CONFIG.model,
     codexApprovalFlags: CODEX_CONFIG.approvalFlags,
     codexModelCutoff: CODEX_CONFIG.modelCutoffDate,
@@ -106,38 +106,38 @@ async function runPilot({ ignoreSpendCap = false } = {}) {
     console.log(`\n--- Pilot synthetic app: ${locale} ---`);
     const localeGlossary = extractGlossaryForLocale(PILOT_GLOSSARY, locale);
 
-    const promptA = `Localize this Next.js (next-intl) project into "${locale}" using the Polyglot MCP server tools.
-Follow the Polyglot /localize workflow strictly:
+    const promptA = `Localize this Next.js (next-intl) project into "${locale}" using the Wraith MCP server tools.
+Follow the Wraith /localize workflow strictly:
 1. Call \`status\` and \`scan\` first.
 2. Call \`prepare\` in batches for targetLocale "${locale}" (pay close attention to usageSites, component names, glossaryHits, and conventions). Read the component files in src/components/ whenever an English word is context-ambiguous (e.g., Open, Post, Order, Close, Free, Save, Back, Charge, Sign, Archive) so your translation matches the exact UI context!
-3. Write EVERY translation via Polyglot's \`apply\` tool (preserving all ICU syntax, plurals, ordinals, selects, rich-text tags like <link>, <b>, <strong>, <codeTag>, and DNT brands Northstar / Northstar Pay / PulseGrid / LedgerVault, and honoring all glossary terms).
+3. Write EVERY translation via Wraith's \`apply\` tool (preserving all ICU syntax, plurals, ordinals, selects, rich-text tags like <link>, <b>, <strong>, <codeTag>, and DNT brands Northstar / Northstar Pay / PulseGrid / LedgerVault, and honoring all glossary terms).
 4. Run \`pseudo\` to check layout hotspots for tight-width buttons/tabs/badges, and ensure your translations for tight buttons/tabs stay concise.
 5. Run \`check\` repeatedly and fix any errors until outcome is "PASS".
 6. Call \`report\` at the end.
 Reply with a brief JSON summary of check outcome and any notes.`;
 
-    const codexRes = await runCodexWithPolyglot({
+    const codexRes = await runCodexWithWraith({
       stageName,
       label: `pilot-nextjs-${locale}`,
       sourceDir: PILOT_APP_DIR,
       prompt: promptA,
-      captureRelPaths: [`messages/${locale}.json`, "messages/en-x-pseudo.json", ".polyglot/records.json"],
+      captureRelPaths: [`messages/${locale}.json`, "messages/en-x-pseudo.json", ".wraith/records.json"],
       ignoreSpendCap,
-      workspaceSetupFn: (tmpDir) => seedPolyglotProject(tmpDir, [locale], PILOT_GLOSSARY),
+      workspaceSetupFn: (tmpDir) => seedWraithProject(tmpDir, [locale], PILOT_GLOSSARY),
     });
 
     const workDirA = path.join(EVAL_ROOT, "work", `pilot-nextjs-A-${locale}`);
     fs.rmSync(workDirA, { recursive: true, force: true });
     fs.cpSync(PILOT_APP_DIR, workDirA, { recursive: true });
-    seedPolyglotProject(workDirA, [locale], PILOT_GLOSSARY);
+    seedWraithProject(workDirA, [locale], PILOT_GLOSSARY);
     materializeCapturedFiles(codexRes, workDirA);
 
     const aJsonPath = path.join(workDirA, "messages", `${locale}.json`);
     const flatA = fs.existsSync(aJsonPath) ? flattenJson(JSON.parse(fs.readFileSync(aJsonPath, "utf8"))) : {};
-    const checkAParsed = parsePolyglotJson(runPolyglotCli(workDirA, ["check", "--locale", locale, "--json"]));
+    const checkAParsed = parseWraithJson(runWraithCli(workDirA, ["check", "--locale", locale, "--json"]));
 
     const pseudoPath = path.join(workDirA, "messages", "en-x-pseudo.json");
-    if (!fs.existsSync(pseudoPath)) runPolyglotCli(workDirA, ["pseudo"]);
+    if (!fs.existsSync(pseudoPath)) runWraithCli(workDirA, ["pseudo"]);
     const flatPseudo = fs.existsSync(pseudoPath) ? flattenJson(JSON.parse(fs.readFileSync(pseudoPath, "utf8"))) : {};
 
     const deeplRes = await translateCatalogWithDeepL({
@@ -152,9 +152,9 @@ Reply with a brief JSON summary of check outcome and any notes.`;
     const workDirC = path.join(EVAL_ROOT, "work", `pilot-nextjs-C-${locale}`);
     fs.rmSync(workDirC, { recursive: true, force: true });
     fs.cpSync(PILOT_APP_DIR, workDirC, { recursive: true });
-    seedPolyglotProject(workDirC, [locale], PILOT_GLOSSARY);
+    seedWraithProject(workDirC, [locale], PILOT_GLOSSARY);
     fs.writeFileSync(path.join(workDirC, "messages", `${locale}.json`), JSON.stringify(unflattenJson(flatB), null, 2) + "\n");
-    const checkCParsed = parsePolyglotJson(runPolyglotCli(workDirC, ["check", "--locale", locale, "--json"]));
+    const checkCParsed = parseWraithJson(runWraithCli(workDirC, ["check", "--locale", locale, "--json"]));
 
     const detA = computeCatalogMetrics(appInfo.flatEn, flatA, localeGlossary);
     const detB = computeCatalogMetrics(appInfo.flatEn, flatB, localeGlossary);
@@ -204,7 +204,7 @@ Reply with a brief JSON summary of check outcome and any notes.`;
         exitCode: codexRes.exitCode,
         wallMs: codexRes.wallMs,
         telemetry: codexRes.telemetry,
-        polyglotCheck: checkAParsed,
+        wraithCheck: checkAParsed,
         deterministicMetrics: detA,
         visualDefects: visualA.available ? visualA.locales[locale]?.totalDefects ?? null : null,
       },
@@ -227,15 +227,15 @@ Reply with a brief JSON summary of check outcome and any notes.`;
   fs.mkdirSync(docxWorkSrc, { recursive: true });
   fs.copyFileSync(docxPath, path.join(docxWorkSrc, "northstar-policy.docx"));
 
-  const docxCodexRes = await runCodexWithPolyglot({
+  const docxCodexRes = await runCodexWithWraith({
     stageName,
     label: "pilot-docx-de",
     sourceDir: docxWorkSrc,
-    prompt: `Translate the DOCX document "northstar-policy.docx" into German ("de") as "northstar-policy.de.docx" using Polyglot MCP tools.`,
-    captureRelPaths: ["northstar-policy.de.docx", ".polyglot/documents.json"],
+    prompt: `Translate the DOCX document "northstar-policy.docx" into German ("de") as "northstar-policy.de.docx" using Wraith MCP tools.`,
+    captureRelPaths: ["northstar-policy.de.docx", ".wraith/documents.json"],
     ignoreSpendCap,
     workspaceSetupFn: (tmpDir) =>
-      seedPolyglotProject(tmpDir, [docxLocale], PILOT_GLOSSARY, (cfg) => {
+      seedWraithProject(tmpDir, [docxLocale], PILOT_GLOSSARY, (cfg) => {
         cfg.paths.documents = ["northstar-policy.docx"];
       }),
   });

@@ -1,0 +1,725 @@
+{
+  "version": 1,
+  "keys": {
+    "billing.chargeHeading": {
+      "fingerprint": "b5c02d815f48fd1c",
+      "sites": [
+        {
+          "file": "src/components/BillingStatement.tsx",
+          "line": 12,
+          "component": "BillingStatement",
+          "element": "h3",
+          "surrounding": []
+        }
+      ]
+    },
+    "branch.closeBadge": {
+      "fingerprint": "44acd01f72693e3f",
+      "sites": [
+        {
+          "file": "src/components/NearbyBranchCard.tsx",
+          "line": 8,
+          "component": "NearbyBranchCard",
+          "element": "span",
+          "surrounding": []
+        }
+      ]
+    },
+    "brand.analyticsDesc": {
+      "fingerprint": "6e23e903e6a59777",
+      "sites": [
+        {
+          "file": "src/components/AnalyticsPanel.tsx",
+          "line": 8,
+          "component": "AnalyticsPanel",
+          "element": "p",
+          "surrounding": []
+        }
+      ]
+    },
+    "brand.auditExport": {
+      "fingerprint": "1315236d09ab6b4d",
+      "sites": [
+        {
+          "file": "src/components/BillingStatement.tsx",
+          "line": 16,
+          "component": "BillingStatement",
+          "element": "button",
+          "surrounding": []
+        }
+      ]
+    },
+    "brand.footerNote": {
+      "fingerprint": "23cea79fc089591f",
+      "sites": [
+        {
+          "file": "src/components/ContractFooter.tsx",
+          "line": 12,
+          "component": "ContractFooter",
+          "element": "small",
+          "surrounding": []
+        }
+      ]
+    },
+    "brand.payCta": {
+      "fingerprint": "2af7bd3e42c64616",
+      "sites": [
+        {
+          "file": "src/components/CheckoutSummary.tsx",
+          "line": 16,
+          "component": "CheckoutSummary",
+          "element": "button",
+          "surrounding": []
+        }
+      ]
+    },
+    "brand.vaultSync": {
+      "fingerprint": "0bb00165fa8ea0a4",
+      "sites": [
+        {
+          "file": "src/components/InvoiceActions.tsx",
+          "line": 14,
+          "component": "InvoiceActions",
+          "element": "small",
+          "surrounding": []
+        }
+      ]
+    },
+    "brand.welcome": {
+      "fingerprint": "fd034d703f91a402",
+      "sites": [
+        {
+          "file": "src/components/HeaderNav.tsx",
+          "line": 10,
+          "component": "HeaderNav",
+          "element": "h1",
+          "surrounding": []
+        }
+      ]
+    },
+    "catalog.orderLabel": {
+      "fingerprint": "d6e26be6be8e325d",
+      "sites": [
+        {
+          "file": "src/components/SortToolbar.tsx",
+          "line": 9,
+          "component": "SortToolbar",
+          "element": "label",
+          "surrounding": []
+        }
+      ]
+    },
+    "checkout.orderLabel": {
+      "fingerprint": "46287408bb619c51",
+      "sites": [
+        {
+          "file": "src/components/CheckoutSummary.tsx",
+          "line": 12,
+          "component": "CheckoutSummary",
+          "element": "h2",
+          "surrounding": []
+        }
+      ]
+    },
+    "community.postHeading": {
+      "fingerprint": "4c43858944538a70",
+      "sites": [
+        {
+          "file": "src/components/CommunityFeed.tsx",
+          "line": 8,
+          "component": "CommunityFeed",
+          "element": "h2",
+          "surrounding": []
+        }
+      ]
+    },
+    "composer.postAction": {
+      "fingerprint": "d7b5d83503a6b501",
+      "sites": [
+        {
+          "file": "src/components/CommentComposer.tsx",
+          "line": 9,
+          "component": "CommentComposer",
+          "element": "button",
+          "surrounding": []
+        }
+      ]
+    },
+    "contract.signAction": {
+      "fingerprint": "9d960c6e58f85b92",
+      "sites": [
+        {
+          "file": "src/components/ContractFooter.tsx",
+          "line": 11,
+          "component": "ContractFooter",
+          "element": "button",
+          "surrounding": []
+        }
+      ]
+    },
+    "device.chargeHeading": {
+      "fingerprint": "9e421280ed82de7f",
+      "sites": [
+        {
+          "file": "src/components/DeviceBatteryStatus.tsx",
+          "line": 9,
+          "component": "DeviceBatteryStatus",
+          "element": "h3",
+          "surrounding": []
+        }
+      ]
+    },
+    "docs.archiveHeading": {
+      "fingerprint": "41a9197bce79aad5",
+      "sites": [
+        {
+          "file": "src/components/DocsSidebar.tsx",
+          "line": 9,
+          "component": "DocsSidebar",
+          "element": "h3",
+          "surrounding": []
+        }
+      ]
+    },
+    "general.batteryTip": {
+      "fingerprint": "a9f10e642a1894f4",
+      "sites": [
+        {
+          "file": "src/components/DeviceBatteryStatus.tsx",
+          "line": 10,
+          "component": "DeviceBatteryStatus",
+          "element": "p",
+          "surrounding": []
+        }
+      ]
+    },
+    "general.emptyInbox": {
+      "fingerprint": "0e78f8c4563b7d38",
+      "sites": [
+        {
+          "file": "src/components/InboxToolbar.tsx",
+          "line": 13,
+          "component": "InboxToolbar",
+          "element": "p",
+          "surrounding": []
+        }
+      ]
+    },
+    "general.exportHint": {
+      "fingerprint": "525ee44e341b383b",
+      "sites": [
+        {
+          "file": "src/components/DocsSidebar.tsx",
+          "line": 10,
+          "component": "DocsSidebar",
+          "element": "p",
+          "surrounding": []
+        }
+      ]
+    },
+    "general.hoursSubtitle": {
+      "fingerprint": "889cf8a1ff9b7c76",
+      "sites": [
+        {
+          "file": "src/components/StoreHoursCard.tsx",
+          "line": 10,
+          "component": "StoreHoursCard",
+          "element": "p",
+          "surrounding": []
+        }
+      ]
+    },
+    "general.networkError": {
+      "fingerprint": "64e513588558c240",
+      "sites": [
+        {
+          "file": "src/components/CheckoutSummary.tsx",
+          "line": 17,
+          "component": "CheckoutSummary",
+          "element": "p",
+          "surrounding": []
+        }
+      ]
+    },
+    "general.profileSaved": {
+      "fingerprint": "a5d089613a873fb6",
+      "sites": [
+        {
+          "file": "src/components/ProfileForm.tsx",
+          "line": 14,
+          "component": "ProfileForm",
+          "element": "p",
+          "surrounding": []
+        }
+      ]
+    },
+    "glossary.invoiceDownload": {
+      "fingerprint": "c89885ccddf294d3",
+      "sites": [
+        {
+          "file": "src/components/InvoiceActions.tsx",
+          "line": 12,
+          "component": "InvoiceActions",
+          "element": "button",
+          "surrounding": []
+        }
+      ]
+    },
+    "glossary.invoicePaid": {
+      "fingerprint": "1fde6354b18f5a45",
+      "sites": [
+        {
+          "file": "src/components/BillingStatement.tsx",
+          "line": 15,
+          "component": "BillingStatement",
+          "element": "p",
+          "surrounding": []
+        }
+      ]
+    },
+    "glossary.seatAssign": {
+      "fingerprint": "a5d089613a873fb6",
+      "sites": [
+        {
+          "file": "src/components/ProfileForm.tsx",
+          "line": 12,
+          "component": "ProfileForm",
+          "element": "p",
+          "surrounding": []
+        }
+      ]
+    },
+    "glossary.seatLimit": {
+      "fingerprint": "708c8b2f49151008",
+      "sites": [
+        {
+          "file": "src/components/PricingBanner.tsx",
+          "line": 12,
+          "component": "PricingBanner",
+          "element": "p",
+          "surrounding": []
+        }
+      ]
+    },
+    "glossary.workspaceCreate": {
+      "fingerprint": "fc4b706db9ea3f86",
+      "sites": [
+        {
+          "file": "src/components/HeaderNav.tsx",
+          "line": 11,
+          "component": "HeaderNav",
+          "element": "p",
+          "surrounding": []
+        }
+      ]
+    },
+    "glossary.workspaceSwitch": {
+      "fingerprint": "d5640513543b7c70",
+      "sites": [
+        {
+          "file": "src/components/HeaderNav.tsx",
+          "line": 17,
+          "component": "HeaderNav",
+          "element": "button",
+          "surrounding": []
+        }
+      ]
+    },
+    "hours.openBadge": {
+      "fingerprint": "9540883b52f22d9d",
+      "sites": [
+        {
+          "file": "src/components/StoreHoursCard.tsx",
+          "line": 9,
+          "component": "StoreHoursCard",
+          "element": "span",
+          "surrounding": []
+        }
+      ]
+    },
+    "icu.cartItems": {
+      "fingerprint": "64e513588558c240",
+      "sites": [
+        {
+          "file": "src/components/CheckoutSummary.tsx",
+          "line": 13,
+          "component": "CheckoutSummary",
+          "element": "p",
+          "surrounding": []
+        }
+      ]
+    },
+    "icu.memberRole": {
+      "fingerprint": "4932bad72811afcf",
+      "sites": [
+        {
+          "file": "src/components/ProfileForm.tsx",
+          "line": 11,
+          "component": "ProfileForm",
+          "element": "span",
+          "surrounding": []
+        }
+      ]
+    },
+    "icu.orderPipeline": {
+      "fingerprint": "64e513588558c240",
+      "sites": [
+        {
+          "file": "src/components/CheckoutSummary.tsx",
+          "line": 14,
+          "component": "CheckoutSummary",
+          "element": "p",
+          "surrounding": []
+        }
+      ]
+    },
+    "icu.promoThreshold": {
+      "fingerprint": "93496491aec1899d",
+      "sites": [
+        {
+          "file": "src/components/PromoBadge.tsx",
+          "line": 10,
+          "component": "PromoBadge",
+          "element": "span",
+          "surrounding": []
+        }
+      ]
+    },
+    "icu.rankOrdinal": {
+      "fingerprint": "6e23e903e6a59777",
+      "sites": [
+        {
+          "file": "src/components/AnalyticsPanel.tsx",
+          "line": 9,
+          "component": "AnalyticsPanel",
+          "element": "p",
+          "surrounding": []
+        }
+      ]
+    },
+    "icu.renewalDate": {
+      "fingerprint": "1fde6354b18f5a45",
+      "sites": [
+        {
+          "file": "src/components/BillingStatement.tsx",
+          "line": 14,
+          "component": "BillingStatement",
+          "element": "p",
+          "surrounding": []
+        }
+      ]
+    },
+    "icu.seatsRemaining": {
+      "fingerprint": "708c8b2f49151008",
+      "sites": [
+        {
+          "file": "src/components/PricingBanner.tsx",
+          "line": 13,
+          "component": "PricingBanner",
+          "element": "p",
+          "surrounding": []
+        }
+      ]
+    },
+    "icu.ticketAssign": {
+      "fingerprint": "0e78f8c4563b7d38",
+      "sites": [
+        {
+          "file": "src/components/InboxToolbar.tsx",
+          "line": 12,
+          "component": "InboxToolbar",
+          "element": "p",
+          "surrounding": []
+        }
+      ]
+    },
+    "icu.totalDue": {
+      "fingerprint": "1fde6354b18f5a45",
+      "sites": [
+        {
+          "file": "src/components/BillingStatement.tsx",
+          "line": 13,
+          "component": "BillingStatement",
+          "element": "p",
+          "surrounding": []
+        }
+      ]
+    },
+    "icu.unreadAlerts": {
+      "fingerprint": "034c023497d6d011",
+      "sites": [
+        {
+          "file": "src/components/InboxToolbar.tsx",
+          "line": 11,
+          "component": "InboxToolbar",
+          "element": "span",
+          "surrounding": []
+        }
+      ]
+    },
+    "inbox.archiveAction": {
+      "fingerprint": "77e3c4ccc17cb984",
+      "sites": [
+        {
+          "file": "src/components/InboxToolbar.tsx",
+          "line": 10,
+          "component": "InboxToolbar",
+          "element": "button",
+          "surrounding": []
+        }
+      ]
+    },
+    "invoice.openAction": {
+      "fingerprint": "c89885ccddf294d3",
+      "sites": [
+        {
+          "file": "src/components/InvoiceActions.tsx",
+          "line": 11,
+          "component": "InvoiceActions",
+          "element": "button",
+          "surrounding": []
+        }
+      ]
+    },
+    "modal.closeButton": {
+      "fingerprint": "b14c9b98676032ae",
+      "sites": [
+        {
+          "file": "src/components/ModalHeader.tsx",
+          "line": 9,
+          "component": "ModalHeader",
+          "element": "button",
+          "surrounding": []
+        }
+      ]
+    },
+    "pricing.freeTag": {
+      "fingerprint": "7bcef8b98c9d35a5",
+      "sites": [
+        {
+          "file": "src/components/PricingBanner.tsx",
+          "line": 11,
+          "component": "PricingBanner",
+          "element": "span",
+          "surrounding": []
+        }
+      ]
+    },
+    "profile.saveButton": {
+      "fingerprint": "d8aeda28b6cd9cf8",
+      "sites": [
+        {
+          "file": "src/components/ProfileForm.tsx",
+          "line": 13,
+          "component": "ProfileForm",
+          "element": "button",
+          "surrounding": []
+        }
+      ]
+    },
+    "promo.saveLabel": {
+      "fingerprint": "fc8ea625c9123e84",
+      "sites": [
+        {
+          "file": "src/components/PromoBadge.tsx",
+          "line": 9,
+          "component": "PromoBadge",
+          "element": "strong",
+          "surrounding": []
+        }
+      ]
+    },
+    "rich.backupNotice": {
+      "fingerprint": "7c0e75b8ca6c607e",
+      "sites": [
+        {
+          "file": "src/components/StorageQuota.tsx",
+          "line": 11,
+          "component": "StorageQuota",
+          "element": "p",
+          "surrounding": []
+        }
+      ]
+    },
+    "rich.deleteWarn": {
+      "fingerprint": "546f63764492e89e",
+      "sites": [
+        {
+          "file": "src/components/ModalHeader.tsx",
+          "line": 10,
+          "component": "ModalHeader",
+          "element": "p",
+          "surrounding": []
+        }
+      ]
+    },
+    "rich.helpLink": {
+      "fingerprint": "1fde6354b18f5a45",
+      "sites": [
+        {
+          "file": "src/components/BillingStatement.tsx",
+          "line": 17,
+          "component": "BillingStatement",
+          "element": "p",
+          "surrounding": []
+        }
+      ]
+    },
+    "rich.shippingFast": {
+      "fingerprint": "64e513588558c240",
+      "sites": [
+        {
+          "file": "src/components/CheckoutSummary.tsx",
+          "line": 15,
+          "component": "CheckoutSummary",
+          "element": "p",
+          "surrounding": []
+        }
+      ]
+    },
+    "rich.termsAccept": {
+      "fingerprint": "c247ab68fa0cd3e0",
+      "sites": [
+        {
+          "file": "src/components/ContractFooter.tsx",
+          "line": 10,
+          "component": "ContractFooter",
+          "element": "p",
+          "surrounding": []
+        }
+      ]
+    },
+    "rich.trialEnd": {
+      "fingerprint": "708c8b2f49151008",
+      "sites": [
+        {
+          "file": "src/components/PricingBanner.tsx",
+          "line": 14,
+          "component": "PricingBanner",
+          "element": "p",
+          "surrounding": []
+        }
+      ]
+    },
+    "storage.freeTag": {
+      "fingerprint": "e098a92619308ca8",
+      "sites": [
+        {
+          "file": "src/components/StorageQuota.tsx",
+          "line": 10,
+          "component": "StorageQuota",
+          "element": "span",
+          "surrounding": []
+        }
+      ]
+    },
+    "storefront.signNotice": {
+      "fingerprint": "cdf5567aa744b005",
+      "sites": [
+        {
+          "file": "src/components/StorefrontAlert.tsx",
+          "line": 8,
+          "component": "StorefrontAlert",
+          "element": "p",
+          "surrounding": []
+        }
+      ]
+    },
+    "tight.badgeVerified": {
+      "fingerprint": "d0a601361b3f56da",
+      "sites": [
+        {
+          "file": "src/components/WarrantyCard.tsx",
+          "line": 9,
+          "component": "WarrantyCard",
+          "element": "span",
+          "surrounding": []
+        }
+      ]
+    },
+    "tight.btnFilters": {
+      "fingerprint": "fac4b146c26f38f8",
+      "sites": [
+        {
+          "file": "src/components/SortToolbar.tsx",
+          "line": 11,
+          "component": "SortToolbar",
+          "element": "button",
+          "surrounding": []
+        }
+      ]
+    },
+    "tight.btnRefund": {
+      "fingerprint": "c89885ccddf294d3",
+      "sites": [
+        {
+          "file": "src/components/InvoiceActions.tsx",
+          "line": 13,
+          "component": "InvoiceActions",
+          "element": "button",
+          "surrounding": []
+        }
+      ]
+    },
+    "tight.tabBilling": {
+      "fingerprint": "d5640513543b7c70",
+      "sites": [
+        {
+          "file": "src/components/HeaderNav.tsx",
+          "line": 16,
+          "component": "HeaderNav",
+          "element": "button",
+          "surrounding": []
+        }
+      ]
+    },
+    "tight.tabOverview": {
+      "fingerprint": "d5640513543b7c70",
+      "sites": [
+        {
+          "file": "src/components/HeaderNav.tsx",
+          "line": 14,
+          "component": "HeaderNav",
+          "element": "button",
+          "surrounding": []
+        }
+      ]
+    },
+    "tight.tabSettings": {
+      "fingerprint": "d5640513543b7c70",
+      "sites": [
+        {
+          "file": "src/components/HeaderNav.tsx",
+          "line": 15,
+          "component": "HeaderNav",
+          "element": "button",
+          "surrounding": []
+        }
+      ]
+    },
+    "warranty.backPromise": {
+      "fingerprint": "ff22044e28829478",
+      "sites": [
+        {
+          "file": "src/components/WarrantyCard.tsx",
+          "line": 10,
+          "component": "WarrantyCard",
+          "element": "p",
+          "surrounding": []
+        }
+      ]
+    },
+    "wizard.backButton": {
+      "fingerprint": "302da4d1b32d9ffa",
+      "sites": [
+        {
+          "file": "src/components/WizardNav.tsx",
+          "line": 8,
+          "component": "WizardNav",
+          "element": "button",
+          "surrounding": []
+        }
+      ]
+    }
+  }
+}

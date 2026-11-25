@@ -1,16 +1,16 @@
-# Polyglot Independent Evaluation Report
+# Wraith Independent Evaluation Report
 
-Generated: 2026-11-25T17:46:03.675Z  
-Repository: `Polyglot MCP` (evaluated unmodified; zero edits to `src/`, `audit/`, `audit2/`, `audit3/`)  
+Generated: 2026-11-25T17:57:48.526Z  
+Repository: `Wraith MCP` (evaluated unmodified; zero edits to `src/`, `audit/`, `audit2/`, `audit3/`)  
 Codex Model: `gpt-6.2-astra` (`reasoning_effort=high`, approval flags: `--approve-for-me`, cutoff `2026-03-01`)  
 Judge Panel: Claude `sonnet` (`effort=medium`) + Gemini `gemini-4-carbon-medium` (blinded, position-swapped; zero OpenAI judges)
 
 ## Executive Summary
 
-This evaluation compares **Polyglot + Coding Agent (System A)** against **Coding Agent without Polyglot (System A0)**, **DeepL API (System B)**, **DeepL API with native `context` parameter (System B+ctx)**, **DeepL + Polyglot deterministic QA (System C)**, and **existing human OSS translations (System H)** across 4 synthetic framework stacks, 5 real open-source repositories, 4 complex OOXML DOCX documents, an end-to-end extraction test, Playwright visual layout QA, and a Release N→N+1 TM/glossary replay.
+This evaluation compares **Wraith + Coding Agent (System A)** against **Coding Agent without Wraith (System A0)**, **DeepL API (System B)**, **DeepL API with native `context` parameter (System B+ctx)**, **DeepL + Wraith deterministic QA (System C)**, and **existing human OSS translations (System H)** across 4 synthetic framework stacks, 5 real open-source repositories, 4 complex OOXML DOCX documents, an end-to-end extraction test, Playwright visual layout QA, and a Release N→N+1 TM/glossary replay.
 
 - **Cal.com skipped as instructed:** `audit3` MISS suite failed 3/5 (`MISS-1`, `MISS-2`, `MISS-3`), so Cal.com was excluded and documented here.
-- **Pilot `de` DeepL note:** In Stage 2 Pilot, `de` ran **without** a DeepL glossary due to DeepL Free tier's 1-glossary account limit (HTTP 456). In Stage 3, the harness deletes only its own `polyglot-eval-*` glossaries before/after each run (logged by ID below), so Stage 3 `es-MX`, `de`, `ja`, and `pl` **all** ran with live DeepL glossaries (`ar` has no DeepL glossary support).
+- **Pilot `de` DeepL note:** In Stage 2 Pilot, `de` ran **without** a DeepL glossary due to DeepL Free tier's 1-glossary account limit (HTTP 456). In Stage 3, the harness deletes only its own `wraith-eval-*` glossaries before/after each run (logged by ID below), so Stage 3 `es-MX`, `de`, `ja`, and `pl` **all** ran with live DeepL glossaries (`ar` has no DeepL glossary support).
 
 ## 1. Judge Validation (Reported First)
 
@@ -83,7 +83,7 @@ All proportion confidence intervals use **Wilson 95% score intervals** (avoiding
 
 ## 2. Raw DeepL Response Analysis for Pilot `icu_syntax_error` (Change #4)
 
-In the Stage 2 Pilot, System C (`polyglot check` on System B) flagged `icu_syntax_error` on two keys. Inspection of the exact cached raw DeepL API responses proves one was our harness bug (fixed before Stage 3) and one was a genuine DeepL XML corruption bug:
+In the Stage 2 Pilot, System C (`wraith check` on System B) flagged `icu_syntax_error` on two keys. Inspection of the exact cached raw DeepL API responses proves one was our harness bug (fixed before Stage 3) and one was a genuine DeepL XML corruption bug:
 
 - **Key `icu.orderPipeline` (`ES`, cache `50062d237844b36a40a9ab7a2873c2ab8e2550d5b90a30934ddb9584bc5d0f7c.json`) — `HARNESS_BUG`**
   - Sent XML: `{count, plural, one {<ph id="0"/> pending order} other {<ph id="1"/> pending orders}}`
@@ -108,14 +108,14 @@ In the Stage 2 Pilot, System C (`polyglot check` on System B) flagged `icu_synta
 
 ## 3. Synthetic Benchmark: A vs A0 vs B vs B+ctx (4 Stacks × 5 Languages)
 
-Note: In Stage 3, **all** DeepL runs for `es-MX`, `de`, `ja`, and `pl` used live DeepL glossaries (with `polyglot-eval-*` slot cleanup after every run); `ar` ran without a DeepL glossary because DeepL does not support EN→AR glossaries.
+Note: In Stage 3, **all** DeepL runs for `es-MX`, `de`, `ja`, and `pl` used live DeepL glossaries (with `wraith-eval-*` slot cleanup after every run); `ar` ran without a DeepL glossary because DeepL does not support EN→AR glossaries.
 
 ### Challenge Subset vs Non-Challenge Subset (Aggregated Across 4 Synthetic Apps × 5 Languages)
 
-| System | Challenge Win Rate (n=545, Wilson 95% CI) | Challenge Disambiguation Sense Accuracy (Wilson 95% CI) | Challenge MQM Major+Crit / 100 | Non-Challenge Win Rate (n=60, Wilson 95% CI) | Non-Challenge MQM Major+Crit / 100 | Total `polyglot check` Errors | Total Visual Defects |
+| System | Challenge Win Rate (n=545, Wilson 95% CI) | Challenge Disambiguation Sense Accuracy (Wilson 95% CI) | Challenge MQM Major+Crit / 100 | Non-Challenge Win Rate (n=60, Wilson 95% CI) | Non-Challenge MQM Major+Crit / 100 | Total `wraith check` Errors | Total Visual Defects |
 |---|---|---|---|---|---|---|---|
-| **A (Codex + Polyglot MCP)** | 2.8% [1.7%, 4.5%] | 99.5% [98.3%, 99.9%] | 4.8 | 6.7% [2.6%, 15.9%] | 7.5 | 0 | 25 |
-| A0 (Codex, no Polyglot) | 4.8% [3.3%, 6.9%] | 99.8% [98.7%, 100.0%] | 1.8 | 11.7% [5.8%, 22.2%] | 5.8 | 28 | 26 |
+| **A (Codex + Wraith MCP)** | 2.8% [1.7%, 4.5%] | 99.5% [98.3%, 99.9%] | 4.8 | 6.7% [2.6%, 15.9%] | 7.5 | 0 | 25 |
+| A0 (Codex, no Wraith) | 4.8% [3.3%, 6.9%] | 99.8% [98.7%, 100.0%] | 1.8 | 11.7% [5.8%, 22.2%] | 5.8 | 28 | 26 |
 | B (DeepL + XML + glossary) | 0.5% [0.2%, 1.6%] | 59.3% [54.6%, 63.8%] | 34.0 | 0.0% [0.0%, 6.0%] | 21.3 | 53 | 66 |
 | B+ctx (DeepL + `context` ≤300c) | 0.5% [0.2%, 1.6%] | 86.7% [83.2%, 89.6%] | 18.0 | 3.3% [0.9%, 11.4%] | 9.6 | 42 | 57 |
 | *Ties* | 91.4% | — | — | 78.3% | — | — | Pseudo: 70 |
@@ -158,7 +158,7 @@ Note: In Stage 3, **all** DeepL runs for `es-MX`, `de`, `ja`, and `pl` used live
 
 ### Per-Tool MCP Response Payload Overhead (Across All System A Synthetic Runs)
 
-| Polyglot MCP Tool | Total Calls | Total Response Bytes | Avg Bytes / Call | Total Approx Tokens (bytes/4) |
+| Wraith MCP Tool | Total Calls | Total Response Bytes | Avg Bytes / Call | Total Approx Tokens (bytes/4) |
 |---|---|---|---|---|
 | `prepare` | 61 | 381,080 | 6,247 | 95,292 |
 | `check` | 32 | 137,256 | 4,289 | 34,326 |
@@ -173,21 +173,21 @@ Note: In Stage 3, **all** DeepL runs for `es-MX`, `de`, `ja`, and `pl` used live
 
 | System | Avg Model Turns | Avg Uncached Input / 1k strings | Avg Total Input / 1k strings | Avg Output / 1k strings |
 |---|---|---|---|---|
-| System A (Codex + Polyglot MCP) | 1.0 | 981,569 | 13,853,846 | 66,370 |
-| System A0 (Codex, no Polyglot) | 1.0 | 612,327 | 5,709,335 | 66,835 |
+| System A (Codex + Wraith MCP) | 1.0 | 981,569 | 13,853,846 | 66,370 |
+| System A0 (Codex, no Wraith) | 1.0 | 612,327 | 5,709,335 | 66,835 |
 
 ## 5. Never-Internationalized App Extraction Test (`nextjs-unlocalized`)
 
 - **Scanner recall on 24 expected user-visible strings:** 24/24 (100.0%)
 - **Scanner false positives on 10 technical strings (API URLs, SQL, HTTP headers, Tailwind classes, logs):** 0/10
 - **Total raw scanner candidates:** 24
-- **End-to-end Codex + Polyglot refactor:** extracted 23 keys, `src/lib/runnerApi.ts` untouched=true, `tsc --noEmit` passed=true, `polyglot check` de=PASS (0 errs), es-MX=PASS (0 errs), wall=94.0s.
+- **End-to-end Codex + Wraith refactor:** extracted 23 keys, `src/lib/runnerApi.ts` untouched=true, `tsc --noEmit` passed=true, `wraith check` de=PASS (0 errs), es-MX=PASS (0 errs), wall=94.0s.
 
 ## 6. Real Open-Source Apps Evaluation (A vs A0 vs B vs H)
 
 ### Repository Inventory & Monorepo Setup DX
 
-| Repo | Stack | Pinned Commit | Catalog Path | Total Keys | Sampled | Post-Cutoff (>2026-03-01) | `polyglot init` Auto-Detected? |
+| Repo | Stack | Pinned Commit | Catalog Path | Total Keys | Sampled | Post-Cutoff (>2026-03-01) | `wraith init` Auto-Detected? |
 |---|---|---|---|---|---|---|---|
 | next-intl | auto | `19675be7` | `examples/example-app-router-playground/messages/en.json` | 30 | 30 | 0 | No (needed manual `paths.locales`) |
 | hoppscotch | auto | `6177eae1` | `packages/hoppscotch-common/locales/en.json` | 2198 | 200 | 0 | No (needed manual `paths.locales`) |
@@ -197,10 +197,10 @@ Note: In Stage 3, **all** DeepL runs for `es-MX`, `de`, `ja`, and `pl` used live
 
 ### Aggregated OSS Judge Panel Results (Stratified 40 Strings/App/Lang vs Human `H`)
 
-| System | Panel Win Rate (n=460, Wilson 95% CI) | MQM Major+Crit / 100 | Total `polyglot check` Errors |
+| System | Panel Win Rate (n=460, Wilson 95% CI) | MQM Major+Crit / 100 | Total `wraith check` Errors |
 |---|---|---|---|
-| **A (Codex + Polyglot MCP)** | 12.4% [9.7%, 15.7%] | 1.5 | 6 |
-| A0 (Codex, no Polyglot) | 13.7% [10.8%, 17.1%] | 1.8 | 67 |
+| **A (Codex + Wraith MCP)** | 12.4% [9.7%, 15.7%] | 1.5 | 6 |
+| A0 (Codex, no Wraith) | 13.7% [10.8%, 17.1%] | 1.8 | 67 |
 | B (DeepL) | 8.3% [6.1%, 11.1%] | 17.2 | 116 |
 | H (Existing Human OSS Translation) | 4.8% [3.2%, 7.1%] | 23.1 | — |
 | *Ties* | 60.9% | — | — |
@@ -237,7 +237,7 @@ Note: In Stage 3, **all** DeepL runs for `es-MX`, `de`, `ja`, and `pl` used live
 
 > **Methodological Note:** LOW-CONFIDENCE JUDGE VERDICT (Pilot DOCX κ = 0.34, Claude flip rate = 35%): treat DOCX judge preferences as secondary; primary DOCX conclusions rest on deterministic OOXML structure preservation, LibreOffice rendering, source-text leakage, and incremental-update integrity.
 
-| Document | Target | LibreOffice Opens (A / B) | Source Leakage Paras (A / B) | Unique `w:rPr` Formatting Runs (Src / A / B) | Structural Elements Match Src? (A / B) | Polyglot `check` (A) | DeepL Billed Chars | Low-Conf Judge Wins (A / B / Tie, n=15) |
+| Document | Target | LibreOffice Opens (A / B) | Source Leakage Paras (A / B) | Unique `w:rPr` Formatting Runs (Src / A / B) | Structural Elements Match Src? (A / B) | Wraith `check` (A) | DeepL Billed Chars | Low-Conf Judge Wins (A / B / Tie, n=15) |
 |---|---|---|---|---|---|---|---|---|
 | `northstar-policy.docx` | `de` | Yes / Yes | 0 / 0 | 5 / 5 / 5 | Exact match / Exact match | PASS (0 err) | 50,000 | 4 / 1 / 10 *(low-conf)* |
 | `gov-grant-form.docx` | `ja` | Yes / Yes | 0 / 0 | 2 / 2 / 2 | Exact match / Exact match | PASS (0 err) | 50,000 | 6 / 1 / 8 *(low-conf)* |
@@ -247,8 +247,8 @@ Note: In Stage 3, **all** DeepL runs for `es-MX`, `de`, `ja`, and `pl` used live
 ### Mid-Batch Incremental Source Edit Test (`libreoffice-revisions.docx` → `pl`)
 
 - **Source v1 → v2 edit:** Inserted a new urgent amendment paragraph at top of document (shifting all paragraph indices +1) and edited paragraph 2 from *"twelve hours"* to *"six hours"*.
-- **`polyglot check` immediately after v2 swap:** `FAIL` (errors=1, codes=`{"missing_document_translation":1}`).
-- **After Batch 2 on v2:** `polyglot check` = `PASS` (errors=0), LibreOffice opened cleanly=true, final visible paragraphs=13 (v2 source=13).
+- **`wraith check` immediately after v2 swap:** `FAIL` (errors=1, codes=`{"missing_document_translation":1}`).
+- **After Batch 2 on v2:** `wraith check` = `PASS` (errors=0), LibreOffice opened cleanly=true, final visible paragraphs=13 (v2 source=13).
 - **Alignment check:** Top amendment aligned in slot 0=true; edited para updated to 6 hours (not 12)=true.
 
 ## 8. Release N → N+1 Replay, Fuzzy TM Leverage & 30-Term Glossary Propagation
@@ -258,13 +258,13 @@ Note: In Stage 3, **all** DeepL runs for `es-MX`, `de`, `ja`, and `pl` used live
 | next-intl | 100.0% / 100.0% | 0/5 | 0 / 9 | 100.0% / 100.0% | 1/1 (100.0% / 100.0%) | 8 / 3 / 5 |
 | hoppscotch | 100.0% / 100.0% | 0/5 | 1 / 11 | 100.0% / 90.5% | 4/4 (100.0% / 100.0%) | 4 / 6 / 6 |
 
-## 9. Polyglot Defects Observed (Documented Only — Not Modified)
+## 9. Wraith Defects Observed (Documented Only — Not Modified)
 
 1. **False-positive `glossary_inconsistency` warnings on context-dependent homonyms:**
-   - *Reproduction:* On `eval/synthetic/nextjs-commerce`, run `polyglot check --locale de --json` after translating `status.open` ("Open" = business open → `"Geöffnet"`) and `actions.open` ("Open" = open file verb → `"Öffnen"`).
-   - *Observed:* Polyglot emits `glossary_inconsistency` warnings for `"Open"`, `"Free"`, and `"Charge"` even though they are intentionally distinct translations for distinct component usage contexts.
+   - *Reproduction:* On `eval/synthetic/nextjs-commerce`, run `wraith check --locale de --json` after translating `status.open` ("Open" = business open → `"Geöffnet"`) and `actions.open` ("Open" = open file verb → `"Öffnen"`).
+   - *Observed:* Wraith emits `glossary_inconsistency` warnings for `"Open"`, `"Free"`, and `"Charge"` even though they are intentionally distinct translations for distinct component usage contexts.
 2. **Monorepo auto-detection requires manual `paths.locales` configuration:**
-   - *Reproduction:* Run `polyglot init -s en -t de` in the root of real monorepos (`hoppscotch`, `immich`, `next-intl` examples) where catalogs sit under nested package directories.
+   - *Reproduction:* Run `wraith init -s en -t de` in the root of real monorepos (`hoppscotch`, `immich`, `next-intl` examples) where catalogs sit under nested package directories.
    - *Observed:* `init` defaults to root-level heuristics rather than discovering nested workspace locale directories, requiring users to set `paths.locales` manually (see §6 DX table).
 3. **`audit3` MISS extraction tests (pre-existing, caused Cal.com skip):**
    - *Reproduction:* `./node_modules/.bin/vitest run --config audit3/vitest.config.ts -t "MISS"` fails 3/5 (`MISS-1`, `MISS-2`, `MISS-3`).
@@ -273,7 +273,7 @@ Note: In Stage 3, **all** DeepL runs for `es-MX`, `de`, `ja`, and `pl` used live
 
 - **Total estimated API-equivalent spend (list-price reference; subscription CLIs billed $0):** $98.2924
 - **DeepL total billed characters recorded across all runs:** 482,953
-- **DeepL `polyglot-eval-*` glossary deletions (strictly scoped to our prefix; never touched other projects):**
+- **DeepL `wraith-eval-*` glossary deletions (strictly scoped to our prefix; never touched other projects):**
   - `7c65e287-6afc-4672-9372-ea2f03d9be8d` — `polyglot-eval-docx-libreoffice-revisions-pl` (en→pl, reason: `after-docx-pl`, at 2026-11-25T14:10:13.855Z)
 
 ## 11. Explicit Limitations
@@ -286,16 +286,16 @@ Note: In Stage 3, **all** DeepL runs for `es-MX`, `de`, `ja`, and `pl` used live
 
 ## 12. Post-Eval Addendum: Before vs After — Layout & Formatting v1 (`layout-v1` Branch)
 
-> **Sequencing Disclosure:** All Stage 3 benchmarks in Sections 1–11 were executed while Polyglot was pinned unmodified at `f317563`. After Stage 3 completed, release blockers (`MISS-1`, `MISS-2`, `MISS-3`, `STALE-1`) and **Layout & Formatting v1** were built on branch `layout-v1`, and **only the layout evaluation** was re-run on `nextjs-commerce` across 7 locales (`en-XA`, `ar-XB`, `de`, `es-MX`, `ja`, `ar`, `pl`) at 375px and 1280px viewports.
+> **Sequencing Disclosure:** All Stage 3 benchmarks in Sections 1–11 were executed while Wraith was pinned unmodified at `f317563`. After Stage 3 completed, release blockers (`MISS-1`, `MISS-2`, `MISS-3`, `STALE-1`) and **Layout & Formatting v1** were built on branch `layout-v1`, and **only the layout evaluation** was re-run on `nextjs-commerce` across 7 locales (`en-XA`, `ar-XB`, `de`, `es-MX`, `ja`, `ar`, `pl`) at 375px and 1280px viewports.
 
 | Stage | Outcome | Total Rendered Defects | Clipped Text | RTL `dir`/`lang` Mismatch | Horizontal Overflow | Static Physical-RTL Risks |
 |---|---|---|---|---|---|---|
 | **Baseline (`f317563`)** | `FAIL` | **26** | 15 | 4 | 7 | 1 |
-| **After Step 1 (`polyglot layout --fix` mechanical codemods only)** | `FAIL` | 8 | **0** | **0** | 8 | **0** |
+| **After Step 1 (`wraith layout --fix` mechanical codemods only)** | `FAIL` | 8 | **0** | **0** | 8 | **0** |
 | **After Step 2 (Agent applies prescribed `flex-wrap` edit)** | `PASS` | **0** | **0** | **0** | **0** | **0** |
 
 - **Auto pseudo-modes generated:** `expand` (`en-XA`, 60 keys), `rtl` (`ar-XB`, 56 keys), `cjk` (`ja-XC`, 60 keys), `long-word` (`de-XE`, 60 keys).
-- **Zero-width key ID tracing:** mapped **13/26** rendered browser defects directly back to catalog keys and `file:line`, recording **13** width budgets in `.polyglot/layout.json`.
+- **Zero-width key ID tracing:** mapped **13/26** rendered browser defects directly back to catalog keys and `file:line`, recording **13** width budgets in `.wraith/layout.json`.
 - **Deterministic mechanical codemods (`layout --fix`):** modified **5 files** (**8** mechanical rewrites: `w-*` → `min-w-*`, physical `ml-/mr-/pl-/text-left/border-l` → logical `ms-/me-/ps-/text-start/border-s`, root `<html>` `dir`/`lang`), eliminating **100% of clipped text (15 → 0)** and **100% of RTL defects (5 → 0)** automatically.
 
 
@@ -303,7 +303,7 @@ Note: In Stage 3, **all** DeepL runs for `es-MX`, `de`, `ja`, and `pl` used live
 
 > **DRY RUN — no model outputs yet; dataset & metric pipeline validated.** No Codex or judge calls were made. Metric values below are gold-vs-gold sanity checks, **not** system results.
 
-Cross-file consistency benchmark: 482 items in 165 recurring (slice × locale × source) groups across locales `de`, `ja`, `ar`, `es`; 40% of recurring patterns pre-seeded into an isolated per-slice `.polyglot/tm.json`. TM retrieval: top-3 fuzzy, minSimilarity 0.7.
+Cross-file consistency benchmark: 482 items in 165 recurring (slice × locale × source) groups across locales `de`, `ja`, `ar`, `es`; 40% of recurring patterns pre-seeded into an isolated per-slice `.wraith/tm.json`. TM retrieval: top-3 fuzzy, minSimilarity 0.7.
 
 | Slice | Gold Provenance | Items | Unique Sources | Components/Namespaces | Glossary Terms | TM Entries | A-full Items w/ TM Hit | Per-Locale Items (groups / TM-seeded groups) |
 |---|---|---|---|---|---|---|---|---|

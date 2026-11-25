@@ -5,10 +5,10 @@ This log records implementation choices made where the kickoff brief intentional
 ---
 
 ## ADR-001: Single Binary & Packaging Strategy
-- **Decision:** Build the entire CLI and MCP server in TypeScript (ESM, targeting Node 20+). Distribute via npm (`npx polyglot ...`) using an `esbuild`-bundled entry point, and compile standalone binaries using Node.js Single Executable Applications (`node --build-sea` / SEA config) for Linux, macOS, and Windows (with an optional Bun compile fallback script when `bun` is installed).
+- **Decision:** Build the entire CLI and MCP server in TypeScript (ESM, targeting Node 20+). Distribute via npm (`npx wraith ...`) using an `esbuild`-bundled entry point, and compile standalone binaries using Node.js Single Executable Applications (`node --build-sea` / SEA config) for Linux, macOS, and Windows (with an optional Bun compile fallback script when `bun` is installed).
 - **Rationale:** Node 26 is available in the local environment and natively supports Single Executable Applications without requiring Bun to be preinstalled, while keeping the npm distribution tiny and standard.
 
-## ADR-002: `.polyglot/` Storage Format
+## ADR-002: `.wraith/` Storage Format
 - **Decision:** Use canonically sorted JSON (`2-space` indentation, trailing newline) for structured files (`config.json`, `glossary.json`, `usage.json`, `records.json`, `assumptions.json`, `reviews.json`) and JSONL (`memory.jsonl`) for translation memory pairs.
 - **Rationale:** JSON needs zero external parsing dependencies, validates cleanly with Zod, produces predictable diffs when keys are sorted alphabetically, and is immediately readable by both humans and coding agents. JSONL keeps translation memory diffs strictly one-line-per-entry.
 
@@ -49,7 +49,7 @@ This log records implementation choices made where the kickoff brief intentional
 - **Rationale:** Guarantees 100% offline determinism, fast startup in standalone binaries, and strict MIT/Apache/BSD/ISC license compliance.
 
 ## ADR-010: Advisory Memory & Fuzzy Matches (Never Blind Auto-Fill)
-- **Decision:** Even 100% lexical matches from `.polyglot/memory.jsonl` or TMX are returned strictly as **strong suggestions with prior context** (`advisory`, `previousContext`, `contextAlignment`), never blindly auto-applied.
+- **Decision:** Even 100% lexical matches from `.wraith/memory.jsonl` or TMX are returned strictly as **strong suggestions with prior context** (`advisory`, `previousContext`, `contextAlignment`), never blindly auto-applied.
 - **Rationale:** Identical source strings frequently mean different things in different UI locations (e.g., `"Open"` in a File menu vs. a store-hours banner). The coding agent sees both the previous usage context and the current component context and decides whether to reuse or adapt the match.
 
 ## ADR-011: Deterministic Layout, Formatting & Visual Continuity QA
@@ -58,7 +58,7 @@ This log records implementation choices made where the kickoff brief intentional
 
 ## ADR-012: Content-Derived Document Segment Identity, Manual Edit Preservation & Workspace Locking
 - **Decision:**
-  1. **Document segment identity:** Key incremental segment records in `.polyglot/documents.json` by occurrence-aware content identity (`${part}:${sha256Short(sourceText)}:${occurrence}`), never by paragraph index. When a source paragraph changes in-place, drop its stale translation from re-application and surface it as `stale` in `prepareDocument` and blocking `stale_source` in `runCheck`.
-  2. **Manual edits to translated documents:** Before applying a new batch, extract the existing target document on disk and compare each carried-forward segment against the last written translation at its recorded `lastSegmentId`. If a human reviewer edited the wording while keeping inline tags compatible, **preserve the manual edit automatically** and persist it back into `.polyglot/documents.json` and `.polyglot/memory.jsonl`. If a manual edit altered inline formatting tags incompatibly, refuse to overwrite (`manual_edit_conflict`) unless `force: true` is passed.
-  3. **Multi-process concurrency:** Coordinate read-modify-write mutations across locale files and `.polyglot/` state files with an exclusive lock file (`.polyglot/.lock` via `O_CREAT | O_EXCL`), supporting same-process re-entrancy, configurable timeout, and stale-lock recovery (dead PID or expired mtime).
+  1. **Document segment identity:** Key incremental segment records in `.wraith/documents.json` by occurrence-aware content identity (`${part}:${sha256Short(sourceText)}:${occurrence}`), never by paragraph index. When a source paragraph changes in-place, drop its stale translation from re-application and surface it as `stale` in `prepareDocument` and blocking `stale_source` in `runCheck`.
+  2. **Manual edits to translated documents:** Before applying a new batch, extract the existing target document on disk and compare each carried-forward segment against the last written translation at its recorded `lastSegmentId`. If a human reviewer edited the wording while keeping inline tags compatible, **preserve the manual edit automatically** and persist it back into `.wraith/documents.json` and `.wraith/memory.jsonl`. If a manual edit altered inline formatting tags incompatibly, refuse to overwrite (`manual_edit_conflict`) unless `force: true` is passed.
+  3. **Multi-process concurrency:** Coordinate read-modify-write mutations across locale files and `.wraith/` state files with an exclusive lock file (`.wraith/.lock` via `O_CREAT | O_EXCL`), supporting same-process re-entrancy, configurable timeout, and stale-lock recovery (dead PID or expired mtime).
 - **Rationale:** Positional document state silently misaligned translations whenever source paragraphs were inserted, deleted, or reordered, and silently clobbered human reviewer edits in Word/Markdown. Content-derived identity plus automatic preservation of compatible manual edits eliminates both failure modes while keeping incremental batch translation safe.

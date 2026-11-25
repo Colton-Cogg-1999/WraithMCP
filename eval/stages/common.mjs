@@ -2,7 +2,7 @@ import { execFileSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
 import YAML from "yaml";
-import { CACHE_DIR, POLYGLOT_BIN } from "../config.mjs";
+import { CACHE_DIR, WRAITH_BIN } from "../config.mjs";
 
 export function flattenJson(obj, prefix = "", out = {}) {
   if (!obj || typeof obj !== "object") return out;
@@ -128,9 +128,9 @@ export function writePoCatalogFromSkeleton(skeletonPo, translationsByMsgid) {
   return updated.join("\n\n") + "\n";
 }
 
-export function runPolyglotCli(cwd, args) {
+export function runWraithCli(cwd, args) {
   try {
-    const out = execFileSync(POLYGLOT_BIN, ["-C", cwd, ...args], {
+    const out = execFileSync(WRAITH_BIN, ["-C", cwd, ...args], {
       encoding: "utf8",
       stdio: ["ignore", "pipe", "pipe"],
       maxBuffer: 16 * 1024 * 1024,
@@ -145,7 +145,7 @@ export function runPolyglotCli(cwd, args) {
   }
 }
 
-export function parsePolyglotJson(cliRes) {
+export function parseWraithJson(cliRes) {
   try {
     return JSON.parse(cliRes.stdout);
   } catch {
@@ -153,8 +153,8 @@ export function parsePolyglotJson(cliRes) {
   }
 }
 
-export function seedPolyglotProject(dir, targetLocales, glossaryEntries = [], configPatch = null) {
-  runPolyglotCli(dir, ["init", "-s", "en", "-t", targetLocales.join(","), "--no-agent-rule"]);
+export function seedWraithProject(dir, targetLocales, glossaryEntries = [], configPatch = null) {
+  runWraithCli(dir, ["init", "-s", "en", "-t", targetLocales.join(","), "--no-agent-rule"]);
   if (glossaryEntries && glossaryEntries.length > 0) {
     const fixedTs = "2026-01-01T00:00:00.000Z";
     const glossaryFile = {
@@ -170,12 +170,12 @@ export function seedPolyglotProject(dir, targetLocales, glossaryEntries = [], co
       })),
     };
     fs.writeFileSync(
-      path.join(dir, ".polyglot", "glossary.json"),
+      path.join(dir, ".wraith", "glossary.json"),
       JSON.stringify(glossaryFile, null, 2) + "\n"
     );
   }
   if (configPatch) {
-    const cfgPath = path.join(dir, ".polyglot", "config.json");
+    const cfgPath = path.join(dir, ".wraith", "config.json");
     if (fs.existsSync(cfgPath)) {
       const cfg = JSON.parse(fs.readFileSync(cfgPath, "utf8"));
       configPatch(cfg);

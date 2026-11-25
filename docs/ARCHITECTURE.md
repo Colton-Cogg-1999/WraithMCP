@@ -7,9 +7,9 @@
 Wraith is a **deterministic-first, repo-native** CLI and MCP server built as a single TypeScript codebase compiled into one executable.
 
 - **Deterministic core, no translation calls:** Scanning, extraction gating, placeholder/ICU/plural validation, fuzzy TM, lossless writes, layout and visual QA, TMS export/import, and reporting are repeatable and offline. All translation and code refactoring are performed by the user's coding agent.
-- **One opt-in model call:** `polyglot qe` Tier 2 (three LLM critics) runs only when `ANTHROPIC_API_KEY` or `GEMINI_API_KEY`/`GOOGLE_API_KEY` is present. Without keys it is skipped and segments are `unscored` (fail-closed, never `verified`). Nothing else in Wraith calls a model.
-- **Repo-native state:** All state lives in plain, diffable, canonically formatted files in `.polyglot/`, committed alongside code.
-- **Conductor about "done", toolbox about "how":** Tools are small, orthogonal primitives. Completion is enforced by MCP server instructions, `AGENTS.md`/`CLAUDE.md` rules, the `/localize` prompt, the skills in `skills/`, and `polyglot check` / `extract` / `visual-qa` in pre-commit and CI.
+- **One opt-in model call:** `wraith qe` Tier 2 (three LLM critics) runs only when `ANTHROPIC_API_KEY` or `GEMINI_API_KEY`/`GOOGLE_API_KEY` is present. Without keys it is skipped and segments are `unscored` (fail-closed, never `verified`). Nothing else in Wraith calls a model.
+- **Repo-native state:** All state lives in plain, diffable, canonically formatted files in `.wraith/`, committed alongside code.
+- **Conductor about "done", toolbox about "how":** Tools are small, orthogonal primitives. Completion is enforced by MCP server instructions, `AGENTS.md`/`CLAUDE.md` rules, the `/localize` prompt, the skills in `skills/`, and `wraith check` / `extract` / `visual-qa` in pre-commit and CI.
 - **Fail closed:** Every gate returns `PASS` / `FAIL` / `INCONCLUSIVE`; missing Playwright, server, baseline, or coverage is `INCONCLUSIVE` (exit 2), never `PASS`.
 - **Compact outputs:** MCP tools return ranked summaries with counts and accept filters/pagination.
 
@@ -56,7 +56,7 @@ flowchart LR
 | Stage | Command / MCP tool | Model tokens | Writes |
 |---|---|---|---|
 | Status, scan | `status`, `scan` | 0 | none |
-| Extraction gate | `polyglot extract` (CLI only) | 0 (agent does the refactor) | none |
+| Extraction gate | `wraith extract` (CLI only) | 0 (agent does the refactor) | none |
 | Mechanical codemods | `layout --fix` / `layout_fix` | 0 | source files |
 | Context packaging | `prepare` | 0 | none |
 | Translation | coding agent | **agent** | — |
@@ -80,11 +80,11 @@ flowchart TD
     Agent["Coding Agent (Claude Code / Codex / Gemini CLI)"]
     Human["Developer / CI / Pre-commit"]
 
-    subgraph Binary["Single Executable (polyglot)"]
+    subgraph Binary["Single Executable (wraith)"]
         CLI["CLI Entrypoint (commander)"]
         MCP["MCP Server (stdio, 17 tools, /localize prompt)"]
         subgraph Core["Core Engine (src/core/)"]
-            Store["Repo Store (.polyglot/)"]
+            Store["Repo Store (.wraith/)"]
             Check["Deterministic Check Engine"]
             Prepare["Context Packager (prepare)"]
             Apply["Validated Writer (apply)"]
@@ -113,7 +113,7 @@ flowchart TD
 
 ---
 
-## Data model (`.polyglot/`)
+## Data model (`.wraith/`)
 
 | File | Contents | Written by |
 |---|---|---|
@@ -137,7 +137,7 @@ flowchart TD
 
 ```
 src/
-├── bin.ts            # single binary entrypoint (CLI vs `polyglot mcp`)
+├── bin.ts            # single binary entrypoint (CLI vs `wraith mcp`)
 ├── cli.ts            # init, status, scan, extract, check, pseudo, layout, visual-qa, qe,
 │                     # review, escalate, import, export, report, mcp
 ├── mcp/server.ts     # MCP tools, annotations, instructions, /localize prompt
@@ -147,7 +147,7 @@ src/
 ├── adapters/         # React/Next, Vue/Nuxt, SvelteKit, Rails, Django scanners
 └── documents/        # Markdown/MDX, byte-preserving DOCX
 skills/               # agent skills (i18n-prep, localize-pr, layout-remediation, qe-triage, tms-roundtrip)
-.github/workflows/    # polyglot.yml (CI gate + /localize), release.yml
+.github/workflows/    # wraith.yml (CI gate + /localize), release.yml
 eval/                 # independent benchmark harness + REPORT.md
 ```
 

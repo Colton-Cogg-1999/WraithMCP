@@ -9,13 +9,13 @@ import path from "node:path";
 import { execFileSync } from "node:child_process";
 
 const ext = process.platform === "win32" ? ".exe" : "";
-const binPath = path.resolve("release", `polyglot-${process.platform}-${process.arch}${ext}`);
+const binPath = path.resolve("release", `wraith-${process.platform}-${process.arch}${ext}`);
 const target = fs.existsSync(binPath) ? binPath : process.execPath;
 const baseArgs = fs.existsSync(binPath) ? [] : [path.resolve("dist/bin.js")];
 
 console.log(`=== Milestone 7: Packaged Binary Demo (${path.basename(binPath)}) ===\n`);
 
-const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "polyglot-demo-07-"));
+const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "wraith-demo-07-"));
 try {
   fs.cpSync(path.resolve("fixtures/nextjs-app"), tmp, { recursive: true });
   const scanOut = execFileSync(target, [...baseArgs, "-C", tmp, "scan"], { encoding: "utf8" });

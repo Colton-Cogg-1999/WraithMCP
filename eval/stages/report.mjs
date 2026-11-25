@@ -148,10 +148,10 @@ export async function generateReports() {
   if (synthetic?.apps) {
     for (const [appId, appObj] of Object.entries(synthetic.apps)) {
       for (const [loc, locObj] of Object.entries(appObj.locales ?? {})) {
-        synAgg.detErrors.A += locObj.systemA?.polyglotCheck?.errorCount ?? 0;
-        synAgg.detErrors.A0 += locObj.systemA0?.polyglotCheck?.errorCount ?? 0;
-        synAgg.detErrors.B += locObj.systemB?.polyglotCheck?.errorCount ?? 0;
-        synAgg.detErrors.Bctx += locObj.systemBctx?.polyglotCheck?.errorCount ?? 0;
+        synAgg.detErrors.A += locObj.systemA?.wraithCheck?.errorCount ?? 0;
+        synAgg.detErrors.A0 += locObj.systemA0?.wraithCheck?.errorCount ?? 0;
+        synAgg.detErrors.B += locObj.systemB?.wraithCheck?.errorCount ?? 0;
+        synAgg.detErrors.Bctx += locObj.systemBctx?.wraithCheck?.errorCount ?? 0;
 
         synAgg.visualDefects.A += locObj.systemA?.visualDefects ?? 0;
         synAgg.visualDefects.A0 += locObj.systemA0?.visualDefects ?? 0;
@@ -201,9 +201,9 @@ export async function generateReports() {
   if (oss?.repos) {
     for (const [repoId, repoObj] of Object.entries(oss.repos)) {
       for (const [loc, locObj] of Object.entries(repoObj.locales ?? {})) {
-        ossAgg.detErrors.A += locObj.systemA?.translationOnlyCheck?.errorCount ?? locObj.systemA?.polyglotCheck?.errorCount ?? 0;
-        ossAgg.detErrors.A0 += locObj.systemA0?.translationOnlyCheck?.errorCount ?? locObj.systemA0?.polyglotCheck?.errorCount ?? 0;
-        ossAgg.detErrors.B += locObj.systemB?.translationOnlyCheck?.errorCount ?? locObj.systemB?.polyglotCheck?.errorCount ?? 0;
+        ossAgg.detErrors.A += locObj.systemA?.translationOnlyCheck?.errorCount ?? locObj.systemA?.wraithCheck?.errorCount ?? 0;
+        ossAgg.detErrors.A0 += locObj.systemA0?.translationOnlyCheck?.errorCount ?? locObj.systemA0?.wraithCheck?.errorCount ?? 0;
+        ossAgg.detErrors.B += locObj.systemB?.translationOnlyCheck?.errorCount ?? locObj.systemB?.wraithCheck?.errorCount ?? 0;
         if (locObj.chrfAll) ossAgg.chrfRows.push({ repoId, loc, ...locObj.chrfAll });
         if (locObj.chrfPostCutoff) ossAgg.postCutoffRows.push({ repoId, loc, ...locObj.chrfPostCutoff });
         const j = locObj.judging;
@@ -231,19 +231,19 @@ export async function generateReports() {
   // Build Markdown Report (`eval/REPORT.md`)
   // ============================================================================
   const md = [];
-  md.push(`# Polyglot Independent Evaluation Report`);
+  md.push(`# Wraith Independent Evaluation Report`);
   md.push(``);
   md.push(`Generated: ${new Date().toISOString()}  `);
-  md.push(`Repository: \`Polyglot MCP\` (evaluated unmodified; zero edits to \`src/\`, \`audit/\`, \`audit2/\`, \`audit3/\`)  `);
+  md.push(`Repository: \`Wraith MCP\` (evaluated unmodified; zero edits to \`src/\`, \`audit/\`, \`audit2/\`, \`audit3/\`)  `);
   md.push(`Codex Model: \`${CODEX_CONFIG.model}\` (\`reasoning_effort=${CODEX_CONFIG.reasoningEffort}\`, approval flags: \`${CODEX_CONFIG.approvalFlags.join(" ")}\`, cutoff \`${CODEX_CONFIG.modelCutoffDate}\`)  `);
   md.push(`Judge Panel: Claude \`${JUDGE_CONFIG.claude.model}\` (\`effort=${JUDGE_CONFIG.claude.effort}\`) + Gemini \`${JUDGE_CONFIG.gemini.model}\` (blinded, position-swapped; zero OpenAI judges)`);
   md.push(``);
   md.push(`## Executive Summary`);
   md.push(``);
-  md.push(`This evaluation compares **Polyglot + Coding Agent (System A)** against **Coding Agent without Polyglot (System A0)**, **DeepL API (System B)**, **DeepL API with native \`context\` parameter (System B+ctx)**, **DeepL + Polyglot deterministic QA (System C)**, and **existing human OSS translations (System H)** across 4 synthetic framework stacks, 5 real open-source repositories, 4 complex OOXML DOCX documents, an end-to-end extraction test, Playwright visual layout QA, and a Release N→N+1 TM/glossary replay.`);
+  md.push(`This evaluation compares **Wraith + Coding Agent (System A)** against **Coding Agent without Wraith (System A0)**, **DeepL API (System B)**, **DeepL API with native \`context\` parameter (System B+ctx)**, **DeepL + Wraith deterministic QA (System C)**, and **existing human OSS translations (System H)** across 4 synthetic framework stacks, 5 real open-source repositories, 4 complex OOXML DOCX documents, an end-to-end extraction test, Playwright visual layout QA, and a Release N→N+1 TM/glossary replay.`);
   md.push(``);
   md.push(`- **Cal.com skipped as instructed:** \`audit3\` MISS suite failed 3/5 (\`MISS-1\`, \`MISS-2\`, \`MISS-3\`), so Cal.com was excluded and documented here.`);
-  md.push(`- **Pilot \`de\` DeepL note:** In Stage 2 Pilot, \`de\` ran **without** a DeepL glossary due to DeepL Free tier's 1-glossary account limit (HTTP 456). In Stage 3, the harness deletes only its own \`polyglot-eval-*\` glossaries before/after each run (logged by ID below), so Stage 3 \`es-MX\`, \`de\`, \`ja\`, and \`pl\` **all** ran with live DeepL glossaries (\`ar\` has no DeepL glossary support).`);
+  md.push(`- **Pilot \`de\` DeepL note:** In Stage 2 Pilot, \`de\` ran **without** a DeepL glossary due to DeepL Free tier's 1-glossary account limit (HTTP 456). In Stage 3, the harness deletes only its own \`wraith-eval-*\` glossaries before/after each run (logged by ID below), so Stage 3 \`es-MX\`, \`de\`, \`ja\`, and \`pl\` **all** ran with live DeepL glossaries (\`ar\` has no DeepL glossary support).`);
   md.push(``);
 
   // ---- Section 1: Judge Validation (Upfront!) ----
@@ -308,7 +308,7 @@ export async function generateReports() {
   // ---- Section 2: Pilot System C icu_syntax_error Root-Cause Disclosure (Change #4) ----
   md.push(`## 2. Raw DeepL Response Analysis for Pilot \`icu_syntax_error\` (Change #4)`);
   md.push(``);
-  md.push(`In the Stage 2 Pilot, System C (\`polyglot check\` on System B) flagged \`icu_syntax_error\` on two keys. Inspection of the exact cached raw DeepL API responses proves one was our harness bug (fixed before Stage 3) and one was a genuine DeepL XML corruption bug:`);
+  md.push(`In the Stage 2 Pilot, System C (\`wraith check\` on System B) flagged \`icu_syntax_error\` on two keys. Inspection of the exact cached raw DeepL API responses proves one was our harness bug (fixed before Stage 3) and one was a genuine DeepL XML corruption bug:`);
   md.push(``);
   for (const d of icuDiagnostics) {
     md.push(`- **Key \`${d.key}\` (\`${d.targetLang}\`, cache \`${d.cacheFile}\`) — \`${d.rootCause}\`**`);
@@ -321,17 +321,17 @@ export async function generateReports() {
   // ---- Section 3: Synthetic Benchmark (A vs A0 vs B vs B+ctx) ----
   md.push(`## 3. Synthetic Benchmark: A vs A0 vs B vs B+ctx (4 Stacks × 5 Languages)`);
   md.push(``);
-  md.push(`Note: In Stage 3, **all** DeepL runs for \`es-MX\`, \`de\`, \`ja\`, and \`pl\` used live DeepL glossaries (with \`polyglot-eval-*\` slot cleanup after every run); \`ar\` ran without a DeepL glossary because DeepL does not support EN→AR glossaries.`);
+  md.push(`Note: In Stage 3, **all** DeepL runs for \`es-MX\`, \`de\`, \`ja\`, and \`pl\` used live DeepL glossaries (with \`wraith-eval-*\` slot cleanup after every run); \`ar\` ran without a DeepL glossary because DeepL does not support EN→AR glossaries.`);
   md.push(``);
   md.push(`### Challenge Subset vs Non-Challenge Subset (Aggregated Across 4 Synthetic Apps × 5 Languages)`);
   md.push(``);
   const chN = Math.max(1, synAgg.challenge.count);
   const nchN = Math.max(1, synAgg.nonChallenge.count);
-  md.push(`| System | Challenge Win Rate (n=${synAgg.challenge.count}, Wilson 95% CI) | Challenge Disambiguation Sense Accuracy (Wilson 95% CI) | Challenge MQM Major+Crit / 100 | Non-Challenge Win Rate (n=${synAgg.nonChallenge.count}, Wilson 95% CI) | Non-Challenge MQM Major+Crit / 100 | Total \`polyglot check\` Errors | Total Visual Defects |`);
+  md.push(`| System | Challenge Win Rate (n=${synAgg.challenge.count}, Wilson 95% CI) | Challenge Disambiguation Sense Accuracy (Wilson 95% CI) | Challenge MQM Major+Crit / 100 | Non-Challenge Win Rate (n=${synAgg.nonChallenge.count}, Wilson 95% CI) | Non-Challenge MQM Major+Crit / 100 | Total \`wraith check\` Errors | Total Visual Defects |`);
   md.push(`|---|---|---|---|---|---|---|---|`);
   for (const [sys, label] of [
-    ["A", "**A (Codex + Polyglot MCP)**"],
-    ["A0", "A0 (Codex, no Polyglot)"],
+    ["A", "**A (Codex + Wraith MCP)**"],
+    ["A0", "A0 (Codex, no Wraith)"],
     ["B", "B (DeepL + XML + glossary)"],
     ["Bctx", "B+ctx (DeepL + \`context\` ≤300c)"],
   ]) {
@@ -358,7 +358,7 @@ export async function generateReports() {
         const sa = d.judging?.senseAccuracy ?? {};
         const fS = (k) => (sa[k] ? `${(sa[k].mean * 100).toFixed(0)}%` : "n/a");
         md.push(
-          `| ${appId} (${appObj.stack}) | \`${loc}\` | ${d.systemB?.usedGlossary ? "Yes" : "No (unsupported)"} | ${w.A ?? 0} / ${w.A0 ?? 0} / ${w.B ?? 0} / ${w.Bctx ?? 0} / ${w.tie ?? 0} | ${fS("A")} / ${fS("A0")} / ${fS("B")} / ${fS("Bctx")} | ${d.systemA?.polyglotCheck?.errorCount ?? "?"} / ${d.systemA0?.polyglotCheck?.errorCount ?? "?"} / ${d.systemB?.polyglotCheck?.errorCount ?? "?"} / ${d.systemBctx?.polyglotCheck?.errorCount ?? "?"} | ${d.systemA?.visualDefects ?? "?"} / ${d.systemA0?.visualDefects ?? "?"} / ${d.systemB?.visualDefects ?? "?"} / ${d.systemBctx?.visualDefects ?? "?"} |`
+          `| ${appId} (${appObj.stack}) | \`${loc}\` | ${d.systemB?.usedGlossary ? "Yes" : "No (unsupported)"} | ${w.A ?? 0} / ${w.A0 ?? 0} / ${w.B ?? 0} / ${w.Bctx ?? 0} / ${w.tie ?? 0} | ${fS("A")} / ${fS("A0")} / ${fS("B")} / ${fS("Bctx")} | ${d.systemA?.wraithCheck?.errorCount ?? "?"} / ${d.systemA0?.wraithCheck?.errorCount ?? "?"} / ${d.systemB?.wraithCheck?.errorCount ?? "?"} / ${d.systemBctx?.wraithCheck?.errorCount ?? "?"} | ${d.systemA?.visualDefects ?? "?"} / ${d.systemA0?.visualDefects ?? "?"} / ${d.systemB?.visualDefects ?? "?"} / ${d.systemBctx?.visualDefects ?? "?"} |`
         );
       }
     }
@@ -377,8 +377,8 @@ export async function generateReports() {
       const f = comp.fullA;
       const c = comp.compactA;
       const w = comp.judging?.panel?.wins ?? {};
-      md.push(`| ${key} | Full A | ${(f.wallMs / 1000).toFixed(1)} | ${f.telemetry.modelTurns} | ${f.telemetry.uncachedInputTokensPer1k.toLocaleString()} | ${f.telemetry.inputTokensPer1k.toLocaleString()} | ${f.telemetry.outputTokensPer1k.toLocaleString()} | ${f.telemetry.totalMcpResponseBytes.toLocaleString()} | ${f.telemetry.totalMcpApproxTokens.toLocaleString()} | ${f.polyglotCheckOutcome} | ${w.A ?? 0} / ${w.Acompact ?? 0} / ${w.tie ?? 0} |`);
-      md.push(`| ${key} | **A-compact** | ${(c.wallMs / 1000).toFixed(1)} | ${c.telemetry.modelTurns} | ${c.telemetry.uncachedInputTokensPer1k.toLocaleString()} | ${c.telemetry.inputTokensPer1k.toLocaleString()} | ${c.telemetry.outputTokensPer1k.toLocaleString()} | ${c.telemetry.totalMcpResponseBytes.toLocaleString()} | ${c.telemetry.totalMcpApproxTokens.toLocaleString()} | ${c.polyglotCheck?.outcome} | *(above)* |`);
+      md.push(`| ${key} | Full A | ${(f.wallMs / 1000).toFixed(1)} | ${f.telemetry.modelTurns} | ${f.telemetry.uncachedInputTokensPer1k.toLocaleString()} | ${f.telemetry.inputTokensPer1k.toLocaleString()} | ${f.telemetry.outputTokensPer1k.toLocaleString()} | ${f.telemetry.totalMcpResponseBytes.toLocaleString()} | ${f.telemetry.totalMcpApproxTokens.toLocaleString()} | ${f.wraithCheckOutcome} | ${w.A ?? 0} / ${w.Acompact ?? 0} / ${w.tie ?? 0} |`);
+      md.push(`| ${key} | **A-compact** | ${(c.wallMs / 1000).toFixed(1)} | ${c.telemetry.modelTurns} | ${c.telemetry.uncachedInputTokensPer1k.toLocaleString()} | ${c.telemetry.inputTokensPer1k.toLocaleString()} | ${c.telemetry.outputTokensPer1k.toLocaleString()} | ${c.telemetry.totalMcpResponseBytes.toLocaleString()} | ${c.telemetry.totalMcpApproxTokens.toLocaleString()} | ${c.wraithCheck?.outcome} | *(above)* |`);
     }
     md.push(``);
   }
@@ -396,7 +396,7 @@ export async function generateReports() {
   if (Object.keys(mcpAgg).length > 0) {
     md.push(`### Per-Tool MCP Response Payload Overhead (Across All System A Synthetic Runs)`);
     md.push(``);
-    md.push(`| Polyglot MCP Tool | Total Calls | Total Response Bytes | Avg Bytes / Call | Total Approx Tokens (bytes/4) |`);
+    md.push(`| Wraith MCP Tool | Total Calls | Total Response Bytes | Avg Bytes / Call | Total Approx Tokens (bytes/4) |`);
     md.push(`|---|---|---|---|---|`);
     for (const [tool, st] of Object.entries(mcpAgg).sort((a, b) => b[1].bytes - a[1].bytes)) {
       md.push(`| \`${tool}\` | ${st.calls} | ${st.bytes.toLocaleString()} | ${Math.round(st.bytes / Math.max(1, st.calls)).toLocaleString()} | ${st.tokens.toLocaleString()} |`);
@@ -411,8 +411,8 @@ export async function generateReports() {
     md.push(``);
     md.push(`| System | Avg Model Turns | Avg Uncached Input / 1k strings | Avg Total Input / 1k strings | Avg Output / 1k strings |`);
     md.push(`|---|---|---|---|---|`);
-    md.push(`| System A (Codex + Polyglot MCP) | ${(synAgg.telemetryA.reduce((s, x) => s + x.modelTurns, 0) / synAgg.telemetryA.length).toFixed(1)} | ${avg(synAgg.telemetryA, "uncachedInputTokensPer1k").toLocaleString()} | ${avg(synAgg.telemetryA, "inputTokensPer1k").toLocaleString()} | ${avg(synAgg.telemetryA, "outputTokensPer1k").toLocaleString()} |`);
-    md.push(`| System A0 (Codex, no Polyglot) | ${(synAgg.telemetryA0.reduce((s, x) => s + x.modelTurns, 0) / synAgg.telemetryA0.length).toFixed(1)} | ${avg(synAgg.telemetryA0, "uncachedInputTokensPer1k").toLocaleString()} | ${avg(synAgg.telemetryA0, "inputTokensPer1k").toLocaleString()} | ${avg(synAgg.telemetryA0, "outputTokensPer1k").toLocaleString()} |`);
+    md.push(`| System A (Codex + Wraith MCP) | ${(synAgg.telemetryA.reduce((s, x) => s + x.modelTurns, 0) / synAgg.telemetryA.length).toFixed(1)} | ${avg(synAgg.telemetryA, "uncachedInputTokensPer1k").toLocaleString()} | ${avg(synAgg.telemetryA, "inputTokensPer1k").toLocaleString()} | ${avg(synAgg.telemetryA, "outputTokensPer1k").toLocaleString()} |`);
+    md.push(`| System A0 (Codex, no Wraith) | ${(synAgg.telemetryA0.reduce((s, x) => s + x.modelTurns, 0) / synAgg.telemetryA0.length).toFixed(1)} | ${avg(synAgg.telemetryA0, "uncachedInputTokensPer1k").toLocaleString()} | ${avg(synAgg.telemetryA0, "inputTokensPer1k").toLocaleString()} | ${avg(synAgg.telemetryA0, "outputTokensPer1k").toLocaleString()} |`);
     md.push(``);
   }
 
@@ -426,7 +426,7 @@ export async function generateReports() {
     md.push(`- **Total raw scanner candidates:** ${ex.scanner.totalCandidatesFound}`);
     if (ex.scanner.missedExpected?.length) md.push(`- **Missed expected strings:** ${ex.scanner.missedExpected.map((s) => `\`${s}\``).join(", ")}`);
     if (ex.scanner.flaggedTechnical?.length) md.push(`- **Flagged technical strings:** ${ex.scanner.flaggedTechnical.map((s) => `\`${s}\``).join(", ")}`);
-    md.push(`- **End-to-end Codex + Polyglot refactor:** extracted ${ex.agentWorkflow.extractedKeyCount} keys, \`src/lib/runnerApi.ts\` untouched=${ex.agentWorkflow.runnerApiUnchanged}, \`tsc --noEmit\` passed=${ex.agentWorkflow.tscPassed}, \`polyglot check\` de=${ex.agentWorkflow.polyglotCheck.de.outcome} (${ex.agentWorkflow.polyglotCheck.de.errorCount} errs), es-MX=${ex.agentWorkflow.polyglotCheck["es-MX"].outcome} (${ex.agentWorkflow.polyglotCheck["es-MX"].errorCount} errs), wall=${(ex.agentWorkflow.wallMs / 1000).toFixed(1)}s.`);
+    md.push(`- **End-to-end Codex + Wraith refactor:** extracted ${ex.agentWorkflow.extractedKeyCount} keys, \`src/lib/runnerApi.ts\` untouched=${ex.agentWorkflow.runnerApiUnchanged}, \`tsc --noEmit\` passed=${ex.agentWorkflow.tscPassed}, \`wraith check\` de=${ex.agentWorkflow.wraithCheck.de.outcome} (${ex.agentWorkflow.wraithCheck.de.errorCount} errs), es-MX=${ex.agentWorkflow.wraithCheck["es-MX"].outcome} (${ex.agentWorkflow.wraithCheck["es-MX"].errorCount} errs), wall=${(ex.agentWorkflow.wallMs / 1000).toFixed(1)}s.`);
     md.push(``);
   }
 
@@ -436,7 +436,7 @@ export async function generateReports() {
     md.push(``);
     md.push(`### Repository Inventory & Monorepo Setup DX`);
     md.push(``);
-    md.push(`| Repo | Stack | Pinned Commit | Catalog Path | Total Keys | Sampled | Post-Cutoff (>${CODEX_CONFIG.modelCutoffDate}) | \`polyglot init\` Auto-Detected? |`);
+    md.push(`| Repo | Stack | Pinned Commit | Catalog Path | Total Keys | Sampled | Post-Cutoff (>${CODEX_CONFIG.modelCutoffDate}) | \`wraith init\` Auto-Detected? |`);
     md.push(`|---|---|---|---|---|---|---|---|`);
     for (const [id, r] of Object.entries(oss.repos)) {
       md.push(`| ${id} | ${r.dxProbe?.detectedFramework ?? "—"} | \`${String(r.sha ?? "").slice(0, 8)}\` | \`${r.sourceRel}\` | ${r.totalSourceKeys} | ${r.sampledKeyCount} | ${r.postCutoffCount} | ${r.dxProbe?.autoDetectedCorrectly ? "Yes" : "No (needed manual \`paths.locales\`)"} |`);
@@ -446,11 +446,11 @@ export async function generateReports() {
     md.push(`### Aggregated OSS Judge Panel Results (Stratified 40 Strings/App/Lang vs Human \`H\`)`);
     md.push(``);
     const ossDen = Math.max(1, ossAgg.judgedCount);
-    md.push(`| System | Panel Win Rate (n=${ossAgg.judgedCount}, Wilson 95% CI) | MQM Major+Crit / 100 | Total \`polyglot check\` Errors |`);
+    md.push(`| System | Panel Win Rate (n=${ossAgg.judgedCount}, Wilson 95% CI) | MQM Major+Crit / 100 | Total \`wraith check\` Errors |`);
     md.push(`|---|---|---|---|`);
     for (const [sys, label] of [
-      ["A", "**A (Codex + Polyglot MCP)**"],
-      ["A0", "A0 (Codex, no Polyglot)"],
+      ["A", "**A (Codex + Wraith MCP)**"],
+      ["A0", "A0 (Codex, no Wraith)"],
       ["B", "B (DeepL)"],
       ["H", "H (Existing Human OSS Translation)"],
     ]) {
@@ -470,7 +470,7 @@ export async function generateReports() {
         const w = d.judging?.panel?.wins ?? {};
         const pc = d.chrfPostCutoff ? `n=${d.chrfPostCutoff.n}: ${d.chrfPostCutoff.A}/${d.chrfPostCutoff.A0}/${d.chrfPostCutoff.B}` : "none";
         md.push(
-          `| ${id} | \`${loc}\` (\`${d.repoHumanLocale}\`) | ${d.chrfAll?.A} / ${d.chrfAll?.A0} / ${d.chrfAll?.B} | ${pc} | ${w.A ?? 0} / ${w.A0 ?? 0} / ${w.B ?? 0} / ${w.H ?? 0} / ${w.tie ?? 0} | ${d.systemA?.translationOnlyCheck?.errorCount ?? d.systemA?.polyglotCheck?.errorCount ?? "?"} / ${d.systemA0?.translationOnlyCheck?.errorCount ?? d.systemA0?.polyglotCheck?.errorCount ?? "?"} / ${d.systemB?.translationOnlyCheck?.errorCount ?? d.systemB?.polyglotCheck?.errorCount ?? "?"} |`
+          `| ${id} | \`${loc}\` (\`${d.repoHumanLocale}\`) | ${d.chrfAll?.A} / ${d.chrfAll?.A0} / ${d.chrfAll?.B} | ${pc} | ${w.A ?? 0} / ${w.A0 ?? 0} / ${w.B ?? 0} / ${w.H ?? 0} / ${w.tie ?? 0} | ${d.systemA?.translationOnlyCheck?.errorCount ?? d.systemA?.wraithCheck?.errorCount ?? "?"} / ${d.systemA0?.translationOnlyCheck?.errorCount ?? d.systemA0?.wraithCheck?.errorCount ?? "?"} / ${d.systemB?.translationOnlyCheck?.errorCount ?? d.systemB?.wraithCheck?.errorCount ?? "?"} |`
         );
       }
     }
@@ -483,7 +483,7 @@ export async function generateReports() {
     md.push(``);
     md.push(`> **Methodological Note:** ${docx.lowConfidenceNote}`);
     md.push(``);
-    md.push(`| Document | Target | LibreOffice Opens (A / B) | Source Leakage Paras (A / B) | Unique \`w:rPr\` Formatting Runs (Src / A / B) | Structural Elements Match Src? (A / B) | Polyglot \`check\` (A) | DeepL Billed Chars | Low-Conf Judge Wins (A / B / Tie, n=15) |`);
+    md.push(`| Document | Target | LibreOffice Opens (A / B) | Source Leakage Paras (A / B) | Unique \`w:rPr\` Formatting Runs (Src / A / B) | Structural Elements Match Src? (A / B) | Wraith \`check\` (A) | DeepL Billed Chars | Low-Conf Judge Wins (A / B / Tie, n=15) |`);
     md.push(`|---|---|---|---|---|---|---|---|---|`);
     for (const [id, d] of Object.entries(docx.documents)) {
       const s = d.sourceStructure;
@@ -497,7 +497,7 @@ export async function generateReports() {
       };
       const w = d.judging?.panel?.wins ?? {};
       md.push(
-        `| \`${id}.docx\` | \`${d.targetLocale}\` | ${d.systemA?.libreOfficeOpened ? "Yes" : "NO"} / ${d.systemB?.libreOfficeOpened ? "Yes" : "NO"} | ${d.systemA?.sourceLeakage?.leakedCount ?? "?"} / ${d.systemB?.sourceLeakage?.leakedCount ?? "?"} | ${s?.uniqueFormattingRuns} / ${sA?.uniqueFormattingRuns ?? "?"} / ${sB?.uniqueFormattingRuns ?? "?"} | ${matchStr(sA)} / ${matchStr(sB)} | ${d.systemA?.polyglotCheck?.outcome ?? "?"} (${d.systemA?.polyglotCheck?.errorCount ?? "?"} err) | ${(d.systemB?.billedCharacters ?? 0).toLocaleString()} | ${w.A ?? 0} / ${w.B ?? 0} / ${w.tie ?? 0} *(low-conf)* |`
+        `| \`${id}.docx\` | \`${d.targetLocale}\` | ${d.systemA?.libreOfficeOpened ? "Yes" : "NO"} / ${d.systemB?.libreOfficeOpened ? "Yes" : "NO"} | ${d.systemA?.sourceLeakage?.leakedCount ?? "?"} / ${d.systemB?.sourceLeakage?.leakedCount ?? "?"} | ${s?.uniqueFormattingRuns} / ${sA?.uniqueFormattingRuns ?? "?"} / ${sB?.uniqueFormattingRuns ?? "?"} | ${matchStr(sA)} / ${matchStr(sB)} | ${d.systemA?.wraithCheck?.outcome ?? "?"} (${d.systemA?.wraithCheck?.errorCount ?? "?"} err) | ${(d.systemB?.billedCharacters ?? 0).toLocaleString()} | ${w.A ?? 0} / ${w.B ?? 0} / ${w.tie ?? 0} *(low-conf)* |`
       );
     }
     md.push(``);
@@ -507,8 +507,8 @@ export async function generateReports() {
       md.push(`### Mid-Batch Incremental Source Edit Test (\`libreoffice-revisions.docx\` → \`pl\`)`);
       md.push(``);
       md.push(`- **Source v1 → v2 edit:** Inserted a new urgent amendment paragraph at top of document (shifting all paragraph indices +1) and edited paragraph 2 from *"twelve hours"* to *"six hours"*.`);
-      md.push(`- **\`polyglot check\` immediately after v2 swap:** \`${inc.midBatchCheckAfterV2Swap.outcome}\` (errors=${inc.midBatchCheckAfterV2Swap.errorCount}, codes=\`${JSON.stringify(inc.midBatchCheckAfterV2Swap.countsByCode)}\`).`);
-      md.push(`- **After Batch 2 on v2:** \`polyglot check\` = \`${inc.finalCheckAfterBatch2.outcome}\` (errors=${inc.finalCheckAfterBatch2.errorCount}), LibreOffice opened cleanly=${inc.libreOfficeOpened}, final visible paragraphs=${inc.finalParagraphCount} (v2 source=${inc.sourceV2Paragraphs}).`);
+      md.push(`- **\`wraith check\` immediately after v2 swap:** \`${inc.midBatchCheckAfterV2Swap.outcome}\` (errors=${inc.midBatchCheckAfterV2Swap.errorCount}, codes=\`${JSON.stringify(inc.midBatchCheckAfterV2Swap.countsByCode)}\`).`);
+      md.push(`- **After Batch 2 on v2:** \`wraith check\` = \`${inc.finalCheckAfterBatch2.outcome}\` (errors=${inc.finalCheckAfterBatch2.errorCount}), LibreOffice opened cleanly=${inc.libreOfficeOpened}, final visible paragraphs=${inc.finalParagraphCount} (v2 source=${inc.sourceV2Paragraphs}).`);
       md.push(`- **Alignment check:** Top amendment aligned in slot 0=${inc.topInsertionAligned}; edited para updated to 6 hours (not 12)=${inc.editedParaUpdatedTo6h}.`);
       md.push(``);
     }
@@ -534,14 +534,14 @@ export async function generateReports() {
     md.push(``);
   }
 
-  // ---- Section 9: Polyglot Defects Found (Unfixed, With Reproductions) ----
-  md.push(`## 9. Polyglot Defects Observed (Documented Only — Not Modified)`);
+  // ---- Section 9: Wraith Defects Found (Unfixed, With Reproductions) ----
+  md.push(`## 9. Wraith Defects Observed (Documented Only — Not Modified)`);
   md.push(``);
   md.push(`1. **False-positive \`glossary_inconsistency\` warnings on context-dependent homonyms:**`);
-  md.push(`   - *Reproduction:* On \`eval/synthetic/nextjs-commerce\`, run \`polyglot check --locale de --json\` after translating \`status.open\` ("Open" = business open → \`"Geöffnet"\`) and \`actions.open\` ("Open" = open file verb → \`"Öffnen"\`).`);
-  md.push(`   - *Observed:* Polyglot emits \`glossary_inconsistency\` warnings for \`"Open"\`, \`"Free"\`, and \`"Charge"\` even though they are intentionally distinct translations for distinct component usage contexts.`);
+  md.push(`   - *Reproduction:* On \`eval/synthetic/nextjs-commerce\`, run \`wraith check --locale de --json\` after translating \`status.open\` ("Open" = business open → \`"Geöffnet"\`) and \`actions.open\` ("Open" = open file verb → \`"Öffnen"\`).`);
+  md.push(`   - *Observed:* Wraith emits \`glossary_inconsistency\` warnings for \`"Open"\`, \`"Free"\`, and \`"Charge"\` even though they are intentionally distinct translations for distinct component usage contexts.`);
   md.push(`2. **Monorepo auto-detection requires manual \`paths.locales\` configuration:**`);
-  md.push(`   - *Reproduction:* Run \`polyglot init -s en -t de\` in the root of real monorepos (\`hoppscotch\`, \`immich\`, \`next-intl\` examples) where catalogs sit under nested package directories.`);
+  md.push(`   - *Reproduction:* Run \`wraith init -s en -t de\` in the root of real monorepos (\`hoppscotch\`, \`immich\`, \`next-intl\` examples) where catalogs sit under nested package directories.`);
   md.push(`   - *Observed:* \`init\` defaults to root-level heuristics rather than discovering nested workspace locale directories, requiring users to set \`paths.locales\` manually (see §6 DX table).`);
   md.push(`3. **\`audit3\` MISS extraction tests (pre-existing, caused Cal.com skip):**`);
   md.push(`   - *Reproduction:* \`./node_modules/.bin/vitest run --config audit3/vitest.config.ts -t "MISS"\` fails 3/5 (\`MISS-1\`, \`MISS-2\`, \`MISS-3\`).`);
@@ -552,7 +552,7 @@ export async function generateReports() {
   md.push(``);
   md.push(`- **Total estimated API-equivalent spend (list-price reference; subscription CLIs billed $0):** $${ledger.totalEstimatedApiUsd.toFixed(4)}`);
   md.push(`- **DeepL total billed characters recorded across all runs:** ${(ledger.byProvider?.deepl?.chars ?? 0).toLocaleString()}`);
-  md.push(`- **DeepL \`polyglot-eval-*\` glossary deletions (strictly scoped to our prefix; never touched other projects):**`);
+  md.push(`- **DeepL \`wraith-eval-*\` glossary deletions (strictly scoped to our prefix; never touched other projects):**`);
   if (allGlossaryDeletions.length === 0) {
     md.push(`  - *(No live deletions during cached/current stage; Pilot glossary \`b22b5f45-5a3b-47ed-a592-60535641b133\` was deleted prior to Stage 3.)*`);
   } else {
@@ -576,7 +576,7 @@ export async function generateReports() {
   if (layoutBA) {
     md.push(`## 12. Post-Eval Addendum: Before vs After — Layout & Formatting v1 (\`layout-v1\` Branch)`);
     md.push(``);
-    md.push(`> **Sequencing Disclosure:** All Stage 3 benchmarks in Sections 1–11 were executed while Polyglot was pinned unmodified at \`f317563\`. After Stage 3 completed, release blockers (\`MISS-1\`, \`MISS-2\`, \`MISS-3\`, \`STALE-1\`) and **Layout & Formatting v1** were built on branch \`layout-v1\`, and **only the layout evaluation** was re-run on \`nextjs-commerce\` across ${layoutBA.localesTested.length} locales (\`${layoutBA.localesTested.join("`, `")}\`) at 375px and 1280px viewports.`);
+    md.push(`> **Sequencing Disclosure:** All Stage 3 benchmarks in Sections 1–11 were executed while Wraith was pinned unmodified at \`f317563\`. After Stage 3 completed, release blockers (\`MISS-1\`, \`MISS-2\`, \`MISS-3\`, \`STALE-1\`) and **Layout & Formatting v1** were built on branch \`layout-v1\`, and **only the layout evaluation** was re-run on \`nextjs-commerce\` across ${layoutBA.localesTested.length} locales (\`${layoutBA.localesTested.join("`, `")}\`) at 375px and 1280px viewports.`);
     md.push(``);
     md.push(`| Stage | Outcome | Total Rendered Defects | Clipped Text | RTL \`dir\`/\`lang\` Mismatch | Horizontal Overflow | Static Physical-RTL Risks |`);
     md.push(`|---|---|---|---|---|---|---|`);
@@ -588,7 +588,7 @@ export async function generateReports() {
     );
     if (s1) {
       md.push(
-        `| **After Step 1 (\`polyglot layout --fix\` mechanical codemods only)** | \`${s1.renderedOutcome}\` | ${s1.renderedTotalFindings} | **${s1.renderedByType?.clipped_text ?? 0}** | **${s1.renderedByType?.dir_lang_mismatch ?? 0}** | ${s1.renderedByType?.horizontal_overflow ?? 0} | **${s1.staticRtlLayoutRisks}** |`
+        `| **After Step 1 (\`wraith layout --fix\` mechanical codemods only)** | \`${s1.renderedOutcome}\` | ${s1.renderedTotalFindings} | **${s1.renderedByType?.clipped_text ?? 0}** | **${s1.renderedByType?.dir_lang_mismatch ?? 0}** | ${s1.renderedByType?.horizontal_overflow ?? 0} | **${s1.staticRtlLayoutRisks}** |`
       );
     }
     md.push(
@@ -596,7 +596,7 @@ export async function generateReports() {
     );
     md.push(``);
     md.push(`- **Auto pseudo-modes generated:** ${layoutBA.pseudoModesGenerated.map((m) => `\`${m.mode}\` (\`${m.pseudoLocale}\`, ${m.keysGenerated} keys)`).join(", ")}.`);
-    md.push(`- **Zero-width key ID tracing:** mapped **${b.tracedKeysCount}/${b.renderedTotalFindings}** rendered browser defects directly back to catalog keys and \`file:line\`, recording **${b.budgetsRecorded}** width budgets in \`.polyglot/layout.json\`.`);
+    md.push(`- **Zero-width key ID tracing:** mapped **${b.tracedKeysCount}/${b.renderedTotalFindings}** rendered browser defects directly back to catalog keys and \`file:line\`, recording **${b.budgetsRecorded}** width budgets in \`.wraith/layout.json\`.`);
     md.push(`- **Deterministic mechanical codemods (\`layout --fix\`):** modified **${layoutBA.codemodsApplied.filesModified.length} files** (**${layoutBA.codemodsApplied.totalChanges}** mechanical rewrites: \`w-*\` → \`min-w-*\`, physical \`ml-/mr-/pl-/text-left/border-l\` → logical \`ms-/me-/ps-/text-start/border-s\`, root \`<html>\` \`dir\`/\`lang\`), eliminating **100% of clipped text (${b.renderedByType?.clipped_text ?? 0} → 0)** and **100% of RTL defects (${(b.renderedByType?.dir_lang_mismatch ?? 0) + b.staticRtlLayoutRisks} → 0)** automatically.`);
     md.push(``);
   }
@@ -664,7 +664,7 @@ export async function generateReports() {
 <html lang="en">
 <head>
 <meta charset="utf-8"/>
-<title>Polyglot Independent Evaluation Report</title>
+<title>Wraith Independent Evaluation Report</title>
 <style>
   body { font-family: system-ui, -apple-system, sans-serif; margin: 0; padding: 24px 32px; background: #f8fafc; color: #0f172a; line-height: 1.5; }
   h1, h2, h3 { color: #0f172a; }
@@ -681,7 +681,7 @@ export async function generateReports() {
 </style>
 </head>
 <body>
-  <h1>Polyglot Independent Evaluation — Visual & Side-by-Side Report</h1>
+  <h1>Wraith Independent Evaluation — Visual & Side-by-Side Report</h1>
   <p>Companion to <code>eval/REPORT.md</code>. Codex: <code>${escHtml(CODEX_CONFIG.model)}</code> | Judges: Claude <code>${escHtml(JUDGE_CONFIG.claude.model)}</code> + Gemini <code>${escHtml(JUDGE_CONFIG.gemini.model)}</code> | Total Judged Items: <strong>${jVal.totalJudgedItems}</strong></p>
 
   <div class="card">
@@ -690,8 +690,8 @@ export async function generateReports() {
       <thead><tr><th>System</th><th>Challenge Win Rate (Wilson 95% CI)</th><th>Disambiguation Sense Accuracy</th><th>Challenge MQM Maj+Crit / 100</th><th>Non-Challenge Win Rate</th><th><code>check</code> Errors</th><th>Visual Defects</th></tr></thead>
       <tbody>
         ${[
-          ["A", "A (Codex + Polyglot MCP)"],
-          ["A0", "A0 (Codex, no Polyglot)"],
+          ["A", "A (Codex + Wraith MCP)"],
+          ["A0", "A0 (Codex, no Wraith)"],
           ["B", "B (DeepL + XML + glossary)"],
           ["Bctx", "B+ctx (DeepL + context ≤300c)"],
         ]
@@ -709,7 +709,7 @@ export async function generateReports() {
   <div class="card">
     <h2>2. Side-by-Side Challenge Examples (<code>nextjs-commerce</code> → <code>de</code>)</h2>
     <table>
-      <thead><tr><th>Key &amp; Category</th><th>Source (en) &amp; Sense</th><th>A (Polyglot)</th><th>A0 (No Polyglot)</th><th>B (DeepL)</th><th>B+ctx (DeepL+ctx)</th><th>Panel</th></tr></thead>
+      <thead><tr><th>Key &amp; Category</th><th>Source (en) &amp; Sense</th><th>A (Wraith)</th><th>A0 (No Wraith)</th><th>B (DeepL)</th><th>B+ctx (DeepL+ctx)</th><th>Panel</th></tr></thead>
       <tbody>
         ${exampleRows
           .map(
@@ -738,7 +738,7 @@ export async function generateReports() {
         (d) => `<h3><code>${escHtml(d.id)}.docx</code> → <code>${escHtml(d.locale)}</code></h3>
       <div class="grid-3">
         <div><h4>Source (en)</h4>${d.src ? `<img src="${escHtml(d.src)}"/>` : "<em>n/a</em>"}</div>
-        <div><h4>System A (Polyglot)</h4>${d.A ? `<img src="${escHtml(d.A)}"/>` : "<em>n/a</em>"}</div>
+        <div><h4>System A (Wraith)</h4>${d.A ? `<img src="${escHtml(d.A)}"/>` : "<em>n/a</em>"}</div>
         <div><h4>System B (DeepL Document API)</h4>${d.B ? `<img src="${escHtml(d.B)}"/>` : "<em>n/a</em>"}</div>
       </div>`
       )
@@ -806,7 +806,7 @@ export function renderTmAblationMarkdown(data) {
     md.push(`> **DRY RUN — no model outputs yet; dataset & metric pipeline validated.** No Codex or judge calls were made. Metric values below are gold-vs-gold sanity checks, **not** system results.`);
     md.push(``);
   }
-  md.push(`Cross-file consistency benchmark: ${ds.totalItems ?? "?"} items in ${ds.totalGroups ?? "?"} recurring (slice × locale × source) groups across locales \`${(ds.locales ?? []).join("`, `")}\`; ${Math.round((ds.tmSeedFraction ?? 0) * 100)}% of recurring patterns pre-seeded into an isolated per-slice \`.polyglot/tm.json\`. TM retrieval: top-${data.tmRetrieval?.topK} fuzzy, minSimilarity ${data.tmRetrieval?.minSimilarity}.`);
+  md.push(`Cross-file consistency benchmark: ${ds.totalItems ?? "?"} items in ${ds.totalGroups ?? "?"} recurring (slice × locale × source) groups across locales \`${(ds.locales ?? []).join("`, `")}\`; ${Math.round((ds.tmSeedFraction ?? 0) * 100)}% of recurring patterns pre-seeded into an isolated per-slice \`.wraith/tm.json\`. TM retrieval: top-${data.tmRetrieval?.topK} fuzzy, minSimilarity ${data.tmRetrieval?.minSimilarity}.`);
   md.push(``);
   md.push(`| Slice | Gold Provenance | Items | Unique Sources | Components/Namespaces | Glossary Terms | TM Entries | A-full Items w/ TM Hit | Per-Locale Items (groups / TM-seeded groups) |`);
   md.push(`|---|---|---|---|---|---|---|---|---|`);

@@ -9,7 +9,7 @@ import {
   ensureBootstrapped,
   initProject,
   MarkdownDocumentAdapter,
-  PolyglotStore,
+  WraithStore,
   prepareDocument,
   scanProject,
 } from "../src/index.js";
@@ -18,7 +18,7 @@ ensureBootstrapped();
 
 const tmpDirs: string[] = [];
 function makeTempDir(): string {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "polyglot-docs-"));
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "wraith-docs-"));
   tmpDirs.push(dir);
   return dir;
 }
@@ -88,7 +88,7 @@ import { Callout } from "./Callout";
 
 # Welcome to **Acme Pulse**
 
-Run \`npx polyglot check\` or read the [documentation](https://example.com/docs) carefully.
+Run \`npx wraith check\` or read the [documentation](https://example.com/docs) carefully.
 
 <Callout type="info">
   This line has *italic* emphasis and \`inline_code\`.
@@ -141,7 +141,7 @@ const greeting = "Hello world";
     ]);
     expect(ok.ok).toBe(true);
     const out = fs.readFileSync(translatedPath, "utf8");
-    expect(out).toContain("`npx polyglot check`");
+    expect(out).toContain("`npx wraith check`");
     expect(out).toContain("[documentación](https://example.com/docs)");
     expect(out).toContain('const greeting = "Hello world";');
   });
@@ -295,7 +295,7 @@ const greeting = "Hello world";
 
   it("integrates documents with scan(), prepareDocument() (whole-document context), and memory recording", () => {
     const dir = makeTempDir();
-    fs.writeFileSync(path.join(dir, "README.md"), "# Acme Pulse\n\nShip faster with **Polyglot**.\n", "utf8");
+    fs.writeFileSync(path.join(dir, "README.md"), "# Acme Pulse\n\nShip faster with **Wraith**.\n", "utf8");
     initProject({
       rootDir: dir,
       sourceLocale: "en",
@@ -310,17 +310,17 @@ const greeting = "Hello world";
 
     const prep = prepareDocument(dir, { documentPath: "README.md", targetLocale: "fr" });
     expect(prep.fullDocumentContext).toContain("Acme Pulse");
-    expect(prep.fullDocumentContext).toContain("Polyglot");
+    expect(prep.fullDocumentContext).toContain("Wraith");
     expect(prep.documentGuidance).toContain("document-level");
 
     const applyRes = applyDocumentTranslations(dir, {
       sourceFile: "README.md",
       targetFile: "README.fr.md",
       targetLocale: "fr",
-      updates: [{ id: prep.segments[1].id, text: 'Livrez plus vite avec <g id="1" type="bold">Polyglot</g>.' }],
+      updates: [{ id: prep.segments[1].id, text: 'Livrez plus vite avec <g id="1" type="bold">Wraith</g>.' }],
     });
     expect(applyRes.ok).toBe(true);
-    const store = new PolyglotStore(dir);
+    const store = new WraithStore(dir);
     expect(store.readMemory().length).toBe(1);
   });
 });

@@ -16,7 +16,7 @@ ensureBootstrapped();
 
 const tmpDirs: string[] = [];
 function copyFixture(name: string): string {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), `polyglot-${name}-`));
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), `wraith-${name}-`));
   tmpDirs.push(dir);
   fs.cpSync(path.resolve("fixtures", name), dir, { recursive: true });
   return dir;

@@ -7,7 +7,7 @@ import { checkGlossaryCompliance } from "./glossary.js";
 import { getLocaleConventions, getPluralCategories } from "./locales.js";
 import { findMissingAdvisoryPluralCategories, PluralValidationContext, validateTranslationString } from "./placeholders.js";
 import { evaluateDocumentForCheck, scanDocumentsInProject } from "../documents/registry.js";
-import { computeContextFingerprint, PolyglotStore, sha256Short } from "./store.js";
+import { computeContextFingerprint, WraithStore, sha256Short } from "./store.js";
 import {
   CheckIssue,
   CheckIssueCode,
@@ -141,7 +141,7 @@ const SEVERITY_RANK: Record<CheckSeverity, number> = {
 };
 
 export function runCheck(options: CheckOptions): CheckSummary {
-  const store = new PolyglotStore(options.rootDir);
+  const store = new WraithStore(options.rootDir);
   const config = store.readConfig();
   const glossary = store.readGlossary();
   const records = store.readRecords();
@@ -189,7 +189,7 @@ export function runCheck(options: CheckOptions): CheckSummary {
   const dynamicNamespaces = new Set<string>();
 
   if (adapter) {
-    // 1. Source scan: hardcoded strings, concatenations, and live key usage sites (READ-ONLY: never mutates .polyglot/usage.json)
+    // 1. Source scan: hardcoded strings, concatenations, and live key usage sites (READ-ONLY: never mutates .wraith/usage.json)
     if (!options.skipScan) {
       executedChecks.push("source_scan");
       const scanRes = adapter.scanSource(store.rootDir, {
@@ -577,7 +577,7 @@ export function runCheck(options: CheckOptions): CheckSummary {
           });
         }
 
-        // Layout width budget check (.polyglot/layout.json)
+        // Layout width budget check (.wraith/layout.json)
         const budget = layoutState.budgets[key]?.[locale];
         if (budget && tgtLen > budget.budgetChars) {
           issues.push({
@@ -587,7 +587,7 @@ export function runCheck(options: CheckOptions): CheckSummary {
             key,
             file: budget.file,
             line: budget.line,
-            message: `[${locale}] ${key}: translated length (${tgtLen} chars) exceeds recorded layout width budget (${budget.budgetChars} chars / ${budget.maxWidthPx}px on <${budget.element ?? "element"}>). Shorten copy, use an approved glossary abbreviation, or relax CSS and re-run \`polyglot layout\`.`,
+            message: `[${locale}] ${key}: translated length (${tgtLen} chars) exceeds recorded layout width budget (${budget.budgetChars} chars / ${budget.maxWidthPx}px on <${budget.element ?? "element"}>). Shorten copy, use an approved glossary abbreviation, or relax CSS and re-run \`wraith layout\`.`,
             details: {
               targetLength: tgtLen,
               budgetChars: budget.budgetChars,
@@ -623,7 +623,7 @@ export function runCheck(options: CheckOptions): CheckSummary {
             severity: "info",
             locale,
             key,
-            message: `[${locale}] ${key}: target file differs from last recorded translation (manual edit detected; run \`polyglot import --format locales\` to update baseline).`,
+            message: `[${locale}] ${key}: target file differs from last recorded translation (manual edit detected; run \`wraith import --format locales\` to update baseline).`,
           });
         }
         const baselineHash = records.sourceBaselines?.[key];
@@ -665,7 +665,7 @@ export function runCheck(options: CheckOptions): CheckSummary {
             severity: "error",
             locale,
             key,
-            message: `[${locale}] ${key}: source text changed since baseline; hand-added translation needs verification (or run \`polyglot import --format locales\` after updating).`,
+            message: `[${locale}] ${key}: source text changed since baseline; hand-added translation needs verification (or run \`wraith import --format locales\` after updating).`,
           });
         } else if (rec) {
           const currentFp = liveUsage.keys[key]?.fingerprint ?? "";

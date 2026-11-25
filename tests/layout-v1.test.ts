@@ -11,7 +11,7 @@ import {
   generatePseudoLocale,
   getLocaleConventions,
   initProject,
-  PolyglotStore,
+  WraithStore,
   prepareBatch,
   pseudoLocalizeString,
   recordGlossaryTerm,
@@ -269,7 +269,7 @@ export function Panel() {
         translations: { de: "Abrechnung" },
         abbreviations: { de: "Abr." },
       });
-      const store = new PolyglotStore(dir);
+      const store = new WraithStore(dir);
       store.setLayoutBudget("tabBilling", "de", {
         maxWidthPx: 88,
         budgetChars: 12,
@@ -400,7 +400,7 @@ export function Header() {
       if (
         before.outcome === "INCONCLUSIVE" &&
         /Playwright/i.test(before.inconclusiveReason ?? "") &&
-        process.env.POLYGLOT_REQUIRE_PLAYWRIGHT !== "1"
+        process.env.WRAITH_REQUIRE_PLAYWRIGHT !== "1"
       ) {
         // Environment without Playwright installed (e.g. restricted sandbox) -> verified INCONCLUSIVE contract
         expect(before.passed).toBe(false);

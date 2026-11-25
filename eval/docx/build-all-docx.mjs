@@ -174,7 +174,7 @@ function buildOpenAnnualReport() {
 /**
  * Doc 4 (-> pl): Complex Revisions & Incremental Edit Document
  * Has tracked changes (w:ins + w:del), reviewer comments, footnotes, tables, fields, hyperlinks,
- * PLUS a v2 edited source variant to test Polyglot's mid-batch incremental update!
+ * PLUS a v2 edited source variant to test Wraith's mid-batch incremental update!
  */
 function buildRevisionsDoc({ editedVariant = false } = {}) {
   const outPath = path.join(

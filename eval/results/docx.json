@@ -61,7 +61,7 @@
           "prepareCalls": 2,
           "applyCalls": 2
         },
-        "polyglotCheck": {
+        "wraithCheck": {
           "outcome": "PASS",
           "errorCount": 0,
           "warningCount": 0
@@ -2383,7 +2383,7 @@
           "prepareCalls": 2,
           "applyCalls": 2
         },
-        "polyglotCheck": {
+        "wraithCheck": {
           "outcome": "PASS",
           "errorCount": 0,
           "warningCount": 0
@@ -4891,7 +4891,7 @@
           "prepareCalls": 2,
           "applyCalls": 2
         },
-        "polyglotCheck": {
+        "wraithCheck": {
           "outcome": "PASS",
           "errorCount": 0,
           "warningCount": 0
@@ -7477,7 +7477,7 @@
           "prepareCalls": 2,
           "applyCalls": 2
         },
-        "polyglotCheck": {
+        "wraithCheck": {
           "outcome": "PASS",
           "errorCount": 0,
           "warningCount": 0

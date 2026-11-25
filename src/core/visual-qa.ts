@@ -4,7 +4,7 @@ import { detectProjectAdapter } from "../adapters/registry.js";
 import { SYSTEM_CHROMIUM_PATHS, buildRouteUrl, defaultPlaywrightLoader } from "./layout.js";
 import { decodeZeroWidthKeyIds } from "./pseudo.js";
 import { atomicWriteFileSync, resolveConfinedPath } from "./security.js";
-import { PolyglotStore } from "./store.js";
+import { WraithStore } from "./store.js";
 import { UsageSite } from "./types.js";
 
 /**
@@ -72,7 +72,7 @@ export interface VisualQaOptions {
   viewports?: { width: number; height: number }[];
   localeUrlPattern?: "query" | "prefix" | "cookie";
   captureBaseline?: boolean;
-  /** default .polyglot/visual-baseline.json, confined to rootDir */
+  /** default .wraith/visual-baseline.json, confined to rootDir */
   basePath?: string;
   playwrightLoader?: () => Promise<unknown>;
 }
@@ -101,8 +101,8 @@ const DEFAULT_VIEWPORTS = [
   { width: 375, height: 812 },
   { width: 1280, height: 800 },
 ];
-const DEFAULT_BASELINE_PATH = ".polyglot/visual-baseline.json";
-const ARTIFACTS_DIR = ".polyglot/artifacts/visual-qa";
+const DEFAULT_BASELINE_PATH = ".wraith/visual-baseline.json";
+const ARTIFACTS_DIR = ".wraith/artifacts/visual-qa";
 
 // ---------------------------------------------------------------------------
 // Contrast (WCAG 2.x)
@@ -493,7 +493,7 @@ function measureInPage(): RawMeasured[] {
 }
 
 export async function runVisualQa(options: VisualQaOptions): Promise<VisualQaResult> {
-  const store = new PolyglotStore(options.rootDir);
+  const store = new WraithStore(options.rootDir);
   const config = store.readConfig();
   const layoutCfg = config.layout;
   const mode: "capture" | "diff" = options.captureBaseline ? "capture" : "diff";
@@ -535,10 +535,10 @@ export async function runVisualQa(options: VisualQaOptions): Promise<VisualQaRes
 
   if (!baseUrl) {
     return inconclusive(
-      "No baseUrl configured for visual QA. Start your dev server and pass --url http://localhost:3000 (or set layout.baseUrl in .polyglot/config.json).",
+      "No baseUrl configured for visual QA. Start your dev server and pass --url http://localhost:3000 (or set layout.baseUrl in .wraith/config.json).",
       [
         "Start your local dev server (e.g. npm run dev).",
-        "Run `polyglot visual-qa --url http://localhost:3000` or add `layout.baseUrl` to `.polyglot/config.json`.",
+        "Run `wraith visual-qa --url http://localhost:3000` or add `layout.baseUrl` to `.wraith/config.json`.",
       ]
     );
   }
@@ -547,8 +547,8 @@ export async function runVisualQa(options: VisualQaOptions): Promise<VisualQaRes
   if (mode === "diff") {
     if (!fs.existsSync(baselineAbs)) {
       return inconclusive(`No visual baseline found at ${baselinePath}; cannot diff geometry without a baseline.`, [
-        `Run \`polyglot visual-qa --capture-baseline --url ${baseUrl}\` on a known-good build first.`,
-        "Then re-run `polyglot visual-qa` to diff against the baseline.",
+        `Run \`wraith visual-qa --capture-baseline --url ${baseUrl}\` on a known-good build first.`,
+        "Then re-run `wraith visual-qa` to diff against the baseline.",
       ]);
     }
     try {
@@ -560,7 +560,7 @@ export async function runVisualQa(options: VisualQaOptions): Promise<VisualQaRes
     } catch (err) {
       return inconclusive(
         `Visual baseline at ${baselinePath} is unreadable (${err instanceof Error ? err.message : String(err)}).`,
-        ["Re-run `polyglot visual-qa --capture-baseline` to regenerate the baseline."]
+        ["Re-run `wraith visual-qa --capture-baseline` to regenerate the baseline."]
       );
     }
   }
@@ -573,7 +573,7 @@ export async function runVisualQa(options: VisualQaOptions): Promise<VisualQaRes
   } catch {
     return inconclusive(
       "Playwright is not installed (optional peer dependency). Visual QA cannot run without a browser.",
-      ["Install Playwright: `npm install -D playwright && npx playwright install chromium`", "Re-run `polyglot visual-qa`."]
+      ["Install Playwright: `npm install -D playwright && npx playwright install chromium`", "Re-run `wraith visual-qa`."]
     );
   }
 
@@ -594,7 +594,7 @@ export async function runVisualQa(options: VisualQaOptions): Promise<VisualQaRes
     if (!browser) {
       return inconclusive(
         `Playwright could not launch Chromium: ${lastErr instanceof Error ? lastErr.message.split("\n")[0] : String(lastErr)}`,
-        ["Run `npx playwright install chromium` (or install a system Chromium) and retry `polyglot visual-qa`."]
+        ["Run `npx playwright install chromium` (or install a system Chromium) and retry `wraith visual-qa`."]
       );
     }
   }
@@ -762,7 +762,7 @@ export async function runVisualQa(options: VisualQaOptions): Promise<VisualQaRes
       defects: [],
       screenshots: [],
       nextSteps: [
-        `Baseline captured (${elementsMeasured} elements) at ${baselinePath}. Run \`polyglot visual-qa\` after changes to diff against it.`,
+        `Baseline captured (${elementsMeasured} elements) at ${baselinePath}. Run \`wraith visual-qa\` after changes to diff against it.`,
       ],
     };
   }
@@ -803,8 +803,8 @@ export async function runVisualQa(options: VisualQaOptions): Promise<VisualQaRes
     nextSteps.push(
       `Inspect the cropped screenshots listed in ${manifestPath} and fix each element at its file:line (shorten copy, relax fixed widths, remove overlays, add font fallbacks, or restore contrast).`
     );
-    nextSteps.push("Re-run `polyglot visual-qa` until it returns PASS.");
-    nextSteps.push("If the new geometry is intentional, re-capture with `polyglot visual-qa --capture-baseline`.");
+    nextSteps.push("Re-run `wraith visual-qa` until it returns PASS.");
+    nextSteps.push("If the new geometry is intentional, re-capture with `wraith visual-qa --capture-baseline`.");
   }
 
   return {

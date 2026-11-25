@@ -7,7 +7,7 @@ import { afterEach, describe, expect, it } from "vitest";
 import {
   applyTranslations,
   buildXlsxBuffer,
-  createPolyglotMcpServer,
+  createWraithMcpServer,
   ensureBootstrapped,
   exportEscalation,
   generatePseudoLocale,
@@ -16,7 +16,7 @@ import {
   initProject,
   packageReviewJob,
   parseXlsxBuffer,
-  PolyglotStore,
+  WraithStore,
   prepareBatch,
   runCheck,
   scanProject,
@@ -26,7 +26,7 @@ ensureBootstrapped();
 
 const tmpDirs: string[] = [];
 function makeCleanProject(extraComponent?: string): string {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "polyglot-m4-"));
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "wraith-m4-"));
   tmpDirs.push(dir);
   fs.cpSync(path.resolve("fixtures/nextjs-app"), dir, { recursive: true });
   fs.writeFileSync(
@@ -73,7 +73,7 @@ describe("Milestone 4: Cross-Model Review, Human Escalation, Advisory Memory, La
     });
 
     // 1. Package MQM review job for another agent (e.g. Gemini CLI / Codex)
-    const jobPath = ".polyglot/review-job-es-MX.json";
+    const jobPath = ".wraith/review-job-es-MX.json";
     const pkg = packageReviewJob(dir, { targetLocale: "es-MX", outputPath: jobPath });
     expect(pkg.items.length).toBe(3);
     expect(pkg.instructions).toContain("Pass 2 (Verification Filter)");
@@ -118,8 +118,8 @@ describe("Milestone 4: Cross-Model Review, Human Escalation, Advisory Memory, La
     for (const f of esc.filesWritten) {
       expect(fs.existsSync(path.join(dir, f))).toBe(true);
     }
-    const html = fs.readFileSync(path.join(dir, ".polyglot/escalations/polyglot-review.html"), "utf8");
-    expect(html).toContain("Polyglot Native-Speaker Review");
+    const html = fs.readFileSync(path.join(dir, ".wraith/escalations/wraith-review.html"), "utf8");
+    expect(html).toContain("Wraith Native-Speaker Review");
     expect(html).toContain("feed.postHeading");
 
     // 4. Simulate human editing XLSX and importing corrections back
@@ -138,7 +138,7 @@ describe("Milestone 4: Cross-Model Review, Human Escalation, Advisory Memory, La
     expect(imp.appliedCount).toBe(1);
     expect(imp.resolvedReviews).toBe(1);
 
-    const store = new PolyglotStore(dir);
+    const store = new WraithStore(dir);
     expect(store.readRecords().records["feed.postHeading"]["es-MX"].reviewStatus).toBe("approved");
     expect(store.readRecords().records["feed.postHeading"]["es-MX"].origin).toBe("human");
     const esJson = JSON.parse(fs.readFileSync(path.join(dir, "messages/es-MX.json"), "utf8"));
@@ -150,7 +150,7 @@ describe("Milestone 4: Cross-Model Review, Human Escalation, Advisory Memory, La
     initProject({ rootDir: dir, sourceLocale: "en", targetLocales: ["fr"], writeAgentRule: false });
     scanProject({ rootDir: dir });
 
-    const store = new PolyglotStore(dir);
+    const store = new WraithStore(dir);
     store.appendMemory([
       {
         sourceLocale: "en",
@@ -197,7 +197,7 @@ describe("Milestone 4: Cross-Model Review, Human Escalation, Advisory Memory, La
     }
     fs.writeFileSync(path.join(dir, "messages/en.json"), JSON.stringify(bigEn, null, 2), "utf8");
 
-    const server = createPolyglotMcpServer({ rootDir: dir });
+    const server = createWraithMcpServer({ rootDir: dir });
     const client = new Client({ name: "test-client", version: "1.0.0" });
     const [clientTransport, serverTransport] = InMemoryTransport.createLinkedPair();
     await Promise.all([server.connect(serverTransport), client.connect(clientTransport)]);

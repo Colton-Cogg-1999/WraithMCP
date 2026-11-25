@@ -45,7 +45,7 @@ beforeAll(async () => {
     "messages/en.json": JSON.stringify({ save: "Save", hello: "Hello {name}" }, null, 2),
     "messages/de.json": JSON.stringify({ save: "Speichern", hello: "Hallo {name}" }, null, 2),
     "src/A.tsx": `import { useTranslations } from "next-intl";\nexport function A(){ const t = useTranslations(); return <div><button>{t("save")}</button><p>{t("hello", { name: "x" })}</p></div>; }\n`,
-    ".polyglot/config.json": JSON.stringify({ version: 1, sourceLocale: "en", targetLocales: ["de"] }, null, 2),
+    ".wraith/config.json": JSON.stringify({ version: 1, sourceLocale: "en", targetLocales: ["de"] }, null, 2),
   };
   for (const [rel, content] of Object.entries(files)) {
     fs.mkdirSync(path.dirname(path.join(dir, rel)), { recursive: true });
@@ -53,7 +53,7 @@ beforeAll(async () => {
   }
   const env: Record<string, string> = {};
   for (const [k, v] of Object.entries(process.env)) {
-    if (v !== undefined && !/^(ANTHROPIC_API_KEY|GEMINI_API_KEY|GOOGLE_API_KEY|POLYGLOT_QE_MODEL)$/.test(k)) env[k] = v;
+    if (v !== undefined && !/^(ANTHROPIC_API_KEY|GEMINI_API_KEY|GOOGLE_API_KEY|WRAITH_QE_MODEL)$/.test(k)) env[k] = v;
   }
   const transport = new StdioClientTransport({
     command: process.execPath,
@@ -99,7 +99,7 @@ describe("MCP v2 stdio schema coverage", () => {
     expect(body.tier2).toBe("unavailable");
     expect(body.summary.verified).toBe(0);
     expect(body.summary.total).toBe(2);
-    expect(fs.existsSync(path.join(dir, ".polyglot/qe-report.json"))).toBe(true);
+    expect(fs.existsSync(path.join(dir, ".wraith/qe-report.json"))).toBe(true);
     expect(text(res).length).toBeLessThan(25000);
   });
 

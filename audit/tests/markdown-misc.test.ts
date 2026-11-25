@@ -60,9 +60,9 @@ describe("U. Markdown / MDX", () => {
   it("U7 documents are covered by check (an untranslated configured document fails check)", () => {
     const dir = project({ "package.json": nextIntlPkg, "messages/en.json": "{}", "docs/guide.md": "# Guide\n\nHello world.\n" });
     init(dir, ["de"]);
-    const cfg = JSON.parse(read(dir, ".polyglot/config.json"));
+    const cfg = JSON.parse(read(dir, ".wraith/config.json"));
     cfg.paths.documents = ["docs"];
-    fs.writeFileSync(path.join(dir, ".polyglot/config.json"), JSON.stringify(cfg));
+    fs.writeFileSync(path.join(dir, ".wraith/config.json"), JSON.stringify(cfg));
     const res = runCheck({ rootDir: dir });
     console.log(`[U7] passed=${res.passed} codes=${JSON.stringify(res.countsByCode)}`);
     expect(res.passed).toBe(false);

@@ -12,7 +12,7 @@ import {
   validateLocaleTag,
   withWorkspaceLock,
 } from "../core/security.js";
-import { PolyglotStore, sha256Short } from "../core/store.js";
+import { WraithStore, sha256Short } from "../core/store.js";
 import { DocxDocumentAdapter } from "./docx.js";
 import { MarkdownDocumentAdapter } from "./markdown.js";
 import {
@@ -291,7 +291,7 @@ function inspectDocumentState(
   };
 }
 
-export function readDocumentsState(store: PolyglotStore): DocumentsStateFile {
+export function readDocumentsState(store: WraithStore): DocumentsStateFile {
   const p = store.filePath("documents.json");
   if (!fs.existsSync(p)) return { version: 1, documents: {} };
   try {
@@ -302,7 +302,7 @@ export function readDocumentsState(store: PolyglotStore): DocumentsStateFile {
   }
 }
 
-function writeDocumentsState(store: PolyglotStore, state: DocumentsStateFile): void {
+function writeDocumentsState(store: WraithStore, state: DocumentsStateFile): void {
   store.ensureDir();
   atomicWriteFileSync(store.filePath("documents.json"), JSON.stringify(state, null, 2) + "\n");
 }
@@ -317,7 +317,7 @@ export function evaluateDocumentForCheck(
   evaluation: DocumentEvaluation | null;
   targetPathError?: string;
 } {
-  const store = new PolyglotStore(rootDir);
+  const store = new WraithStore(rootDir);
   const absSource = resolveConfinedPath(store.rootDir, relDocFile, { label: "document" });
   const adapter = getDocumentAdapter(absSource);
   if (!adapter) {
@@ -469,7 +469,7 @@ function applyDocumentTranslationsUnlocked(
     force?: boolean;
   }
 ): DocumentApplyResult {
-  const store = new PolyglotStore(rootDir);
+  const store = new WraithStore(rootDir);
   const relSource = path.relative(store.rootDir, absSource).replace(/\\/g, "/");
   const relTarget = path.relative(store.rootDir, absTarget).replace(/\\/g, "/");
   const extracted = adapter.extract(absSource);
@@ -586,7 +586,7 @@ function applyDocumentTranslationsUnlocked(
       writeDocumentsState(store, docState);
     }
 
-    // Record incoming segment pairs (and preserved manual edits) into .polyglot/memory.jsonl
+    // Record incoming segment pairs (and preserved manual edits) into .wraith/memory.jsonl
     if (store.exists()) {
       const config = store.readConfig();
       const segById = new Map(extracted.segments.map((s) => [s.id, s]));
@@ -666,7 +666,7 @@ export function prepareDocument(
   }
 ) {
   validateLocaleTag(options.targetLocale, "targetLocale");
-  const store = new PolyglotStore(rootDir);
+  const store = new WraithStore(rootDir);
   const config = store.readConfig();
   const glossary = store.readGlossary();
   const memory = store.readMemory();
@@ -759,7 +759,7 @@ export function scanDocumentsInProject(
   rootDir: string,
   docPaths: string[]
 ): DocumentScanSummary[] {
-  const store = new PolyglotStore(rootDir);
+  const store = new WraithStore(rootDir);
   const config = store.readConfig();
   const docState = readDocumentsState(store);
   const knownTargets = new Set<string>();

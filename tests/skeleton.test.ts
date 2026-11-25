@@ -3,17 +3,17 @@ import os from "node:os";
 import path from "node:path";
 import { describe, expect, it, afterEach } from "vitest";
 import {
-  PolyglotStore,
+  WraithStore,
   computeContextFingerprint,
   initProject,
   getProjectStatus,
   getLocaleConventions,
-  createPolyglotMcpServer,
+  createWraithMcpServer,
 } from "../src/index.js";
 
 const tmpDirs: string[] = [];
 
-function makeTempDir(prefix = "polyglot-test-"): string {
+function makeTempDir(prefix = "wraith-test-"): string {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), prefix));
   tmpDirs.push(dir);
   return dir;
@@ -27,7 +27,7 @@ afterEach(() => {
 });
 
 describe("Milestone 1: Skeleton, Store, Init, Status & MCP Server", () => {
-  it("initializes .polyglot/, AGENTS.md rule, and pre-commit hook", () => {
+  it("initializes .wraith/, AGENTS.md rule, and pre-commit hook", () => {
     const dir = makeTempDir();
     fs.mkdirSync(path.join(dir, ".git"), { recursive: true });
 
@@ -39,10 +39,10 @@ describe("Milestone 1: Skeleton, Store, Init, Status & MCP Server", () => {
     });
 
     expect(res.created).toBe(true);
-    expect(fs.existsSync(path.join(dir, ".polyglot", "config.json"))).toBe(true);
+    expect(fs.existsSync(path.join(dir, ".wraith", "config.json"))).toBe(true);
     expect(res.agentFilesUpdated).toContain("AGENTS.md");
     expect(fs.readFileSync(path.join(dir, "AGENTS.md"), "utf8")).toContain(
-      "Localization is not done until `polyglot check` passes."
+      "Localization is not done until `wraith check` passes."
     );
     expect(res.hookInstalled).toBe(".git/hooks/pre-commit");
     expect(fs.existsSync(path.join(dir, ".git", "hooks", "pre-commit"))).toBe(true);
@@ -53,9 +53,9 @@ describe("Milestone 1: Skeleton, Store, Init, Status & MCP Server", () => {
     expect(res2.agentFilesUpdated).toEqual([]);
   });
 
-  it("reads and writes deterministic sorted .polyglot/ files", () => {
+  it("reads and writes deterministic sorted .wraith/ files", () => {
     const dir = makeTempDir();
-    const store = new PolyglotStore(dir);
+    const store = new WraithStore(dir);
 
     store.upsertGlossaryEntry({
       term: "Post",
@@ -143,7 +143,7 @@ describe("Milestone 1: Skeleton, Store, Init, Status & MCP Server", () => {
     expect(st.targetLocales).toEqual(["es-MX", "fr"]);
     expect(st.checkPassed).toBe(true);
 
-    const mcp = createPolyglotMcpServer({ rootDir: dir });
+    const mcp = createWraithMcpServer({ rootDir: dir });
     expect(mcp).toBeDefined();
   });
 });

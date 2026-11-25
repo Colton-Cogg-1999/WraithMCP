@@ -41,7 +41,7 @@ function renderAppWithFixes(
       .replace(/overflow:\s*hidden;\s*white-space:\s*nowrap;\s*text-overflow:\s*ellipsis;/g, "overflow: visible; white-space: normal;");
   }
   if (fixedFlexWrap) {
-    // Reflect Step 2 (Agent judgment edit per Polyglot's `agent_code_fix` prescription): allow nav & header flex wrap + word wrapping at 375px
+    // Reflect Step 2 (Agent judgment edit per Wraith's `agent_code_fix` prescription): allow nav & header flex wrap + word wrapping at 375px
     html = html
       .replace(
         "header { display: flex; align-items: center; justify-content: space-between;",
@@ -133,10 +133,10 @@ async function main() {
       baseUrl,
       routes: ["/"],
       locales: testLocales,
-      screenshotsDir: ".polyglot/screenshots-before",
+      screenshotsDir: ".wraith/screenshots-before",
     });
 
-    // 2. Apply Step 1 deterministic mechanical codemods (`polyglot layout --fix`)
+    // 2. Apply Step 1 deterministic mechanical codemods (`wraith layout --fix`)
     const fixRes = runLayoutFix({ rootDir: workDir, dryRun: false });
 
     // 3. Re-measure static checks AFTER mechanical codemods
@@ -152,17 +152,17 @@ async function main() {
       baseUrl,
       routes: ["/"],
       locales: testLocales,
-      screenshotsDir: ".polyglot/screenshots-after-step1",
+      screenshotsDir: ".wraith/screenshots-after-step1",
     });
 
-    // 5. AFTER Step 2 (agent applies Polyglot's prescribed `flex-wrap: wrap` + `hyphens: auto` edit)
+    // 5. AFTER Step 2 (agent applies Wraith's prescribed `flex-wrap: wrap` + `hyphens: auto` edit)
     fixedFlexWrap = true;
     const renderedAfterStep2 = await runLayoutCheck({
       rootDir: workDir,
       baseUrl,
       routes: ["/"],
       locales: testLocales,
-      screenshotsDir: ".polyglot/screenshots-after-step2",
+      screenshotsDir: ".wraith/screenshots-after-step2",
     });
 
     const summary = {

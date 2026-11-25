@@ -41,7 +41,7 @@ function pickSampleIndices(total, maxCount = 15) {
 
 /**
  * Saturate all 16 Gemini + 12 Claude workers concurrently across EVERY remaining unjudged
- * (app x locale) / DOCX / OSS / replay pair with zero Playwright or Polyglot re-runs.
+ * (app x locale) / DOCX / OSS / replay pair with zero Playwright or Wraith re-runs.
  */
 export async function runJudgeRemaining({ scopes = ["synthetic", "docx", "oss", "replay"], ignoreSpendCap = false, judgeMode = "all" } = {}) {
   console.log(`=== Fast Parallel Judge Finisher | scopes=[${scopes.join(",")}] judgeMode=${judgeMode} ===`);

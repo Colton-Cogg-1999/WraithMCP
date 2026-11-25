@@ -8,7 +8,7 @@ ensureBootstrapped();
 
 const tmpDirs: string[] = [];
 function makeDir(): string {
-  const d = fs.mkdtempSync(path.join(os.tmpdir(), "polyglot-json-"));
+  const d = fs.mkdtempSync(path.join(os.tmpdir(), "wraith-json-"));
   tmpDirs.push(d);
   return d;
 }

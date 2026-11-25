@@ -5,7 +5,7 @@ import { runCheck } from "./check.js";
 import { prepareBatch, PreparedItem } from "./prepare.js";
 import { readQeReport, refreshQeSummary, QeSegmentResult, writeQeReport } from "./qe.js";
 import { atomicWriteFileSync, resolveConfinedPath } from "./security.js";
-import { PolyglotStore } from "./store.js";
+import { WraithStore } from "./store.js";
 import { findTmMatches, readTm, TmEntry, upsertTmEntries } from "./tm.js";
 import { runVisualQa } from "./visual-qa.js";
 
@@ -144,7 +144,7 @@ interface ScreenshotRef {
 
 function readVisualManifest(rootDir: string): ScreenshotRef[] {
   try {
-    const p = resolveConfinedPath(rootDir, ".polyglot/artifacts/visual-qa/manifest.json", { label: "visual-qa manifest" });
+    const p = resolveConfinedPath(rootDir, ".wraith/artifacts/visual-qa/manifest.json", { label: "visual-qa manifest" });
     if (!fs.existsSync(p)) return [];
     const parsed = JSON.parse(fs.readFileSync(p, "utf8")) as { defects?: Array<Record<string, unknown>> };
     return (parsed.defects ?? [])
@@ -190,7 +190,7 @@ export function buildXliff2(input: {
     const metaEntries = Object.entries(u.meta).filter(([, v]) => v !== undefined && v !== "");
     if (metaEntries.length > 0) {
       lines.push(`      <mda:metadata>`);
-      lines.push(`        <mda:metaGroup category="polyglot">`);
+      lines.push(`        <mda:metaGroup category="wraith">`);
       for (const [k, v] of metaEntries) {
         lines.push(`          <mda:meta type="${escapeXml(k)}">${escapeXml(String(v))}</mda:meta>`);
       }
@@ -221,7 +221,7 @@ export function buildTmx14b(srcLang: string, entries: Array<Pick<TmEntry, "sourc
   lines.push(`<!DOCTYPE tmx SYSTEM "tmx14.dtd">`);
   lines.push(`<tmx version="1.4">`);
   lines.push(
-    `  <header creationtool="polyglot" creationtoolversion="0.1.0" segtype="sentence" o-tmf="polyglot-tm-json" adminlang="en" srclang="${escapeXml(srcLang)}" datatype="plaintext"/>`
+    `  <header creationtool="wraith" creationtoolversion="0.1.0" segtype="sentence" o-tmf="wraith-tm-json" adminlang="en" srclang="${escapeXml(srcLang)}" datatype="plaintext"/>`
   );
   lines.push(`  <body>`);
   entries.forEach((e, i) => {
@@ -246,7 +246,7 @@ export function buildTbxBasic(
   lines.push(`<?xml version="1.0" encoding="UTF-8"?>`);
   lines.push(`<martif type="TBX-Basic" xml:lang="${escapeXml(srcLang)}">`);
   lines.push(`  <martifHeader>`);
-  lines.push(`    <fileDesc><sourceDesc><p>Polyglot glossary export</p></sourceDesc></fileDesc>`);
+  lines.push(`    <fileDesc><sourceDesc><p>Wraith glossary export</p></sourceDesc></fileDesc>`);
   lines.push(`    <encodingDesc><p type="XCSURI">TBXBasicXCSV02.xcs</p></encodingDesc>`);
   lines.push(`  </martifHeader>`);
   lines.push(`  <text>`);
@@ -276,11 +276,11 @@ export function buildTbxBasic(
 }
 
 export function runTmsExport(options: TmsExportOptions): TmsExportResult {
-  const store = new PolyglotStore(options.rootDir);
+  const store = new WraithStore(options.rootDir);
   const config = store.readConfig();
   const layout = store.readLayout();
   const qe = readQeReport(options.rootDir);
-  const outRel = options.outDir ?? ".polyglot/exports/tms";
+  const outRel = options.outDir ?? ".wraith/exports/tms";
   const outAbs = resolveConfinedPath(store.rootDir, outRel, { label: "TMS export directory" });
   fs.mkdirSync(outAbs, { recursive: true });
   const locales = options.locales && options.locales.length > 0 ? options.locales : config.targetLocales;
@@ -350,7 +350,7 @@ export function runTmsExport(options: TmsExportOptions): TmsExportResult {
         notes,
       });
     }
-    const xml = buildXliff2({ srcLang: config.sourceLocale, trgLang: locale, fileId: `polyglot-${locale}`, units });
+    const xml = buildXliff2({ srcLang: config.sourceLocale, trgLang: locale, fileId: `wraith-${locale}`, units });
     const fileAbs = path.join(outAbs, `${locale}.xliff`);
     atomicWriteFileSync(fileAbs, xml);
     files.push(rel(fileAbs));
@@ -456,7 +456,7 @@ function collectXliffFiles(rootDir: string, input: string): string[] {
 }
 
 export async function runTmsImport(options: TmsImportOptions): Promise<TmsImportResult> {
-  const store = new PolyglotStore(options.rootDir);
+  const store = new WraithStore(options.rootDir);
   const config = store.readConfig();
   const files = collectXliffFiles(store.rootDir, options.input);
   const now = new Date().toISOString();

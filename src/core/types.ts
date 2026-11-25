@@ -32,7 +32,7 @@ export const ConfigPathsSchema = z.object({
       "build",
       "coverage",
       ".git",
-      ".polyglot",
+      ".wraith",
       "__pycache__",
       ".venv",
       "venv",
@@ -58,7 +58,7 @@ export const LayoutConfigSchema = z.object({
       { width: 375, height: 812 },
       { width: 1280, height: 800 },
     ]),
-  screenshotsDir: z.string().default(".polyglot/screenshots"),
+  screenshotsDir: z.string().default(".wraith/screenshots"),
 });
 export type LayoutConfig = z.infer<typeof LayoutConfigSchema>;
 
@@ -72,7 +72,7 @@ export const ConfigSchema = z.object({
   paths: ConfigPathsSchema.default({}),
   layout: LayoutConfigSchema.optional(),
 });
-export type PolyglotConfig = z.infer<typeof ConfigSchema>;
+export type WraithConfig = z.infer<typeof ConfigSchema>;
 
 export const GlossaryOriginSchema = z.enum(["inferred", "user", "imported"]);
 export type GlossaryOrigin = z.infer<typeof GlossaryOriginSchema>;

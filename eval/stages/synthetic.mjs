@@ -12,8 +12,8 @@ import {
 import { atomicWriteJson } from "../lib/cache.mjs";
 import {
   materializeCapturedFiles,
-  runCodexNoPolyglot,
-  runCodexWithPolyglot,
+  runCodexNoWraith,
+  runCodexWithWraith,
 } from "../lib/codex.mjs";
 import {
   getDeepLUsage,
@@ -40,10 +40,10 @@ import {
   flattenJson,
   normalizeTelemetryPer1k,
   parsePoCatalog,
-  parsePolyglotJson,
+  parseWraithJson,
   parseYamlCatalog,
-  runPolyglotCli,
-  seedPolyglotProject,
+  runWraithCli,
+  seedWraithProject,
   unflattenJson,
   writePoCatalogFromSkeleton,
   writeYamlCatalog,
@@ -80,24 +80,24 @@ function writeTargetCatalog(appSpec, dir, locale, flatMap) {
 
 function buildPromptsForApp(appSpec, locale) {
   const targetRel = appSpec.targetPathFn(locale);
-  const promptA = `Localize this ${appSpec.stack} project into "${locale}" using the Polyglot MCP server tools.
-Follow the Polyglot /localize workflow strictly:
+  const promptA = `Localize this ${appSpec.stack} project into "${locale}" using the Wraith MCP server tools.
+Follow the Wraith /localize workflow strictly:
 1. Call \`status\` and \`scan\` first.
 2. Call \`prepare\` in batches for targetLocale "${locale}". Inspect usageSites, component files, glossaryHits, and locale conventions so context-ambiguous words (Open, Post, Order, Close, Free, Save, Back, Charge, Sign, Archive) match their exact UI context.
-3. Write EVERY translation via Polyglot's \`apply\` tool (preserving all placeholders, ICU/plural syntax, rich-text tags, DNT brands Northstar / Northstar Pay / PulseGrid / LedgerVault, and honoring all glossary terms).
+3. Write EVERY translation via Wraith's \`apply\` tool (preserving all placeholders, ICU/plural syntax, rich-text tags, DNT brands Northstar / Northstar Pay / PulseGrid / LedgerVault, and honoring all glossary terms).
 4. Run \`pseudo\` to check layout hotspots for tight-width buttons/tabs/badges and keep tight UI translations concise.
 5. Run \`check\` repeatedly and fix any errors until outcome is "PASS".
 6. Call \`report\` at the end.
 Reply with a brief JSON summary of check outcome.`;
 
-  // Change #1 exact A0 prompt (Codex with NO Polyglot MCP)
+  // Change #1 exact A0 prompt (Codex with NO Wraith MCP)
   const promptA0 =
     appSpec.id === "nextjs-commerce"
       ? `Translate messages/en.json into ${locale} (writing messages/${locale}.json), reading the components for context; keep placeholders/ICU valid.`
       : `Translate ${appSpec.sourceRel} into ${locale} (writing ${targetRel}), reading the components for context; keep placeholders/ICU valid.`;
 
   // Change #5 A-compact prompt: prepare (largest page size limit=100) -> apply -> check only
-  const promptACompact = `Localize this ${appSpec.stack} project into "${locale}" using ONLY these three Polyglot MCP tools in minimal turns:
+  const promptACompact = `Localize this ${appSpec.stack} project into "${locale}" using ONLY these three Wraith MCP tools in minimal turns:
 1. Call \`prepare\` ONCE with targetLocale="${locale}", limit=100, offset=0 (do NOT call status, scan, pseudo, or report). Read component files only if needed to disambiguate ambiguous words.
 2. Call \`apply\` ONCE (or minimal calls) with all translations for "${locale}", preserving placeholders, ICU/plurals, rich-text tags, DNT brands, and glossary terms.
 3. Call \`check\` once (and fix only if errors exist until outcome is "PASS").
@@ -110,10 +110,10 @@ function runCheckOnFlat(appSpec, locale, flatMap, workSubdir) {
   const workDir = path.join(EVAL_ROOT, "work", workSubdir);
   fs.rmSync(workDir, { recursive: true, force: true });
   fs.cpSync(appSpec.dir, workDir, { recursive: true });
-  seedPolyglotProject(workDir, [locale], appSpec.glossary);
+  seedWraithProject(workDir, [locale], appSpec.glossary);
   writeTargetCatalog(appSpec, workDir, locale, flatMap);
-  const res = runPolyglotCli(workDir, ["check", "--locale", locale, "--json"]);
-  return parsePolyglotJson(res);
+  const res = runWraithCli(workDir, ["check", "--locale", locale, "--json"]);
+  return parseWraithJson(res);
 }
 
 /**
@@ -124,10 +124,10 @@ async function runExtractionBenchmark(extractionApp, { ignoreSpendCap = false } 
   const scanDir = path.join(EVAL_ROOT, "work", "extract-scan-only");
   fs.rmSync(scanDir, { recursive: true, force: true });
   fs.cpSync(extractionApp.appDir, scanDir, { recursive: true });
-  seedPolyglotProject(scanDir, ["de", "es-MX"], PILOT_GLOSSARY);
+  seedWraithProject(scanDir, ["de", "es-MX"], PILOT_GLOSSARY);
 
-  const scanRes = runPolyglotCli(scanDir, ["scan", "--json"]);
-  const scanParsed = parsePolyglotJson(scanRes);
+  const scanRes = runWraithCli(scanDir, ["scan", "--json"]);
+  const scanParsed = parseWraithJson(scanRes);
   const candidates =
     scanParsed.hardcodedStrings?.items ??
     scanParsed.hardcodedCandidates ??
@@ -165,17 +165,17 @@ async function runExtractionBenchmark(extractionApp, { ignoreSpendCap = false } 
     `[Extraction scanner] candidates=${candidateTexts.length} recall=${expectedFound}/${extractionApp.expected.length} (${(recall * 100).toFixed(1)}%) techFalsePositives=${mustNotFlagged}/${extractionApp.mustNotFlag.length}`
   );
 
-  // Now run Codex + Polyglot MCP to actually extract strings, wire next-intl, and translate into de & es-MX
+  // Now run Codex + Wraith MCP to actually extract strings, wire next-intl, and translate into de & es-MX
   const extractPrompt = `This Next.js app (src/components/StudioDashboard.tsx) has hardcoded English UI strings and an empty messages/en.json.
 Do NOT touch src/lib/runnerApi.ts (those are API/SQL/header/log technical strings).
-Using Polyglot MCP tools:
+Using Wraith MCP tools:
 1. Call \`scan\` to find hardcoded user-visible strings in src/components/StudioDashboard.tsx.
 2. Refactor src/components/StudioDashboard.tsx to use \`useTranslations\` from "next-intl" and populate messages/en.json with clean structured keys for every user-visible string (keep Northstar as brand name).
 3. Call \`prepare\` and \`apply\` to translate all extracted strings into "de" and "es-MX" (messages/de.json and messages/es-MX.json).
 4. Call \`check\` repeatedly until outcome is "PASS" with 0 errors.
 Reply DONE.`;
 
-  const codexRes = await runCodexWithPolyglot({
+  const codexRes = await runCodexWithWraith({
     stageName: "synthetic-extraction",
     label: "nextjs-unlocalized-extract",
     sourceDir: extractionApp.appDir,
@@ -187,17 +187,17 @@ Reply DONE.`;
       "messages/es-MX.json",
     ],
     ignoreSpendCap,
-    workspaceSetupFn: (tmpDir) => seedPolyglotProject(tmpDir, ["de", "es-MX"], PILOT_GLOSSARY),
+    workspaceSetupFn: (tmpDir) => seedWraithProject(tmpDir, ["de", "es-MX"], PILOT_GLOSSARY),
   });
 
   const verifyDir = path.join(EVAL_ROOT, "work", "extract-verify");
   fs.rmSync(verifyDir, { recursive: true, force: true });
   fs.cpSync(extractionApp.appDir, verifyDir, { recursive: true });
-  seedPolyglotProject(verifyDir, ["de", "es-MX"], PILOT_GLOSSARY);
+  seedWraithProject(verifyDir, ["de", "es-MX"], PILOT_GLOSSARY);
   materializeCapturedFiles(codexRes, verifyDir);
 
-  const checkDe = parsePolyglotJson(runPolyglotCli(verifyDir, ["check", "--locale", "de", "--json"]));
-  const checkEs = parsePolyglotJson(runPolyglotCli(verifyDir, ["check", "--locale", "es-MX", "--json"]));
+  const checkDe = parseWraithJson(runWraithCli(verifyDir, ["check", "--locale", "de", "--json"]));
+  const checkEs = parseWraithJson(runWraithCli(verifyDir, ["check", "--locale", "es-MX", "--json"]));
 
   // Check TypeScript compilation using repo's tsc with minimal ambient declarations for react & next-intl
   fs.writeFileSync(
@@ -263,7 +263,7 @@ declare namespace JSX {
       runnerApiUnchanged,
       tscPassed,
       tscOutput,
-      polyglotCheck: {
+      wraithCheck: {
         de: { outcome: checkDe?.outcome, errorCount: checkDe?.errorCount, warningCount: checkDe?.warningCount },
         "es-MX": { outcome: checkEs?.outcome, errorCount: checkEs?.errorCount, warningCount: checkEs?.warningCount },
       },
@@ -363,32 +363,32 @@ export async function runSyntheticStage({ ignoreSpendCap = false, onlyApp = null
       const localeGlossary = extractGlossaryForLocale(appSpec.glossary, locale);
       const { promptA, promptA0, promptACompact } = buildPromptsForApp(appSpec, locale);
       const targetRel = appSpec.targetPathFn(locale);
-      const capturePaths = [targetRel, ".polyglot/records.json"];
+      const capturePaths = [targetRel, ".wraith/records.json"];
       if (appSpec.pseudoRel) capturePaths.push(appSpec.pseudoRel);
 
-      // 1. System A: Codex + Polyglot MCP
-      const resA = await runCodexWithPolyglot({
+      // 1. System A: Codex + Wraith MCP
+      const resA = await runCodexWithWraith({
         stageName: `synthetic-${appSpec.id}`,
         label: `${appSpec.id}-A-${locale}`,
         sourceDir: appSpec.dir,
         prompt: promptA,
         captureRelPaths: capturePaths,
         ignoreSpendCap,
-        workspaceSetupFn: (tmpDir) => seedPolyglotProject(tmpDir, [locale], appSpec.glossary),
+        workspaceSetupFn: (tmpDir) => seedWraithProject(tmpDir, [locale], appSpec.glossary),
       });
       const workA = path.join(EVAL_ROOT, "work", `syn-${appSpec.id}-A-${locale}`);
       fs.rmSync(workA, { recursive: true, force: true });
       fs.cpSync(appSpec.dir, workA, { recursive: true });
-      seedPolyglotProject(workA, [locale], appSpec.glossary);
+      seedWraithProject(workA, [locale], appSpec.glossary);
       materializeCapturedFiles(resA, workA);
       const flatA = readTargetCatalog(appSpec, workA, locale);
-      const checkA = parsePolyglotJson(runPolyglotCli(workA, ["check", "--locale", locale, "--json"]));
+      const checkA = parseWraithJson(runWraithCli(workA, ["check", "--locale", locale, "--json"]));
 
       // Pseudo-locale for visual QA
       let flatPseudo = {};
       if (appSpec.pseudoRel) {
         const pseudoAbs = path.join(workA, appSpec.pseudoRel);
-        if (!fs.existsSync(pseudoAbs)) runPolyglotCli(workA, ["pseudo"]);
+        if (!fs.existsSync(pseudoAbs)) runWraithCli(workA, ["pseudo"]);
         if (fs.existsSync(pseudoAbs)) {
           flatPseudo =
             appSpec.format === "yaml"
@@ -397,8 +397,8 @@ export async function runSyntheticStage({ ignoreSpendCap = false, onlyApp = null
         }
       }
 
-      // 2. System A0: Codex CLI with NO Polyglot MCP (Change #1)
-      const resA0 = await runCodexNoPolyglot({
+      // 2. System A0: Codex CLI with NO Wraith MCP (Change #1)
+      const resA0 = await runCodexNoWraith({
         stageName: `synthetic-${appSpec.id}`,
         label: `${appSpec.id}-A0-${locale}`,
         sourceDir: appSpec.dir,
@@ -531,7 +531,7 @@ export async function runSyntheticStage({ ignoreSpendCap = false, onlyApp = null
           cacheHit: resA.cacheHit,
           estimatedApiUsd: resA.estimatedApiUsd,
           telemetry: normalizeTelemetryPer1k(resA.telemetry, appSpec.items.length),
-          polyglotCheck: {
+          wraithCheck: {
             outcome: checkA?.outcome,
             errorCount: checkA?.errorCount,
             warningCount: checkA?.warningCount,
@@ -549,7 +549,7 @@ export async function runSyntheticStage({ ignoreSpendCap = false, onlyApp = null
           cacheHit: resA0.cacheHit,
           estimatedApiUsd: resA0.estimatedApiUsd,
           telemetry: normalizeTelemetryPer1k(resA0.telemetry, appSpec.items.length),
-          polyglotCheck: {
+          wraithCheck: {
             outcome: checkA0?.outcome,
             errorCount: checkA0?.errorCount,
             warningCount: checkA0?.warningCount,
@@ -566,7 +566,7 @@ export async function runSyntheticStage({ ignoreSpendCap = false, onlyApp = null
           usedGlossary: resB.usedGlossary,
           formality: resB.formality,
           deterministicMetrics: detB,
-          polyglotCheck: {
+          wraithCheck: {
             outcome: checkC_onB?.outcome,
             errorCount: checkC_onB?.errorCount,
             warningCount: checkC_onB?.warningCount,
@@ -582,7 +582,7 @@ export async function runSyntheticStage({ ignoreSpendCap = false, onlyApp = null
           usedGlossary: resBctx.usedGlossary,
           formality: resBctx.formality,
           deterministicMetrics: detBctx,
-          polyglotCheck: {
+          wraithCheck: {
             outcome: checkC_onBctx?.outcome,
             errorCount: checkC_onBctx?.errorCount,
             warningCount: checkC_onBctx?.warningCount,
@@ -597,23 +597,23 @@ export async function runSyntheticStage({ ignoreSpendCap = false, onlyApp = null
       // 8. System A-compact variant (Change #5) on nextjs-commerce es-MX & de
       if (appSpec.runCompactOnLocales.includes(locale)) {
         console.log(`  --- Running A-compact (prepare limit=100 -> apply -> check) for ${appSpec.id}:${locale} ---`);
-        const resCompact = await runCodexWithPolyglot({
+        const resCompact = await runCodexWithWraith({
           mode: "A-compact",
           stageName: `synthetic-${appSpec.id}-compact`,
           label: `${appSpec.id}-Acompact-${locale}`,
           sourceDir: appSpec.dir,
           prompt: promptACompact,
-          captureRelPaths: [targetRel, ".polyglot/records.json"],
+          captureRelPaths: [targetRel, ".wraith/records.json"],
           ignoreSpendCap,
-          workspaceSetupFn: (tmpDir) => seedPolyglotProject(tmpDir, [locale], appSpec.glossary),
+          workspaceSetupFn: (tmpDir) => seedWraithProject(tmpDir, [locale], appSpec.glossary),
         });
         const workC = path.join(EVAL_ROOT, "work", `syn-${appSpec.id}-Acompact-${locale}`);
         fs.rmSync(workC, { recursive: true, force: true });
         fs.cpSync(appSpec.dir, workC, { recursive: true });
-        seedPolyglotProject(workC, [locale], appSpec.glossary);
+        seedWraithProject(workC, [locale], appSpec.glossary);
         materializeCapturedFiles(resCompact, workC);
         const flatCompact = readTargetCatalog(appSpec, workC, locale);
-        const checkCompact = parsePolyglotJson(runPolyglotCli(workC, ["check", "--locale", locale, "--json"]));
+        const checkCompact = parseWraithJson(runWraithCli(workC, ["check", "--locale", locale, "--json"]));
         const detCompact = computeCatalogMetrics(appSpec.flatEn, flatCompact, localeGlossary);
 
         const compactJudgeItems = appSpec.items.map((item) => ({
@@ -654,13 +654,13 @@ export async function runSyntheticStage({ ignoreSpendCap = false, onlyApp = null
           fullA: {
             wallMs: resA.wallMs,
             telemetry: normalizeTelemetryPer1k(resA.telemetry, appSpec.items.length),
-            polyglotCheckOutcome: checkA?.outcome,
+            wraithCheckOutcome: checkA?.outcome,
           },
           compactA: {
             exitCode: resCompact.exitCode,
             wallMs: resCompact.wallMs,
             telemetry: normalizeTelemetryPer1k(resCompact.telemetry, appSpec.items.length),
-            polyglotCheck: {
+            wraithCheck: {
               outcome: checkCompact?.outcome,
               errorCount: checkCompact?.errorCount,
               warningCount: checkCompact?.warningCount,

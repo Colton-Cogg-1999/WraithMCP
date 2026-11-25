@@ -1,19 +1,19 @@
-# Polyglot: Independent Audit Report
+# Wraith: Independent Audit Report
 
-**Date:** 2026-11-24 · **Scope:** `polyglot-mcp` 0.1.0 (uncommitted working tree on `main`) · **Auditor stance:** independent principal engineer / localization engineer / adversarial QA
+**Date:** 2026-11-24 · **Scope:** `wraith-mcp` 0.1.0 (uncommitted working tree on `main`) · **Auditor stance:** independent principal engineer / localization engineer / adversarial QA
 
 ---
 
 ## 1. Verdict
 
-Polyglot has a solid foundation. It is **not** yet a dependable localization tool, and it does **not** yet deliver the promised experience: *a developer with no localization knowledge localizes and maintains an app using an existing coding agent*.
+Wraith has a solid foundation. It is **not** yet a dependable localization tool, and it does **not** yet deliver the promised experience: *a developer with no localization knowledge localizes and maintains an app using an existing coding agent*.
 
 The architecture is sensible: deterministic core, repo-native state, MCP and CLI over a shared engine, splice-based DOCX. Several components work well under independent verification. However:
 
-- **The completion gate can't be trusted.** The whole product rests on `polyglot check`, and it gets that answer wrong in both directions:
+- **The completion gate can't be trusted.** The whole product rests on `wraith check`, and it gets that answer wrong in both directions:
   - **False rejections:** it rejects correct translations for French, Spanish, Italian and Portuguese, and for correct Django PO files.
   - **False passes:** it reports `passed: true` for monorepos, unrecognized projects, standard Django layouts and every document.
-- **Three write paths silently destroy or lose user data:** Rails plural maps are overwritten, multi-batch DOCX translation drops earlier batches, and the French Django plurals Polyglot demands make `compilemessages` fail.
+- **Three write paths silently destroy or lose user data:** Rails plural maps are overwritten, multi-batch DOCX translation drops earlier batches, and the French Django plurals Wraith demands make `compilemessages` fail.
 - **Four write paths can be steered outside the repository** by agent- or reviewer-supplied values. A fifth goes outside whenever the project sits under a directory named after the source locale.
 - **Scanner recall is about 37%** on an independently written Next.js app, and **0%** on common Rails ERB-helper and Django form/model/exception strings.
 
@@ -65,7 +65,7 @@ Classification key: **Verified**, **Partial**, **Incorrect**, **Untested**, **Ar
 | Human escalation (CSV/XLSX/HTML) | **Verified** | Reviewer workflow simulated through a LibreOffice re-save (shared strings): correction applied, review resolved. |
 | Filesystem security | **Incorrect** | Five confirmed writes outside the repo (S1–S5). Symlinks followed outside the repo. No archive limits. |
 | Standalone distribution | **Incorrect** (shipped artifact) / **Untested** (CI matrix) | Linux binary links 40 distro shared libs and GLIBC_2.44. macOS/Windows never built here. |
-| Install path / developer onboarding | **Incorrect** | `npx polyglot-mcp` returns 404 on npm. Pre-commit hook blocks commits when `polyglot` isn't on PATH. |
+| Install path / developer onboarding | **Incorrect** | `npx wraith-mcp` returns 404 on npm. Pre-commit hook blocks commits when `wraith` isn't on PATH. |
 | Performance | **Verified** | `check` on 1,500 files, 3 locales: ~0.4 s. MCP responses 0.8–13 KB on a 400-key project. |
 
 ---
@@ -90,7 +90,7 @@ Each finding lists its class, the audit test IDs that reproduce it (in `audit/te
 - Agents comply by adding `many` branches. For Django that produces broken files (see C3). The original suite asserts this behavior as correct (`tests/nextjs-e2e.test.ts:141,195`).
 
 **C3. Django/gettext support doesn't match how Django localization works.** *Incorrect / architectural*
-- **Standard layout invisible:** `makemessages -l fr` produces `locale/fr/LC_MESSAGES/django.po` and no English catalog, because msgids are the source. Polyglot then sees `totalSourceKeys: 0`, `prepare` returns nothing (**K2**), `apply` refuses (`no_source_locale`), and `check` **passes** with untranslated msgids (**H1**). Even with an English `.po`, empty `msgstr` is read as an empty source string (`src/formats/po.ts:219-224`).
+- **Standard layout invisible:** `makemessages -l fr` produces `locale/fr/LC_MESSAGES/django.po` and no English catalog, because msgids are the source. Wraith then sees `totalSourceKeys: 0`, `prepare` returns nothing (**K2**), `apply` refuses (`no_source_locale`), and `check` **passes** with untranslated msgids (**H1**). Even with an English `.po`, empty `msgstr` is read as an empty source string (`src/formats/po.ts:219-224`).
 - **Plural indices wrong:** `msgstr[n]` is mapped to CLDR categories by position (`src/formats/po.ts:163-170, 203`) instead of the file's `Plural-Forms`. A valid French entry (`nplurals=2`) fails `check` with *"requires plural subkeys [other]"* (**H5**).
 - **Generated files fail to compile:** the only input `apply` accepts writes `msgstr[0..2]` under `nplurals=2`. **`msgfmt` reports a fatal error**, so `compilemessages` fails. The `many` text also lands in `msgstr[1]`, which gettext uses for every n > 1 (**H4**, probe output reproduced in the test log).
 - **`#, fuzzy` ignored:** fuzzy entries count as translated (**H2**). `apply` preserves the `#, fuzzy` flag (`src/formats/po.ts:145`), so Django keeps ignoring the new translation at runtime (**H3**).
@@ -155,11 +155,11 @@ Each finding lists its class, the audit test IDs that reproduce it (in `audit/te
 - **Duplicated text boxes:** `mc:Choice` and `mc:Fallback` text boxes are extracted twice (**Q11**).
 
 **H6. The standalone distribution and install path don't work as documented.** *Incorrect / untested*
-- **Linux binary isn't standalone.** `release/polyglot-linux-x64` (72 MB) was built from Arch's shared-library `/usr/bin/node`. It **dynamically links 40 system libraries** (ICU 78, abseil 2608, simdjson 34, c-ares, nghttp2, OpenSSL 3…) and requires **GLIBC_2.44**, so it won't start on Ubuntu, Debian, RHEL or Alpine. Verified by `ldd`/`objdump`; no other distro was available to run it on.
+- **Linux binary isn't standalone.** `release/wraith-linux-x64` (72 MB) was built from Arch's shared-library `/usr/bin/node`. It **dynamically links 40 system libraries** (ICU 78, abseil 2608, simdjson 34, c-ares, nghttp2, OpenSSL 3…) and requires **GLIBC_2.44**, so it won't start on Ubuntu, Debian, RHEL or Alpine. Verified by `ldd`/`objdump`; no other distro was available to run it on.
   - It *does* behave identically to the source on all five fixtures and over MCP on this machine.
 - **CI matrix never exercised.** `.github/workflows/release.yml` (ubuntu/macos/windows) may produce more portable binaries, but it has never run. It doesn't sign the macOS binary (SEA binaries must be re-signed on Apple Silicon) and only uploads artifacts.
-- **Quick Start fails.** The README's `npx -y polyglot-mcp mcp` returns **404**: the package isn't on npm. The name is also unclaimed, so anyone could publish under it and every user following the README would execute their code.
-- **Pre-commit hook blocks commits.** The hook runs `npx --no-install polyglot check || polyglot check` (`src/core/init.ts:94`). Unless `polyglot-mcp` is a local dependency or a binary named exactly `polyglot` is on PATH (the README's `npx -y` setup and the release binary `polyglot-linux-x64` provide neither), **every commit fails** with "command not found". Reproduced in a real git repo.
+- **Quick Start fails.** The README's `npx -y wraith-mcp mcp` returns **404**: the package isn't on npm. The name is also unclaimed, so anyone could publish under it and every user following the README would execute their code.
+- **Pre-commit hook blocks commits.** The hook runs `npx --no-install wraith check || wraith check` (`src/core/init.ts:94`). Unless `wraith-mcp` is a local dependency or a binary named exactly `wraith` is on PATH (the README's `npx -y` setup and the release binary `wraith-linux-x64` provide neither), **every commit fails** with "command not found". Reproduced in a real git repo.
 
 ### Medium
 
@@ -174,10 +174,10 @@ Each finding lists its class, the audit test IDs that reproduce it (in `audit/te
 | M7 | **No archive limits.** A 300 KB DOCX expanding to 300 MB is decompressed fully (~600 MB RSS growth, `docx.ts:543`). The same `unzipSync` path is used for reviewer-supplied XLSX. Control characters in translations produce invalid XML. | Incorrect | R4, Q9 |
 | M8 | **Markdown segmentation is line-based.** Hard-wrapped paragraphs split mid-sentence (`markdown.ts:134`). Indented code blocks, link-reference URLs, MDX `{expressions}` and multi-line `export` objects are offered for translation. | Partial | U1, U2, U3, U5, U6 |
 | M9 | **MCP contract.** No `annotations` (readOnly/destructive) and no `outputSchema`/`structuredContent`. `memory` is one tool with 18 optional fields and no per-action schema. `apply` returns `isError:false` when some items are rejected (`server.ts:168`). `prepareDocument` returns the whole document on every page (58 KB for a 10-segment page), contradicting ADR-007. | Partial | T2, T3, T4, T6, R3 |
-| M10 | **Codex can't use Polyglot non-interactively.** `codex exec` refused both read-only calls: *"MCP tool call requires approval, but approval policy is never"*. Missing read-only annotations is the likely cause; **not confirmed**. | Partial (plausible cause) | live Codex run |
+| M10 | **Codex can't use Wraith non-interactively.** `codex exec` refused both read-only calls: *"MCP tool call requires approval, but approval policy is never"*. Missing read-only annotations is the likely cause; **not confirmed**. | Partial (plausible cause) | live Codex run |
 | M11 | **Pseudo-locale silently skips keys** with ICU-escaped literals (`'{name}'`): 3/4 keys generated, with no warning. | Incorrect | V1 |
 | M12 | **Layout warnings** only inspect static `className` strings, so they miss `cn()`/`clsx()`/template classes, which most Tailwind/shadcn apps use. They also flag `truncate` regardless of whether translated text is inside. | Partial | F4 |
-| M13 | **`check` and `status` write `.polyglot/usage.json`.** `status` is documented as "facts like git status", yet both write state. After a pre-commit `check` the working tree is dirty. | Incorrect | M5 |
+| M13 | **`check` and `status` write `.wraith/usage.json`.** `status` is documented as "facts like git status", yet both write state. After a pre-commit `check` the working tree is dirty. | Incorrect | M5 |
 
 ### Low
 
@@ -216,7 +216,7 @@ These passed independent tests or oracles that the original author didn't contro
 - Codex with approvals enabled. A retry with Codex's automatic-approval mode was blocked by this audit session's safety controls and wasn't pursued.
 - Opening outputs in Microsoft Word itself (LibreOffice was the oracle).
 - Rendered visual / RTL QA. Quality of cross-model review jobs (only packaging and ingestion are exercised).
-- Multi-process concurrency (CLI and MCP writing `.polyglot/` at the same time; writes aren't atomic).
+- Multi-process concurrency (CLI and MCP writing `.wraith/` at the same time; writes aren't atomic).
 
 ## 7. Assessment of the existing test suite
 
@@ -237,8 +237,8 @@ Passing tests show the code runs its own scenarios. They don't establish correct
 
 The vision: *a developer with no localization knowledge can easily localize and maintain their app using an existing coding agent.* A first-time user would hit these, in order:
 
-1. **Install fails:** `npx polyglot-mcp` is a 404. The Linux binary won't start outside an up-to-date Arch-like system.
-2. **First commit fails:** `init --hook` installs a hook that blocks every commit unless a binary named `polyglot` is on PATH.
+1. **Install fails:** `npx wraith-mcp` is a 404. The Linux binary won't start outside an up-to-date Arch-like system.
+2. **First commit fails:** `init --hook` installs a hook that blocks every commit unless a binary named `wraith` is on PATH.
 3. **Wrong "done" signals:** for monorepos, Django projects and documents, `check` says *passed* while nothing was checked. For French, Spanish, Italian and Portuguese it says *failed* on correct translations, and the agent "fixes" them in ways that break Django builds.
 4. **Most hardcoded strings are missed:** about two-thirds in a typical Next.js app, and nearly all helper-based strings in Rails and Django. The agent is told the job is finished while visible English remains.
 5. **Maintenance doesn't hold up:** staleness breaks for anything not written by `apply` (pre-existing translations, translator edits, `import`). Context warnings fire on file moves. Glossary changes aren't enforced.
@@ -260,7 +260,7 @@ No new features. Every item corrects documented behavior or narrows a claim. Acc
 | 2 | **Make `check` fail closed.** `passed` must be false (or `inconclusive` with a non-zero exit) when no adapter, no source catalog or no files were scanned. Report configured documents as unchecked until document state exists. Surface parse failures as issues. | C4, F5 | G1, G2, H1, U7, F5 green. |
 | 3 | **Separate the plural models.** ICU: require `other` plus categories *present in the source*; treat CLDR `many` and others as advisory; use ordinal rules for `selectordinal`. Gettext: derive form count and index mapping from the file's `Plural-Forms` header and never write more than `nplurals`. Rails/i18next: validate per-variant placeholders, and reject scalar-over-plural writes. | C2, C3 (plural part), C5, H4 (A3–A5) | A1–A5, E1, E2, H4 (`msgfmt --check` clean), H5, I3–I5 green. **Fix `tests/nextjs-e2e.test.ts:141,195`.** |
 | 4 | **Stop silent data loss in documents.** Make document `apply` incremental (start from the existing target when present, or require the full segment set and refuse partial apply), and refuse `targetFile == sourceFile`. | C6 | R1, R2 green. |
-| 5 | **Fix the install path.** Publish (or reserve) the npm name, or change the README to a working install. Build the Linux binary from an official Node build (not a distro shared-lib build) and verify it with `ldd` in CI on Ubuntu, Debian and Alpine (or document glibc-only). Re-sign macOS SEA binaries. Make the hook resolve the actual installed command, or fail with an actionable message. | H6 | Smoke job: fresh container → install per README → `polyglot check` → commit with hook. |
+| 5 | **Fix the install path.** Publish (or reserve) the npm name, or change the README to a working install. Build the Linux binary from an official Node build (not a distro shared-lib build) and verify it with `ldd` in CI on Ubuntu, Debian and Alpine (or document glibc-only). Re-sign macOS SEA binaries. Make the hook resolve the actual installed command, or fail with an actionable message. | H6 | Smoke job: fresh container → install per README → `wraith check` → commit with hook. |
 
 ### P1: core correctness for every advertised stack
 
@@ -310,9 +310,9 @@ No new features. Every item corrects documented behavior or narrows a claim. Acc
 
 ## Appendix B: key reproductions outside the suite
 
-- **Django French plural accepted by Polyglot fails `msgfmt`:** `nplurals = 2 ... but some messages have 3 plural forms; msgfmt: found 1 fatal error`.
+- **Django French plural accepted by Wraith fails `msgfmt`:** `nplurals = 2 ... but some messages have 3 plural forms; msgfmt: found 1 fatal error`.
 - **Rails plural destroyed:** a Russian `count: {one, few, many, other}` becomes `count: "%{count} участников"` after `apply`. `check` then reports only an unrelated `missing_key`.
-- **Codex (`codex exec`, v0.172):** `mcp: polyglot/status (failed)`, logged as `MCP tool call requires approval, but approval policy is never`.
-- **Binary:** `ldd release/polyglot-linux-x64` lists 42 entries (libicu*.so.78, libabsl_*.so.2608, libsimdjson.so.34, …). Max symbol version `GLIBC_2.44`.
-- **Install:** `npm view polyglot-mcp` returns `E404 Not Found`.
-- **Hook:** `git commit` in an `init --hook` repo fails with `npx: command not found` / `polyglot: command not found`.
+- **Codex (`codex exec`, v0.172):** `mcp: wraith/status (failed)`, logged as `MCP tool call requires approval, but approval policy is never`.
+- **Binary:** `ldd release/wraith-linux-x64` lists 42 entries (libicu*.so.78, libabsl_*.so.2608, libsimdjson.so.34, …). Max symbol version `GLIBC_2.44`.
+- **Install:** `npm view wraith-mcp` returns `E404 Not Found`.
+- **Hook:** `git commit` in an `init --hook` repo fails with `npx: command not found` / `wraith: command not found`.

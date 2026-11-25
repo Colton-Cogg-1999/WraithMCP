@@ -190,14 +190,14 @@ export function isRealPathWithinRoot(rootDir: string, targetPath: string): boole
 
 /**
  * Confine MCP tool `rootDir` overrides to the server's launch workspace (and any
- * roots explicitly authorized via options or POLYGLOT_ALLOWED_ROOTS).
+ * roots explicitly authorized via options or WRAITH_ALLOWED_ROOTS).
  */
 export function resolveMcpRootDir(
   launchRoot: string,
   requestedRoot?: string,
   authorizedRoots?: string[]
 ): string {
-  const envRoots = (process.env.POLYGLOT_ALLOWED_ROOTS ?? "")
+  const envRoots = (process.env.WRAITH_ALLOWED_ROOTS ?? "")
     .split(path.delimiter)
     .map((s) => s.trim())
     .filter(Boolean);
@@ -219,7 +219,7 @@ export function atomicWriteFileSync(
 ): void {
   const dir = path.dirname(filePath);
   fs.mkdirSync(dir, { recursive: true });
-  const tmpName = `.polyglot-tmp-${process.pid}-${crypto.randomBytes(6).toString("hex")}`;
+  const tmpName = `.wraith-tmp-${process.pid}-${crypto.randomBytes(6).toString("hex")}`;
   const tmpPath = path.join(dir, tmpName);
   try {
     if (typeof content === "string") {
@@ -265,10 +265,10 @@ export interface WorkspaceLockOptions {
 }
 
 /**
- * Exclusive file lock under `.polyglot/.lock` coordinating concurrent multi-process
- * read-modify-write operations on locale files and `.polyglot/` state files.
+ * Exclusive file lock under `.wraith/.lock` coordinating concurrent multi-process
+ * read-modify-write operations on locale files and `.wraith/` state files.
  * - Re-entrant within the same process.
- * - Enforces workspace confinement before creating `.polyglot/.lock`.
+ * - Enforces workspace confinement before creating `.wraith/.lock`.
  * - Recovers stale locks left behind by crashed processes (dead PID or age > staleMs).
  */
 export function withWorkspaceLock<T>(
@@ -287,15 +287,15 @@ export function withWorkspaceLock<T>(
     }
   }
 
-  const polyglotDir = resolveConfinedPath(realRoot, ".polyglot", {
-    label: ".polyglot directory",
+  const wraithDir = resolveConfinedPath(realRoot, ".wraith", {
+    label: ".wraith directory",
   });
-  const lockPath = resolveConfinedPath(realRoot, path.join(".polyglot", ".lock"), {
-    label: ".polyglot/.lock",
+  const lockPath = resolveConfinedPath(realRoot, path.join(".wraith", ".lock"), {
+    label: ".wraith/.lock",
   });
 
-  const existedBefore = fs.existsSync(polyglotDir);
-  fs.mkdirSync(polyglotDir, { recursive: true });
+  const existedBefore = fs.existsSync(wraithDir);
+  fs.mkdirSync(wraithDir, { recursive: true });
 
   const timeoutMs = options?.timeoutMs ?? 15_000;
   const staleMs = options?.staleMs ?? 30_000;
@@ -355,7 +355,7 @@ export function withWorkspaceLock<T>(
 
       if (Date.now() - start >= timeoutMs) {
         throw new Error(
-          `Timed out after ${timeoutMs}ms waiting for workspace lock "${path.relative(realRoot, lockPath)}". If no other Polyglot process is running, delete the lock file and retry.`
+          `Timed out after ${timeoutMs}ms waiting for workspace lock "${path.relative(realRoot, lockPath)}". If no other Wraith process is running, delete the lock file and retry.`
         );
       }
       sleepSync(8 + Math.floor(Math.random() * 12));
@@ -374,7 +374,7 @@ export function withWorkspaceLock<T>(
     }
     if (!existedBefore) {
       try {
-        fs.rmdirSync(polyglotDir);
+        fs.rmdirSync(wraithDir);
       } catch {
         // Directory is non-empty (files were intentionally persisted), keep it
       }

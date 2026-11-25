@@ -14,7 +14,7 @@ afterAll(() => {
 
 /** Create an isolated temp project from a map of relative path -> contents. */
 export function project(files: Record<string, string | Uint8Array>, opts?: { prefix?: string }): string {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), opts?.prefix ?? "polyglot-audit-"));
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), opts?.prefix ?? "wraith-audit-"));
   created.push(dir);
   writeFiles(dir, files);
   return dir;

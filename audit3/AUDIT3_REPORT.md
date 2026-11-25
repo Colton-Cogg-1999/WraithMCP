@@ -1,4 +1,4 @@
-# Polyglot: Third Independent Audit (Round-2 Remediation Verification)
+# Wraith: Third Independent Audit (Round-2 Remediation Verification)
 
 **Date:** 2026-11-24 · **Target:** `remediation` @ `f317563` (12 commits after `0eb5251`) · **Implementation not modified.**
 - New tests: `audit3/` (16 tests).
@@ -55,7 +55,7 @@ The fixture adjustments in `f317563` (adding a source file so B3 applies; `skipS
 | N6 annotations | **Resolved** | audit2 ANN-1 passes; MCP `scan` no longer writes |
 | N7 scanner recall | **Partially resolved** | Fourth unseen app: **4/9 (44%)**, 0 false positives (**SCAN-1**). README now states the limits honestly. REMEDIATION §5.3's "100% on four apps" isn't an independent measure: two of those apps were audit tests the code was tuned against, and one was written by the same agent. |
 | N8 vue pipe plurals | **Resolved** | audit2 PL8 passes |
-| N9 install strings | **Resolved** | No `npx polyglot-mcp` left in `src/`. The binary is still not portable (42 `ldd` entries, disclosed). |
+| N9 install strings | **Resolved** | No `npx wraith-mcp` left in `src/`. The binary is still not portable (42 `ldd` entries, disclosed). |
 | N10, N11, N12, N13 | **Resolved** | audit2 PL3–PL5, ZIP2-2, V6 pass. A README/CHANGELOG at the root doesn't trigger INCONCLUSIVE (**UNS-1**); the Storybook `.mdx` case gives an actionable reason and clears via `paths.ignore` (**UNS-2**). |
 
 ## 4. New findings (round-3 suite: 16 tests, 8 fail)
@@ -76,10 +76,10 @@ The fixture adjustments in `f317563` (adding a source file so B3 applies; `skipS
 | Agent | Result |
 |---|---|
 | Codex 0.172 (`codex exec`, approval `never`) | ✅ `status` and `check` completed (round 2) |
-| **Antigravity CLI (`agy -p`)** | ✅ with MCP permitted. Discovered the server, called `status` and `check`, and reported correct numbers (`outcome=FAIL`, 7 errors, by-code breakdown). Headless mode denies all MCP calls unless `permissions.allow` contains an MCP rule. `mcp(polyglot)` did not match; `mcp(*)` did. That's Antigravity policy, independent of Polyglot's annotations, and worth a line in the README. |
+| **Antigravity CLI (`agy -p`)** | ✅ with MCP permitted. Discovered the server, called `status` and `check`, and reported correct numbers (`outcome=FAIL`, 7 errors, by-code breakdown). Headless mode denies all MCP calls unless `permissions.allow` contains an MCP rule. `mcp(wraith)` did not match; `mcp(*)` did. That's Antigravity policy, independent of Wraith's annotations, and worth a line in the README. |
 | Claude Code | Passed in the first audit; not re-run |
 
-For the Antigravity test, Polyglot was registered with `agy mcp add` and removed afterwards. `~/.gemini/config/mcp_config.json` was restored byte-for-byte from a backup.
+For the Antigravity test, Wraith was registered with `agy mcp add` and removed afterwards. `~/.gemini/config/mcp_config.json` was restored byte-for-byte from a backup.
 
 ## 6. Release blockers (experimental public release)
 

@@ -1,6 +1,6 @@
 {
   "completedAt": "2026-11-25T05:00:50.313Z",
-  "polyglotBin": "/home/colton/Projects/Polyglot MCP/release/polyglot-linux-x64",
+  "wraithBin": "/home/colton/Projects/Polyglot MCP/release/wraith-linux-x64",
   "codexModel": "gpt-6.2-astra",
   "codexApprovalFlags": [
     "--approve-for-me"

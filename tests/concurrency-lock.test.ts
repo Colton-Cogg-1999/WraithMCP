@@ -6,7 +6,7 @@ import { initProject, withWorkspaceLock } from "../src/index.js";
 
 const tmpDirs: string[] = [];
 function mkTmp(): string {
-  const d = fs.mkdtempSync(path.join(os.tmpdir(), "polyglot-lock-"));
+  const d = fs.mkdtempSync(path.join(os.tmpdir(), "wraith-lock-"));
   tmpDirs.push(d);
   return d;
 }
@@ -21,7 +21,7 @@ describe("Workspace exclusive lock (N1)", () => {
   it("supports same-process re-entrancy and releases lock file cleanly", () => {
     const dir = mkTmp();
     initProject({ rootDir: dir, sourceLocale: "en", targetLocales: ["de"], writeAgentRule: false });
-    const lockFile = path.join(dir, ".polyglot", ".lock");
+    const lockFile = path.join(dir, ".wraith", ".lock");
 
     const val = withWorkspaceLock(dir, () => {
       expect(fs.existsSync(lockFile)).toBe(true);
@@ -34,7 +34,7 @@ describe("Workspace exclusive lock (N1)", () => {
   it("recovers stale locks left behind by crashed processes (dead PID or old mtime)", () => {
     const dir = mkTmp();
     initProject({ rootDir: dir, sourceLocale: "en", targetLocales: ["de"], writeAgentRule: false });
-    const lockFile = path.join(dir, ".polyglot", ".lock");
+    const lockFile = path.join(dir, ".wraith", ".lock");
 
     // Simulate crashed process lock with an old timestamp and nonexistent PID
     fs.writeFileSync(lockFile, JSON.stringify({ pid: 99999999, createdAt: Date.now() - 10_000 }) + "\n");
@@ -49,7 +49,7 @@ describe("Workspace exclusive lock (N1)", () => {
   it("times out with an actionable error when a fresh live lock is held", () => {
     const dir = mkTmp();
     initProject({ rootDir: dir, sourceLocale: "en", targetLocales: ["de"], writeAgentRule: false });
-    const lockFile = path.join(dir, ".polyglot", ".lock");
+    const lockFile = path.join(dir, ".wraith", ".lock");
 
     // Simulate active lock held by current live PID (different process simulation via file)
     fs.writeFileSync(lockFile, JSON.stringify({ pid: process.pid, createdAt: Date.now() }) + "\n");

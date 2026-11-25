@@ -72,7 +72,7 @@
               "prepareCalls": 3,
               "applyCalls": 4
             },
-            "polyglotCheck": {
+            "wraithCheck": {
               "outcome": "PASS",
               "errorCount": 0,
               "warningCount": 15,
@@ -136,7 +136,7 @@
               "prepareCalls": 0,
               "applyCalls": 0
             },
-            "polyglotCheck": {
+            "wraithCheck": {
               "outcome": "PASS",
               "errorCount": 0,
               "warningCount": 15,
@@ -205,7 +205,7 @@
                 "repeatedGroups": 8
               }
             },
-            "polyglotCheck": {
+            "wraithCheck": {
               "outcome": "PASS",
               "errorCount": 0,
               "warningCount": 7,
@@ -248,7 +248,7 @@
                 "repeatedGroups": 8
               }
             },
-            "polyglotCheck": {
+            "wraithCheck": {
               "outcome": "PASS",
               "errorCount": 0,
               "warningCount": 16,
@@ -11042,7 +11042,7 @@
               "prepareCalls": 4,
               "applyCalls": 5
             },
-            "polyglotCheck": {
+            "wraithCheck": {
               "outcome": "PASS",
               "errorCount": 0,
               "warningCount": 15,
@@ -11105,7 +11105,7 @@
               "prepareCalls": 0,
               "applyCalls": 0
             },
-            "polyglotCheck": {
+            "wraithCheck": {
               "outcome": "PASS",
               "errorCount": 0,
               "warningCount": 18,
@@ -11174,7 +11174,7 @@
                 "repeatedGroups": 8
               }
             },
-            "polyglotCheck": {
+            "wraithCheck": {
               "outcome": "PASS",
               "errorCount": 0,
               "warningCount": 8,
@@ -11217,7 +11217,7 @@
                 "repeatedGroups": 8
               }
             },
-            "polyglotCheck": {
+            "wraithCheck": {
               "outcome": "PASS",
               "errorCount": 0,
               "warningCount": 19,
@@ -22378,7 +22378,7 @@
               "prepareCalls": 4,
               "applyCalls": 5
             },
-            "polyglotCheck": {
+            "wraithCheck": {
               "outcome": "PASS",
               "errorCount": 0,
               "warningCount": 15,
@@ -22441,7 +22441,7 @@
               "prepareCalls": 0,
               "applyCalls": 0
             },
-            "polyglotCheck": {
+            "wraithCheck": {
               "outcome": "PASS",
               "errorCount": 0,
               "warningCount": 15,
@@ -22509,7 +22509,7 @@
                 "repeatedGroups": 8
               }
             },
-            "polyglotCheck": {
+            "wraithCheck": {
               "outcome": "FAIL",
               "errorCount": 11,
               "warningCount": 7,
@@ -22554,7 +22554,7 @@
                 "repeatedGroups": 8
               }
             },
-            "polyglotCheck": {
+            "wraithCheck": {
               "outcome": "FAIL",
               "errorCount": 5,
               "warningCount": 19,
@@ -35204,7 +35204,7 @@
               "prepareCalls": 3,
               "applyCalls": 3
             },
-            "polyglotCheck": {
+            "wraithCheck": {
               "outcome": "PASS",
               "errorCount": 0,
               "warningCount": 20,
@@ -35268,7 +35268,7 @@
               "prepareCalls": 0,
               "applyCalls": 0
             },
-            "polyglotCheck": {
+            "wraithCheck": {
               "outcome": "FAIL",
               "errorCount": 3,
               "warningCount": 21,
@@ -35339,7 +35339,7 @@
                 "repeatedGroups": 8
               }
             },
-            "polyglotCheck": {
+            "wraithCheck": {
               "outcome": "FAIL",
               "errorCount": 8,
               "warningCount": 7,
@@ -35384,7 +35384,7 @@
                 "repeatedGroups": 8
               }
             },
-            "polyglotCheck": {
+            "wraithCheck": {
               "outcome": "FAIL",
               "errorCount": 7,
               "warningCount": 17,
@@ -47892,7 +47892,7 @@
               "prepareCalls": 3,
               "applyCalls": 4
             },
-            "polyglotCheck": {
+            "wraithCheck": {
               "outcome": "PASS",
               "errorCount": 0,
               "warningCount": 20,
@@ -47956,7 +47956,7 @@
               "prepareCalls": 0,
               "applyCalls": 0
             },
-            "polyglotCheck": {
+            "wraithCheck": {
               "outcome": "FAIL",
               "errorCount": 2,
               "warningCount": 23,
@@ -48025,7 +48025,7 @@
                 "repeatedGroups": 8
               }
             },
-            "polyglotCheck": {
+            "wraithCheck": {
               "outcome": "FAIL",
               "errorCount": 7,
               "warningCount": 12,
@@ -48070,7 +48070,7 @@
                 "repeatedGroups": 8
               }
             },
-            "polyglotCheck": {
+            "wraithCheck": {
               "outcome": "FAIL",
               "errorCount": 7,
               "warningCount": 19,
@@ -59234,7 +59234,7 @@
               "prepareCalls": 3,
               "applyCalls": 1
             },
-            "polyglotCheck": {
+            "wraithCheck": {
               "outcome": "PASS",
               "errorCount": 0,
               "warningCount": 8,
@@ -59297,7 +59297,7 @@
               "prepareCalls": 0,
               "applyCalls": 0
             },
-            "polyglotCheck": {
+            "wraithCheck": {
               "outcome": "PASS",
               "errorCount": 0,
               "warningCount": 8,
@@ -59365,7 +59365,7 @@
                 "repeatedGroups": 3
               }
             },
-            "polyglotCheck": {
+            "wraithCheck": {
               "outcome": "PASS",
               "errorCount": 0,
               "warningCount": 6,
@@ -59408,7 +59408,7 @@
                 "repeatedGroups": 3
               }
             },
-            "polyglotCheck": {
+            "wraithCheck": {
               "outcome": "PASS",
               "errorCount": 0,
               "warningCount": 9,
@@ -63889,7 +63889,7 @@
               "prepareCalls": 3,
               "applyCalls": 1
             },
-            "polyglotCheck": {
+            "wraithCheck": {
               "outcome": "PASS",
               "errorCount": 0,
               "warningCount": 9,
@@ -63953,7 +63953,7 @@
               "prepareCalls": 0,
               "applyCalls": 0
             },
-            "polyglotCheck": {
+            "wraithCheck": {
               "outcome": "PASS",
               "errorCount": 0,
               "warningCount": 10,
@@ -64023,7 +64023,7 @@
                 "repeatedGroups": 3
               }
             },
-            "polyglotCheck": {
+            "wraithCheck": {
               "outcome": "PASS",
               "errorCount": 0,
               "warningCount": 7,
@@ -64066,7 +64066,7 @@
                 "repeatedGroups": 3
               }
             },
-            "polyglotCheck": {
+            "wraithCheck": {
               "outcome": "PASS",
               "errorCount": 0,
               "warningCount": 12,
@@ -68775,7 +68775,7 @@
               "prepareCalls": 3,
               "applyCalls": 2
             },
-            "polyglotCheck": {
+            "wraithCheck": {
               "outcome": "PASS",
               "errorCount": 0,
               "warningCount": 8,
@@ -68838,7 +68838,7 @@
               "prepareCalls": 0,
               "applyCalls": 0
             },
-            "polyglotCheck": {
+            "wraithCheck": {
               "outcome": "PASS",
               "errorCount": 0,
               "warningCount": 8,
@@ -68906,7 +68906,7 @@
                 "repeatedGroups": 3
               }
             },
-            "polyglotCheck": {
+            "wraithCheck": {
               "outcome": "FAIL",
               "errorCount": 2,
               "warningCount": 5,
@@ -68949,7 +68949,7 @@
                 "repeatedGroups": 3
               }
             },
-            "polyglotCheck": {
+            "wraithCheck": {
               "outcome": "FAIL",
               "errorCount": 2,
               "warningCount": 7,
@@ -73586,7 +73586,7 @@
               "prepareCalls": 3,
               "applyCalls": 2
             },
-            "polyglotCheck": {
+            "wraithCheck": {
               "outcome": "PASS",
               "errorCount": 0,
               "warningCount": 5,
@@ -73649,7 +73649,7 @@
               "prepareCalls": 0,
               "applyCalls": 0
             },
-            "polyglotCheck": {
+            "wraithCheck": {
               "outcome": "FAIL",
               "errorCount": 2,
               "warningCount": 8,
@@ -73718,7 +73718,7 @@
                 "repeatedGroups": 3
               }
             },
-            "polyglotCheck": {
+            "wraithCheck": {
               "outcome": "FAIL",
               "errorCount": 2,
               "warningCount": 5,
@@ -73761,7 +73761,7 @@
                 "repeatedGroups": 3
               }
             },
-            "polyglotCheck": {
+            "wraithCheck": {
               "outcome": "FAIL",
               "errorCount": 2,
               "warningCount": 8,
@@ -78738,7 +78738,7 @@
               "prepareCalls": 3,
               "applyCalls": 2
             },
-            "polyglotCheck": {
+            "wraithCheck": {
               "outcome": "PASS",
               "errorCount": 0,
               "warningCount": 8,
@@ -78801,7 +78801,7 @@
               "prepareCalls": 0,
               "applyCalls": 0
             },
-            "polyglotCheck": {
+            "wraithCheck": {
               "outcome": "FAIL",
               "errorCount": 5,
               "warningCount": 8,
@@ -78870,7 +78870,7 @@
                 "repeatedGroups": 3
               }
             },
-            "polyglotCheck": {
+            "wraithCheck": {
               "outcome": "FAIL",
               "errorCount": 5,
               "warningCount": 6,
@@ -78915,7 +78915,7 @@
                 "repeatedGroups": 3
               }
             },
-            "polyglotCheck": {
+            "wraithCheck": {
               "outcome": "FAIL",
               "errorCount": 5,
               "warningCount": 9,
@@ -84067,7 +84067,7 @@
               "prepareCalls": 3,
               "applyCalls": 2
             },
-            "polyglotCheck": {
+            "wraithCheck": {
               "outcome": "PASS",
               "errorCount": 0,
               "warningCount": 6,
@@ -84130,7 +84130,7 @@
               "prepareCalls": 0,
               "applyCalls": 0
             },
-            "polyglotCheck": {
+            "wraithCheck": {
               "outcome": "PASS",
               "errorCount": 0,
               "warningCount": 8,
@@ -84199,7 +84199,7 @@
                 "repeatedGroups": 2
               }
             },
-            "polyglotCheck": {
+            "wraithCheck": {
               "outcome": "PASS",
               "errorCount": 0,
               "warningCount": 6,
@@ -84242,7 +84242,7 @@
                 "repeatedGroups": 2
               }
             },
-            "polyglotCheck": {
+            "wraithCheck": {
               "outcome": "PASS",
               "errorCount": 0,
               "warningCount": 6,
@@ -88184,7 +88184,7 @@
               "prepareCalls": 3,
               "applyCalls": 1
             },
-            "polyglotCheck": {
+            "wraithCheck": {
               "outcome": "PASS",
               "errorCount": 0,
               "warningCount": 3,
@@ -88247,7 +88247,7 @@
               "prepareCalls": 0,
               "applyCalls": 0
             },
-            "polyglotCheck": {
+            "wraithCheck": {
               "outcome": "PASS",
               "errorCount": 0,
               "warningCount": 8,
@@ -88317,7 +88317,7 @@
                 "repeatedGroups": 2
               }
             },
-            "polyglotCheck": {
+            "wraithCheck": {
               "outcome": "PASS",
               "errorCount": 0,
               "warningCount": 5,
@@ -88360,7 +88360,7 @@
                 "repeatedGroups": 2
               }
             },
-            "polyglotCheck": {
+            "wraithCheck": {
               "outcome": "PASS",
               "errorCount": 0,
               "warningCount": 6,
@@ -92141,7 +92141,7 @@
               "prepareCalls": 3,
               "applyCalls": 2
             },
-            "polyglotCheck": {
+            "wraithCheck": {
               "outcome": "PASS",
               "errorCount": 0,
               "warningCount": 6,
@@ -92204,7 +92204,7 @@
               "prepareCalls": 0,
               "applyCalls": 0
             },
-            "polyglotCheck": {
+            "wraithCheck": {
               "outcome": "PASS",
               "errorCount": 0,
               "warningCount": 6,
@@ -92272,7 +92272,7 @@
                 "repeatedGroups": 2
               }
             },
-            "polyglotCheck": {
+            "wraithCheck": {
               "outcome": "FAIL",
               "errorCount": 3,
               "warningCount": 4,
@@ -92315,7 +92315,7 @@
                 "repeatedGroups": 2
               }
             },
-            "polyglotCheck": {
+            "wraithCheck": {
               "outcome": "FAIL",
               "errorCount": 3,
               "warningCount": 6,
@@ -96467,7 +96467,7 @@
               "prepareCalls": 3,
               "applyCalls": 5
             },
-            "polyglotCheck": {
+            "wraithCheck": {
               "outcome": "PASS",
               "errorCount": 0,
               "warningCount": 2,
@@ -96529,7 +96529,7 @@
               "prepareCalls": 0,
               "applyCalls": 0
             },
-            "polyglotCheck": {
+            "wraithCheck": {
               "outcome": "FAIL",
               "errorCount": 5,
               "warningCount": 7,
@@ -96600,7 +96600,7 @@
                 "repeatedGroups": 2
               }
             },
-            "polyglotCheck": {
+            "wraithCheck": {
               "outcome": "FAIL",
               "errorCount": 6,
               "warningCount": 4,
@@ -96645,7 +96645,7 @@
                 "repeatedGroups": 2
               }
             },
-            "polyglotCheck": {
+            "wraithCheck": {
               "outcome": "FAIL",
               "errorCount": 2,
               "warningCount": 5,
@@ -100851,7 +100851,7 @@
               "prepareCalls": 3,
               "applyCalls": 2
             },
-            "polyglotCheck": {
+            "wraithCheck": {
               "outcome": "PASS",
               "errorCount": 0,
               "warningCount": 3,
@@ -100914,7 +100914,7 @@
               "prepareCalls": 0,
               "applyCalls": 0
             },
-            "polyglotCheck": {
+            "wraithCheck": {
               "outcome": "FAIL",
               "errorCount": 1,
               "warningCount": 8,
@@ -100983,7 +100983,7 @@
                 "repeatedGroups": 2
               }
             },
-            "polyglotCheck": {
+            "wraithCheck": {
               "outcome": "FAIL",
               "errorCount": 3,
               "warningCount": 5,
@@ -101028,7 +101028,7 @@
                 "repeatedGroups": 2
               }
             },
-            "polyglotCheck": {
+            "wraithCheck": {
               "outcome": "FAIL",
               "errorCount": 3,
               "warningCount": 6,
@@ -105158,7 +105158,7 @@
               "prepareCalls": 3,
               "applyCalls": 1
             },
-            "polyglotCheck": {
+            "wraithCheck": {
               "outcome": "PASS",
               "errorCount": 0,
               "warningCount": 1,
@@ -105220,7 +105220,7 @@
               "prepareCalls": 0,
               "applyCalls": 0
             },
-            "polyglotCheck": {
+            "wraithCheck": {
               "outcome": "FAIL",
               "errorCount": 1,
               "warningCount": 5,
@@ -105289,7 +105289,7 @@
                 "repeatedGroups": 0
               }
             },
-            "polyglotCheck": {
+            "wraithCheck": {
               "outcome": "PASS",
               "errorCount": 0,
               "warningCount": 5,
@@ -105332,7 +105332,7 @@
                 "repeatedGroups": 0
               }
             },
-            "polyglotCheck": {
+            "wraithCheck": {
               "outcome": "PASS",
               "errorCount": 0,
               "warningCount": 5,
@@ -108882,7 +108882,7 @@
               "prepareCalls": 3,
               "applyCalls": 2
             },
-            "polyglotCheck": {
+            "wraithCheck": {
               "outcome": "PASS",
               "errorCount": 0,
               "warningCount": 6,
@@ -108946,7 +108946,7 @@
               "prepareCalls": 0,
               "applyCalls": 0
             },
-            "polyglotCheck": {
+            "wraithCheck": {
               "outcome": "FAIL",
               "errorCount": 2,
               "warningCount": 7,
@@ -109018,7 +109018,7 @@
                 "repeatedGroups": 0
               }
             },
-            "polyglotCheck": {
+            "wraithCheck": {
               "outcome": "FAIL",
               "errorCount": 1,
               "warningCount": 5,
@@ -109062,7 +109062,7 @@
                 "repeatedGroups": 0
               }
             },
-            "polyglotCheck": {
+            "wraithCheck": {
               "outcome": "FAIL",
               "errorCount": 1,
               "warningCount": 6,
@@ -112540,7 +112540,7 @@
               "prepareCalls": 3,
               "applyCalls": 2
             },
-            "polyglotCheck": {
+            "wraithCheck": {
               "outcome": "PASS",
               "errorCount": 0,
               "warningCount": 5,
@@ -112603,7 +112603,7 @@
               "prepareCalls": 0,
               "applyCalls": 0
             },
-            "polyglotCheck": {
+            "wraithCheck": {
               "outcome": "FAIL",
               "errorCount": 3,
               "warningCount": 5,
@@ -112673,7 +112673,7 @@
                 "repeatedGroups": 0
               }
             },
-            "polyglotCheck": {
+            "wraithCheck": {
               "outcome": "FAIL",
               "errorCount": 1,
               "warningCount": 5,
@@ -112717,7 +112717,7 @@
                 "repeatedGroups": 0
               }
             },
-            "polyglotCheck": {
+            "wraithCheck": {
               "outcome": "FAIL",
               "errorCount": 1,
               "warningCount": 5,
@@ -116440,7 +116440,7 @@
               "prepareCalls": 3,
               "applyCalls": 2
             },
-            "polyglotCheck": {
+            "wraithCheck": {
               "outcome": "PASS",
               "errorCount": 0,
               "warningCount": 5,
@@ -116503,7 +116503,7 @@
               "prepareCalls": 0,
               "applyCalls": 0
             },
-            "polyglotCheck": {
+            "wraithCheck": {
               "outcome": "FAIL",
               "errorCount": 2,
               "warningCount": 5,
@@ -116573,7 +116573,7 @@
                 "repeatedGroups": 0
               }
             },
-            "polyglotCheck": {
+            "wraithCheck": {
               "outcome": "FAIL",
               "errorCount": 3,
               "warningCount": 5,
@@ -116618,7 +116618,7 @@
                 "repeatedGroups": 0
               }
             },
-            "polyglotCheck": {
+            "wraithCheck": {
               "outcome": "FAIL",
               "errorCount": 3,
               "warningCount": 5,
@@ -120168,7 +120168,7 @@
               "prepareCalls": 2,
               "applyCalls": 5
             },
-            "polyglotCheck": {
+            "wraithCheck": {
               "outcome": "PASS",
               "errorCount": 0,
               "warningCount": 5,
@@ -120231,7 +120231,7 @@
               "prepareCalls": 0,
               "applyCalls": 0
             },
-            "polyglotCheck": {
+            "wraithCheck": {
               "outcome": "FAIL",
               "errorCount": 2,
               "warningCount": 5,
@@ -120301,7 +120301,7 @@
                 "repeatedGroups": 0
               }
             },
-            "polyglotCheck": {
+            "wraithCheck": {
               "outcome": "FAIL",
               "errorCount": 1,
               "warningCount": 5,
@@ -120345,7 +120345,7 @@
                 "repeatedGroups": 0
               }
             },
-            "polyglotCheck": {
+            "wraithCheck": {
               "outcome": "FAIL",
               "errorCount": 1,
               "warningCount": 5,
@@ -123936,7 +123936,7 @@
           "prepareCalls": 3,
           "applyCalls": 4
         },
-        "polyglotCheckOutcome": "PASS"
+        "wraithCheckOutcome": "PASS"
       },
       "compactA": {
         "exitCode": 0,
@@ -123976,7 +123976,7 @@
           "prepareCalls": 1,
           "applyCalls": 1
         },
-        "polyglotCheck": {
+        "wraithCheck": {
           "outcome": "PASS",
           "errorCount": 0,
           "warningCount": 15
@@ -130228,7 +130228,7 @@
           "prepareCalls": 4,
           "applyCalls": 5
         },
-        "polyglotCheckOutcome": "PASS"
+        "wraithCheckOutcome": "PASS"
       },
       "compactA": {
         "exitCode": 0,
@@ -130268,7 +130268,7 @@
           "prepareCalls": 1,
           "applyCalls": 1
         },
-        "polyglotCheck": {
+        "wraithCheck": {
           "outcome": "PASS",
           "errorCount": 0,
           "warningCount": 18
@@ -136768,7 +136768,7 @@
       "runnerApiUnchanged": true,
       "tscPassed": true,
       "tscOutput": "",
-      "polyglotCheck": {
+      "wraithCheck": {
         "de": {
           "outcome": "PASS",
           "errorCount": 0,

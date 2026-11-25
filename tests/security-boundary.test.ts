@@ -6,7 +6,7 @@ import { afterEach, describe, expect, it } from "vitest";
 import {
   applyDocumentTranslations,
   applyTranslations,
-  createPolyglotMcpServer,
+  createWraithMcpServer,
   DocxDocumentAdapter,
   ensureBootstrapped,
   exportEscalation,
@@ -26,7 +26,7 @@ import { InMemoryTransport } from "@modelcontextprotocol/sdk/inMemory.js";
 ensureBootstrapped();
 
 const tmpDirs: string[] = [];
-function makeDir(prefix = "polyglot-sec-"): string {
+function makeDir(prefix = "wraith-sec-"): string {
   const d = fs.mkdtempSync(path.join(os.tmpdir(), prefix));
   tmpDirs.push(d);
   return d;
@@ -64,8 +64,8 @@ describe("P0 Security Boundary Regression Suite", () => {
   });
 
   it("blocks nonexistent target paths whose symlinked parent escapes workspace", () => {
-    const repo = makeDir("polyglot-repo-");
-    const outside = makeDir("polyglot-outside-");
+    const repo = makeDir("wraith-repo-");
+    const outside = makeDir("wraith-outside-");
     fs.symlinkSync(outside, path.join(repo, "escape-link"));
 
     expect(() =>
@@ -75,15 +75,15 @@ describe("P0 Security Boundary Regression Suite", () => {
   });
 
   it("blocks MCP rootDir escapes while allowing subdirectories inside launch root", async () => {
-    const repo = makeDir("polyglot-mcp-root-");
-    const outside = makeDir("polyglot-mcp-outside-");
+    const repo = makeDir("wraith-mcp-root-");
+    const outside = makeDir("wraith-mcp-outside-");
     fs.mkdirSync(path.join(repo, "sub"), { recursive: true });
 
     expect(() => resolveMcpRootDir(repo, outside)).toThrow(SecurityBoundaryError);
     expect(() => resolveMcpRootDir(repo, "../outside")).toThrow(SecurityBoundaryError);
     expect(resolveMcpRootDir(repo, "sub")).toBe(fs.realpathSync(path.join(repo, "sub")));
 
-    const server = createPolyglotMcpServer({ rootDir: repo });
+    const server = createWraithMcpServer({ rootDir: repo });
     const client = new Client({ name: "sec-test", version: "1.0.0" });
     const [ct, st] = InMemoryTransport.createLinkedPair();
     await Promise.all([server.connect(st), client.connect(ct)]);
@@ -104,7 +104,7 @@ describe("P0 Security Boundary Regression Suite", () => {
     fs.writeFileSync(path.join(repo, "docs/a.md"), "# Hello\n");
     initProject({ rootDir: repo, sourceLocale: "en", targetLocales: ["de"], writeAgentRule: false });
 
-    const beforeCfg = fs.readFileSync(path.join(repo, ".polyglot/config.json"), "utf8");
+    const beforeCfg = fs.readFileSync(path.join(repo, ".wraith/config.json"), "utf8");
 
     const badApply = applyTranslations({
       rootDir: repo,
@@ -112,7 +112,7 @@ describe("P0 Security Boundary Regression Suite", () => {
       translations: [{ key: "hello", value: "Hallo" }],
     });
     expect(badApply.ok).toBe(false);
-    expect(fs.readFileSync(path.join(repo, ".polyglot/config.json"), "utf8")).toBe(beforeCfg);
+    expect(fs.readFileSync(path.join(repo, ".wraith/config.json"), "utf8")).toBe(beforeCfg);
 
     expect(() => packageReviewJob(repo, { targetLocale: "de", outputPath: path.join(outside, "x.json") })).toThrow(SecurityBoundaryError);
     expect(() => exportEscalation(repo, { outputDir: path.join(outside, "esc") })).toThrow(SecurityBoundaryError);
@@ -138,10 +138,10 @@ describe("P0 Security Boundary Regression Suite", () => {
     expect(() => parseXlsxBuffer(bomb)).toThrow(SecurityBoundaryError);
   });
 
-  it("refuses symlinked .git/hooks, dangling AGENTS.md symlinks, and symlinked .polyglot directories (B6, B7)", () => {
+  it("refuses symlinked .git/hooks, dangling AGENTS.md symlinks, and symlinked .wraith directories (B6, B7)", () => {
     // 1. Symlinked .git/hooks pointing outside workspace
-    const repo1 = makeDir("polyglot-hook-sym-");
-    const outsideHooks = makeDir("polyglot-outside-hooks-");
+    const repo1 = makeDir("wraith-hook-sym-");
+    const outsideHooks = makeDir("wraith-outside-hooks-");
     fs.mkdirSync(path.join(repo1, ".git"), { recursive: true });
     fs.symlinkSync(outsideHooks, path.join(repo1, ".git", "hooks"));
     expect(() =>
@@ -150,8 +150,8 @@ describe("P0 Security Boundary Regression Suite", () => {
     expect(fs.readdirSync(outsideHooks)).toEqual([]);
 
     // 2. Dangling symlink AGENTS.md pointing to non-existent outside path
-    const repo2 = makeDir("polyglot-dangling-");
-    const outsideDir = makeDir("polyglot-outside-dangling-");
+    const repo2 = makeDir("wraith-dangling-");
+    const outsideDir = makeDir("wraith-outside-dangling-");
     const danglingTarget = path.join(outsideDir, "would-be-created.txt");
     fs.symlinkSync(danglingTarget, path.join(repo2, "AGENTS.md"));
     expect(() =>
@@ -159,10 +159,10 @@ describe("P0 Security Boundary Regression Suite", () => {
     ).toThrow(SecurityBoundaryError);
     expect(fs.existsSync(danglingTarget)).toBe(false);
 
-    // 3. Symlinked .polyglot/ pointing outside workspace
-    const repo3 = makeDir("polyglot-store-sym-");
-    const outsideStore = makeDir("polyglot-outside-store-");
-    fs.symlinkSync(outsideStore, path.join(repo3, ".polyglot"));
+    // 3. Symlinked .wraith/ pointing outside workspace
+    const repo3 = makeDir("wraith-store-sym-");
+    const outsideStore = makeDir("wraith-outside-store-");
+    fs.symlinkSync(outsideStore, path.join(repo3, ".wraith"));
     expect(() =>
       initProject({ rootDir: repo3, sourceLocale: "en", targetLocales: ["de"], writeAgentRule: false })
     ).toThrow(SecurityBoundaryError);

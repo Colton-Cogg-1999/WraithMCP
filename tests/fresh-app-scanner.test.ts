@@ -6,7 +6,7 @@ import { initProject, scanProject } from "../src/index.js";
 
 const tmpDirs: string[] = [];
 function mkProject(files: Record<string, string>): string {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "polyglot-fresh-app-"));
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "wraith-fresh-app-"));
   tmpDirs.push(dir);
   for (const [rel, content] of Object.entries(files)) {
     const abs = path.join(dir, rel);

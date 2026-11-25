@@ -1,6 +1,6 @@
 import { detectProjectAdapter, loadLocaleCatalog } from "../adapters/registry.js";
 import { runCheck } from "./check.js";
-import { PolyglotStore } from "./store.js";
+import { WraithStore } from "./store.js";
 import { Assumption } from "./types.js";
 
 export interface ReviewRecommendation {
@@ -55,7 +55,7 @@ const AMBIGUOUS_UI_TERMS = new Set([
 ]);
 
 export function generateReport(rootDir: string): LocalizationReport {
-  const store = new PolyglotStore(rootDir);
+  const store = new WraithStore(rootDir);
   const config = store.readConfig();
   const assumptionsFile = store.readAssumptions();
   const reviewsFile = store.readReviews();
@@ -147,7 +147,7 @@ export function generateReport(rootDir: string): LocalizationReport {
   }
 
   const lines: string[] = [];
-  lines.push(`## Polyglot Localization Report`);
+  lines.push(`## Wraith Localization Report`);
   lines.push("");
   lines.push(
     `**Status:** ${check.passed ? "✓ Clean (0 errors)" : `✗ ${check.errorCount} error(s)`} · **Warnings:** ${check.warningCount} · **Source:** \`${check.sourceLocale}\` (${check.totalSourceKeys} keys) · **Targets:** ${check.targetLocales.map((l) => `\`${l}\``).join(", ") || "_none_"}`

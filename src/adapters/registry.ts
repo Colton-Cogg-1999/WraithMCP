@@ -156,7 +156,7 @@ export function detectProjectAdapter(
         localeFiles: {},
         placeholderSyntaxes: ["icu"],
         notes: [
-          `Monorepo with multiple apps detected (${names.join(", ")}). Run Polyglot with --cwd <app-dir> or configure paths.source and paths.locales.`,
+          `Monorepo with multiple apps detected (${names.join(", ")}). Run Wraith with --cwd <app-dir> or configure paths.source and paths.locales.`,
         ],
       },
     };

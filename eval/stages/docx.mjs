@@ -7,7 +7,7 @@ import {
   RESULTS_DIR,
 } from "../config.mjs";
 import { atomicWriteJson } from "../lib/cache.mjs";
-import { runCodexWithPolyglot } from "../lib/codex.mjs";
+import { runCodexWithWraith } from "../lib/codex.mjs";
 import {
   assertDeepLStageCap,
   getDeepLUsage,
@@ -24,9 +24,9 @@ import { buildAllDocxCorpus } from "../docx/build-all-docx.mjs";
 import {
   extractGlossaryForLocale,
   normalizeTelemetryPer1k,
-  parsePolyglotJson,
-  runPolyglotCli,
-  seedPolyglotProject,
+  parseWraithJson,
+  runWraithCli,
+  seedWraithProject,
 } from "./common.mjs";
 
 const DOCX_LOW_CONFIDENCE_NOTE =
@@ -45,7 +45,7 @@ function pickSampleIndices(total, maxCount = 15) {
  * Mid-batch incremental edit test on `libreoffice-revisions.docx` (-> pl):
  * 1) Translate Batch 1 (limit=5, offset=0) on v1
  * 2) Replace source file with v2 (inserted urgent paragraph at top + edited para 2 from 12h -> 6h)
- * 3) Inspect `prepare` & `check` on v2 to verify Polyglot detects stale & new segments without shifting translations
+ * 3) Inspect `prepare` & `check` on v2 to verify Wraith detects stale & new segments without shifting translations
  * 4) Run Batch 2 on v2 and verify `check` passes with aligned Polish paragraphs
  */
 async function runDocxIncrementalEditTest(docSpec, { ignoreSpendCap = false } = {}) {
@@ -60,22 +60,22 @@ async function runDocxIncrementalEditTest(docSpec, { ignoreSpendCap = false } = 
   fs.copyFileSync(docSpec.path, path.join(workDir, filename));
 
   // Batch 1 on v1 (only first 5 segments!)
-  const batch1Prompt = `Translate ONLY the first batch (limit=5, offset=0) of "${filename}" into Polish ("${locale}") as "${targetName}" using Polyglot MCP tools.
+  const batch1Prompt = `Translate ONLY the first batch (limit=5, offset=0) of "${filename}" into Polish ("${locale}") as "${targetName}" using Wraith MCP tools.
 Steps:
 1. Call \`prepare\` with document="${filename}", targetLocale="${locale}", limit=5, offset=0.
 2. Translate ONLY those 5 segments (preserving <x>/<g> tags and DNT terms Northstar, LedgerVault, SSH) and write them via \`apply\` with document="${filename}", targetFile="${targetName}", targetLocale="${locale}".
 3. Stop immediately after Batch 1 (do NOT translate remaining segments yet).
 Reply BATCH1_DONE.`;
 
-  const resB1 = await runCodexWithPolyglot({
+  const resB1 = await runCodexWithWraith({
     stageName: "docx-incremental",
     label: `${docSpec.id}-inc-batch1-${locale}`,
     sourceDir: workDir,
     prompt: batch1Prompt,
-    captureRelPaths: [targetName, ".polyglot/documents.json"],
+    captureRelPaths: [targetName, ".wraith/documents.json"],
     ignoreSpendCap,
     workspaceSetupFn: (tmpDir) =>
-      seedPolyglotProject(tmpDir, [locale], docSpec.glossary, (cfg) => {
+      seedWraithProject(tmpDir, [locale], docSpec.glossary, (cfg) => {
         cfg.paths.documents = [filename];
       }),
   });
@@ -84,7 +84,7 @@ Reply BATCH1_DONE.`;
   const workV2 = path.join(EVAL_ROOT, "work", `docx-incremental-v2-${docSpec.id}`);
   fs.rmSync(workV2, { recursive: true, force: true });
   fs.mkdirSync(workV2, { recursive: true });
-  seedPolyglotProject(workV2, [locale], docSpec.glossary, (cfg) => {
+  seedWraithProject(workV2, [locale], docSpec.glossary, (cfg) => {
     cfg.paths.documents = [filename];
   });
   // Write captured Batch 1 outputs
@@ -96,23 +96,23 @@ Reply BATCH1_DONE.`;
   // Now replace source DOCX with v2!
   fs.copyFileSync(docSpec.v2Path, path.join(workV2, filename));
 
-  // Probe deterministic Polyglot check & prepare right after v2 swap (before Batch 2)
-  const midCheck = parsePolyglotJson(runPolyglotCli(workV2, ["check", "--locale", locale, "--json"]));
+  // Probe deterministic Wraith check & prepare right after v2 swap (before Batch 2)
+  const midCheck = parseWraithJson(runWraithCli(workV2, ["check", "--locale", locale, "--json"]));
 
   // Batch 2 on v2: finish remaining + stale segments and verify PASS
   const batch2Prompt = `The source document "${filename}" was edited mid-translation (a new top amendment paragraph was inserted and paragraph 2 changed from twelve hours to six hours).
-Using Polyglot MCP tools:
+Using Wraith MCP tools:
 1. Call \`prepare\` with document="${filename}", targetLocale="${locale}", limit=50, offset=0 to see all remaining and stale segments (note how previously translated unchanged segments are preserved).
 2. Translate every remaining and stale segment into Polish ("${locale}"), preserving <x>/<g> tags and DNT terms (Northstar, LedgerVault, SSH), and apply them with \`apply\` to targetFile="${targetName}".
 3. Run \`check\` until outcome is "PASS".
 Reply BATCH2_DONE.`;
 
-  const resB2 = await runCodexWithPolyglot({
+  const resB2 = await runCodexWithWraith({
     stageName: "docx-incremental",
     label: `${docSpec.id}-inc-batch2-${locale}`,
     sourceDir: workV2,
     prompt: batch2Prompt,
-    captureRelPaths: [targetName, ".polyglot/documents.json"],
+    captureRelPaths: [targetName, ".wraith/documents.json"],
     ignoreSpendCap,
   });
 
@@ -125,7 +125,7 @@ Reply BATCH2_DONE.`;
     fs.writeFileSync(abs, Buffer.from(b64, "base64"));
   }
 
-  const finalCheck = parsePolyglotJson(runPolyglotCli(finalDir, ["check", "--locale", locale, "--json"]));
+  const finalCheck = parseWraithJson(runWraithCli(finalDir, ["check", "--locale", locale, "--json"]));
   const finalDocxPath = path.join(DOCX_OUT_DIR, `inc-final-${docSpec.id}.${locale}.docx`);
   fs.mkdirSync(DOCX_OUT_DIR, { recursive: true });
   if (fs.existsSync(path.join(finalDir, targetName))) {
@@ -212,14 +212,14 @@ export async function runDocxStage({ part = "all", ignoreSpendCap = false, judge
     // Reuse exact Pilot prompt for northstar-policy so Codex cache hits 100% if available
     const promptA =
       docSpec.id === "northstar-policy"
-        ? `Translate the DOCX document "northstar-policy.docx" into German ("de") as "northstar-policy.de.docx" using Polyglot MCP tools.
+        ? `Translate the DOCX document "northstar-policy.docx" into German ("de") as "northstar-policy.de.docx" using Wraith MCP tools.
 Steps:
 1. Call \`prepare\` with document="northstar-policy.docx", targetLocale="de", limit=12, offset=0 (and paginate with offset=12 if hasMore is true) to translate in batches.
 2. Preserve EVERY <x id="..."/> and <g id="...">...</g> inline tag verbatim, keep DNT brand names (Northstar, Northstar Pay, PulseGrid, LedgerVault) untranslated, and apply the glossary terms (Workspace -> Arbeitsbereich, Invoice -> Rechnung).
 3. Write each batch using \`apply\` with document="northstar-policy.docx", targetFile="northstar-policy.de.docx", targetLocale="de".
 4. Run \`check\` to verify the configured document passes with 0 errors.
 Reply DONE when complete.`
-        : `Translate the DOCX document "${filename}" into "${locale}" as "${targetName}" using Polyglot MCP tools.
+        : `Translate the DOCX document "${filename}" into "${locale}" as "${targetName}" using Wraith MCP tools.
 Steps:
 1. Call \`prepare\` with document="${filename}", targetLocale="${locale}", limit=15, offset=0 (paginate if hasMore is true).
 2. Preserve EVERY <x id="..."/> and <g id="...">...</g> inline tag verbatim, keep DNT terms (${docSpec.dntTerms.join(", ")}) untranslated, and follow ${locale} locale conventions.
@@ -227,15 +227,15 @@ Steps:
 4. Run \`check\` to verify the document passes with 0 errors.
 Reply DONE when complete.`;
 
-    const codexRes = await runCodexWithPolyglot({
+    const codexRes = await runCodexWithWraith({
       stageName: `docx-part${part}`,
       label: docSpec.id === "northstar-policy" ? "pilot-docx-de" : `docx-${docSpec.id}-${locale}`,
       sourceDir: docWorkSrc,
       prompt: promptA,
-      captureRelPaths: [targetName, ".polyglot/documents.json"],
+      captureRelPaths: [targetName, ".wraith/documents.json"],
       ignoreSpendCap,
       workspaceSetupFn: (tmpDir) =>
-        seedPolyglotProject(tmpDir, [locale], docSpec.glossary, (cfg) => {
+        seedWraithProject(tmpDir, [locale], docSpec.glossary, (cfg) => {
           cfg.paths.documents = [filename];
         }),
     });
@@ -249,11 +249,11 @@ Reply DONE when complete.`;
       fs.writeFileSync(docxOutA, Buffer.from(codexRes.capturedFiles[targetName], "base64"));
     }
 
-    // Verify Polyglot check on A
+    // Verify Wraith check on A
     const verifyA = path.join(EVAL_ROOT, "work", `docx-verifyA-${docSpec.id}`);
     fs.rmSync(verifyA, { recursive: true, force: true });
     fs.cpSync(docWorkSrc, verifyA, { recursive: true });
-    seedPolyglotProject(verifyA, [locale], docSpec.glossary, (cfg) => {
+    seedWraithProject(verifyA, [locale], docSpec.glossary, (cfg) => {
       cfg.paths.documents = [filename];
     });
     for (const [rel, b64] of Object.entries(codexRes.capturedFiles ?? {})) {
@@ -261,7 +261,7 @@ Reply DONE when complete.`;
       fs.mkdirSync(path.dirname(abs), { recursive: true });
       fs.writeFileSync(abs, Buffer.from(b64, "base64"));
     }
-    const checkA = parsePolyglotJson(runPolyglotCli(verifyA, ["check", "--locale", locale, "--json"]));
+    const checkA = parseWraithJson(runWraithCli(verifyA, ["check", "--locale", locale, "--json"]));
 
     // System B: DeepL Document API (checking stage budget before live call)
     const deeplMid = await getDeepLUsage();
@@ -346,7 +346,7 @@ Reply DONE when complete.`;
         wallMs: codexRes.wallMs,
         cacheHit: codexRes.cacheHit,
         telemetry: normalizeTelemetryPer1k(codexRes.telemetry, srcStruct.visibleParagraphs.length),
-        polyglotCheck: {
+        wraithCheck: {
           outcome: checkA?.outcome,
           errorCount: checkA?.errorCount,
           warningCount: checkA?.warningCount,

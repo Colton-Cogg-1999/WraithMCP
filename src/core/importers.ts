@@ -2,7 +2,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { detectProjectAdapter, loadLocaleCatalog, loadSourceCatalog } from "../adapters/registry.js";
 import { canonicalizeLocaleTag, resolveConfinedPath, withWorkspaceLock } from "./security.js";
-import { PolyglotStore, sha256Short } from "./store.js";
+import { WraithStore, sha256Short } from "./store.js";
 import { MemoryEntry } from "./types.js";
 
 /** RFC 4180 CSV parser supporting quoted fields, embedded commas, escaped quotes, and CRLF. */
@@ -104,7 +104,7 @@ export interface ImportResult {
 }
 
 export function importGlossaryCsv(rootDir: string, filePath: string): ImportResult {
-  const store = new PolyglotStore(rootDir);
+  const store = new WraithStore(rootDir);
   const config = store.readConfig();
   const abs = resolveConfinedPath(rootDir, filePath, { label: "glossary CSV file" });
   const rows = parseCsv(fs.readFileSync(abs, "utf8"));
@@ -183,7 +183,7 @@ export function importGlossaryCsv(rootDir: string, filePath: string): ImportResu
  * Import a TBX (TermBase eXchange, TBX-Basic / TBX-Core v2/v3) XML glossary file.
  */
 export function importGlossaryTbx(rootDir: string, filePath: string): ImportResult {
-  const store = new PolyglotStore(rootDir);
+  const store = new WraithStore(rootDir);
   const config = store.readConfig();
   const abs = resolveConfinedPath(rootDir, filePath, { label: "TBX file" });
   const xml = fs.readFileSync(abs, "utf8");
@@ -254,10 +254,10 @@ export function importGlossaryTbx(rootDir: string, filePath: string): ImportResu
 }
 
 /**
- * Import a TMX (Translation Memory eXchange v1.4) XML file into .polyglot/memory.jsonl.
+ * Import a TMX (Translation Memory eXchange v1.4) XML file into .wraith/memory.jsonl.
  */
 export function importMemoryTmx(rootDir: string, filePath: string): ImportResult {
-  const store = new PolyglotStore(rootDir);
+  const store = new WraithStore(rootDir);
   const config = store.readConfig();
   const abs = resolveConfinedPath(rootDir, filePath, { label: "TMX file" });
   const xml = fs.readFileSync(abs, "utf8");
@@ -330,11 +330,11 @@ export function importMemoryTmx(rootDir: string, filePath: string): ImportResult
 }
 
 /**
- * Import existing locale files already present in the repository into .polyglot/records.json
- * and .polyglot/memory.jsonl.
+ * Import existing locale files already present in the repository into .wraith/records.json
+ * and .wraith/memory.jsonl.
  */
 export function importExistingLocales(rootDir: string): ImportResult {
-  const store = new PolyglotStore(rootDir);
+  const store = new WraithStore(rootDir);
   const config = store.readConfig();
   const usage = store.readUsage();
   const records = store.readRecords();

@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Milestone 1 Demo: Initialize a project with Polyglot and inspect status.
+ * Milestone 1 Demo: Initialize a project with Wraith and inspect status.
  * Run with: npx tsx examples/01-skeleton-demo.mjs
  */
 import fs from "node:fs";
@@ -8,7 +8,7 @@ import os from "node:os";
 import path from "node:path";
 import { initProject, getProjectStatus } from "../src/index.ts";
 
-const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "polyglot-demo-01-"));
+const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "wraith-demo-01-"));
 try {
   console.log("=== Milestone 1: Skeleton Demo ===");
   const initRes = initProject({

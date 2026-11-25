@@ -10,7 +10,7 @@
  *   B          source + target locale
  *   Bgl        B + project glossary
  *   Anotm      B+glossary + AST/usage UI context (file, component, element type) + width budgets; tmEnabled:false
- *   Afull      Anotm + top-k (k=3) fuzzy TM matches from isolated .polyglot/tm.json (minSimilarity 0.70)
+ *   Afull      Anotm + top-k (k=3) fuzzy TM matches from isolated .wraith/tm.json (minSimilarity 0.70)
  */
 import crypto from "node:crypto";
 import fs from "node:fs";
@@ -406,7 +406,7 @@ function seedTm(slice) {
   }
   for (const it of slice.items) it.tmSeeded = seededGroups.has(`${it.locale}\u0000${it.source}`);
   const tm = { version: 1, entries };
-  const tmPath = path.join(TM_ABLATION_WORK_DIR, slice.id, ".polyglot", "tm.json");
+  const tmPath = path.join(TM_ABLATION_WORK_DIR, slice.id, ".wraith", "tm.json");
   fs.mkdirSync(path.dirname(tmPath), { recursive: true });
   fs.writeFileSync(tmPath, JSON.stringify(tm, null, 2) + "\n");
   return { tm, tmPath };
@@ -646,7 +646,7 @@ function goldSanity(slices) {
 }
 
 // ============================================================================
-// Full mode: run Codex (no Polyglot MCP — prompt carries all context) per arm
+// Full mode: run Codex (no Wraith MCP — prompt carries all context) per arm
 // ============================================================================
 async function runPool(tasks, n) {
   const results = new Array(tasks.length);
@@ -680,16 +680,16 @@ function parseCodexOutput(res) {
 }
 
 async function runFull(slices, jobs, { ignoreSpendCap }) {
-  const { runCodexNoPolyglot } = await import("../lib/codex.mjs");
+  const { runCodexNoWraith } = await import("../lib/codex.mjs");
   const srcDir = path.join(TM_ABLATION_WORK_DIR, "codex-src");
   fs.mkdirSync(srcDir, { recursive: true });
-  fs.writeFileSync(path.join(srcDir, "README.txt"), "Polyglot eval: TM context ablation scratch workspace.\n");
+  fs.writeFileSync(path.join(srcDir, "README.txt"), "Wraith eval: TM context ablation scratch workspace.\n");
   const outputs = {}; // arm -> id -> text
   const runMeta = [];
   await runPool(
     jobs.map((job) => async () => {
       console.log(`[tm-ablation] ${job.slice} ${job.label} (${job.itemIds.length} strings)`);
-      const res = await runCodexNoPolyglot({
+      const res = await runCodexNoWraith({
         stageName: "tm-ablation",
         label: `tm-ablation-${job.slice}-${job.label}`,
         sourceDir: srcDir,

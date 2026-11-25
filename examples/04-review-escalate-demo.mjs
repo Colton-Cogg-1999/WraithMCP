@@ -21,7 +21,7 @@ import {
 
 ensureBootstrapped();
 
-const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "polyglot-demo-04-"));
+const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "wraith-demo-04-"));
 try {
   fs.cpSync(path.resolve("fixtures/nextjs-app"), tmp, { recursive: true });
   initProject({ rootDir: tmp, sourceLocale: "en", targetLocales: ["es-MX"], writeAgentRule: false });
@@ -38,7 +38,7 @@ try {
   });
 
   console.log("=== Milestone 4: Review & Escalation Demo ===\n");
-  const pkg = packageReviewJob(tmp, { targetLocale: "es-MX", outputPath: ".polyglot/review-job.json" });
+  const pkg = packageReviewJob(tmp, { targetLocale: "es-MX", outputPath: ".wraith/review-job.json" });
   console.log(`Packaged MQM review job: ${pkg.items.length} strings -> ${pkg.outputPath}`);
 
   const ingest = ingestReviewResults(tmp, {

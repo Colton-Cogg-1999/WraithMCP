@@ -71,7 +71,7 @@ export function inspectCssDeclarationBlock(cssBody: string): Array<{
       kind: "truncation_or_fixed_width",
       constraint: tightParts.join("; "),
       suggestion:
-        "CSS rule combines fixed size/nowrap with overflow clipping; expanded translations or tall scripts may clip. Prefer min-width, allow wrapping, or verify with `polyglot layout`.",
+        "CSS rule combines fixed size/nowrap with overflow clipping; expanded translations or tall scripts may clip. Prefer min-width, allow wrapping, or verify with `wraith layout`.",
     });
   }
 

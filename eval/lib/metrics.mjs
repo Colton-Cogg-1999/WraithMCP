@@ -196,7 +196,7 @@ export function cohensKappa(labelsA, labelsB) {
 }
 
 /**
- * Deterministic catalog metrics independent of Polyglot's own check.
+ * Deterministic catalog metrics independent of Wraith's own check.
  */
 export function computeCatalogMetrics(sourceMap, targetMap, glossaryEntries = [], contextGroups = null) {
   const keys = Object.keys(sourceMap);

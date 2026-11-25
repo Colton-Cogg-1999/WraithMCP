@@ -14,7 +14,7 @@ import {
 import { init, nextIntlPkg, project } from "../helpers.js";
 
 function outsideMarker(): string {
-  return fs.mkdtempSync(path.join(os.tmpdir(), "polyglot-outside-"));
+  return fs.mkdtempSync(path.join(os.tmpdir(), "wraith-outside-"));
 }
 
 function base() {
@@ -71,7 +71,7 @@ describe("S. Filesystem safety (inputs can come from an LLM agent or a reviewer'
 
   it("S5 Django: a project path containing '/en/' does not redirect writes outside the repo", () => {
     // e.g. ~/clients/en/shop — resolveTargetLocaleFile replaces the FIRST '/en/' in the absolute path
-    const parent = fs.mkdtempSync(path.join(os.tmpdir(), "polyglot-s5-"));
+    const parent = fs.mkdtempSync(path.join(os.tmpdir(), "wraith-s5-"));
     const dir = path.join(parent, "en", "shop");
     fs.mkdirSync(path.join(dir, "locale/en/LC_MESSAGES"), { recursive: true });
     fs.writeFileSync(path.join(dir, "manage.py"), "");
@@ -126,9 +126,9 @@ describe("S. Filesystem safety (inputs can come from an LLM agent or a reviewer'
     expect(err).toBe("");
   });
 
-  it("S9 a malformed .polyglot/config.json yields an actionable error, not a stack trace", () => {
+  it("S9 a malformed .wraith/config.json yields an actionable error, not a stack trace", () => {
     const dir = base();
-    fs.writeFileSync(path.join(dir, ".polyglot/config.json"), '{"targetLocales": "de"}');
+    fs.writeFileSync(path.join(dir, ".wraith/config.json"), '{"targetLocales": "de"}');
     let msg = "";
     try {
       runCheck({ rootDir: dir });

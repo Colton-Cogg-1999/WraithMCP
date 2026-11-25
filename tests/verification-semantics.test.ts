@@ -9,7 +9,7 @@ ensureBootstrapped();
 
 const tmpDirs: string[] = [];
 function makeDir(): string {
-  const d = fs.mkdtempSync(path.join(os.tmpdir(), "polyglot-verif-"));
+  const d = fs.mkdtempSync(path.join(os.tmpdir(), "wraith-verif-"));
   tmpDirs.push(d);
   return d;
 }
@@ -59,7 +59,7 @@ describe("P0 Verification Semantics (PASS / FAIL / INCONCLUSIVE & Read-Only)", (
     expect(res.countsByLocale["fr"]).toBeUndefined();
   });
 
-  it("keeps check() and status() 100% side-effect free (never creates/modifies .polyglot/usage.json)", () => {
+  it("keeps check() and status() 100% side-effect free (never creates/modifies .wraith/usage.json)", () => {
     const dir = makeDir();
     fs.writeFileSync(path.join(dir, "package.json"), JSON.stringify({ dependencies: { next: "15", react: "19", "next-intl": "4" } }));
     fs.mkdirSync(path.join(dir, "messages"), { recursive: true });
@@ -68,7 +68,7 @@ describe("P0 Verification Semantics (PASS / FAIL / INCONCLUSIVE & Read-Only)", (
     fs.writeFileSync(path.join(dir, "src/App.tsx"), `import { useTranslations } from "next-intl"; export function A(){ const t = useTranslations(); return <p>{t("a")}</p>; }`);
     initProject({ rootDir: dir, sourceLocale: "en", targetLocales: ["fr"], writeAgentRule: false });
 
-    const usagePath = path.join(dir, ".polyglot/usage.json");
+    const usagePath = path.join(dir, ".wraith/usage.json");
     expect(fs.existsSync(usagePath)).toBe(false);
     runCheck({ rootDir: dir });
     getProjectStatus(dir);

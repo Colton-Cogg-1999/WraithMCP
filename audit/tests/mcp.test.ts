@@ -7,7 +7,7 @@ import { init, nextIntlPkg, project } from "../helpers.js";
 
 /**
  * Real stdio transport (child process), exactly as Claude Code / Codex / Gemini CLI launch it.
- * BIN selects what is spawned: default = tsx src/bin.ts; AUDIT_MCP_BIN=release/polyglot-linux-x64 tests the SEA binary.
+ * BIN selects what is spawned: default = tsx src/bin.ts; AUDIT_MCP_BIN=release/wraith-linux-x64 tests the SEA binary.
  */
 const REPO = path.resolve(__dirname, "../..");
 const BIN = process.env.AUDIT_MCP_BIN;
@@ -110,7 +110,7 @@ describe(`T. MCP over real stdio (${BIN ?? "tsx src/bin.ts"})`, () => {
   });
 
   it("T8 status (a 'facts like git status' tool) does not modify repository files", async () => {
-    const usage = path.join(dir, ".polyglot/usage.json");
+    const usage = path.join(dir, ".wraith/usage.json");
     if (fs.existsSync(usage)) fs.rmSync(usage);
     await client.callTool({ name: "status", arguments: {} });
     expect(fs.existsSync(usage)).toBe(false);

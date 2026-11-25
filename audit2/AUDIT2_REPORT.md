@@ -1,4 +1,4 @@
-# Polyglot: Second Independent Audit (Remediation Verification)
+# Wraith: Second Independent Audit (Remediation Verification)
 
 **Date:** 2026-11-24 · **Target:** branch `remediation` @ `0eb5251` (8 remediation commits on baseline `5022913`) · **Implementation not modified.** New tests live in `audit2/`. The original `audit/` is untouched (verified: `git diff 5022913 HEAD -- audit/` is empty).
 
@@ -24,7 +24,7 @@ New adversarial inputs, however, found **three classes of problem that make the 
    - zero source files scanned, when catalog keys exist;
    - keys used in code but absent from the source catalog;
    - a Django project with marked strings but no catalogs yet.
-3. **The workspace boundary still has two write paths outside the repository:** a symlinked `.polyglot/` directory, and a symlinked `CLAUDE.md`/`AGENTS.md` during `init`. Both are reachable from an untrusted cloned repository.
+3. **The workspace boundary still has two write paths outside the repository:** a symlinked `.wraith/` directory, and a symlinked `CLAUDE.md`/`AGENTS.md` during `init`. Both are reachable from an untrusted cloned repository.
 
 **Recommendation:**
 - **Dogfooding** on the team's own trusted repos: acceptable now, with documents excluded or translated in a single pass from a frozen source.
@@ -39,7 +39,7 @@ New adversarial inputs, however, found **three classes of problem that make the 
 | `tsc --noEmit` clean | ✅ | |
 | Core suite 38/38 (11 files) | ✅ | |
 | Audit suite **119 pass / 1 fail / 6 skip** (126) | ✅ exact | 6 skips are the DOCX corpus tests, which need `AUDIT_REF_DOCX`/`AUDIT_LO_DOCX`. |
-| Audit MCP suite on the SEA binary 10/10 | ✅ | `AUDIT_MCP_BIN=release/polyglot-linux-x64` |
+| Audit MCP suite on the SEA binary 10/10 | ✅ | `AUDIT_MCP_BIN=release/wraith-linux-x64` |
 | Baseline 24 / 96 / 6 | ✅ consistent | My original 28 pass / 98 fail figure included the 6 corpus tests (4 pass, 2 fail). Excluding them: 24 / 96 / 6. **The counts reconcile.** |
 | "Real third-party Word template not available" | Ran it | With the original corpus supplied: **123 pass / 3 fail**. All three failures are test defects (§4). P-REF-1/2/3 pass on the real Word template. |
 
@@ -55,19 +55,19 @@ Run with `npx vitest run --config audit2/vitest.config.ts`. Each test prints `[I
 
 | ID | Severity | Finding | Evidence |
 |---|---|---|---|
-| **B1** | Critical | **DOCX translations land on the wrong paragraphs after the source document is edited.** Segment IDs are positional (`document-p1…`), and `.polyglot/documents.json` maps translations by ID with no per-segment source hash. After the author inserted one paragraph at the top between batches, the "Apples are red." paragraph received the *Bananas* translation, and "Bananas…" stayed English. `apply` returned `ok: true`. | **DX1** output: `["WICHTIG…", "Bananen sind gelb.", "Bananas are yellow.", …]` |
+| **B1** | Critical | **DOCX translations land on the wrong paragraphs after the source document is edited.** Segment IDs are positional (`document-p1…`), and `.wraith/documents.json` maps translations by ID with no per-segment source hash. After the author inserted one paragraph at the top between batches, the "Apples are red." paragraph received the *Bananas* translation, and "Bananas…" stayed English. `apply` returned `ok: true`. | **DX1** output: `["WICHTIG…", "Bananen sind gelb.", "Bananas are yellow.", …]` |
 | **B2** | High | **Changed source paragraphs keep their old translation and `check` reports PASS.** "Apples are red." → "Apples are green." still renders "Äpfel sind rot." `check` (document configured): `PASS {}`. | **DX2** |
 | **B3** | High | **`check` returns PASS when no source file was scanned.** INCONCLUSIVE fires only when *both* `totalSourceKeys === 0` *and* `filesScanned === 0` (`src/core/check.ts:666-673`). A mistyped `paths.source` yields `PASS` with `filesScanned: 0`. | **V3** |
 | **B4** | High | **Keys used in code but missing from the source catalog are not detected.** `t("subtitle")` with no `en.json` entry renders the raw key in every language, and the outcome is `PASS`. This is the most common failure after agent-driven extraction. | **V9** |
 | **B5** | High | **Django project with `_()`/`{% translate %}` usage but no catalogs yet → PASS.** Same root cause as B3/B4: used keys aren't compared against catalogs. | **V8** |
-| **B6** | High (security) | **A symlinked `.polyglot/` directory redirects state writes outside the repo.** `records.json`, `glossary.json` and `memory.jsonl` were written into the symlink target. `PolyglotStore` writes aren't confined (`src/core/store.ts` uses `fs.writeFileSync`/`atomicWriteFileSync` on `this.dir` without a realpath check). Filenames and content are fixed, which limits exploitability, but it violates the boundary REMEDIATION.md marks **Resolved**. | **SEC2-1** |
-| **B7** | High (security) | **`init` appends through a symlinked `CLAUDE.md`/`AGENTS.md` to any file the user can write** (`src/core/init.ts:92`). With `CLAUDE.md → ~/.bashrc`, the appended rule text contains backticks (`` `polyglot check` ``) that bash executes as command substitution at every shell start. | **SEC2-3** |
+| **B6** | High (security) | **A symlinked `.wraith/` directory redirects state writes outside the repo.** `records.json`, `glossary.json` and `memory.jsonl` were written into the symlink target. `WraithStore` writes aren't confined (`src/core/store.ts` uses `fs.writeFileSync`/`atomicWriteFileSync` on `this.dir` without a realpath check). Filenames and content are fixed, which limits exploitability, but it violates the boundary REMEDIATION.md marks **Resolved**. | **SEC2-1** |
+| **B7** | High (security) | **`init` appends through a symlinked `CLAUDE.md`/`AGENTS.md` to any file the user can write** (`src/core/init.ts:92`). With `CLAUDE.md → ~/.bashrc`, the appended rule text contains backticks (`` `wraith check` ``) that bash executes as command substitution at every shell start. | **SEC2-3** |
 
 ### Not blockers (fix before or soon after release)
 
 | ID | Severity | Finding | Evidence |
 |---|---|---|---|
-| N1 | High | **Concurrent processes lose translations.** Two processes applying different keys to one locale lost up to 13/40 locale-file entries and 20/40 records across five runs. REMEDIATION §4.5 discloses missing locking but frames it as `.polyglot/` merges; the loss also hits **user locale files**. `check` would report the lost keys as `missing_key`, so it's recoverable. | **CONC-1** (intermittent: 40/40, 38/40, 36/40, 27/40) |
+| N1 | High | **Concurrent processes lose translations.** Two processes applying different keys to one locale lost up to 13/40 locale-file entries and 20/40 records across five runs. REMEDIATION §4.5 discloses missing locking but frames it as `.wraith/` merges; the loss also hits **user locale files**. `check` would report the lost keys as `missing_key`, so it's recoverable. | **CONC-1** (intermittent: 40/40, 38/40, 36/40, 27/40) |
 | N2 | High (maintenance) | **Hand-updating English and its translation together leaves a permanent `stale_source` error.** `import` deliberately preserves hashes (the L3 fix) and the CLI has no `apply`, so the pre-commit hook blocks the commit until an agent re-applies the same text. This regression comes from over-correcting L3. | **MT2**, **MT3** |
 | N3 | Medium | **Translations added by hand *after* `init` are never baselined**, so they never go stale (L1 is fixed only for translations present at `init`). | **MT1** |
 | N4 | Medium | **Hand-corrected translations don't replace the old agent text in memory suggestions** (L2 claimed fixed). | **MT5**: suggestions `["Kaufen jetzt"]` after the file says `"Jetzt kaufen"` |
@@ -75,10 +75,10 @@ Run with `npx vitest run --config audit2/vitest.config.ts`. Each test prints `[I
 | N6 | Medium | **`apply` is annotated `destructiveHint: false`** but overwrites existing translations (observed `messages/de.json` "Hallo" → "Servus"). `escalate import` and a second `pseudo` run do the same. Clients may treat "non-destructive" as safe to auto-approve. `scan` with opt-in `saveUsage: true` writes despite `readOnlyHint`. | **ANN-1** |
 | N7 | Medium | **Scanner recall on a third, unseen app is ~50%** (7/13, with one hit possibly a substring match). The audit fixture (19/19) and the implementation's own held-out app (12/12) overstate it. Precision held (0 false positives). Missed: ternaries assigned to variables, `as const` arrays, `setState("…")`, the `hint` prop. | **GEN-1** |
 | N8 | Medium | **vue-i18n: a correct 4-form Russian pipe plural is rejected** ("`count` appears 3 times, expected 1"). The per-message placeholder count is applied across pipe branches. | **PL8** |
-| N9 | Medium | **Distribution:** `release/polyglot-linux-x64` still links 42 host libraries (honestly disclosed). The CI matrix has never run. **`polyglot init` still prints `claude mcp add polyglot -- npx -y polyglot-mcp mcp`** (`src/cli.ts:76`), and the hook error text says `npm install -D polyglot-mcp`. That name is unpublished, so a squatter's package would be executed. | `ldd`, source |
+| N9 | Medium | **Distribution:** `release/wraith-linux-x64` still links 42 host libraries (honestly disclosed). The CI matrix has never run. **`wraith init` still prints `claude mcp add wraith -- npx -y wraith-mcp mcp`** (`src/cli.ts:76`), and the hook error text says `npm install -D wraith-mcp`. That name is unpublished, so a squatter's package would be executed. | `ldd`, source |
 | N10 | Low | Advisory plural categories (fr `many` for millions; cs/lt fractional `many`) are computed but **never surfaced** in `check`/`prepare` issues. The integers-0..100 policy is defensible, but the advisory signal is invisible. | **PL3–PL5** |
 | N11 | Low | Hook fallback `node ./dist/bin.js check` runs the **user project's own** `dist/bin.js` if present. | `src/core/init.ts` hook |
-| N12 | Low | The archive guard rejects any entry name containing `..` as a substring (e.g. `item..1.xml`). Polyglot never extracts entries to disk, so this is over-strict but harmless. | **ZIP2-2** |
+| N12 | Low | The archive guard rejects any entry name containing `..` as a substring (e.g. `item..1.xml`). Wraith never extracts entries to disk, so this is over-strict but harmless. | **ZIP2-2** |
 | N13 | Low | `.mdx` pages in a Next.js app aren't scanned and aren't reported as unscanned in `coverage`. | **V6** |
 
 ---
@@ -125,8 +125,8 @@ Run with `npx vitest run --config audit2/vitest.config.ts`. Each test prints `[I
    - INCONCLUSIVE when `filesScanned === 0` and a framework adapter is active.
    - An error for keys referenced in code but missing from the source catalog.
    - A Django state where used msgids have no catalog entries must not PASS.
-3. **B6/B7: confine every write.** Route `PolyglotStore`, `init` agent-rule writes and hook writes through `resolveConfinedPath`, or refuse when `.polyglot`, `AGENTS.md` or `CLAUDE.md` is a symlink resolving outside the root.
-4. **N9 (install string only):** stop printing `npx -y polyglot-mcp` until the package name is published or reserved.
+3. **B6/B7: confine every write.** Route `WraithStore`, `init` agent-rule writes and hook writes through `resolveConfinedPath`, or refuse when `.wraith`, `AGENTS.md` or `CLAUDE.md` is a symlink resolving outside the root.
+4. **N9 (install string only):** stop printing `npx -y wraith-mcp` until the package name is published or reserved.
 
 **Strongly recommended before release:** N1 (a lock file around read-modify-write of locale and state files), N2 (let `import` re-baseline keys whose target changed since the record, or add a non-agent accept path), N6 (`destructiveHint: true` for `apply`, `escalate`, `pseudo`, `import`).
 
@@ -140,7 +140,7 @@ npx vitest run --config audit/vitest.config.ts
 # Original audit with the original corpus (123/3: E4 + P-LO-2/3 test defects)
 AUDIT_REF_DOCX=<reference.docx> AUDIT_LO_DOCX=<complex.docx> npx vitest run --config audit/vitest.config.ts
 # MCP suite against the shipped binary (10/10)
-AUDIT_MCP_BIN=release/polyglot-linux-x64 npx vitest run --config audit/vitest.config.ts audit/tests/mcp.test.ts
+AUDIT_MCP_BIN=release/wraith-linux-x64 npx vitest run --config audit/vitest.config.ts audit/tests/mcp.test.ts
 # Second audit (47 tests: 22 fail = findings above; CONC-1 is a race and fails intermittently)
 npx vitest run --config audit2/vitest.config.ts
 ```
@@ -151,7 +151,7 @@ npx vitest run --config audit2/vitest.config.ts
 
 **Live agents:**
 - Claude Code: not re-run; it passed in the first audit and the protocol surface is now strictly richer.
-- Codex 0.172 `codex exec -s read-only` against `release/polyglot-linux-x64`: `polyglot/status (completed)`, `polyglot/check (completed)`.
+- Codex 0.172 `codex exec -s read-only` against `release/wraith-linux-x64`: `wraith/status (completed)`, `wraith/check (completed)`.
 
 ## 8. Not independently verified
 

@@ -13,7 +13,7 @@ import {
 
 const tmpDirs: string[] = [];
 function mkProject(files: Record<string, string>): string {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "polyglot-maint-"));
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "wraith-maint-"));
   tmpDirs.push(dir);
   for (const [rel, content] of Object.entries(files)) {
     const abs = path.join(dir, rel);

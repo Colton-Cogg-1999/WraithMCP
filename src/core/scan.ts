@@ -3,7 +3,7 @@ import { detectProjectAdapter, loadLocaleCatalog } from "../adapters/registry.js
 import { ConcatenationFinding, HardcodedStringFinding, ParseFailure } from "../adapters/types.js";
 import { HardcodedFormattingFinding } from "./formatting-scanner.js";
 import { inferGlossaryCandidates, InferredGlossaryCandidate } from "./glossary.js";
-import { computeContextFingerprint, PolyglotStore } from "./store.js";
+import { computeContextFingerprint, WraithStore } from "./store.js";
 import { UsageFile } from "./types.js";
 
 export interface ScanOptions {
@@ -72,7 +72,7 @@ export function registerDocumentScannerHook(hook: DocumentScannerHook): void {
 }
 
 export function scanProject(options: ScanOptions): ScanResult {
-  const store = new PolyglotStore(options.rootDir);
+  const store = new WraithStore(options.rootDir);
   const config = store.readConfig();
   const { adapter, detection } = detectProjectAdapter(
     store.rootDir,

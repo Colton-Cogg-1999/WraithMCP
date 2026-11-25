@@ -25,61 +25,61 @@
           "reasoningTokens": 315,
           "toolCalls": [
             {
-              "server": "polyglot",
+              "server": "wraith",
               "tool": "status",
               "status": "completed",
               "error": null
             },
             {
-              "server": "polyglot",
+              "server": "wraith",
               "tool": "scan",
               "status": "completed",
               "error": null
             },
             {
-              "server": "polyglot",
+              "server": "wraith",
               "tool": "prepare",
               "status": "completed",
               "error": null
             },
             {
-              "server": "polyglot",
+              "server": "wraith",
               "tool": "prepare",
               "status": "completed",
               "error": null
             },
             {
-              "server": "polyglot",
+              "server": "wraith",
               "tool": "prepare",
               "status": "completed",
               "error": null
             },
             {
-              "server": "polyglot",
+              "server": "wraith",
               "tool": "apply",
               "status": "completed",
               "error": null
             },
             {
-              "server": "polyglot",
+              "server": "wraith",
               "tool": "pseudo",
               "status": "completed",
               "error": null
             },
             {
-              "server": "polyglot",
+              "server": "wraith",
               "tool": "memory",
               "status": "completed",
               "error": null
             },
             {
-              "server": "polyglot",
+              "server": "wraith",
               "tool": "check",
               "status": "completed",
               "error": null
             },
             {
-              "server": "polyglot",
+              "server": "wraith",
               "tool": "report",
               "status": "completed",
               "error": null
@@ -88,11 +88,11 @@
           "checkIterations": 1,
           "applyCalls": 1,
           "prepareCalls": 3,
-          "lastMessage": "{\n  \"locale\": \"es-MX\",\n  \"check\": \"PASS\",\n  \"translated\": \"60/60\",\n  \"errors\": 0,\n  \"warnings\": 15,\n  \"notes\": [\n    \"Eight warnings reflect intentional wording differences confirmed in the components, such as “Cargo” for billing and “Carga” for a battery.\",\n    \"Pseudo-localization flagged seven layout hotspots. Labels were reviewed for brevity. Visual fit remains unverified.\",\n    \"Northstar Commerce was retained as the product name. Polyglot validated the glossary, ICU syntax, and rich-text tags.\"\n  ]\n}",
+          "lastMessage": "{\n  \"locale\": \"es-MX\",\n  \"check\": \"PASS\",\n  \"translated\": \"60/60\",\n  \"errors\": 0,\n  \"warnings\": 15,\n  \"notes\": [\n    \"Eight warnings reflect intentional wording differences confirmed in the components, such as “Cargo” for billing and “Carga” for a battery.\",\n    \"Pseudo-localization flagged seven layout hotspots. Labels were reviewed for brevity. Visual fit remains unverified.\",\n    \"Northstar Commerce was retained as the product name. Wraith validated the glossary, ICU syntax, and rich-text tags.\"\n  ]\n}",
           "errors": []
         },
         "estimatedApiUsd": 0.1597835,
-        "polyglotCheck": {
+        "wraithCheck": {
           "outcome": "PASS",
           "errorCount": 0,
           "warningCount": 15,
@@ -7202,85 +7202,85 @@
           "reasoningTokens": 250,
           "toolCalls": [
             {
-              "server": "polyglot",
+              "server": "wraith",
               "tool": "status",
               "status": "completed",
               "error": null
             },
             {
-              "server": "polyglot",
+              "server": "wraith",
               "tool": "scan",
               "status": "completed",
               "error": null
             },
             {
-              "server": "polyglot",
+              "server": "wraith",
               "tool": "prepare",
               "status": "completed",
               "error": null
             },
             {
-              "server": "polyglot",
+              "server": "wraith",
               "tool": "prepare",
               "status": "completed",
               "error": null
             },
             {
-              "server": "polyglot",
+              "server": "wraith",
               "tool": "prepare",
               "status": "completed",
               "error": null
             },
             {
-              "server": "polyglot",
+              "server": "wraith",
               "tool": "apply",
               "status": "completed",
               "error": null
             },
             {
-              "server": "polyglot",
+              "server": "wraith",
               "tool": "apply",
               "status": "completed",
               "error": null
             },
             {
-              "server": "polyglot",
+              "server": "wraith",
               "tool": "apply",
               "status": "completed",
               "error": null
             },
             {
-              "server": "polyglot",
+              "server": "wraith",
               "tool": "pseudo",
               "status": "completed",
               "error": null
             },
             {
-              "server": "polyglot",
+              "server": "wraith",
               "tool": "check",
               "status": "completed",
               "error": null
             },
             {
-              "server": "polyglot",
+              "server": "wraith",
               "tool": "apply",
               "status": "completed",
               "error": null
             },
             {
-              "server": "polyglot",
+              "server": "wraith",
               "tool": "memory",
               "status": "completed",
               "error": null
             },
             {
-              "server": "polyglot",
+              "server": "wraith",
               "tool": "check",
               "status": "completed",
               "error": null
             },
             {
-              "server": "polyglot",
+              "server": "wraith",
               "tool": "report",
               "status": "completed",
               "error": null
@@ -7289,11 +7289,11 @@
           "checkIterations": 2,
           "applyCalls": 4,
           "prepareCalls": 3,
-          "lastMessage": "{\n  \"locale\": \"de\",\n  \"checkOutcome\": \"PASS\",\n  \"translatedKeys\": 60,\n  \"totalKeys\": 60,\n  \"errors\": 0,\n  \"warnings\": 15,\n  \"notes\": [\n    \"All 60 translations were written through Polyglot apply using formal German (Sie).\",\n    \"Eight warnings reflect intentional translations of English words with different meanings across components.\",\n    \"Pseudo flagged seven layout hotspots. Labels were reviewed for brevity. Visual fit remains unverified because the project has no renderable routes.\"\n  ]\n}",
+          "lastMessage": "{\n  \"locale\": \"de\",\n  \"checkOutcome\": \"PASS\",\n  \"translatedKeys\": 60,\n  \"totalKeys\": 60,\n  \"errors\": 0,\n  \"warnings\": 15,\n  \"notes\": [\n    \"All 60 translations were written through Wraith apply using formal German (Sie).\",\n    \"Eight warnings reflect intentional translations of English words with different meanings across components.\",\n    \"Pseudo flagged seven layout hotspots. Labels were reviewed for brevity. Visual fit remains unverified because the project has no renderable routes.\"\n  ]\n}",
           "errors": []
         },
         "estimatedApiUsd": 0.1572305,
-        "polyglotCheck": {
+        "wraithCheck": {
           "outcome": "PASS",
           "errorCount": 0,
           "warningCount": 15,
@@ -14617,31 +14617,31 @@
         "reasoningTokens": 0,
         "toolCalls": [
           {
-            "server": "polyglot",
+            "server": "wraith",
             "tool": "prepare",
             "status": "completed",
             "error": null
           },
           {
-            "server": "polyglot",
+            "server": "wraith",
             "tool": "prepare",
             "status": "completed",
             "error": null
           },
           {
-            "server": "polyglot",
+            "server": "wraith",
             "tool": "apply",
             "status": "completed",
             "error": null
           },
           {
-            "server": "polyglot",
+            "server": "wraith",
             "tool": "apply",
             "status": "completed",
             "error": null
           },
           {
-            "server": "polyglot",
+            "server": "wraith",
             "tool": "check",
             "status": "completed",
             "error": null

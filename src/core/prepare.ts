@@ -4,7 +4,7 @@ import { GlossaryHit, matchGlossaryTerms } from "./glossary.js";
 import { getLocaleConventions, LocaleConventions } from "./locales.js";
 import { reconcileMemoryWithLiveLocales } from "./memory-ops.js";
 import { extractPlaceholders } from "./placeholders.js";
-import { computeContextFingerprint, PolyglotStore, sha256Short } from "./store.js";
+import { computeContextFingerprint, WraithStore, sha256Short } from "./store.js";
 import { UsageFile, UsageSite } from "./types.js";
 
 export type PrepareReason = "missing" | "stale_source" | "context_changed" | "layout_budget_exceeded" | "requested" | "flagged";
@@ -67,7 +67,7 @@ export interface PrepareResult {
 }
 
 export function prepareBatch(options: PrepareOptions): PrepareResult {
-  const store = new PolyglotStore(options.rootDir);
+  const store = new WraithStore(options.rootDir);
   const config = store.readConfig();
   const glossary = store.readGlossary();
   const memory = store.readMemory();

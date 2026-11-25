@@ -2,8 +2,8 @@ import fs from "node:fs";
 import path from "node:path";
 import { importExistingLocales } from "./importers.js";
 import { atomicWriteFileSync, resolveConfinedPath } from "./security.js";
-import { PolyglotStore } from "./store.js";
-import { FrameworkName, PolyglotConfig, ReviewMode } from "./types.js";
+import { WraithStore } from "./store.js";
+import { FrameworkName, WraithConfig, ReviewMode } from "./types.js";
 
 function existsOrSymlink(p: string): boolean {
   try {
@@ -14,11 +14,11 @@ function existsOrSymlink(p: string): boolean {
   }
 }
 
-export const AGENT_RULE_MARKER = "<!-- polyglot:rule -->";
+export const AGENT_RULE_MARKER = "<!-- wraith:rule -->";
 export const AGENT_RULE_TEXT = `${AGENT_RULE_MARKER}
-## Localization (Polyglot)
-Localization is not done until \`polyglot check\` passes.
-- Use Polyglot MCP tools (\`scan\`, \`prepare\`, \`apply\`, \`check\`, \`report\`) to translate in context and write locale files through \`apply\`.
+## Localization (Wraith)
+Localization is not done until \`wraith check\` passes.
+- Use Wraith MCP tools (\`scan\`, \`prepare\`, \`apply\`, \`check\`, \`report\`) to translate in context and write locale files through \`apply\`.
 - Never bypass placeholder, plural, glossary, or hardcoded-string checks.
 `;
 
@@ -38,18 +38,18 @@ export interface InitOptions {
 export interface InitResult {
   configPath: string;
   created: boolean;
-  config: PolyglotConfig;
+  config: WraithConfig;
   agentFilesUpdated: string[];
   hookInstalled: string | null;
   mcpConfigSnippet: Record<string, unknown>;
 }
 
 export function initProject(options: InitOptions): InitResult {
-  const store = new PolyglotStore(options.rootDir);
+  const store = new WraithStore(options.rootDir);
   const existed = store.exists();
   const current = store.readConfig();
 
-  const next: PolyglotConfig = {
+  const next: WraithConfig = {
     version: 1,
     sourceLocale: options.sourceLocale ?? current.sourceLocale ?? "en",
     targetLocales: options.targetLocales ?? current.targetLocales ?? [],
@@ -95,7 +95,7 @@ export function initProject(options: InitOptions): InitResult {
     for (const rel of targets) {
       const full = resolveConfinedPath(store.rootDir, rel, { label: rel });
       const existingText = fs.existsSync(full) ? fs.readFileSync(full, "utf8") : "";
-      if (!existingText.includes(AGENT_RULE_MARKER) && !existingText.includes("polyglot check")) {
+      if (!existingText.includes(AGENT_RULE_MARKER) && !existingText.includes("wraith check")) {
         const sep = existingText.length > 0 && !existingText.endsWith("\n\n")
           ? existingText.endsWith("\n") ? "\n" : "\n\n"
           : "";
@@ -119,22 +119,22 @@ export function initProject(options: InitOptions): InitResult {
       );
       fs.mkdirSync(gitHooksDir, { recursive: true });
       const hookSnippet = `
-# polyglot-pre-commit
-if [ -n "\${POLYGLOT_BIN:-}" ] && [ -x "\${POLYGLOT_BIN}" ]; then
-  "\${POLYGLOT_BIN}" check
-elif [ -x "./node_modules/.bin/polyglot" ]; then
-  ./node_modules/.bin/polyglot check
-elif command -v polyglot >/dev/null 2>&1; then
-  polyglot check
+# wraith-pre-commit
+if [ -n "\${WRAITH_BIN:-}" ] && [ -x "\${WRAITH_BIN}" ]; then
+  "\${WRAITH_BIN}" check
+elif [ -x "./node_modules/.bin/wraith" ]; then
+  ./node_modules/.bin/wraith check
+elif command -v wraith >/dev/null 2>&1; then
+  wraith check
 else
-  echo "polyglot pre-commit hook: could not locate 'polyglot' CLI." >&2
-  echo "Put 'polyglot' on PATH, install it in node_modules, or set POLYGLOT_BIN=/path/to/polyglot." >&2
+  echo "wraith pre-commit hook: could not locate 'wraith' CLI." >&2
+  echo "Put 'wraith' on PATH, install it in node_modules, or set WRAITH_BIN=/path/to/wraith." >&2
   exit 1
 fi
 `;
       if (fs.existsSync(hookPath)) {
         const existing = fs.readFileSync(hookPath, "utf8");
-        if (!existing.includes("polyglot-pre-commit")) {
+        if (!existing.includes("wraith-pre-commit")) {
           atomicWriteFileSync(hookPath, existing + hookSnippet);
         }
       } else {
@@ -147,8 +147,8 @@ fi
 
   const mcpConfigSnippet = {
     mcpServers: {
-      polyglot: {
-        command: "polyglot",
+      wraith: {
+        command: "wraith",
         args: ["mcp"],
       },
     },

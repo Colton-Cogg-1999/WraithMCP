@@ -9,8 +9,8 @@ import {
 import { atomicWriteJson } from "../lib/cache.mjs";
 import {
   materializeCapturedFiles,
-  runCodexNoPolyglot,
-  runCodexWithPolyglot,
+  runCodexNoWraith,
+  runCodexWithWraith,
 } from "../lib/codex.mjs";
 import {
   getDeepLUsage,
@@ -31,10 +31,10 @@ import {
   flattenJson,
   normalizeTelemetryPer1k,
   parsePoCatalog,
-  parsePolyglotJson,
+  parseWraithJson,
   parseYamlCatalog,
-  runPolyglotCli,
-  seedPolyglotProject,
+  runWraithCli,
+  seedWraithProject,
   unflattenJson,
   writePoCatalogFromSkeleton,
   writeYamlCatalog,
@@ -76,7 +76,7 @@ function findFilesMatching(rootDir, predicate, maxDepth = 5, maxResults = 300) {
 
 /**
  * Inspect each cloned OSS repo to locate its English source catalog, available human target catalogs,
- * and source code roots, plus probe Polyglot's out-of-the-box monorepo DX (`init` + `status`).
+ * and source code roots, plus probe Wraith's out-of-the-box monorepo DX (`init` + `status`).
  */
 export function discoverOssRepoCatalog(repo, repoDir) {
   let sourceRel = null;
@@ -214,21 +214,21 @@ export function discoverOssRepoCatalog(repo, repoDir) {
 }
 
 /**
- * Probe Polyglot's out-of-the-box setup DX on the real repo directory (without leaving .polyglot behind).
+ * Probe Wraith's out-of-the-box setup DX on the real repo directory (without leaving .wraith behind).
  */
 function probeMonorepoSetupDx(repoDir, discovered) {
-  const pgDir = path.join(repoDir, ".polyglot");
+  const pgDir = path.join(repoDir, ".wraith");
   const hadPg = fs.existsSync(pgDir);
   if (hadPg) return { skipped: true };
   try {
-    const initRes = runPolyglotCli(repoDir, ["init", "-s", "en", "-t", "de", "--no-agent-rule"]);
+    const initRes = runWraithCli(repoDir, ["init", "-s", "en", "-t", "de", "--no-agent-rule"]);
     let configSnapshot = null;
     const cfgPath = path.join(pgDir, "config.json");
     if (fs.existsSync(cfgPath)) {
       configSnapshot = JSON.parse(fs.readFileSync(cfgPath, "utf8"));
     }
-    const statusRes = runPolyglotCli(repoDir, ["status", "--json"]);
-    const statusParsed = parsePolyglotJson(statusRes);
+    const statusRes = runWraithCli(repoDir, ["status", "--json"]);
+    const statusParsed = parseWraithJson(statusRes);
     const detectedFormat = configSnapshot?.format ?? null;
     const detectedLocalesDir = configSnapshot?.paths?.locales ?? null;
     const autoDetectedCorrectly =
@@ -254,7 +254,7 @@ function probeMonorepoSetupDx(repoDir, discovered) {
 
 /**
  * Collect up to `maxFiles` real source files from the repo that reference sampled keys
- * so Codex + Polyglot can read genuine surrounding code context in a fast, isolated copy!
+ * so Codex + Wraith can read genuine surrounding code context in a fast, isolated copy!
  */
 function collectRelevantCodeFiles(repoDir, codeRoots, sampledKeys, maxFiles = 20) {
   const leafTokens = [...new Set(sampledKeys.map((k) => k.split(".").pop()).filter((t) => t && t.length >= 5))].slice(0, 80);
@@ -303,7 +303,7 @@ function makePoSkeletonFromMap(locale, sourceMap) {
 }
 
 /**
- * Materialize an isolated, clean, Polyglot-compatible catalog workspace for a sampled OSS app.
+ * Materialize an isolated, clean, Wraith-compatible catalog workspace for a sampled OSS app.
  */
 function buildIsolatedOssWorkspace(repo, sampledEnMap, contextCodeFiles, targetLocales) {
   const workSrc = path.join(EVAL_ROOT, "work", `oss-src-${repo.id}`);
@@ -484,35 +484,35 @@ export async function runOssStage({ ignoreSpendCap = false, onlyApp = null, maxS
       const targetRel = iso.targetPathFn(locale);
       const humanMap = humanMaps[locale].map;
 
-      // 1. System A: Codex + Polyglot MCP
-      const promptA = `Localize this ${repo.id} (${repo.stack}) catalog into "${locale}" using Polyglot MCP server tools.
+      // 1. System A: Codex + Wraith MCP
+      const promptA = `Localize this ${repo.id} (${repo.stack}) catalog into "${locale}" using Wraith MCP server tools.
 Steps:
 1. Call \`status\` and \`prepare\` (using limit=100, paginating with offset if hasMore=true) for targetLocale="${locale}".
 2. Read relevant files under src_context/ whenever a short UI string needs context disambiguation.
-3. Write EVERY translation via Polyglot's \`apply\` tool, preserving all placeholders, ICU/plural syntax, printf tokens, HTML/rich-text tags, and product names.
+3. Write EVERY translation via Wraith's \`apply\` tool, preserving all placeholders, ICU/plural syntax, printf tokens, HTML/rich-text tags, and product names.
 4. Run \`check\` and fix any errors until outcome is "PASS".
 Reply DONE.`;
 
-      const resA = await runCodexWithPolyglot({
+      const resA = await runCodexWithWraith({
         stageName: `oss-${repo.id}`,
         label: `oss-${repo.id}-A-${locale}`,
         sourceDir: iso.workSrc,
         prompt: promptA,
-        captureRelPaths: [targetRel, ".polyglot/records.json"],
+        captureRelPaths: [targetRel, ".wraith/records.json"],
         ignoreSpendCap,
-        workspaceSetupFn: (tmpDir) => seedPolyglotProject(tmpDir, [locale], []),
+        workspaceSetupFn: (tmpDir) => seedWraithProject(tmpDir, [locale], []),
       });
       const workA = path.join(EVAL_ROOT, "work", `oss-${repo.id}-A-${locale}`);
       fs.rmSync(workA, { recursive: true, force: true });
       fs.cpSync(iso.workSrc, workA, { recursive: true });
-      seedPolyglotProject(workA, [locale], []);
+      seedWraithProject(workA, [locale], []);
       materializeCapturedFiles(resA, workA);
       const flatA = readIsolatedCatalog(iso.format, workA, targetRel, locale);
-      const checkA = parsePolyglotJson(runPolyglotCli(workA, ["check", "--locale", locale, "--json"]));
+      const checkA = parseWraithJson(runWraithCli(workA, ["check", "--locale", locale, "--json"]));
 
-      // 2. System A0: Codex CLI with NO Polyglot MCP (Change #1)
+      // 2. System A0: Codex CLI with NO Wraith MCP (Change #1)
       const promptA0 = `Translate ${iso.sourceRel} into ${locale} (writing ${targetRel}), reading the components in src_context/ for context; keep placeholders/ICU valid.`;
-      const resA0 = await runCodexNoPolyglot({
+      const resA0 = await runCodexNoWraith({
         stageName: `oss-${repo.id}`,
         label: `oss-${repo.id}-A0-${locale}`,
         sourceDir: iso.workSrc,
@@ -526,13 +526,13 @@ Reply DONE.`;
       materializeCapturedFiles(resA0, workA0);
       const flatA0 = readIsolatedCatalog(iso.format, workA0, targetRel, locale);
 
-      // Run Polyglot check on A0 as well
+      // Run Wraith check on A0 as well
       const workCheckA0 = path.join(EVAL_ROOT, "work", `oss-${repo.id}-checkA0-${locale}`);
       fs.rmSync(workCheckA0, { recursive: true, force: true });
       fs.cpSync(iso.workSrc, workCheckA0, { recursive: true });
-      seedPolyglotProject(workCheckA0, [locale], []);
+      seedWraithProject(workCheckA0, [locale], []);
       writeIsolatedCatalog(iso.format, workCheckA0, targetRel, locale, flatA0, sampledEnMap);
-      const checkA0 = parsePolyglotJson(runPolyglotCli(workCheckA0, ["check", "--locale", locale, "--json"]));
+      const checkA0 = parseWraithJson(runWraithCli(workCheckA0, ["check", "--locale", locale, "--json"]));
 
       // 3. System B: DeepL (staying strictly inside per-app stage cap)
       const remainingAppCap = Math.max(0, DEEPL_STAGE_CHAR_CAP - appDeepLDelta);
@@ -545,13 +545,13 @@ Reply DONE.`;
       appDeepLDelta += resB.liveChars;
       const flatB = resB.translations;
 
-      // 4. System C: Polyglot check on B (no fixing)
+      // 4. System C: Wraith check on B (no fixing)
       const workC = path.join(EVAL_ROOT, "work", `oss-${repo.id}-C-${locale}`);
       fs.rmSync(workC, { recursive: true, force: true });
       fs.cpSync(iso.workSrc, workC, { recursive: true });
-      seedPolyglotProject(workC, [locale], []);
+      seedWraithProject(workC, [locale], []);
       writeIsolatedCatalog(iso.format, workC, targetRel, locale, flatB, sampledEnMap);
-      const checkC = parsePolyglotJson(runPolyglotCli(workC, ["check", "--locale", locale, "--json"]));
+      const checkC = parseWraithJson(runWraithCli(workC, ["check", "--locale", locale, "--json"]));
 
       // 5. Deterministic metrics + chrF2 against human H on 100% of sampled strings (and post-cutoff subset!)
       const detA = computeCatalogMetrics(sampledEnMap, flatA);
@@ -630,7 +630,7 @@ Reply DONE.`;
           cacheHit: resA.cacheHit,
           estimatedApiUsd: resA.estimatedApiUsd,
           telemetry: normalizeTelemetryPer1k(resA.telemetry, sampledKeys.length),
-          polyglotCheck: {
+          wraithCheck: {
             outcome: checkA?.outcome,
             errorCount: checkA?.errorCount,
             warningCount: checkA?.warningCount,
@@ -644,7 +644,7 @@ Reply DONE.`;
           cacheHit: resA0.cacheHit,
           estimatedApiUsd: resA0.estimatedApiUsd,
           telemetry: normalizeTelemetryPer1k(resA0.telemetry, sampledKeys.length),
-          polyglotCheck: {
+          wraithCheck: {
             outcome: checkA0?.outcome,
             errorCount: checkA0?.errorCount,
             warningCount: checkA0?.warningCount,
@@ -658,7 +658,7 @@ Reply DONE.`;
           cacheHits: resB.cacheHits,
           formality: resB.formality,
           deterministicMetrics: detB,
-          polyglotCheck: {
+          wraithCheck: {
             outcome: checkC?.outcome,
             errorCount: checkC?.errorCount,
             warningCount: checkC?.warningCount,

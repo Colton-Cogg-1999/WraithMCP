@@ -149,7 +149,7 @@ describe("R3-UNSCANNED. Ordinary repository files do not make every check INCONC
     const dir = project({ ...clean, "src/stories/Button.mdx": "import { Meta } from '@storybook/blocks';\n<Meta title='Button' />\n# Button\n" });
     init(dir, ["de"]);
     const before = chk(dir);
-    const cfgPath = path.join(dir, ".polyglot/config.json");
+    const cfgPath = path.join(dir, ".wraith/config.json");
     const cfg = JSON.parse(fs.readFileSync(cfgPath, "utf8"));
     cfg.paths.ignore = [...cfg.paths.ignore, "src/stories"];
     fs.writeFileSync(cfgPath, JSON.stringify(cfg));
@@ -189,7 +189,7 @@ describe("R3-DOC. Content-derived DOCX segment identity", () => {
   it("DOC-2 a reviewer's hand edit on a paragraph whose SOURCE later changes is reported stale, not silently kept with PASS", () => {
     const dir = project({ "d.docx": docx(["Apples are red.", "Pears are green."]) });
     init(dir, ["de"]);
-    const cfgPath = path.join(dir, ".polyglot/config.json");
+    const cfgPath = path.join(dir, ".wraith/config.json");
     const cfg = JSON.parse(fs.readFileSync(cfgPath, "utf8"));
     cfg.paths.documents = ["d.docx"];
     fs.writeFileSync(cfgPath, JSON.stringify(cfg));
@@ -222,7 +222,7 @@ describe("R3-LOCK. Workspace lock", () => {
     init(dir, ["de"]);
     const body = (p: string) => `for (let i = 0; i < 25; i++) P.recordGlossaryTerm(${JSON.stringify(dir)}, { term: "${p}" + i, translations: { de: "${p}DE" + i } });`;
     await Promise.all([runScript(dir, body("Alpha")), runScript(dir, body("Beta"))]);
-    const n = JSON.parse(fs.readFileSync(path.join(dir, ".polyglot/glossary.json"), "utf8")).entries.length;
+    const n = JSON.parse(fs.readFileSync(path.join(dir, ".wraith/glossary.json"), "utf8")).entries.length;
     console.log(`[LOCK-1] glossary entries kept: ${n}/50`);
     expect(n).toBe(50);
   });
@@ -233,7 +233,7 @@ describe("R3-LOCK. Workspace lock", () => {
     try {
       applyTranslations({ rootDir: dir, targetLocale: "de", translations: [{ key: "a", value: "Hallo" }] });
     } catch {}
-    const lockLeft = fs.existsSync(path.join(dir, ".polyglot/.lock"));
+    const lockLeft = fs.existsSync(path.join(dir, ".wraith/.lock"));
     fs.writeFileSync(path.join(dir, "messages/de.json"), "{}\n");
     const t0 = Date.now();
     const r = applyTranslations({ rootDir: dir, targetLocale: "de", translations: [{ key: "b", value: "Tschüss" }] });
@@ -245,7 +245,7 @@ describe("R3-LOCK. Workspace lock", () => {
   it("LOCK-3 a lock left by a SIGKILLed process is recovered", async () => {
     const dir = project({ "package.json": nextIntlPkg, "messages/en.json": JSON.stringify({ a: "Hello" }) });
     init(dir, ["de"]);
-    fs.writeFileSync(path.join(dir, ".polyglot/.lock"), JSON.stringify({ pid: 999999, createdAt: new Date().toISOString() }));
+    fs.writeFileSync(path.join(dir, ".wraith/.lock"), JSON.stringify({ pid: 999999, createdAt: new Date().toISOString() }));
     const t0 = Date.now();
     let ok = false;
     try {

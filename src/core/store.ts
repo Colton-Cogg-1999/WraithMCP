@@ -15,7 +15,7 @@ import {
   LayoutFileSchema,
   MemoryEntry,
   MemoryEntrySchema,
-  PolyglotConfig,
+  WraithConfig,
   RecordsFile,
   RecordsFileSchema,
   ReviewsFile,
@@ -26,7 +26,7 @@ import {
   UsageSite,
 } from "./types.js";
 
-export const POLYGLOT_DIR = ".polyglot";
+export const WRAITH_DIR = ".wraith";
 
 export function sha256Short(input: string, len = 16): string {
   return crypto.createHash("sha256").update(input, "utf8").digest("hex").slice(0, len);
@@ -63,13 +63,13 @@ function sortRecordKeys<T>(obj: Record<string, T>): Record<string, T> {
   return out;
 }
 
-export class PolyglotStore {
+export class WraithStore {
   readonly rootDir: string;
   readonly dir: string;
 
   constructor(rootDir: string) {
     this.rootDir = path.resolve(rootDir);
-    this.dir = path.join(this.rootDir, POLYGLOT_DIR);
+    this.dir = path.join(this.rootDir, WRAITH_DIR);
   }
 
   exists(): boolean {
@@ -77,8 +77,8 @@ export class PolyglotStore {
   }
 
   confinedDir(): string {
-    return resolveConfinedPath(this.rootDir, POLYGLOT_DIR, {
-      label: ".polyglot directory",
+    return resolveConfinedPath(this.rootDir, WRAITH_DIR, {
+      label: ".wraith directory",
     });
   }
 
@@ -88,12 +88,12 @@ export class PolyglotStore {
   }
 
   filePath(name: string): string {
-    return resolveConfinedPath(this.rootDir, path.join(POLYGLOT_DIR, name), {
-      label: `.polyglot/${name}`,
+    return resolveConfinedPath(this.rootDir, path.join(WRAITH_DIR, name), {
+      label: `.wraith/${name}`,
     });
   }
 
-  readConfig(): PolyglotConfig {
+  readConfig(): WraithConfig {
     const p = this.filePath("config.json");
     if (!fs.existsSync(p)) {
       return ConfigSchema.parse({});
@@ -103,7 +103,7 @@ export class PolyglotStore {
       raw = JSON.parse(fs.readFileSync(p, "utf8"));
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
-      throw new Error(`Invalid JSON in .polyglot/config.json: ${msg}`);
+      throw new Error(`Invalid JSON in .wraith/config.json: ${msg}`);
     }
     try {
       return ConfigSchema.parse(raw);
@@ -112,13 +112,13 @@ export class PolyglotStore {
         const details = err.issues
           .map((i) => `${i.path.join(".") || "(root)"}: ${i.message}`)
           .join("; ");
-        throw new Error(`Invalid .polyglot/config.json: ${details}`);
+        throw new Error(`Invalid .wraith/config.json: ${details}`);
       }
       throw err;
     }
   }
 
-  writeConfig(config: PolyglotConfig): void {
+  writeConfig(config: WraithConfig): void {
     this.ensureDir();
     const parsed = ConfigSchema.parse(config);
     atomicWriteFileSync(this.filePath("config.json"), stableJson(parsed));

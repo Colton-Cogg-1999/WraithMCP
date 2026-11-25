@@ -59,7 +59,7 @@ export function walkFiles(
     );
     for (const entry of entries) {
       if (ignoreSet.has(entry.name)) continue;
-      if (entry.name.startsWith(".") && entry.name !== ".polyglot") continue;
+      if (entry.name.startsWith(".") && entry.name !== ".wraith") continue;
       const child = path.join(absPath, entry.name);
       const rel = path.relative(absRoot, child).replace(/\\/g, "/");
       if (ignoreSet.has(rel)) continue;

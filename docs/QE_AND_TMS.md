@@ -1,14 +1,14 @@
 # Quality Estimation & TMS Round-Trip
 
-## QE (`polyglot qe` / MCP `qe_audit`)
+## QE (`wraith qe` / MCP `qe_audit`)
 
 ```bash
-polyglot qe [--locales de,ja] [--auto-repair] [--fail-above 60] [--json]
+wraith qe [--locales de,ja] [--auto-repair] [--fail-above 60] [--json]
 ```
 
-Writes `.polyglot/qe-report.json`. Exit `1` if any segment's risk > `--fail-above` or any segment is `needs_review`.
+Writes `.wraith/qe-report.json`. Exit `1` if any segment's risk > `--fail-above` or any segment is `needs_review`.
 
-**Model selection (Tier 2 only):** `POLYGLOT_QE_MODEL`, else `claude-haiku-4-5-20251001` if `ANTHROPIC_API_KEY` is set, else `gemini-2.5-flash` if `GEMINI_API_KEY`/`GOOGLE_API_KEY` is set. With no key, Tier 2 is skipped (`tier2: "unavailable"`) and segments passing Tier 1 are `unscored` — fail-closed, never `verified`.
+**Model selection (Tier 2 only):** `WRAITH_QE_MODEL`, else `claude-haiku-4-5-20251001` if `ANTHROPIC_API_KEY` is set, else `gemini-2.5-flash` if `GEMINI_API_KEY`/`GOOGLE_API_KEY` is set. With no key, Tier 2 is skipped (`tier2: "unavailable"`) and segments passing Tier 1 are `unscored` — fail-closed, never `verified`.
 
 MCP `qe_audit` is annotated `destructiveHint: true` because `autoRepair` can write catalogs; with `autoRepair: false` it only writes `qe-report.json`.
 
@@ -63,10 +63,10 @@ QE ranks risk; it is not a quality certificate. Use it to decide where humans lo
 
 ---
 
-## TMS export (`polyglot export` / MCP `tms_export`)
+## TMS export (`wraith export` / MCP `tms_export`)
 
 ```bash
-polyglot export [--format xliff2] [--out .polyglot/exports/tms] [--locales de,ja] \
+wraith export [--format xliff2] [--out .wraith/exports/tms] [--locales de,ja] \
   [--only-flagged] [--include-tm] [--include-glossary] [--bundle-screenshots] [--json]
 ```
 
@@ -91,7 +91,7 @@ polyglot export [--format xliff2] [--out .polyglot/exports/tms] [--locales de,ja
   <file id="f1" original="messages/en.json">
     <unit id="cart.itemCount">
       <mda:metadata>
-        <mda:metaGroup category="polyglot">
+        <mda:metaGroup category="wraith">
           <mda:meta type="file">src/components/Cart.tsx</mda:meta>
           <mda:meta type="line">27</mda:meta>
           <mda:meta type="component">CartBadge</mda:meta>
@@ -121,8 +121,8 @@ polyglot export [--format xliff2] [--out .polyglot/exports/tms] [--locales de,ja
 ```xml
 <?xml version="1.0" encoding="UTF-8"?>
 <tmx version="1.4">
-  <header creationtool="polyglot" creationtoolversion="0.1.0" datatype="plaintext"
-          segtype="sentence" adminlang="en" srclang="en" o-tmf="polyglot"/>
+  <header creationtool="wraith" creationtoolversion="0.1.0" datatype="plaintext"
+          segtype="sentence" adminlang="en" srclang="en" o-tmf="wraith"/>
   <body>
     <tu tuid="checkout.cta">
       <prop type="x-provenance">human-reviewed</prop>
@@ -154,18 +154,18 @@ polyglot export [--format xliff2] [--out .polyglot/exports/tms] [--locales de,ja
 
 ---
 
-## TMS import (`polyglot import` / MCP `tms_import`)
+## TMS import (`wraith import` / MCP `tms_import`)
 
 ```bash
-polyglot import reviewed/de.xliff        # or a directory of .xliff/.xlf files
-polyglot import reviewed/ --format xliff
+wraith import reviewed/de.xliff        # or a directory of .xliff/.xlf files
+wraith import reviewed/ --format xliff
 ```
 
 `.xliff`/`.xlf` files (or directories of them) are auto-detected. For each unit Wraith:
 
 1. Validates the target through the same placeholder / ICU / plural / glossary pipeline as `apply`; failing units are rejected and listed.
 2. Writes catalogs losslessly, preserving key order.
-3. Upserts `.polyglot/tm.json` with `provenance: "human-reviewed"` and `verifiedAt`.
+3. Upserts `.wraith/tm.json` with `provenance: "human-reviewed"` and `verifiedAt`.
 4. Sets the segment's `qe-report.json` status to `human-verified`.
 5. Runs `check` (and `visual-qa` when `layout.baseUrl` is configured) and prints a diff summary.
 

@@ -9,14 +9,14 @@ import path from "node:path";
 import { strToU8, zipSync } from "fflate";
 import { DocxDocumentAdapter, MarkdownDocumentAdapter } from "../src/index.ts";
 
-const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "polyglot-demo-05-"));
+const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "wraith-demo-05-"));
 try {
   console.log("=== Milestone 5: Documents (Markdown/MDX & Byte-Preserving DOCX) Demo ===\n");
 
   const mdFile = path.join(tmp, "release-notes.md");
   fs.writeFileSync(
     mdFile,
-    `---\ntitle: "Release 1.0"\n---\n\n# Welcome to **Acme Pulse**\n\nRun \`npx polyglot check\` and visit [our docs](https://example.com).\n`,
+    `---\ntitle: "Release 1.0"\n---\n\n# Welcome to **Acme Pulse**\n\nRun \`npx wraith check\` and visit [our docs](https://example.com).\n`,
     "utf8"
   );
   const md = new MarkdownDocumentAdapter("markdown");

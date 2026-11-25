@@ -8,4 +8,4 @@ coverage/
 eval/cache/
 eval/work/
 eval/corpora/*/
-.polyglot/
+.wraith/

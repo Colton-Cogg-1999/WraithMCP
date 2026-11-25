@@ -4,7 +4,7 @@ import { FormatWriteUpdate } from "../formats/types.js";
 import { checkGlossaryCompliance } from "./glossary.js";
 import { PluralValidationContext, validateTranslationString } from "./placeholders.js";
 import { resolveConfinedPath, SecurityBoundaryError, validateLocaleTag, withWorkspaceLock } from "./security.js";
-import { computeContextFingerprint, PolyglotStore, sha256Short } from "./store.js";
+import { computeContextFingerprint, WraithStore, sha256Short } from "./store.js";
 import { MemoryEntry, RecordOrigin, UsageFile } from "./types.js";
 
 export interface ApplyTranslationInput {
@@ -62,7 +62,7 @@ export function applyTranslations(options: ApplyOptions): ApplyResult {
 }
 
 function applyTranslationsUnlocked(options: ApplyOptions): ApplyResult {
-  const store = new PolyglotStore(options.rootDir);
+  const store = new WraithStore(options.rootDir);
   const config = store.readConfig();
   const glossary = store.readGlossary();
   const usage = store.readUsage();

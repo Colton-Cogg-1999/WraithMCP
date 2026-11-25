@@ -1,10 +1,10 @@
-# Wraith `.polyglot/` File Schemas
+# Wraith `.wraith/` File Schemas
 
-All Wraith state lives inside `.polyglot/` in the repository root. Every file is plain UTF-8 text, human-readable, deterministically sorted for clean git diffs, and validated at runtime with Zod.
+All Wraith state lives inside `.wraith/` in the repository root. Every file is plain UTF-8 text, human-readable, deterministically sorted for clean git diffs, and validated at runtime with Zod.
 
 ---
 
-## 1. `.polyglot/config.json`
+## 1. `.wraith/config.json`
 
 Minimal project configuration. All fields except `sourceLocale` and `targetLocales` have sensible defaults.
 
@@ -19,7 +19,7 @@ Minimal project configuration. All fields except `sourceLocale` and `targetLocal
     "locales": "messages",
     "source": ["src", "app", "components"],
     "documents": [],
-    "ignore": ["node_modules", ".next", "dist", "build", ".git", ".polyglot"]
+    "ignore": ["node_modules", ".next", "dist", "build", ".git", ".wraith"]
   }
 }
 ```
@@ -39,7 +39,7 @@ Minimal project configuration. All fields except `sourceLocale` and `targetLocal
 
 ---
 
-## 2. `.polyglot/glossary.json`
+## 2. `.wraith/glossary.json`
 
 Preferred terminology and do-not-translate (DNT) terms. Sorted alphabetically by `term`.
 
@@ -85,7 +85,7 @@ Preferred terminology and do-not-translate (DNT) terms. Sorted alphabetically by
 
 ---
 
-## 3. `.polyglot/usage.json`
+## 3. `.wraith/usage.json`
 
 Extracted key usage sites and context fingerprints. Regenerated deterministically on `scan` and `check`. Keys sorted alphabetically.
 
@@ -113,7 +113,7 @@ Extracted key usage sites and context fingerprints. Regenerated deterministicall
 
 ---
 
-## 4. `.polyglot/records.json`
+## 4. `.wraith/records.json`
 
 Per-key, per-locale translation provenance and verification state. Sorted by key, then by locale.
 
@@ -148,7 +148,7 @@ Per-key, per-locale translation provenance and verification state. Sorted by key
 
 ---
 
-## 5. `.polyglot/memory.jsonl`
+## 5. `.wraith/memory.jsonl`
 
 Append-friendly, deduplicated newline-delimited JSON translation memory for lexical fuzzy matching. Each line is one source→target unit:
 
@@ -160,7 +160,7 @@ When written by `apply`, `import`, or `escalate` (correction import), entries wi
 
 ---
 
-## 6. `.polyglot/assumptions.json`
+## 6. `.wraith/assumptions.json`
 
 Decisions the agent made without interrupting the developer (surfaced in the end-of-run report).
 
@@ -184,7 +184,7 @@ Categories: `"terminology" | "brand" | "tone" | "disambiguation" | "formatting" 
 
 ---
 
-## 7. `.polyglot/reviews.json`
+## 7. `.wraith/reviews.json`
 
 Cross-model MQM review findings and human escalation resolutions.
 

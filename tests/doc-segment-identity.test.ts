@@ -13,7 +13,7 @@ import {
 const tmpDirs: string[] = [];
 
 function mkTmp(): string {
-  const d = fs.mkdtempSync(path.join(os.tmpdir(), "polyglot-doc-id-"));
+  const d = fs.mkdtempSync(path.join(os.tmpdir(), "wraith-doc-id-"));
   tmpDirs.push(d);
   return d;
 }
@@ -118,7 +118,7 @@ describe("Document content-derived segment identity (B1, B2, N5)", () => {
       "# Onboarding\n\nWelcome to the engineering team.\n\nSet up your local workspace.\n\nShip your first patch.\n"
     );
     initProject({ rootDir: dir, sourceLocale: "en", targetLocales: ["es"] });
-    const cfgPath = path.join(dir, ".polyglot/config.json");
+    const cfgPath = path.join(dir, ".wraith/config.json");
     const cfg = JSON.parse(fs.readFileSync(cfgPath, "utf8"));
     cfg.paths.documents = ["handbook.md"];
     fs.writeFileSync(cfgPath, JSON.stringify(cfg, null, 2));

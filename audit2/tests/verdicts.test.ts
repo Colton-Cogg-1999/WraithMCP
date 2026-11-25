@@ -41,9 +41,9 @@ describe("V. PASS / FAIL / INCONCLUSIVE on previously unseen repositories", () =
   it("V3 paths.source pointing at a directory that does not exist is INCONCLUSIVE, not PASS", () => {
     const dir = project(cleanNext);
     init(dir, ["de"]);
-    const cfg = JSON.parse(fs.readFileSync(path.join(dir, ".polyglot/config.json"), "utf8"));
+    const cfg = JSON.parse(fs.readFileSync(path.join(dir, ".wraith/config.json"), "utf8"));
     cfg.paths.source = ["frontend/src"];
-    fs.writeFileSync(path.join(dir, ".polyglot/config.json"), JSON.stringify(cfg));
+    fs.writeFileSync(path.join(dir, ".wraith/config.json"), JSON.stringify(cfg));
     const v = verdict(dir);
     console.log(`[V3] ${JSON.stringify(v)}`);
     expect(v.outcome).toBe("INCONCLUSIVE");

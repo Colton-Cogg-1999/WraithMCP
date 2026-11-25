@@ -9,7 +9,7 @@ import {
   PseudoMode,
 } from "./pseudo.js";
 import { validateLocaleTag } from "./security.js";
-import { PolyglotStore } from "./store.js";
+import { WraithStore } from "./store.js";
 
 const TALL_SCRIPT_LANGUAGES = new Set(["th", "vi", "hi", "bn", "ta", "te", "ml", "kn", "km", "lo", "my"]);
 const LONG_WORD_LANGUAGES = new Set(["de", "fi", "nl", "da", "sv", "no", "nb", "nn", "hu", "tr", "el"]);
@@ -83,7 +83,7 @@ export function generatePseudoLocale(
       ? { pseudoLocale: pseudoLocaleOrOptions }
       : pseudoLocaleOrOptions;
 
-  const store = new PolyglotStore(rootDir);
+  const store = new WraithStore(rootDir);
   const config = store.readConfig();
   const glossary = store.readGlossary();
   const dntTerms = glossary.entries.filter((e) => e.doNotTranslate).map((e) => e.term);
@@ -200,9 +200,9 @@ export function generatePseudoLocale(
 
   const primary = modesGenerated[0];
   const qaChecklist = [
-    `Run \`polyglot layout\` (with a running dev server URL configured) to render routes across [${modesGenerated.map((m) => m.pseudoLocale).join(", ")}] at 375px and 1280px.`,
+    `Run \`wraith layout\` (with a running dev server URL configured) to render routes across [${modesGenerated.map((m) => m.pseudoLocale).join(", ")}] at 375px and 1280px.`,
     "Any visible text NOT wrapped in [...] / 「...」 is hardcoded; any `$1,234.56` or `MM/DD` surviving in format mode skipped locale formatting.",
-    "Run `polyglot layout --fix` to apply deterministic Tailwind/HTML codemods, then address any remaining agent prescriptions or width budgets.",
+    "Run `wraith layout --fix` to apply deterministic Tailwind/HTML codemods, then address any remaining agent prescriptions or width budgets.",
   ];
   if (hasRtlTarget) {
     qaChecklist.push(

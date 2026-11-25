@@ -9,8 +9,8 @@ import {
 } from "./glossary.js";
 import { validateTranslationString } from "./placeholders.js";
 import { withWorkspaceLock } from "./security.js";
-import { PolyglotStore, sha256Short } from "./store.js";
-import { AssumptionCategory, GlossaryOrigin, MemoryEntry, PolyglotConfig, RecordsFile } from "./types.js";
+import { WraithStore, sha256Short } from "./store.js";
+import { AssumptionCategory, GlossaryOrigin, MemoryEntry, WraithConfig, RecordsFile } from "./types.js";
 
 /**
  * Reconcile persisted memory against authoritative live target locale files (L2, N4/MT5):
@@ -18,8 +18,8 @@ import { AssumptionCategory, GlossaryOrigin, MemoryEntry, PolyglotConfig, Record
  * - Promotes valid live manual corrections (`origin: "manual"`) so they rank above stale agent text.
  */
 export function reconcileMemoryWithLiveLocales(
-  store: PolyglotStore,
-  config: PolyglotConfig,
+  store: WraithStore,
+  config: WraithConfig,
   memory: readonly MemoryEntry[],
   targetLocale: string,
   preloaded?: {
@@ -113,7 +113,7 @@ export function lookupMemory(
     limit?: number;
   }
 ): MemoryLookupResult {
-  const store = new PolyglotStore(rootDir);
+  const store = new WraithStore(rootDir);
   const config = store.readConfig();
   const glossary = store.readGlossary();
   const memory = store.readMemory();
@@ -214,7 +214,7 @@ function recordGlossaryTermUnlocked(
     origin?: GlossaryOrigin;
   }
 ): UpsertGlossaryResult {
-  const store = new PolyglotStore(rootDir);
+  const store = new WraithStore(rootDir);
   const config = store.readConfig();
   // O1: Pass undefined when omitted so upsertGlossaryEntry preserves previous doNotTranslate/caseSensitive!
   const { changed, glossary } = store.upsertGlossaryEntry({
@@ -315,7 +315,7 @@ export function recordAssumption(
     rationale?: string;
   }
 ) {
-  return withWorkspaceLock(rootDir, () => new PolyglotStore(rootDir).addAssumption(input));
+  return withWorkspaceLock(rootDir, () => new WraithStore(rootDir).addAssumption(input));
 }
 
 export function recordMemoryPair(
@@ -330,7 +330,7 @@ export function recordMemoryPair(
   }
 ): { added: number; total: number } {
   return withWorkspaceLock(rootDir, () => {
-    const store = new PolyglotStore(rootDir);
+    const store = new WraithStore(rootDir);
     const config = store.readConfig();
     const added = store.appendMemory([
       {

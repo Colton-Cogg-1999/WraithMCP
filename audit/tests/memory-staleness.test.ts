@@ -6,7 +6,7 @@ import {
   importAsset,
   lexicalSimilarity,
   lookupMemory,
-  PolyglotStore,
+  WraithStore,
   prepareBatch,
   recordGlossaryTerm,
   runCheck,
@@ -26,7 +26,7 @@ function nextApp(en: Record<string, unknown>, extra: Record<string, string> = {}
 
 describe("L. Staleness & manual edits", () => {
   it("L1 source change after a MANUAL (non-apply) translation is detected as stale", () => {
-    // Very common: translations exist before Polyglot is adopted, or a translator edits de.json directly.
+    // Very common: translations exist before Wraith is adopted, or a translator edits de.json directly.
     const dir = nextApp({ cta: "Start free trial" }, { "messages/de.json": JSON.stringify({ cta: "Kostenlos testen" }, null, 2) + "\n" });
     runCheck({ rootDir: dir }); // first run
     fs.writeFileSync(path.join(dir, "messages/en.json"), JSON.stringify({ cta: "Start your 30-day free trial" }, null, 2) + "\n");
@@ -38,7 +38,7 @@ describe("L. Staleness & manual edits", () => {
     const dir = nextApp({ cta: "Buy now" });
     applyTranslations({ rootDir: dir, targetLocale: "de", translations: [{ key: "cta", value: "Jetzt kaufen" }] });
     fs.writeFileSync(path.join(dir, "messages/de.json"), JSON.stringify({ cta: "Jetzt kaufen!!! {oops}" }, null, 2) + "\n");
-    const store = new PolyglotStore(dir);
+    const store = new WraithStore(dir);
     const rec = store.readRecords().records.cta.de;
     const res = runCheck({ rootDir: dir });
     // The placeholder will be caught, but provenance must not still claim the agent's text:
@@ -59,7 +59,7 @@ describe("L. Staleness & manual edits", () => {
   it("L4 import(locales) must not downgrade an 'approved' human review status", () => {
     const dir = nextApp({ cta: "Buy now" });
     applyTranslations({ rootDir: dir, targetLocale: "de", translations: [{ key: "cta", value: "Jetzt kaufen" }], origin: "human" });
-    const store = new PolyglotStore(dir);
+    const store = new WraithStore(dir);
     const f = store.readRecords();
     f.records.cta.de.reviewStatus = "approved";
     store.writeRecords(f);
@@ -76,7 +76,7 @@ export function ${wrapper}() { const t = useTranslations(); return <div><button>
     const dir = nextApp({ open: "Open" }, { "src/FileMenu.tsx": comp("File", "FileMenu") });
     // Agent extracts and applies straight away — the documented flow never requires `scan` between.
     applyTranslations({ rootDir: dir, targetLocale: "de", translations: [{ key: "open", value: "Öffnen" }] });
-    const rec = new PolyglotStore(dir).readRecords().records.open.de;
+    const rec = new WraithStore(dir).readRecords().records.open.de;
     expect(rec.contextFingerprint).not.toBe("");
   });
 
@@ -109,9 +109,9 @@ export function ${wrapper}() { const t = useTranslations(); return <div><button>
     expect(runCheck({ rootDir: dir, code: "context_changed" }).issues.total).toBe(1);
   });
 
-  it("M5 check is read-only: running check must not rewrite .polyglot/usage.json", () => {
+  it("M5 check is read-only: running check must not rewrite .wraith/usage.json", () => {
     const dir = nextApp({ open: "Open" }, { "src/FileMenu.tsx": comp("File", "FileMenu") });
-    const p = path.join(dir, ".polyglot/usage.json");
+    const p = path.join(dir, ".wraith/usage.json");
     const before = fs.existsSync(p) ? fs.readFileSync(p, "utf8") : null;
     runCheck({ rootDir: dir });
     const after = fs.existsSync(p) ? fs.readFileSync(p, "utf8") : null;
@@ -140,7 +140,7 @@ describe("N. Translation memory matching", () => {
     });
     importAsset(dir, { file: "tm.tmx" });
     const prep = prepareBatch({ rootDir: dir, targetLocale: "de" });
-    console.log(`[N4] memory entries=${JSON.stringify(new PolyglotStore(dir).readMemory().map((m) => `${m.sourceLocale}->${m.targetLocale}`))} matches=${prep.items[0]?.fuzzyMatches.length}`);
+    console.log(`[N4] memory entries=${JSON.stringify(new WraithStore(dir).readMemory().map((m) => `${m.sourceLocale}->${m.targetLocale}`))} matches=${prep.items[0]?.fuzzyMatches.length}`);
     expect(prep.items[0].fuzzyMatches.length).toBeGreaterThan(0);
   });
 
@@ -150,7 +150,7 @@ describe("N. Translation memory matching", () => {
       "tm.tmx": `<tmx version="1.4"><header srclang="en"/><body><tu><tuv xml:lang="en"><seg>Click <bpt i="1">&lt;b&gt;</bpt>here<ept i="1">&lt;/b&gt;</ept></seg></tuv><tuv xml:lang="de"><seg>Klicken Sie <bpt i="1">&lt;b&gt;</bpt>hier<ept i="1">&lt;/b&gt;</ept></seg></tuv></tu></body></tmx>`,
     });
     importAsset(dir, { file: "tm.tmx" });
-    const mem = new PolyglotStore(dir).readMemory();
+    const mem = new WraithStore(dir).readMemory();
     console.log(`[N5] ${JSON.stringify(mem.map((m) => m.source))}`);
     expect(mem[0].source).toBe("Click here");
   });
@@ -158,7 +158,7 @@ describe("N. Translation memory matching", () => {
   it("N6 a single corrupt line in memory.jsonl does not disable every tool", () => {
     const dir = nextApp({ a: "Save" });
     applyTranslations({ rootDir: dir, targetLocale: "de", translations: [{ key: "a", value: "Speichern" }] });
-    fs.appendFileSync(path.join(dir, ".polyglot/memory.jsonl"), "{not json\n");
+    fs.appendFileSync(path.join(dir, ".wraith/memory.jsonl"), "{not json\n");
     expect(() => prepareBatch({ rootDir: dir, targetLocale: "de" })).not.toThrow();
   });
 
@@ -174,7 +174,7 @@ describe("O. Glossary propagation & terminology", () => {
     const dir = nextApp({ a: "Welcome to Acme Pulse" });
     recordGlossaryTerm(dir, { term: "Acme Pulse", doNotTranslate: true, caseSensitive: true });
     recordGlossaryTerm(dir, { term: "Acme Pulse", notes: "Product name" });
-    const e = new PolyglotStore(dir).readGlossary().entries.find((x) => x.term === "Acme Pulse")!;
+    const e = new WraithStore(dir).readGlossary().entries.find((x) => x.term === "Acme Pulse")!;
     expect(e.doNotTranslate).toBe(true);
     expect(e.caseSensitive).toBe(true);
   });

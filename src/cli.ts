@@ -33,7 +33,7 @@ export function createCli(): Command {
   const program = new Command();
 
   program
-    .name("polyglot")
+    .name("wraith")
     .description(
       "Model-free, deterministic localization CLI and MCP server for coding agents."
     )
@@ -42,14 +42,14 @@ export function createCli(): Command {
 
   program
     .command("init")
-    .description("Initialize .polyglot/ config, agent rules, and optional git pre-commit hook")
+    .description("Initialize .wraith/ config, agent rules, and optional git pre-commit hook")
     .option("-s, --source <locale>", "Source locale (BCP-47)", "en")
     .option("-t, --targets <locales>", "Comma-separated target locales (e.g. es-MX,fr,zh-Hans)")
     .option("-r, --review <mode>", "Review mode: auto or confirm", "auto")
     .option("-f, --framework <name>", "Framework override (default: auto)", "auto")
     .option("--locales-dir <path>", "Locales directory override")
     .option("--no-agent-rule", "Skip adding the localization rule to AGENTS.md / CLAUDE.md")
-    .option("--hook", "Install a git pre-commit hook running polyglot check", false)
+    .option("--hook", "Install a git pre-commit hook running wraith check", false)
     .option("--json", "Output JSON", false)
     .action((opts) => {
       const rootDir = program.opts().cwd;
@@ -79,8 +79,8 @@ export function createCli(): Command {
         console.log(`Installed pre-commit hook: ${result.hookInstalled}`);
       }
       console.log("\nAdd to your coding agent MCP config (from a local checkout or installed binary):");
-      console.log("  claude mcp add polyglot -- node /absolute/path/to/polyglot/dist/bin.js mcp");
-      console.log("  # or if 'polyglot' is on PATH: claude mcp add polyglot -- polyglot mcp");
+      console.log("  claude mcp add wraith -- node /absolute/path/to/wraith/dist/bin.js mcp");
+      console.log("  # or if 'wraith' is on PATH: claude mcp add wraith -- wraith mcp");
     });
 
   program
@@ -97,7 +97,7 @@ export function createCli(): Command {
       }
 
       console.log(
-        `Polyglot status (${st.framework}${st.i18nLibrary ? ` / ${st.i18nLibrary}` : ""})`
+        `Wraith status (${st.framework}${st.i18nLibrary ? ` / ${st.i18nLibrary}` : ""})`
       );
       console.log(
         `Source: ${st.sourceLocale} (${st.totalSourceKeys} keys) · Check: ${st.checkPassed ? "PASS" : `FAIL (${st.errorCount} errors, ${st.warningCount} warnings)`}`
@@ -304,7 +304,7 @@ export function createCli(): Command {
           );
         }
         if (res.budgetsRecorded > 0) {
-          console.log(`\nRecorded ${res.budgetsRecorded} width budget(s) in .polyglot/layout.json.`);
+          console.log(`\nRecorded ${res.budgetsRecorded} width budget(s) in .wraith/layout.json.`);
         }
       }
       if (res.outcome === "FAIL") process.exitCode = 1;
@@ -344,9 +344,9 @@ export function createCli(): Command {
 
   program
     .command("visual-qa")
-    .description("Token-free DOM geometry regression check (line wraps, blowouts, truncation, occlusion, tofu, contrast) against .polyglot/visual-baseline.json")
+    .description("Token-free DOM geometry regression check (line wraps, blowouts, truncation, occlusion, tofu, contrast) against .wraith/visual-baseline.json")
     .option("--capture-baseline", "Capture/overwrite the geometry baseline instead of diffing", false)
-    .option("--base <path>", "Baseline file path", ".polyglot/visual-baseline.json")
+    .option("--base <path>", "Baseline file path", ".wraith/visual-baseline.json")
     .option("--routes <csv>", "Comma-separated routes")
     .option("--locales <csv>", "Comma-separated locales")
     .option("--url <baseUrl>", "Running preview/dev server base URL")
@@ -419,9 +419,9 @@ export function createCli(): Command {
     .command("export")
     .description("Export segments for human post-editing in a TMS: XLIFF 2.0 with metadata/notes, optional TMX 1.4b, TBX-Basic, and failure screenshots")
     .option("--format <fmt>", "Export format (xliff2)", "xliff2")
-    .option("-o, --out <dir>", "Output directory", ".polyglot/exports/tms")
+    .option("-o, --out <dir>", "Output directory", ".wraith/exports/tms")
     .option("--locales <csv>", "Comma-separated target locales")
-    .option("--only-flagged", "Only export segments with status needs_review in .polyglot/qe-report.json", false)
+    .option("--only-flagged", "Only export segments with status needs_review in .wraith/qe-report.json", false)
     .option("--include-tm", "Write tm.tmx (TMX 1.4b)", false)
     .option("--include-glossary", "Write glossary.tbx (TBX-Basic)", false)
     .option("--bundle-screenshots", "Copy matching visual-qa failure crops into <out>/screenshots/", false)
@@ -502,7 +502,7 @@ export function createCli(): Command {
     .command("escalate")
     .description("Export flagged strings for human review (CSV, XLSX, HTML) or import corrections")
     .option("-l, --locale <locale>", "Filter export by target locale")
-    .option("-o, --output-dir <dir>", "Output directory", ".polyglot/escalations")
+    .option("-o, --output-dir <dir>", "Output directory", ".wraith/escalations")
     .option("--import <file>", "Import reviewer corrections (.csv, .xlsx, or .json)")
     .option("--json", "Output JSON", false)
     .action((opts) => {
@@ -595,7 +595,7 @@ export function createCli(): Command {
 
   program
     .command("mcp")
-    .description("Start the Polyglot MCP server over stdio")
+    .description("Start the Wraith MCP server over stdio")
     .action(async () => {
       const rootDir = program.opts().cwd;
       await startMcpServer({ rootDir });

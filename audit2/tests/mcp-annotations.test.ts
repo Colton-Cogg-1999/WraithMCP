@@ -78,7 +78,7 @@ describe("ANN. MCP annotations vs observed side effects", () => {
       const a: any = ann[name];
       rows.push(`${name.padEnd(8)} readOnly=${a.readOnlyHint} destructive=${a.destructiveHint} isError=${Boolean(res.isError)} changed=${JSON.stringify(d.changed)}`);
       if (a.readOnlyHint && d.changed.length) violations.push(`${name}: readOnlyHint but changed ${d.changed}`);
-      if (a.destructiveHint === false && d.overwritten.some((f) => !f.startsWith(".polyglot/"))) violations.push(`${name}: destructiveHint=false but overwrote user files ${d.overwritten.filter((f) => !f.startsWith(".polyglot/"))}`);
+      if (a.destructiveHint === false && d.overwritten.some((f) => !f.startsWith(".wraith/"))) violations.push(`${name}: destructiveHint=false but overwrote user files ${d.overwritten.filter((f) => !f.startsWith(".wraith/"))}`);
     }
     console.log(`[ANN-1]\n  ${rows.join("\n  ")}\n  violations: ${JSON.stringify(violations, null, 2)}`);
     expect(violations).toEqual([]);

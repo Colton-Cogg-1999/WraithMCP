@@ -2,7 +2,7 @@ import { spawn } from "node:child_process";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import { CODEX_CONFIG, POLYGLOT_BIN } from "../config.mjs";
+import { CODEX_CONFIG, WRAITH_BIN } from "../config.mjs";
 import { contentHash, getCached, setCached, sha256Buffer } from "./cache.mjs";
 import { assertWithinSpendCap, recordCost } from "./cost.mjs";
 
@@ -47,7 +47,7 @@ function collectFilesBase64(dir, relPaths) {
  * Parse Codex JSONL events with full Change #5 instrumentation:
  * - model turns (`turn.completed` count)
  * - uncached input tokens (`inputTokens - cachedInputTokens`)
- * - per-call MCP response size (bytes & approx tokens = ceil(bytes/4)) for every Polyglot tool
+ * - per-call MCP response size (bytes & approx tokens = ceil(bytes/4)) for every Wraith tool
  */
 function parseCodexJsonl(rawJsonl) {
   const events = rawJsonl
@@ -152,7 +152,7 @@ function parseCodexJsonl(rawJsonl) {
 }
 
 /**
- * Shared runner for System A (Codex + Polyglot MCP) and System A0 (Codex with NO Polyglot MCP).
+ * Shared runner for System A (Codex + Wraith MCP) and System A0 (Codex with NO Wraith MCP).
  */
 async function runCodexBase({
   mode, // "A" | "A0" | "A-compact"
@@ -166,7 +166,7 @@ async function runCodexBase({
   ignoreSpendCap = false,
   workspaceSetupFn = null,
 }) {
-  const usePolyglotMcp = mode !== "A0";
+  const useWraithMcp = mode !== "A0";
   const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), `pg-eval-${mode.toLowerCase()}-`));
   try {
     copyDirRecursive(sourceDir, tmpDir);
@@ -180,8 +180,8 @@ async function runCodexBase({
       model: CODEX_CONFIG.model,
       reasoningEffort: CODEX_CONFIG.reasoningEffort,
       approvalFlags,
-      usePolyglotMcp,
-      polyglotBinHash: usePolyglotMcp ? sha256Buffer(fs.readFileSync(POLYGLOT_BIN)) : null,
+      useWraithMcp,
+      wraithBinHash: useWraithMcp ? sha256Buffer(fs.readFileSync(WRAITH_BIN)) : null,
       inputSnapshot,
       prompt,
       captureRelPaths: [...captureRelPaths].sort(),
@@ -214,12 +214,12 @@ async function runCodexBase({
       tmpDir,
       ...approvalFlags,
     ];
-    if (usePolyglotMcp) {
+    if (useWraithMcp) {
       args.push(
         "-c",
-        `mcp_servers.polyglot.command="${POLYGLOT_BIN}"`,
+        `mcp_servers.wraith.command="${WRAITH_BIN}"`,
         "-c",
-        'mcp_servers.polyglot.args=["mcp"]'
+        'mcp_servers.wraith.args=["mcp"]'
       );
     }
     args.push(prompt);
@@ -306,11 +306,11 @@ async function runCodexBase({
   }
 }
 
-export async function runCodexWithPolyglot(opts) {
+export async function runCodexWithWraith(opts) {
   return runCodexBase({ ...opts, mode: opts.mode ?? "A" });
 }
 
-export async function runCodexNoPolyglot(opts) {
+export async function runCodexNoWraith(opts) {
   return runCodexBase({ ...opts, mode: "A0" });
 }
 

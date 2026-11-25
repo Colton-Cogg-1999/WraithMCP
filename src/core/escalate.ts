@@ -12,7 +12,7 @@ import {
   validateLocaleTag,
   withWorkspaceLock,
 } from "./security.js";
-import { PolyglotStore } from "./store.js";
+import { WraithStore } from "./store.js";
 
 export interface EscalationRow {
   locale: string;
@@ -223,7 +223,7 @@ function buildReviewHtml(rows: EscalationRow[]): string {
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Polyglot Localization Review</title>
+<title>Wraith Localization Review</title>
 <style>
   body { font-family: system-ui, -apple-system, sans-serif; margin: 0; padding: 24px; background: #f8fafc; color: #0f172a; }
   header { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; justify-content: space-between; margin-bottom: 20px; }
@@ -244,7 +244,7 @@ function buildReviewHtml(rows: EscalationRow[]): string {
 <body>
 <header>
   <div>
-    <h1>Polyglot Native-Speaker Review</h1>
+    <h1>Wraith Native-Speaker Review</h1>
     <div class="meta">${rows.length} flagged string(s) · Edit any correction below, then download JSON or CSV and send it back to the developer.</div>
   </div>
   <div class="controls">
@@ -296,12 +296,12 @@ function saveFile(name, mime, content) {
   a.download = name;
   a.click();
 }
-function downloadJson() { saveFile('polyglot-corrections.json', 'application/json', JSON.stringify(ROWS, null, 2)); }
+function downloadJson() { saveFile('wraith-corrections.json', 'application/json', JSON.stringify(ROWS, null, 2)); }
 function downloadCsv() {
   const cols = ${JSON.stringify(HEADERS)};
   const escCsv = v => /[",\\r\\n]/.test(v||'') ? '"' + String(v).replace(/"/g,'""') + '"' : String(v||'');
   const lines = [cols.join(','), ...ROWS.map(r => cols.map(c => escCsv(r[c])).join(','))];
-  saveFile('polyglot-corrections.csv', 'text/csv;charset=utf-8', '\\uFEFF' + lines.join('\\n'));
+  saveFile('wraith-corrections.csv', 'text/csv;charset=utf-8', '\\uFEFF' + lines.join('\\n'));
 }
 </script>
 </body>
@@ -323,7 +323,7 @@ export function exportEscalation(
     formats?: Array<"csv" | "xlsx" | "html">;
   }
 ): EscalateExportResult {
-  const store = new PolyglotStore(rootDir);
+  const store = new WraithStore(rootDir);
   const report = generateReport(store.rootDir);
   const reviews = store.readReviews();
   const suggestionMap = new Map<string, string>();
@@ -352,7 +352,7 @@ export function exportEscalation(
 
   const outDir = resolveConfinedPath(
     store.rootDir,
-    options?.outputDir ?? ".polyglot/escalations",
+    options?.outputDir ?? ".wraith/escalations",
     { label: "escalate outputDir" }
   );
   fs.mkdirSync(outDir, { recursive: true });
@@ -364,7 +364,7 @@ export function exportEscalation(
       HEADERS.join(","),
       ...rows.map((r) => HEADERS.map((h) => csvEscape(r[h])).join(",")),
     ];
-    const csvPath = resolveConfinedPath(store.rootDir, path.join(outDir, "polyglot-review.csv"), {
+    const csvPath = resolveConfinedPath(store.rootDir, path.join(outDir, "wraith-review.csv"), {
       label: "csv export",
     });
     atomicWriteFileSync(csvPath, "\uFEFF" + lines.join("\n") + "\n");
@@ -372,7 +372,7 @@ export function exportEscalation(
   }
 
   if (formats.includes("xlsx")) {
-    const xlsxPath = resolveConfinedPath(store.rootDir, path.join(outDir, "polyglot-review.xlsx"), {
+    const xlsxPath = resolveConfinedPath(store.rootDir, path.join(outDir, "wraith-review.xlsx"), {
       label: "xlsx export",
     });
     atomicWriteFileSync(xlsxPath, buildXlsxBuffer(rows));
@@ -380,7 +380,7 @@ export function exportEscalation(
   }
 
   if (formats.includes("html")) {
-    const htmlPath = resolveConfinedPath(store.rootDir, path.join(outDir, "polyglot-review.html"), {
+    const htmlPath = resolveConfinedPath(store.rootDir, path.join(outDir, "wraith-review.html"), {
       label: "html export",
     });
     atomicWriteFileSync(htmlPath, buildReviewHtml(rows));
@@ -414,7 +414,7 @@ function importEscalationCorrectionsUnlocked(
   rootDir: string,
   filePath: string
 ): ImportCorrectionsResult {
-  const store = new PolyglotStore(rootDir);
+  const store = new WraithStore(rootDir);
   const abs = resolveConfinedPath(store.rootDir, filePath, { label: "corrections file" });
   const ext = path.extname(abs).toLowerCase();
 

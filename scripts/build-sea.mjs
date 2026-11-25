@@ -6,7 +6,7 @@ import * as esbuild from "esbuild";
 const releaseDir = path.resolve("release");
 fs.mkdirSync(releaseDir, { recursive: true });
 
-const cjsBundle = path.join(releaseDir, "polyglot.cjs");
+const cjsBundle = path.join(releaseDir, "wraith.cjs");
 
 // @vue/compiler-sfc bundles `consolidate`, which has optional require() calls for
 // unused template engines (velocityjs, twig, jade, etc.). Stub those optional deps cleanly.
@@ -52,7 +52,7 @@ const raw = fs.readFileSync(cjsBundle, "utf8").replace(/^#!.*\n/, "");
 fs.writeFileSync(cjsBundle, raw, "utf8");
 
 const ext = process.platform === "win32" ? ".exe" : "";
-const outBin = path.join(releaseDir, `polyglot-${process.platform}-${process.arch}${ext}`);
+const outBin = path.join(releaseDir, `wraith-${process.platform}-${process.arch}${ext}`);
 
 const seaConfigPath = path.join(releaseDir, "sea-config.json");
 fs.writeFileSync(
@@ -71,7 +71,7 @@ fs.writeFileSync(
 );
 
 // Prefer an official standalone Node binary when supplied (avoids Arch/distro shared-lib coupling)
-const nodeBin = process.env.POLYGLOT_NODE_BIN || process.execPath;
+const nodeBin = process.env.WRAITH_NODE_BIN || process.execPath;
 execFileSync(nodeBin, ["--build-sea", seaConfigPath], { stdio: "inherit" });
 if (process.platform !== "win32") {
   fs.chmodSync(outBin, 0o755);
@@ -93,7 +93,7 @@ if (process.platform === "linux") {
     if (nonBaseLibs.length > 0) {
       console.warn(
         `WARNING: Host node binary (${nodeBin}) dynamically links ${nonBaseLibs.length} distro-specific shared library(ies). ` +
-          `For portable Linux releases, set POLYGLOT_NODE_BIN to an official nodejs.org standalone Node binary.`
+          `For portable Linux releases, set WRAITH_NODE_BIN to an official nodejs.org standalone Node binary.`
       );
     }
   } catch {

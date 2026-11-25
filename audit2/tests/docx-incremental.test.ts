@@ -120,7 +120,7 @@ describe("DX. Incremental DOCX translation, segment identity, formatting & revis
 });
 
 function runCheckDocs(dir: string): string {
-  const cfgPath = path.join(dir, ".polyglot/config.json");
+  const cfgPath = path.join(dir, ".wraith/config.json");
   const cfg = JSON.parse(fs.readFileSync(cfgPath, "utf8"));
   cfg.paths.documents = ["doc.docx"];
   fs.writeFileSync(cfgPath, JSON.stringify(cfg));

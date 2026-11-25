@@ -18,7 +18,7 @@ import {
 
 ensureBootstrapped();
 
-const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "polyglot-demo-03-"));
+const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "wraith-demo-03-"));
 try {
   fs.cpSync(path.resolve("fixtures/nextjs-app"), tmp, { recursive: true });
   initProject({ rootDir: tmp, sourceLocale: "en", targetLocales: ["es-MX"], writeAgentRule: false });

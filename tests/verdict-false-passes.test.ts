@@ -7,7 +7,7 @@ import { initProject, runCheck } from "../src/index.js";
 const tmpDirs: string[] = [];
 
 function mkProject(files: Record<string, string>): string {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "polyglot-verdicts-"));
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "wraith-verdicts-"));
   tmpDirs.push(dir);
   for (const [rel, content] of Object.entries(files)) {
     const abs = path.join(dir, rel);
@@ -67,7 +67,7 @@ const state = "active";
     expect(runCheck({ rootDir: dir }).outcome).toBe("PASS");
 
     // Point paths.source at a non-existent folder -> INCONCLUSIVE even though catalog keys exist
-    const cfgPath = path.join(dir, ".polyglot/config.json");
+    const cfgPath = path.join(dir, ".wraith/config.json");
     const cfg = JSON.parse(fs.readFileSync(cfgPath, "utf8"));
     cfg.paths.source = ["client/nonexistent"];
     fs.writeFileSync(cfgPath, JSON.stringify(cfg, null, 2));
@@ -97,7 +97,7 @@ const state = "active";
     expect(missing.map((m) => m.key)).toEqual(["orders.index.cancel_missing"]);
 
     // Point paths.source at empty/missing folder -> INCONCLUSIVE even with valid YAML catalogs
-    const cfgPath = path.join(dir, ".polyglot/config.json");
+    const cfgPath = path.join(dir, ".wraith/config.json");
     const cfg = JSON.parse(fs.readFileSync(cfgPath, "utf8"));
     cfg.paths.source = ["nonexistent_views"];
     fs.writeFileSync(cfgPath, JSON.stringify(cfg, null, 2));

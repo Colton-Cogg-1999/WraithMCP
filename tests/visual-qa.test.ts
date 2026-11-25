@@ -139,7 +139,7 @@ describe("Visual QA — fail-closed INCONCLUSIVE", () => {
       expect(res.outcome).toBe("INCONCLUSIVE");
       expect(res.mode).toBe("diff");
       expect(res.inconclusiveReason).toMatch(/baseline/i);
-      expect(res.nextSteps.join(" ")).toContain("polyglot visual-qa --capture-baseline");
+      expect(res.nextSteps.join(" ")).toContain("wraith visual-qa --capture-baseline");
     } finally {
       fs.rmSync(dir, { recursive: true, force: true });
     }
@@ -200,7 +200,7 @@ export function Card() {
       if (
         cap.outcome === "INCONCLUSIVE" &&
         /Playwright|Chromium/i.test(cap.inconclusiveReason ?? "") &&
-        process.env.POLYGLOT_REQUIRE_PLAYWRIGHT !== "1"
+        process.env.WRAITH_REQUIRE_PLAYWRIGHT !== "1"
       ) {
         expect(cap.passed).toBe(false);
         return;
@@ -211,7 +211,7 @@ export function Card() {
       expect(cap.localesChecked).toEqual(["de"]);
       expect(cap.viewportsChecked).toEqual(["375x812", "1280x800"]);
       expect(cap.elementsMeasured).toBe(6);
-      const baselineAbs = path.join(dir, ".polyglot/visual-baseline.json");
+      const baselineAbs = path.join(dir, ".wraith/visual-baseline.json");
       expect(fs.existsSync(baselineAbs)).toBe(true);
       const baseline = JSON.parse(fs.readFileSync(baselineAbs, "utf8"));
       expect(Object.keys(baseline.snapshots).sort()).toEqual(["/|1280x800|de", "/|375x812|de"]);
@@ -243,8 +243,8 @@ export function Card() {
         expect(fs.existsSync(abs)).toBe(true);
         expect(fs.readFileSync(abs).subarray(1, 4).toString()).toBe("PNG");
       }
-      expect(fs.existsSync(path.join(dir, ".polyglot/artifacts/visual-qa/de/cardTitle-375x812.png"))).toBe(true);
-      expect(bad.manifestPath).toBe(".polyglot/artifacts/visual-qa/manifest.json");
+      expect(fs.existsSync(path.join(dir, ".wraith/artifacts/visual-qa/de/cardTitle-375x812.png"))).toBe(true);
+      expect(bad.manifestPath).toBe(".wraith/artifacts/visual-qa/manifest.json");
       const manifest = JSON.parse(fs.readFileSync(path.join(dir, bad.manifestPath!), "utf8"));
       expect(manifest.defects.length).toBe(bad.defectCount);
       const byId = new Map<string, { screenshot?: string; key: string; file?: string }>(
@@ -265,7 +265,7 @@ export function Card() {
       expect(good.outcome).toBe("PASS");
       expect(good.defectCount).toBe(0);
       expect(good.screenshots).toEqual([]);
-      expect(fs.existsSync(path.join(dir, ".polyglot/artifacts/visual-qa/manifest.json"))).toBe(false);
+      expect(fs.existsSync(path.join(dir, ".wraith/artifacts/visual-qa/manifest.json"))).toBe(false);
     } finally {
       server.close();
       fs.rmSync(dir, { recursive: true, force: true });

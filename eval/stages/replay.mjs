@@ -4,11 +4,11 @@ import path from "node:path";
 import {
   DEEPL_STAGE_CHAR_CAP,
   EVAL_ROOT,
-  POLYGLOT_BIN,
+  WRAITH_BIN,
   RESULTS_DIR,
 } from "../config.mjs";
 import { atomicWriteJson } from "../lib/cache.mjs";
-import { materializeCapturedFiles, runCodexWithPolyglot } from "../lib/codex.mjs";
+import { materializeCapturedFiles, runCodexWithWraith } from "../lib/codex.mjs";
 import {
   getDeepLUsage,
   getGlossaryDeletionLog,
@@ -22,19 +22,19 @@ import {
   extractGlossaryForLocale,
   flattenJson,
   normalizeTelemetryPer1k,
-  parsePolyglotJson,
-  runPolyglotCli,
-  seedPolyglotProject,
+  parseWraithJson,
+  runWraithCli,
+  seedWraithProject,
   unflattenJson,
 } from "./common.mjs";
 
 /**
- * Call Polyglot MCP `prepare` directly over stdio JSON-RPC so we can deterministically inspect
+ * Call Wraith MCP `prepare` directly over stdio JSON-RPC so we can deterministically inspect
  * `stale_source`, `context_changed`, and fuzzy TM match scores (>=95% and 75-94%) before Codex runs.
  */
-async function callPolyglotMcpPrepare(cwd, targetLocale, limit = 100) {
+async function callWraithMcpPrepare(cwd, targetLocale, limit = 100) {
   return new Promise((resolve, reject) => {
-    const child = spawn(POLYGLOT_BIN, ["-C", cwd, "mcp"], {
+    const child = spawn(WRAITH_BIN, ["-C", cwd, "mcp"], {
       cwd,
       stdio: ["pipe", "pipe", "pipe"],
     });
@@ -92,7 +92,7 @@ async function callPolyglotMcpPrepare(cwd, targetLocale, limit = 100) {
       params: {
         protocolVersion: "2024-11-05",
         capabilities: {},
-        clientInfo: { name: "polyglot-eval", version: "1.0.0" },
+        clientInfo: { name: "wraith-eval", version: "1.0.0" },
       },
     });
   });
@@ -185,11 +185,11 @@ async function runSingleAppReplay(repo, { ignoreSpendCap = false, judgeMode = "a
   writeUsageComponent("ReleasePanelA.tsx", baseKeys.slice(0, 25));
   writeUsageComponent("ReleasePanelB.tsx", baseKeys.slice(25));
 
-  // Step 1: Seed Release N via `polyglot init` + `polyglot import --format locales`!
+  // Step 1: Seed Release N via `wraith init` + `wraith import --format locales`!
   const glossary30 = build30TermGlossary(repo.id);
-  seedPolyglotProject(workDir, [locale], glossary30);
-  const importRes = runPolyglotCli(workDir, ["import", "--format", "locales", "--json"]);
-  const importParsed = parsePolyglotJson(importRes);
+  seedWraithProject(workDir, [locale], glossary30);
+  const importRes = runWraithCli(workDir, ["import", "--format", "locales", "--json"]);
+  const importParsed = parseWraithJson(importRes);
 
   // Step 2: Apply Release N+1 changes:
   // - 10 edited strings (minor wording tweak -> stale_source + high fuzzy TM match)
@@ -223,9 +223,9 @@ async function runSingleAppReplay(repo, { ignoreSpendCap = false, judgeMode = "a
   writeUsageComponent("ReleasePanelA.tsx", baseKeys.slice(0, 10).concat(baseKeys.slice(15, 25)));
   writeUsageComponent("MovedSettingsModal.tsx", movedKeys.concat(addedKeys));
 
-  // Step 3: Measure deterministic Polyglot `check` & MCP `prepare` BEFORE retranslation!
-  const midCheck = parsePolyglotJson(runPolyglotCli(workDir, ["check", "--locale", locale, "--limit", "500", "--json"]));
-  const prepResult = await callPolyglotMcpPrepare(workDir, locale, 100);
+  // Step 3: Measure deterministic Wraith `check` & MCP `prepare` BEFORE retranslation!
+  const midCheck = parseWraithJson(runWraithCli(workDir, ["check", "--locale", locale, "--limit", "500", "--json"]));
+  const prepResult = await callWraithMcpPrepare(workDir, locale, 100);
 
   const checkIssues = Array.isArray(midCheck?.issues) ? midCheck.issues : (midCheck?.issues?.items ?? []);
   const flaggedStaleKeys = [
@@ -271,21 +271,21 @@ async function runSingleAppReplay(repo, { ignoreSpendCap = false, judgeMode = "a
     `  [Replay ${repo.id}] stale_source P=${stalePrecision} R=${staleRecall} (${staleTP}/${editedKeys.length}) | missing=${flaggedMissingKeys.length}/${addedKeys.length} | ctxChanged=${flaggedContextChanged.length}/${movedKeys.length} | fuzzy>=95=${fuzzyHigh95}, 75-94=${fuzzyMed75}`
   );
 
-  // Step 4: Run System A to incrementally update ONLY the stale/added keys via Polyglot MCP
+  // Step 4: Run System A to incrementally update ONLY the stale/added keys via Wraith MCP
   const changedKeys = [...editedKeys, ...addedKeys];
   const promptReplayA = `Release N+1 updated ${editedKeys.length} existing strings and added ${addedKeys.length} new strings in messages/en.json.
-Using Polyglot MCP tools:
+Using Wraith MCP tools:
 1. Call \`prepare\` with targetLocale="${locale}", limit=100, offset=0 to fetch ONLY the stale and untranslated keys (use any TM fuzzyMatches as context hints, adapting them accurately to the new source text rather than copying blindly!).
 2. Apply all updated/new German translations via \`apply\`, strictly honoring the 30-term glossary (including DNT terms).
 3. Run \`check\` until outcome is "PASS" (0 errors).
 Reply DONE.`;
 
-  const resReplayA = await runCodexWithPolyglot({
+  const resReplayA = await runCodexWithWraith({
     stageName: `replay-${repo.id}`,
     label: `replay-${repo.id}-A-${locale}`,
     sourceDir: workDir,
     prompt: promptReplayA,
-    captureRelPaths: ["messages/de.json", ".polyglot/records.json"],
+    captureRelPaths: ["messages/de.json", ".wraith/records.json"],
     ignoreSpendCap,
   });
 
@@ -294,7 +294,7 @@ Reply DONE.`;
   fs.cpSync(workDir, postAWork, { recursive: true });
   materializeCapturedFiles(resReplayA, postAWork);
   const flatReplayA = flattenJson(JSON.parse(fs.readFileSync(path.join(postAWork, "messages/de.json"), "utf8")));
-  const checkAfterReplayA = parsePolyglotJson(runPolyglotCli(postAWork, ["check", "--locale", locale, "--json"]));
+  const checkAfterReplayA = parseWraithJson(runWraithCli(postAWork, ["check", "--locale", locale, "--json"]));
 
   // System B: DeepL retranslating the changed + added keys with the 30-term glossary
   const changedSourceMap = Object.fromEntries(changedKeys.map((k) => [k, relN1En[k]]));
@@ -345,8 +345,8 @@ Reply DONE.`;
   const detChangedB = computeCatalogMetrics(changedSourceMap, flatReplayB, localeGlossary30);
 
   // Step 5: Mid-project glossary term change propagation test!
-  // Change 1 term ("Workspace": "Arbeitsbereich" -> "Projektbereich") in .polyglot/glossary.json and verify `polyglot check` flags the EXACT affected keys!
-  const gPath = path.join(postAWork, ".polyglot/glossary.json");
+  // Change 1 term ("Workspace": "Arbeitsbereich" -> "Projektbereich") in .wraith/glossary.json and verify `wraith check` flags the EXACT affected keys!
+  const gPath = path.join(postAWork, ".wraith/glossary.json");
   const gData = JSON.parse(fs.readFileSync(gPath, "utf8"));
   const mutatedTerm = "Workspace";
   const newRequiredTranslation = "Projektbereich";
@@ -357,7 +357,7 @@ Reply DONE.`;
   fs.writeFileSync(gPath, JSON.stringify(gData, null, 2) + "\n");
 
   const expectedAffectedKeys = Object.keys(relN1En).filter((k) => /\bWorkspace\b/i.test(relN1En[k]));
-  const afterTermChangeCheck = parsePolyglotJson(runPolyglotCli(postAWork, ["check", "--locale", locale, "--limit", "500", "--json"]));
+  const afterTermChangeCheck = parseWraithJson(runWraithCli(postAWork, ["check", "--locale", locale, "--limit", "500", "--json"]));
   const afterTermIssues = Array.isArray(afterTermChangeCheck?.issues)
     ? afterTermChangeCheck.issues
     : (afterTermChangeCheck?.issues?.items ?? []);

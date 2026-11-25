@@ -10,7 +10,7 @@ import {
   initProject,
   lexicalSimilarity,
   lookupMemory,
-  PolyglotStore,
+  WraithStore,
   prepareBatch,
   recordGlossaryTerm,
   runCheck,
@@ -21,7 +21,7 @@ ensureBootstrapped();
 
 const tmpDirs: string[] = [];
 function makeTempProject(): string {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "polyglot-m3-"));
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "wraith-m3-"));
   tmpDirs.push(dir);
   fs.cpSync(path.resolve("fixtures/nextjs-app"), dir, { recursive: true });
   // Replace Dashboard with a clean i18n file so we isolate staleness & context-change tests
@@ -262,7 +262,7 @@ export function StoreHoursBanner() {
     );
     const locRes = importAsset(dir, { format: "locales" });
     expect(locRes.recordsImported).toBe(1);
-    const store = new PolyglotStore(dir);
+    const store = new WraithStore(dir);
     expect(store.readRecords().records["home.title"]["es-MX"].origin).toBe("imported");
   });
 });

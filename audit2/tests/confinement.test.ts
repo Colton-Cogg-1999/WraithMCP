@@ -33,25 +33,25 @@ const tryRun = (fn: () => unknown) => {
   }
 };
 
-describe("SEC2. Confinement of the .polyglot store and agent files (untrusted cloned repository)", () => {
-  it("SEC2-1 a repo whose .polyglot/ is a symlink to an outside directory cannot make Polyglot write outside", () => {
+describe("SEC2. Confinement of the .wraith store and agent files (untrusted cloned repository)", () => {
+  it("SEC2-1 a repo whose .wraith/ is a symlink to an outside directory cannot make Wraith write outside", () => {
     const out = outside();
     const dir = project({ "package.json": nextIntlPkg, "messages/en.json": JSON.stringify({ a: "Hello" }) });
-    fs.symlinkSync(out, path.join(dir, ".polyglot"));
+    fs.symlinkSync(out, path.join(dir, ".wraith"));
     tryRun(() => applyTranslations({ rootDir: dir, targetLocale: "de", translations: [{ key: "a", value: "Hallo" }] }));
     tryRun(() => recordGlossaryTerm(dir, { term: "Hello", translations: { de: "Hallo" } }));
     const written = fs.readdirSync(out);
-    console.log(`[SEC2-1] files written into outside dir via .polyglot symlink: ${JSON.stringify(written)}`);
+    console.log(`[SEC2-1] files written into outside dir via .wraith symlink: ${JSON.stringify(written)}`);
     expect(written).toEqual([]);
   });
 
-  it("SEC2-2 a repo whose .polyglot/glossary.json is a symlink to an outside file cannot overwrite that file", () => {
+  it("SEC2-2 a repo whose .wraith/glossary.json is a symlink to an outside file cannot overwrite that file", () => {
     const out = outside();
     const victim = path.join(out, "victim.txt");
     fs.writeFileSync(victim, "PRECIOUS USER DATA\n");
     const dir = base();
-    fs.rmSync(path.join(dir, ".polyglot/glossary.json"), { force: true });
-    fs.symlinkSync(victim, path.join(dir, ".polyglot/glossary.json"));
+    fs.rmSync(path.join(dir, ".wraith/glossary.json"), { force: true });
+    fs.symlinkSync(victim, path.join(dir, ".wraith/glossary.json"));
     tryRun(() => recordGlossaryTerm(dir, { term: "Hello", translations: { de: "Hallo" } }));
     const after = fs.readFileSync(victim, "utf8");
     console.log(`[SEC2-2] outside victim file now starts with: ${JSON.stringify(after.slice(0, 40))}`);
@@ -137,7 +137,7 @@ describe("ZIP2. Archive processing", () => {
   });
 
   it("ZIP2-2 a DOCX with path-traversal entry names is still readable for translation (names are never extracted)", () => {
-    // Real-world: some generators emit odd names; Polyglot never extracts to disk, so this should not hard-fail.
+    // Real-world: some generators emit odd names; Wraith never extracts to disk, so this should not hard-fail.
     const z = zipSync({ "[Content_Types].xml": strToU8("<Types/>"), "word/document.xml": strToU8('<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:body><w:p><w:r><w:t>Hello world</w:t></w:r></w:p></w:body></w:document>'), "customXml/item..1.xml": strToU8("<x/>") });
     const dir = project({ "d.docx": z });
     const r = tryRun(() => new DocxDocumentAdapter().extract(path.join(dir, "d.docx")));
@@ -171,7 +171,7 @@ for (const i of ${JSON.stringify(keys)}) applyTranslations({ rootDir: ${JSON.str
       new Promise<number>((res) => spawn(process.execPath, [path.join(REPO, "node_modules/tsx/dist/cli.mjs"), f], { cwd: REPO, stdio: "inherit" }).on("exit", (c) => res(c ?? -1)));
     await Promise.all([run(a), run(b)]);
     const de = JSON.parse(fs.readFileSync(path.join(dir, "messages/de.json"), "utf8"));
-    const recs = JSON.parse(fs.readFileSync(path.join(dir, ".polyglot/records.json"), "utf8")).records;
+    const recs = JSON.parse(fs.readFileSync(path.join(dir, ".wraith/records.json"), "utf8")).records;
     console.log(`[CONC-1] de.json keys=${Object.keys(de).length}/40 records=${Object.keys(recs).filter((k) => recs[k].de?.origin === "agent").length}/40`);
     expect(Object.keys(de).length).toBe(40);
   });
@@ -194,7 +194,7 @@ describe("DOCPATH. Document state cannot be steered", () => {
     const out = outside();
     const dir = base({ "docs/a.md": "# Hello world\n" });
     fs.writeFileSync(
-      path.join(dir, ".polyglot/documents.json"),
+      path.join(dir, ".wraith/documents.json"),
       JSON.stringify({ version: 1, documents: { "docs/a.md": { de: { targetFile: path.join(out, "x.md"), sourceHash: "x", totalSegments: 1, translatedSegments: 1, segments: { "md-1": "Hallo" }, updatedAt: "" } } } })
     );
     tryRun(() => applyDocumentTranslations(dir, { sourceFile: "docs/a.md", targetFile: "docs/a.de.md", targetLocale: "de", updates: [{ id: "md-1", text: "Hallo Welt" }] }));

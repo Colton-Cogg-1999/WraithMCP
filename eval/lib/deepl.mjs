@@ -8,7 +8,7 @@ import {
 import { getCached, setCached, sha256Buffer, withCache } from "./cache.mjs";
 import { recordCost } from "./cost.mjs";
 
-const GLOSSARY_PREFIX = "polyglot-eval-";
+const GLOSSARY_PREFIX = "wraith-eval-";
 const glossaryDeletionLog = [];
 
 export function getGlossaryDeletionLog() {
@@ -84,10 +84,10 @@ export async function getSupportedGlossaryPairs() {
 }
 
 /**
- * Delete ONLY DeepL glossaries whose name starts with `polyglot-eval-` (NEVER touches
+ * Delete ONLY DeepL glossaries whose name starts with `wraith-eval-` (NEVER touches
  * glossaries from other projects sharing this API key) and logs every deletion by ID.
  */
-export async function cleanupPolyglotEvalGlossaries(reason = "slot-release") {
+export async function cleanupWraithEvalGlossaries(reason = "slot-release") {
   const { key, baseUrl } = loadDeepLCredentials();
   const res = await fetch(`${baseUrl}/v2/glossaries`, {
     headers: { Authorization: `DeepL-Auth-Key ${key}` },
@@ -120,7 +120,7 @@ export async function cleanupPolyglotEvalGlossaries(reason = "slot-release") {
 
 /**
  * Create a temporary DeepL glossary for a supported language pair (cleans up any prior
- * `polyglot-eval-*` glossaries first so Free-tier's 1-glossary limit never blocks a language).
+ * `wraith-eval-*` glossaries first so Free-tier's 1-glossary limit never blocks a language).
  * Returns `{ glossaryId, glossaryHash }` or `{ glossaryId: null, glossaryHash: null }`.
  */
 export async function createDeepLGlossaryForRun(name, targetLocale, entries) {
@@ -155,8 +155,8 @@ export async function createDeepLGlossaryForRun(name, targetLocale, entries) {
   return {
     glossaryHash,
     async ensureLiveId() {
-      // Free up any stale `polyglot-eval-*` glossary slot before creating
-      await cleanupPolyglotEvalGlossaries(`before-${name}-${cfg.glossaryTarget}`);
+      // Free up any stale `wraith-eval-*` glossary slot before creating
+      await cleanupWraithEvalGlossaries(`before-${name}-${cfg.glossaryTarget}`);
       const { key, baseUrl } = loadDeepLCredentials();
       const res = await fetch(`${baseUrl}/v2/glossaries`, {
         method: "POST",
@@ -432,9 +432,9 @@ async function translateXmlJobs(stageName, targetLocale, jobs, { glossaryHandle 
       }
     }
   } finally {
-    // Release our temporary `polyglot-eval-*` glossary immediately after use (Change #10)
+    // Release our temporary `wraith-eval-*` glossary immediately after use (Change #10)
     if (liveGlossaryId) {
-      await cleanupPolyglotEvalGlossaries(`after-${stageName}-${targetLocale}`);
+      await cleanupWraithEvalGlossaries(`after-${stageName}-${targetLocale}`);
     }
   }
 
@@ -675,7 +675,7 @@ export async function translateDocxWithDeepL({
     outBuf = Buffer.from(await dlRes.arrayBuffer());
   } finally {
     if (liveGlossaryId) {
-      await cleanupPolyglotEvalGlossaries(`after-docx-${targetLocale}`);
+      await cleanupWraithEvalGlossaries(`after-docx-${targetLocale}`);
     }
   }
 

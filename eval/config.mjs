@@ -3,7 +3,7 @@ import { fileURLToPath } from "node:url";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
-export const REPO_ROOT = "/home/colton/Projects/Polyglot MCP";
+export const REPO_ROOT = path.resolve(__dirname, "..");
 export const EVAL_ROOT = __dirname;
 export const CACHE_DIR = path.join(EVAL_ROOT, "cache");
 export const RESULTS_DIR = path.join(EVAL_ROOT, "results");
@@ -12,8 +12,8 @@ export const CORPORA_DIR = path.join(EVAL_ROOT, "corpora");
 export const SCREENSHOTS_DIR = path.join(RESULTS_DIR, "screenshots");
 export const DOCX_OUT_DIR = path.join(RESULTS_DIR, "docx");
 
-export const POLYGLOT_BIN = path.join(REPO_ROOT, "release", "polyglot-linux-x64");
-export const POLYGLOT_NODE_BIN = path.join(REPO_ROOT, "dist", "bin.js");
+export const WRAITH_BIN = path.join(REPO_ROOT, "release", "wraith-linux-x64");
+export const WRAITH_NODE_BIN = path.join(REPO_ROOT, "dist", "bin.js");
 export const DEEPL_ENV_PATH = "/home/colton/Projects/LocRAG/.env";
 
 // User-configured caps
@@ -38,7 +38,7 @@ export const CODEX_CONFIG = {
   modelCutoffDate: "2026-03-01",
   /**
    * Populated/verified by Stage 1 approval probe; narrowest flag allowing unattended
-   * execution of Polyglot's mutating MCP tools inside disposable copies.
+   * execution of Wraith's mutating MCP tools inside disposable copies.
    */
   approvalFlags: ["--approve-for-me"],
 };

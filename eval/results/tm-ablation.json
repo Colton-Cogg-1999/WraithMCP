@@ -17,7 +17,7 @@
         "components": 12,
         "glossaryTerms": 4,
         "tmEntries": 28,
-        "tmPath": "work/tm-ablation/synthetic-app/.polyglot/tm.json",
+        "tmPath": "work/tm-ablation/synthetic-app/.wraith/tm.json",
         "afullItemsWithTmHit": 99,
         "contextSources": {
           "synthetic-ast": 256
@@ -61,7 +61,7 @@
         "components": 12,
         "glossaryTerms": 0,
         "tmEntries": 7,
-        "tmPath": "work/tm-ablation/oss-next-intl/.polyglot/tm.json",
+        "tmPath": "work/tm-ablation/oss-next-intl/.wraith/tm.json",
         "afullItemsWithTmHit": 18,
         "contextSources": {
           "catalog-namespace": 40
@@ -98,7 +98,7 @@
         "components": 55,
         "glossaryTerms": 0,
         "tmEntries": 32,
-        "tmPath": "work/tm-ablation/oss-hoppscotch/.polyglot/tm.json",
+        "tmPath": "work/tm-ablation/oss-hoppscotch/.wraith/tm.json",
         "afullItemsWithTmHit": 77,
         "contextSources": {
           "catalog-namespace": 44,
