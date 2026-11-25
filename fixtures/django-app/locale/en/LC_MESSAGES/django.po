@@ -1,0 +1,20 @@
+# English catalog
+msgid ""
+msgstr ""
+"Language: en\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+
+#. Greeting shown on dashboard
+#: templates/dashboard.html:3
+msgid "Welcome, %(name)s"
+msgstr "Welcome, %(name)s"
+
+#: views.py:5
+msgid "Account saved"
+msgstr "Account saved"
+
+#: views.py:8
+msgid "%(count)d message"
+msgid_plural "%(count)d messages"
+msgstr[0] "%(count)d message"
+msgstr[1] "%(count)d messages"

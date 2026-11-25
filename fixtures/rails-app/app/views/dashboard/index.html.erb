@@ -1,0 +1,7 @@
+<div class="dashboard">
+  <h1><%= t("dashboard.welcome", name: current_user.name) %></h1>
+  <p><%= t("dashboard.items", count: @count) %></p>
+  <button aria-label="Archive item">Archive now</button>
+  <p><%= "Hello " + current_user.name %></p>
+  <span><%= t("dashboard.open") %></span>
+</div>

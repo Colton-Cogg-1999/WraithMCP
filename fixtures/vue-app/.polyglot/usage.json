@@ -1,0 +1,29 @@
+{
+  "version": 1,
+  "keys": {
+    "post": {
+      "fingerprint": "6aec041836e2d795",
+      "sites": [
+        {
+          "file": "src/App.vue",
+          "line": 12,
+          "component": "App",
+          "element": "p",
+          "surrounding": []
+        }
+      ]
+    },
+    "welcome": {
+      "fingerprint": "53808bfc0981310a",
+      "sites": [
+        {
+          "file": "src/App.vue",
+          "line": 10,
+          "component": "App",
+          "element": "h1",
+          "surrounding": []
+        }
+      ]
+    }
+  }
+}

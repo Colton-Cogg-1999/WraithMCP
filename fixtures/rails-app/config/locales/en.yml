@@ -1,0 +1,8 @@
+# Main English locale file (comment must be preserved!)
+en:
+  dashboard:
+    welcome: "Welcome back, %{name}"
+    items:
+      one: "1 item remaining"
+      other: "%{count} items remaining"
+    open: "Open"

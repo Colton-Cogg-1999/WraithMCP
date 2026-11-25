@@ -1,0 +1,284 @@
+import fs from "node:fs";
+import path from "node:path";
+import { UsageSite } from "../core/types.js";
+import { RailsYamlFormatAdapter } from "../formats/yaml.js";
+import {
+  ConcatenationFinding,
+  FrameworkDetection,
+  HardcodedStringFinding,
+  LayoutRiskFinding,
+  ScannerAdapter,
+  ScanSourceResult,
+} from "./types.js";
+import {
+  inspectLayoutClasses,
+  isLikelyUserFacingText,
+  normalizeWhitespace,
+  USER_FACING_ATTRIBUTES,
+  walkFiles,
+} from "./utils.js";
+
+const RAILS_EXTS = new Set([".erb", ".rb"]);
+
+function offsetToLine(src: string, idx: number): number {
+  let line = 1;
+  for (let i = 0; i < idx && i < src.length; i++) {
+    if (src.charCodeAt(i) === 10) line++;
+  }
+  return line;
+}
+
+function scanErbTemplate(
+  relFile: string,
+  source: string,
+  out: {
+    hardcoded: HardcodedStringFinding[];
+    concats: ConcatenationFinding[];
+    usageByKey: Record<string, UsageSite[]>;
+    layoutRisks: LayoutRiskFinding[];
+  }
+): void {
+  const lines = source.split(/\r?\n/);
+  const comp = path.basename(relFile, ".html.erb");
+
+  // 1. Scan ERB tags <% ... %> / <%= ... %> for I18n.t / t(...) and Ruby string concatenations
+  for (const m of source.matchAll(/<%[=-]?([\s\S]*?)%>/g)) {
+    const code = m[1];
+    const line = offsetToLine(source, m.index ?? 0);
+    for (const tm of code.matchAll(/(?:\bI18n\.t|\bt)\s*\(?\s*['"]([^'"]+)['"]/g)) {
+      const key = tm[1];
+      out.usageByKey[key] = out.usageByKey[key] ?? [];
+      out.usageByKey[key].push({
+        file: relFile,
+        line,
+        component: comp,
+        element: "erb",
+        surrounding: [],
+      });
+    }
+    if (/"[^"]*\p{L}{2,}[^"]*#\{[^}]+\}[^"]*"/u.test(code) || /['"][^'"]*\p{L}{2,}[^'"]*['"]\s*\+/u.test(code)) {
+      out.concats.push({
+        file: relFile,
+        line,
+        column: 0,
+        expression: code.trim().slice(0, 120),
+        reason: "Ruby string interpolation/concatenation inside ERB breaks word order. Use Rails I18n with %{param}.",
+        component: comp,
+      });
+    }
+  }
+
+  // 2. Strip ERB tags with equal-length spaces so line offsets remain exact, then scan HTML text & attrs
+  const htmlOnly = source.replace(/<%[\s\S]*?%>/g, (s) => s.replace(/[^\n]/g, " "));
+
+  // Scan attributes (class, placeholder, title, alt, aria-label, etc.)
+  for (const attrMatch of htmlOnly.matchAll(/\b([a-zA-Z0-9_-]+)\s*=\s*"([^"]*)"/g)) {
+    const attrName = attrMatch[1];
+    const attrVal = attrMatch[2];
+    const line = offsetToLine(source, attrMatch.index ?? 0);
+    const snippet = (lines[line - 1] ?? "").trim().slice(0, 120);
+    if (attrName === "class") {
+      for (const risk of inspectLayoutClasses(attrVal)) {
+        out.layoutRisks.push({
+          file: relFile,
+          line,
+          kind: risk.kind,
+          constraint: risk.constraint,
+          component: comp,
+          suggestion: risk.suggestion,
+          snippet,
+        });
+      }
+    } else if (USER_FACING_ATTRIBUTES.has(attrName) && isLikelyUserFacingText(attrVal)) {
+      out.hardcoded.push({
+        file: relFile,
+        line,
+        column: 0,
+        text: normalizeWhitespace(attrVal),
+        kind: "attribute",
+        attribute: attrName,
+        component: comp,
+        snippet,
+      });
+    }
+  }
+
+  // Scan HTML text nodes between > ... <
+  for (const txtMatch of htmlOnly.matchAll(/>([^<>]+)</g)) {
+    const raw = txtMatch[1];
+    const text = normalizeWhitespace(raw);
+    if (!isLikelyUserFacingText(text)) continue;
+    const line = offsetToLine(source, (txtMatch.index ?? 0) + 1);
+    const snippet = (lines[line - 1] ?? "").trim().slice(0, 120);
+    out.hardcoded.push({
+      file: relFile,
+      line,
+      column: 0,
+      text,
+      kind: "template-text",
+      component: comp,
+      snippet,
+    });
+  }
+}
+
+function scanRubyFile(
+  relFile: string,
+  source: string,
+  out: {
+    hardcoded: HardcodedStringFinding[];
+    concats: ConcatenationFinding[];
+    usageByKey: Record<string, UsageSite[]>;
+  }
+): void {
+  const lines = source.split(/\r?\n/);
+  const comp = path.basename(relFile, ".rb");
+
+  lines.forEach((rawLine, idx) => {
+    const lineNum = idx + 1;
+    const trimmed = rawLine.trim();
+    if (trimmed.startsWith("#")) return;
+
+    // Key usages: I18n.t("key") / t("key")
+    for (const m of trimmed.matchAll(/(?:\bI18n\.t|\bt)\s*\(\s*['"]([^'"]+)['"]/g)) {
+      const key = m[1];
+      out.usageByKey[key] = out.usageByKey[key] ?? [];
+      out.usageByKey[key].push({
+        file: relFile,
+        line: lineNum,
+        component: comp,
+        element: "ruby",
+        surrounding: [],
+      });
+    }
+
+    // Hardcoded flash/notice/alert strings
+    const flashMatch = /\b(?:flash\[[^\]]+\]\s*=|notice:|alert:)\s*(['"])([^'"]+)\1/.exec(trimmed);
+    if (flashMatch && isLikelyUserFacingText(flashMatch[2])) {
+      if (/#\{[^}]+\}/.test(flashMatch[2])) {
+        out.concats.push({
+          file: relFile,
+          line: lineNum,
+          column: 0,
+          expression: trimmed.slice(0, 120),
+          reason: "Interpolated flash/notice string in Ruby controller. Use I18n.t with %{param}.",
+          component: comp,
+        });
+      } else {
+        out.hardcoded.push({
+          file: relFile,
+          line: lineNum,
+          column: 0,
+          text: normalizeWhitespace(flashMatch[2]),
+          kind: "ruby-string",
+          component: comp,
+          snippet: trimmed.slice(0, 120),
+        });
+      }
+    }
+  });
+}
+
+export class RailsAdapter implements ScannerAdapter {
+  readonly id = "rails";
+  readonly frameworks = ["rails"] as const;
+  readonly format = new RailsYamlFormatAdapter();
+
+  detect(rootDir: string, localesPathOverride?: string): FrameworkDetection | null {
+    const gemfilePath = path.join(rootDir, "Gemfile");
+    const hasGemfileRails =
+      fs.existsSync(gemfilePath) && /\bgem\s+['"]rails['"]/.test(fs.readFileSync(gemfilePath, "utf8"));
+    const hasRailsConfig = fs.existsSync(path.join(rootDir, "config", "application.rb"));
+
+    if (!hasGemfileRails && !hasRailsConfig) return null;
+
+    const localesDirRel = localesPathOverride ?? "config/locales";
+    const localesDirAbs = path.resolve(rootDir, localesDirRel);
+    const localeFiles: Record<string, string[]> = {};
+
+    if (fs.existsSync(localesDirAbs) && fs.statSync(localesDirAbs).isDirectory()) {
+      const files = fs
+        .readdirSync(localesDirAbs)
+        .filter((f) => f.endsWith(".yml") || f.endsWith(".yaml"))
+        .sort();
+      for (const f of files) {
+        const stem = f.replace(/\.(?:yml|yaml)$/, "");
+        // Support both `en.yml` and `views.en.yml`
+        const parts = stem.split(".");
+        const locale = parts[parts.length - 1];
+        localeFiles[locale] = localeFiles[locale] ?? [];
+        localeFiles[locale].push(path.join(localesDirAbs, f));
+      }
+    }
+
+    return {
+      framework: "rails",
+      i18nLibrary: "rails-i18n",
+      confidence: 0.95,
+      localesDir: fs.existsSync(localesDirAbs) ? localesDirRel : null,
+      localeFiles,
+      placeholderSyntaxes: ["percent-brace"],
+      notes: [],
+    };
+  }
+
+  scanSource(
+    rootDir: string,
+    options: { sourcePaths: string[]; ignore: string[] }
+  ): ScanSourceResult {
+    const files = walkFiles(rootDir, options.sourcePaths, options.ignore, RAILS_EXTS).filter(
+      (f) => !f.includes("/spec/") && !f.includes("/test/") && !f.includes("/db/")
+    );
+
+    const hardcodedStrings: HardcodedStringFinding[] = [];
+    const concatenations: ConcatenationFinding[] = [];
+    const usageByKey: Record<string, UsageSite[]> = {};
+    const layoutRisks: LayoutRiskFinding[] = [];
+
+    for (const absFile of files) {
+      const relFile = path.relative(rootDir, absFile).replace(/\\/g, "/");
+      const source = fs.readFileSync(absFile, "utf8");
+      if (absFile.endsWith(".erb")) {
+        scanErbTemplate(relFile, source, {
+          hardcoded: hardcodedStrings,
+          concats: concatenations,
+          usageByKey,
+          layoutRisks,
+        });
+      } else if (absFile.endsWith(".rb")) {
+        scanRubyFile(relFile, source, {
+          hardcoded: hardcodedStrings,
+          concats: concatenations,
+          usageByKey,
+        });
+      }
+    }
+
+    return {
+      filesScanned: files.length,
+      hardcodedStrings,
+      concatenations,
+      usageByKey,
+      layoutRisks,
+    };
+  }
+
+  resolveTargetLocaleFile(
+    _rootDir: string,
+    sourceLocale: string,
+    targetLocale: string,
+    sourceFile: string
+  ): string {
+    const dir = path.dirname(sourceFile);
+    const base = path.basename(sourceFile);
+    const ext = path.extname(base);
+    const stem = base.slice(0, -ext.length);
+    if (stem === sourceLocale) {
+      return path.join(dir, `${targetLocale}${ext}`);
+    }
+    if (stem.endsWith(`.${sourceLocale}`)) {
+      return path.join(dir, `${stem.slice(0, -sourceLocale.length)}${targetLocale}${ext}`);
+    }
+    return path.join(dir, `${targetLocale}${ext}`);
+  }
+}

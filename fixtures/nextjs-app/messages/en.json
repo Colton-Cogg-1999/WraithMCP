@@ -1,0 +1,16 @@
+{
+  "home": {
+    "title": "Welcome to Acme Pulse",
+    "subtitle": "Ship faster with your team.",
+    "items": "{count, plural, one {# item in your inbox} other {# items in your inbox}}",
+    "roleBadge": "{role, select, admin {Admin ({count, plural, one {# seat} other {# seats}})} other {Member}}"
+  },
+  "feed": {
+    "postHeading": "Post",
+    "postAction": "Post",
+    "openMenu": "Open"
+  },
+  "legacy": {
+    "unusedBanner": "Holiday sale ends Friday"
+  }
+}

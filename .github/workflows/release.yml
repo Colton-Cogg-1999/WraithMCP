@@ -1,0 +1,33 @@
+name: Release Binaries
+
+on:
+  push:
+    tags:
+      - "v*"
+
+jobs:
+  build-binaries:
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-latest
+            target: linux-x64
+          - os: macos-latest
+            target: darwin-arm64
+          - os: windows-latest
+            target: win32-x64
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "26"
+      - run: npm ci
+      - run: npm test
+      - run: npm run check:licenses
+      - run: npm run build
+      - run: npm run build:sea
+      - uses: actions/upload-artifact@v4
+        with:
+          name: polyglot-${{ matrix.target }}
+          path: release/polyglot-*

@@ -1,0 +1,57 @@
+# Polyglot Architectural Decisions
+
+This log records implementation choices made where the kickoff brief intentionally left details open. Every decision optimizes for: model-free determinism, minimal dependencies, permissive licenses, and zero-jargon developer experience.
+
+---
+
+## ADR-001: Single Binary & Packaging Strategy
+- **Decision:** Build the entire CLI and MCP server in TypeScript (ESM, targeting Node 20+). Distribute via npm (`npx polyglot ...`) using an `esbuild`-bundled entry point, and compile standalone binaries using Node.js Single Executable Applications (`node --build-sea` / SEA config) for Linux, macOS, and Windows (with an optional Bun compile fallback script when `bun` is installed).
+- **Rationale:** Node 26 is available in the local environment and natively supports Single Executable Applications without requiring Bun to be preinstalled, while keeping the npm distribution tiny and standard.
+
+## ADR-002: `.polyglot/` Storage Format
+- **Decision:** Use canonically sorted JSON (`2-space` indentation, trailing newline) for structured files (`config.json`, `glossary.json`, `usage.json`, `records.json`, `assumptions.json`, `reviews.json`) and JSONL (`memory.jsonl`) for translation memory pairs.
+- **Rationale:** JSON needs zero external parsing dependencies, validates cleanly with Zod, produces predictable diffs when keys are sorted alphabetically, and is immediately readable by both humans and coding agents. JSONL keeps translation memory diffs strictly one-line-per-entry.
+
+## ADR-003: Context Fingerprint Stability
+- **Decision:** Compute `contextFingerprint` as the first 16 hex chars of SHA-256 over sorted `(relativeFilePath, componentName, elementRole, sortedSurroundingStrings)` tuples — explicitly **excluding line numbers**.
+- **Rationale:** Excluding line numbers ensures adding a blank line or comment elsewhere in a component never causes false-positive `context_changed` warnings, while moving a key to a different component, element role, or surrounding label set reliably triggers `context_changed`.
+
+## ADR-004: Lossless Format Editing
+- **Decision:**
+  - **JSON:** Parse key paths and preserve original indentation, key order, nested vs flat layout, and trailing newline. When inserting new keys into nested JSON, insert cleanly into existing parent objects without reordering existing keys.
+  - **YAML (Rails):** Use the `yaml` package's `parseDocument()` AST/CST so comments, quoting style, key order, and formatting survive writes intact.
+  - **PO (Django):** Implement a dedicated lossless PO CST parser/writer preserving headers, translator/extracted comments, reference lines, flags, and multi-line string wrapping.
+- **Rationale:** Developers commit locale files to git; reformatting an entire locale file on every `apply` creates noisy diffs and destroys comments.
+
+## ADR-005: Byte-Preserving DOCX Engine
+- **Decision:** Use `fflate` (pure MIT) for ZIP handling and a dedicated offset-tracking XML scanner for OOXML parts (`document.xml`, headers, footers, footnotes, endnotes, comments) instead of parsing into an XML DOM and re-serializing.
+- **Rationale:** Re-serializing OOXML frequently drops namespaces, reorders attributes, or corrupts Word-specific extensions. Splice-based patching on exact `<w:t>` spans guarantees that untouched XML stays byte-for-byte identical, and unchanged round-trips preserve original document fidelity.
+
+## ADR-006: Zero-Bloat XLSX Escalation Export
+- **Decision:** Generate `.xlsx` workbooks directly as minimal valid OOXML ZIP archives via `fflate` (inline strings, standard sheet/workbook/styles XML), alongside `.csv` and a self-contained `.html` reviewer page.
+- **Rationale:** Avoids pulling in large or licensing-ambiguous spreadsheet packages while producing clean `.xlsx` files that open natively in Excel, Google Sheets, and LibreOffice Calc, and round-trip cleanly on correction import.
+
+## ADR-007: Compact MCP Output Budgeting
+- **Decision:** Every MCP tool returns a compact summary header (counts by severity/category) plus at most `limit` items (default `25` for `check`/`scan`, `20` for `prepare`, `10` for `memory`) with `offset`, `total`, and `hasMore` pagination metadata and filter parameters (`locale`, `severity`, `category`, `file`).
+- **Rationale:** Coding agents operate under tight context budgets. Returning ranked top issues with exact counts prevents context overflow on large codebases while letting the agent drill into any slice on demand.
+
+## ADR-008: Lexical Fuzzy Matching
+- **Decision:** Use token-level Levenshtein distance (lowercased, punctuation-stripped, whitespace/word segmented via `Intl.Segmenter`) for space-delimited languages, and grapheme/character-level Levenshtein distance (via `Intl.Segmenter` with `granularity: "grapheme"`) when the source text is predominantly CJK/scriptio continua (Chinese, Japanese, Korean, Thai, Lao, Khmer). Return integer match percentage `0..100`.
+- **Rationale:** Fast, deterministic, zero native dependencies, accurate across both Western and CJK scripts using built-in ICU data in Node.
+
+## ADR-009: Framework Parsers & Licenses
+- **Decision:** Use only permissively licensed (MIT/Apache-2.0/BSD/ISC) reference parsers:
+  - React / Next.js / JS / TS: `@babel/parser` + `@babel/traverse` (MIT)
+  - ICU MessageFormat: `@formatjs/icu-messageformat-parser` (MIT)
+  - Vue / Nuxt: `@vue/compiler-sfc` (MIT)
+  - SvelteKit: `svelte/compiler` (MIT)
+  - Rails ERB & Django templates: deterministic template & HTML/tag AST scanner + tree-sitter WASM when grammar packages are present (with built-in pure-TS parser fallback so zero native binaries or external downloads are ever required offline).
+- **Rationale:** Guarantees 100% offline determinism, fast startup in standalone binaries, and strict MIT/Apache/BSD/ISC license compliance.
+
+## ADR-010: Advisory Memory & Fuzzy Matches (Never Blind Auto-Fill)
+- **Decision:** Even 100% lexical matches from `.polyglot/memory.jsonl` or TMX are returned strictly as **strong suggestions with prior context** (`advisory`, `previousContext`, `contextAlignment`), never blindly auto-applied.
+- **Rationale:** Identical source strings frequently mean different things in different UI locations (e.g., `"Open"` in a File menu vs. a store-hours banner). The coding agent sees both the previous usage context and the current component context and decides whether to reuse or adapt the match.
+
+## ADR-011: Deterministic Layout, Formatting & Visual Continuity QA
+- **Decision:** Extend scanners, `pseudo`, and `check` to detect layout/formatting hazards around localized strings (e.g., `whitespace-nowrap`, `truncate`, `overflow-hidden`, narrow fixed widths `w-16`/`max-w-[...]`, and physical directional styles `ml-`/`mr-`/`pl-`/`pr-`/`text-left`/`text-right` when RTL target locales are configured). Return ranked `layoutHotspots` and QA steps from `pseudo`, and flag `layout_risk` / `rtl_layout_risk` in `check`.
+- **Rationale:** Pseudo-localization and real translations frequently expose truncation, overflow, and RTL mirroring bugs. Surfacing exact file/line CSS constraints alongside pseudo-locale generation lets the agent QA the rendered UI and fix layout or copy issues cleanly.

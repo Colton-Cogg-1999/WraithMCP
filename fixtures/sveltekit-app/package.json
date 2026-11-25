@@ -1,0 +1,9 @@
+{
+  "name": "sveltekit-fixture",
+  "private": true,
+  "dependencies": {
+    "@sveltejs/kit": "^2.15.0",
+    "@inlang/paraglide-sveltekit": "^0.15.0",
+    "svelte": "^5.20.0"
+  }
+}
