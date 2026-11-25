@@ -13,15 +13,15 @@ This log records implementation choices made where the kickoff brief intentional
 - **Rationale:** JSON needs zero external parsing dependencies, validates cleanly with Zod, produces predictable diffs when keys are sorted alphabetically, and is immediately readable by both humans and coding agents. JSONL keeps translation memory diffs strictly one-line-per-entry.
 
 ## ADR-003: Context Fingerprint Stability
-- **Decision:** Compute `contextFingerprint` as the first 16 hex chars of SHA-256 over sorted `(relativeFilePath, componentName, elementRole, sortedSurroundingStrings)` tuples — explicitly **excluding line numbers**.
-- **Rationale:** Excluding line numbers ensures adding a blank line or comment elsewhere in a component never causes false-positive `context_changed` warnings, while moving a key to a different component, element role, or surrounding label set reliably triggers `context_changed`.
+- **Decision:** Compute `contextFingerprint` as the first 16 hex chars of SHA-256 over sorted unique `(componentName, elementRole)` tuples — explicitly excluding line numbers, file paths, and sibling label copy.
+- **Rationale:** Excluding file paths and sibling copy prevents false-positive `context_changed` churn when refactoring/moving files or tweaking unrelated labels in the same component, while moving a key to a different component/element role or adding a second usage site in another component reliably triggers `context_changed`.
 
 ## ADR-004: Lossless Format Editing
 - **Decision:**
-  - **JSON:** Parse key paths and preserve original indentation, key order, nested vs flat layout, and trailing newline. When inserting new keys into nested JSON, insert cleanly into existing parent objects without reordering existing keys.
-  - **YAML (Rails):** Use the `yaml` package's `parseDocument()` AST/CST so comments, quoting style, key order, and formatting survive writes intact.
-  - **PO (Django):** Implement a dedicated lossless PO CST parser/writer preserving headers, translator/extracted comments, reference lines, flags, and multi-line string wrapping.
-- **Rationale:** Developers commit locale files to git; reformatting an entire locale file on every `apply` creates noisy diffs and destroys comments.
+  - **JSON:** Splice-based JSON CST editor (`src/formats/json.ts`) that patches only modified/inserted spans while preserving untouched integer-like key ordering, Unicode escape sequences (`\u00e9`), UTF-8 BOM, indentation, and line endings.
+  - **YAML (Rails):** Use the `yaml` package's `parseDocument()` AST/CST with `lineWidth: 0` so comments, long lines, key order, and formatting survive writes intact.
+  - **PO (Django):** Dedicated lossless PO parser/writer preserving headers, `Plural-Forms`, translator/extracted comments, reference lines, and flags (clearing `#, fuzzy` upon `apply`).
+- **Rationale:** Developers commit locale files to git; reformatting an entire locale file on every `apply` creates noisy diffs and destroys comments or key order.
 
 ## ADR-005: Byte-Preserving DOCX Engine
 - **Decision:** Use `fflate` (pure MIT) for ZIP handling and a dedicated offset-tracking XML scanner for OOXML parts (`document.xml`, headers, footers, footnotes, endnotes, comments) instead of parsing into an XML DOM and re-serializing.
@@ -45,7 +45,7 @@ This log records implementation choices made where the kickoff brief intentional
   - ICU MessageFormat: `@formatjs/icu-messageformat-parser` (MIT)
   - Vue / Nuxt: `@vue/compiler-sfc` (MIT)
   - SvelteKit: `svelte/compiler` (MIT)
-  - Rails ERB & Django templates: deterministic template & HTML/tag AST scanner + tree-sitter WASM when grammar packages are present (with built-in pure-TS parser fallback so zero native binaries or external downloads are ever required offline).
+  - Rails ERB & Django templates: deterministic pure-TS ERB/Ruby and Django template/Python scanners (no native tree-sitter binaries or Python runtime required offline).
 - **Rationale:** Guarantees 100% offline determinism, fast startup in standalone binaries, and strict MIT/Apache/BSD/ISC license compliance.
 
 ## ADR-010: Advisory Memory & Fuzzy Matches (Never Blind Auto-Fill)

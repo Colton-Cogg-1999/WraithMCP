@@ -92,14 +92,15 @@ src/
 │   ├── react.ts             # React / Next.js (next-intl, react-i18next) via @babel/parser
 │   ├── vue.ts               # Vue / Nuxt (vue-i18n) via @vue/compiler-sfc + Babel
 │   ├── svelte.ts            # SvelteKit (Paraglide, svelte-i18n) via svelte/compiler + Babel
-│   ├── rails.ts             # Rails (built-in I18n) via ERB/Ruby AST & tree-sitter
-│   └── django.ts            # Django (gettext) via Django template & Python parser
+│   ├── rails.ts             # Rails (built-in I18n) via ERB/Ruby scanner (lazy lookup & helpers)
+│   └── django.ts            # Django (gettext) via Django template & Python scanner
 └── documents/
     ├── types.ts             # DocumentAdapter & inline tag (<x/>, <g>) types
-    ├── inline-tags.ts       # Inline tag parser & validator
-    ├── markdown.ts          # Lossless Markdown / MDX segmenter & writer
-    └── docx.ts              # Byte-preserving OOXML DOCX extractor & writer
-fixtures/                    # Deliberate-trap fixture apps & real-world DOCX corpus
+    ├── registry.ts          # Document dispatch, batch state (.polyglot/documents.json), compact prepareDocument
+    ├── markdown.ts          # Lossless paragraph-level Markdown / MDX segmenter & writer
+    └── docx.ts              # Byte-preserving OOXML DOCX extractor & splice writer
+fixtures/                    # Framework fixtures & LibreOffice-authored DOCX corpus
+audit/                       # Independent adversarial audit suite & historical AUDIT_REPORT.md
 examples/                    # Runnable milestone demonstration scripts
 tests/                       # Unit, golden, round-trip, and MCP compactness tests
 docs/                        # ARCHITECTURE.md, SCHEMAS.md, DECISIONS.md
