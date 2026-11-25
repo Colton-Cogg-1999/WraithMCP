@@ -136,9 +136,11 @@ describe("Milestone 2: React / Next.js End-to-End Pipeline", () => {
     expect(missing).toHaveLength(1);
     expect(missing[0].code).toBe("placeholder_mismatch");
 
+    // Corrected per P0-3 / Audit C2: Spanish everyday cardinal plurals require ["one", "other"];
+    // CLDR's 'many' (used only for exact millions 1_000_000+) is advisory, NOT mandatory.
     const nestedOk = validateTranslationString(
       "{role, select, admin {Admin ({count, plural, one {# seat} other {# seats}})} other {Member}}",
-      "{role, select, admin {Administrador ({count, plural, one {# asiento} many {# asientos} other {# asientos}})} other {Miembro}}",
+      "{role, select, admin {Administrador ({count, plural, one {# asiento} other {# asientos}})} other {Miembro}}",
       "es-MX",
       ["icu"]
     );
@@ -190,9 +192,11 @@ describe("Milestone 2: React / Next.js End-to-End Pipeline", () => {
     scanProject({ rootDir: dir });
 
     // Step 2: Prepare returns context, usage sites, glossary hits, conventions
+    // Everyday cardinal plurals for es-MX are ["one", "other"] (CLDR 'many' is advisory)
     const prep = prepareBatch({ rootDir: dir, targetLocale: "es-MX" });
     expect(prep.totalPending).toBe(8);
-    expect(prep.conventions.pluralCategories).toEqual(["one", "many", "other"]);
+    expect(prep.conventions.pluralCategories).toEqual(["one", "other"]);
+    expect(prep.conventions.advisoryPluralCategories).toContain("many");
     const titleItem = prep.items.find((i) => i.key === "home.title");
     expect(titleItem?.glossaryHits.some((g) => g.term === "Acme Pulse")).toBe(true);
     expect(titleItem?.usageSites[0]?.component).toBe("Dashboard");

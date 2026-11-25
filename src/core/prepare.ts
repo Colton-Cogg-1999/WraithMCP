@@ -1,4 +1,4 @@
-import { detectProjectAdapter, loadLocaleCatalog } from "../adapters/registry.js";
+import { detectProjectAdapter, loadLocaleCatalog, loadSourceCatalog } from "../adapters/registry.js";
 import { findFuzzyMatches, FuzzyMatch } from "./fuzzy.js";
 import { GlossaryHit, matchGlossaryTerms } from "./glossary.js";
 import { getLocaleConventions, LocaleConventions } from "./locales.js";
@@ -107,9 +107,8 @@ export function prepareBatch(options: PrepareOptions): PrepareResult {
     }
   }
 
-  const srcFiles = detection.localeFiles[config.sourceLocale] ?? [];
+  const srcCatalog = loadSourceCatalog(adapter, detection, config.sourceLocale);
   const tgtFiles = detection.localeFiles[options.targetLocale] ?? [];
-  const srcCatalog = loadLocaleCatalog(adapter, srcFiles, config.sourceLocale);
   const tgtCatalog = loadLocaleCatalog(adapter, tgtFiles, options.targetLocale);
 
   const requestedKeys = options.keys && options.keys.length > 0 ? new Set(options.keys) : null;
@@ -126,7 +125,7 @@ export function prepareBatch(options: PrepareOptions): PrepareResult {
     const currentFp = liveUsage.keys[key]?.fingerprint ?? "";
 
     let reason: PrepareReason | null = null;
-    if (!tgtEntry || tgtEntry.value.trim() === "") {
+    if (!tgtEntry || tgtEntry.value.trim() === "" || tgtEntry.fuzzy) {
       reason = "missing";
     } else if (rec && rec.sourceHash !== currentHash) {
       reason = "stale_source";

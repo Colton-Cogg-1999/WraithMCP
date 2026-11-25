@@ -4,7 +4,12 @@ export interface LocaleConventions {
   language: string;
   region?: string;
   direction: "ltr" | "rtl";
+  /** Required everyday integer cardinal plural categories (0..100 via Intl.PluralRules) */
   pluralCategories: Intl.LDMLPluralRule[];
+  /** Optional/advisory CLDR cardinal categories (e.g. 'many' for fr/es/it/pt millions) */
+  advisoryPluralCategories: Intl.LDMLPluralRule[];
+  /** Required ordinal plural categories (0..100 via Intl.PluralRules type='ordinal') */
+  ordinalCategories: Intl.LDMLPluralRule[];
   isCjk: boolean;
   formalityDefault: string;
   punctuationNorms: string[];
@@ -73,14 +78,53 @@ const EXPANSION_RATIOS: Record<string, number> = {
   ar: 1.2,
 };
 
-export function getPluralCategories(locale: string): Intl.LDMLPluralRule[] {
+const PLURAL_ORDER: Intl.LDMLPluralRule[] = ["zero", "one", "two", "few", "many", "other"];
+
+/**
+ * Full CLDR plural categories reported by Intl.PluralRules (including compact/million-scale
+ * categories such as 'many' in fr/es/it/pt).
+ */
+export function getCldrPluralCategories(
+  locale: string,
+  type: "cardinal" | "ordinal" = "cardinal"
+): Intl.LDMLPluralRule[] {
   try {
-    const pr = new Intl.PluralRules(locale);
+    const pr = new Intl.PluralRules(locale, { type });
     const cats = pr.resolvedOptions().pluralCategories;
     return cats.length > 0 ? cats : ["one", "other"];
   } catch {
     return ["one", "other"];
   }
+}
+
+/**
+ * Everyday integer plural categories required in software UIs (probed over integers 0..100
+ * via Intl.PluralRules, always including 'other' as ICU requires).
+ *
+ * For fr/es/it/pt, CLDR 42+ defines 'many' only for exact millions (1_000_000+),
+ * so probing 0..100 naturally yields ["one", "other"] while Slavic (ru/pl/uk/cs)
+ * and Arabic (ar) retain their full everyday categories (one/few/many/other, zero/one/two/few/many/other).
+ */
+export function getPluralCategories(
+  locale: string,
+  type: "cardinal" | "ordinal" = "cardinal"
+): Intl.LDMLPluralRule[] {
+  try {
+    const pr = new Intl.PluralRules(locale, { type });
+    const seen = new Set<Intl.LDMLPluralRule>(["other"]);
+    for (let n = 0; n <= 100; n++) {
+      seen.add(pr.select(n));
+    }
+    return PLURAL_ORDER.filter((c) => seen.has(c));
+  } catch {
+    return ["one", "other"];
+  }
+}
+
+export function getAdvisoryPluralCategories(locale: string): Intl.LDMLPluralRule[] {
+  const full = getCldrPluralCategories(locale, "cardinal");
+  const required = new Set(getPluralCategories(locale, "cardinal"));
+  return full.filter((c) => !required.has(c));
 }
 
 export function getLocaleConventions(locale: string): LocaleConventions {
@@ -104,7 +148,9 @@ export function getLocaleConventions(locale: string): LocaleConventions {
     // keep canonical
   }
 
-  const pluralCategories = getPluralCategories(canonical);
+  const pluralCategories = getPluralCategories(canonical, "cardinal");
+  const advisoryPluralCategories = getAdvisoryPluralCategories(canonical);
+  const ordinalCategories = getPluralCategories(canonical, "ordinal");
   const direction: "ltr" | "rtl" = RTL_LANGUAGES.has(language) ? "rtl" : "ltr";
   const isCjk = CJK_LANGUAGES.has(language);
 
@@ -128,6 +174,8 @@ export function getLocaleConventions(locale: string): LocaleConventions {
     region,
     direction,
     pluralCategories,
+    advisoryPluralCategories,
+    ordinalCategories,
     isCjk,
     formalityDefault,
     punctuationNorms,

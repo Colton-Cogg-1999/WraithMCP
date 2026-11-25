@@ -1,11 +1,11 @@
 import path from "node:path";
-import { detectProjectAdapter, loadLocaleCatalog } from "../adapters/registry.js";
+import { detectProjectAdapter, loadLocaleCatalog, loadSourceCatalog } from "../adapters/registry.js";
 import { FormatWriteUpdate } from "../formats/types.js";
 import { checkGlossaryCompliance } from "./glossary.js";
-import { validateTranslationString } from "./placeholders.js";
+import { PluralValidationContext, validateTranslationString } from "./placeholders.js";
 import { resolveConfinedPath, SecurityBoundaryError, validateLocaleTag } from "./security.js";
-import { PolyglotStore, sha256Short } from "./store.js";
-import { MemoryEntry, RecordOrigin } from "./types.js";
+import { computeContextFingerprint, PolyglotStore, sha256Short } from "./store.js";
+import { MemoryEntry, RecordOrigin, UsageFile } from "./types.js";
 
 export interface ApplyTranslationInput {
   key: string;
@@ -88,7 +88,8 @@ export function applyTranslations(options: ApplyOptions): ApplyResult {
     };
   }
 
-  const srcFiles = detection.localeFiles[config.sourceLocale] ?? [];
+  const srcCatalog = loadSourceCatalog(adapter, detection, config.sourceLocale);
+  const srcFiles = srcCatalog.files;
   if (srcFiles.length === 0) {
     return {
       ok: false,
@@ -107,7 +108,20 @@ export function applyTranslations(options: ApplyOptions): ApplyResult {
     };
   }
 
-  const srcCatalog = loadLocaleCatalog(adapter, srcFiles, config.sourceLocale);
+  // Load target catalog metadata (e.g. PO Plural-Forms header nplurals) so validation matches runtime!
+  const tgtFiles = detection.localeFiles[options.targetLocale] ?? [];
+  const tgtCatalog = loadLocaleCatalog(adapter, tgtFiles, options.targetLocale);
+  const pluralModel: PluralValidationContext["pluralModel"] =
+    adapter.id === "django"
+      ? "gettext"
+      : adapter.id === "rails"
+        ? "rails"
+        : adapter.id === "vue-nuxt"
+          ? "vue"
+          : detection.i18nLibrary === "react-i18next"
+            ? "i18next"
+            : "icu";
+
   const errors: ApplyError[] = [];
   const warnings: ApplyError[] = [];
   const validItems: { input: ApplyTranslationInput; sourceFile: string; sourceValue: string; sourcePlurals?: Record<string, string> }[] = [];
@@ -123,12 +137,18 @@ export function applyTranslations(options: ApplyOptions): ApplyResult {
       continue;
     }
 
+    const existingTgtEntry = tgtCatalog.entries.get(item.key);
     const problems = validateTranslationString(
       srcEntry.value,
       item.value,
       options.targetLocale,
       detection.placeholderSyntaxes,
-      { sourcePlurals: srcEntry.plurals, targetPlurals: item.plurals }
+      {
+        sourcePlurals: srcEntry.plurals,
+        targetPlurals: item.plurals,
+        pluralModel,
+        gettextNplurals: existingTgtEntry?.pluralForms?.nplurals,
+      }
     );
 
     if (problems.length > 0) {

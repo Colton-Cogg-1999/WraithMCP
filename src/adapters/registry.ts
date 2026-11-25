@@ -8,6 +8,7 @@ import { ReactNextAdapter } from "./react.js";
 import { SvelteKitAdapter } from "./svelte.js";
 import { FrameworkDetection, ScannerAdapter } from "./types.js";
 import { VueNuxtAdapter } from "./vue.js";
+import { GettextPoFormatAdapter } from "../formats/po.js";
 
 const adapters: ScannerAdapter[] = [
   new ReactNextAdapter(),
@@ -221,4 +222,52 @@ export function loadLocaleCatalog(
   }
 
   return { entries, keyToFile, files, errors, unsupportedConstructs };
+}
+
+/**
+ * Load the authoritative source catalog for a project.
+ * For Django/gettext projects where `django-admin makemessages` generates target `.po`
+ * files without an English `.po` (or with empty `msgstr`s), extracts source strings
+ * directly from `msgid` / `msgid_plural`.
+ */
+export function loadSourceCatalog(
+  adapter: ScannerAdapter,
+  detection: FrameworkDetection,
+  sourceLocale: string
+): LoadedLocaleCatalog {
+  const srcFiles = detection.localeFiles[sourceLocale] ?? [];
+
+  if (adapter.format instanceof GettextPoFormatAdapter) {
+    const poFormat = adapter.format;
+    const candidateFiles =
+      srcFiles.length > 0
+        ? srcFiles
+        : Object.values(detection.localeFiles).flat();
+    const entries = new Map<string, LocaleEntry>();
+    const keyToFile = new Map<string, string>();
+    const errors: Array<{ file: string; locale: string; error: string }> = [];
+    const unsupportedConstructs: Array<{ file: string; key?: string; description: string }> = [];
+
+    for (const file of candidateFiles) {
+      if (!fs.existsSync(file)) continue;
+      try {
+        const data = poFormat.readSourceFromMsgids(file, sourceLocale);
+        for (const [k, entry] of data.entries) {
+          if (!entries.has(k)) {
+            entries.set(k, { ...entry, file });
+            keyToFile.set(k, file);
+          }
+        }
+      } catch (err) {
+        errors.push({
+          file,
+          locale: sourceLocale,
+          error: err instanceof Error ? err.message : String(err),
+        });
+      }
+    }
+    return { entries, keyToFile, files: candidateFiles, errors, unsupportedConstructs };
+  }
+
+  return loadLocaleCatalog(adapter, srcFiles, sourceLocale);
 }

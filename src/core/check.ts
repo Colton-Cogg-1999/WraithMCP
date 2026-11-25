@@ -1,9 +1,9 @@
 import fs from "node:fs";
 import path from "node:path";
-import { detectProjectAdapter, loadLocaleCatalog } from "../adapters/registry.js";
+import { detectProjectAdapter, loadLocaleCatalog, loadSourceCatalog } from "../adapters/registry.js";
 import { checkGlossaryCompliance } from "./glossary.js";
-import { getLocaleConventions } from "./locales.js";
-import { validateTranslationString } from "./placeholders.js";
+import { getLocaleConventions, getPluralCategories } from "./locales.js";
+import { PluralValidationContext, validateTranslationString } from "./placeholders.js";
 import { scanDocumentsInProject } from "../documents/registry.js";
 import { computeContextFingerprint, PolyglotStore, sha256Short } from "./store.js";
 import {
@@ -251,8 +251,17 @@ export function runCheck(options: CheckOptions): CheckSummary {
     }
 
     // 2. Load source & target locale catalogs with per-file error isolation
-    const srcFiles = detection.localeFiles[config.sourceLocale] ?? [];
-    const srcCatalog = loadLocaleCatalog(adapter, srcFiles, config.sourceLocale);
+    const srcCatalog = loadSourceCatalog(adapter, detection, config.sourceLocale);
+    const pluralModel: PluralValidationContext["pluralModel"] =
+      adapter.id === "django"
+        ? "gettext"
+        : adapter.id === "rails"
+          ? "rails"
+          : adapter.id === "vue-nuxt"
+            ? "vue"
+            : detection.i18nLibrary === "react-i18next"
+              ? "i18next"
+              : "icu";
     for (const err of srcCatalog.errors) {
       const rel = path.relative(store.rootDir, err.file).replace(/\\/g, "/");
       parseFailures.push({ file: rel, error: err.error });
@@ -347,6 +356,19 @@ export function runCheck(options: CheckOptions): CheckSummary {
           continue;
         }
 
+        // Gettext #, fuzzy entries are ignored at runtime by Django/gettext -> must fail check!
+        if (tgtEntry.fuzzy) {
+          missingByLocale[locale]++;
+          issues.push({
+            code: "fuzzy_translation",
+            severity: "error",
+            locale,
+            key,
+            message: `[${locale}] ${key}: marked '#, fuzzy' (ignored at runtime by gettext/Django until reviewed and applied).`,
+          });
+          continue;
+        }
+
         translatedByLocale[locale]++;
 
         // Placeholder, ICU, plural, select, inline tag validation
@@ -355,7 +377,12 @@ export function runCheck(options: CheckOptions): CheckSummary {
           tgtEntry.value,
           locale,
           detection.placeholderSyntaxes,
-          { sourcePlurals: srcEntry.plurals, targetPlurals: tgtEntry.plurals }
+          {
+            sourcePlurals: srcEntry.plurals,
+            targetPlurals: tgtEntry.plurals,
+            pluralModel,
+            gettextNplurals: tgtEntry.pluralForms?.nplurals,
+          }
         );
         for (const p of problems) {
           issues.push({
@@ -484,9 +511,45 @@ export function runCheck(options: CheckOptions): CheckSummary {
         }
       }
 
-      // Extra keys in target locale not in source
+      // i18next key-suffix plural check (e.g. items_one / items_other -> ru requires items_few / items_many)
+      if (pluralModel === "i18next" || detection.placeholderSyntaxes.includes("double-mustache")) {
+        const suffixRe = /^(.*)_(zero|one|two|few|many|other)$/;
+        const srcPluralBases = new Set<string>();
+        for (const k of srcCatalog.entries.keys()) {
+          const m = suffixRe.exec(k);
+          if (m && srcCatalog.entries.has(`${m[1]}_other`)) {
+            srcPluralBases.add(m[1]);
+          }
+        }
+        const requiredCats = getPluralCategories(locale, "cardinal");
+        for (const base of srcPluralBases) {
+          const missingSuffixes = requiredCats.filter(
+            (cat) => !tgtCatalog.entries.has(`${base}_${cat}`)
+          );
+          if (missingSuffixes.length > 0) {
+            issues.push({
+              code: "missing_plural_category",
+              severity: "error",
+              locale,
+              key: base,
+              message: `[${locale}] i18next plural key "${base}" is missing required plural suffix key(s): ${missingSuffixes.map((c) => `${base}_${c}`).join(", ")}.`,
+              details: { base, missing: missingSuffixes, required: requiredCats },
+            });
+          }
+        }
+      }
+
+      // Extra keys in target locale not in source (excluding valid i18next target-locale plural suffix keys like _few/_many!)
       for (const key of tgtCatalog.entries.keys()) {
         if (!srcCatalog.entries.has(key)) {
+          const i18nextSuffix = /^(.*)_(zero|one|two|few|many|other)$/.exec(key);
+          if (
+            i18nextSuffix &&
+            (pluralModel === "i18next" || detection.placeholderSyntaxes.includes("double-mustache")) &&
+            srcCatalog.entries.has(`${i18nextSuffix[1]}_other`)
+          ) {
+            continue;
+          }
           extraByLocale[locale]++;
           issues.push({
             code: "extra_key",
