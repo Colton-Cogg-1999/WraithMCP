@@ -20,17 +20,20 @@ export function paginate<T>(items: T[], offset = 0, limit = 25): PaginatedResult
 }
 
 /**
- * Format an MCP tool response as compact, structured JSON text that respects
- * context window budgets.
+ * Format an MCP tool response as compact JSON text plus MCP 2025-06-18 `structuredContent`
+ * when returning a structured object payload.
  */
 export function mcpTextResult(data: unknown, isError = false) {
+  const text = typeof data === "string" ? data : JSON.stringify(data, null, 2);
+  const isObject = typeof data === "object" && data !== null && !Array.isArray(data);
   return {
     content: [
       {
         type: "text" as const,
-        text: typeof data === "string" ? data : JSON.stringify(data, null, 2),
+        text,
       },
     ],
+    ...(!isError && isObject ? { structuredContent: data as Record<string, unknown> } : {}),
     ...(isError ? { isError: true } : {}),
   };
 }

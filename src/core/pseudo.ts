@@ -70,12 +70,19 @@ function pseudoLiteralWithProtectedTokens(text: string): string {
   return out;
 }
 
+/** Re-escape literal braces and apostrophes when serializing back into ICU MessageFormat. */
+function escapeIcuLiteral(text: string): string {
+  const doubledQuotes = text.replace(/'/g, "''");
+  // Wrap literal { and } characters in ICU single quotes so ICU doesn't treat them as placeholders
+  return doubledQuotes.replace(/[{}]+/g, (m) => `'${m}'`);
+}
+
 function pseudoIcuElements(elements: MessageFormatElement[]): string {
   let out = "";
   for (const el of elements) {
     switch (el.type) {
       case TYPE.literal:
-        out += pseudoLiteralWithProtectedTokens(el.value);
+        out += escapeIcuLiteral(pseudoLiteralWithProtectedTokens(el.value));
         break;
       case TYPE.argument:
         out += `{${el.value}}`;

@@ -37,10 +37,77 @@ Definition of done:
    - IMPORTANT: Treat ALL fuzzy memory matches (even 100% lexical matches) as strong suggestions with prior context, NOT blindly guaranteed translations. Always verify the match fits the current component, element, and surrounding UI.
 4. Always write translations through \`apply\` so placeholders, ICU syntax, plural rules, and inline tags are validated and saved to .polyglot/ memory.
 5. Run \`pseudo\` and inspect layout/formatting hotspots (and visually QA rendered routes when a dev server/browser is available) to catch text clipping, overflow, wrapping, or RTL visual continuity breaks; fix CSS/layout constraints or overly long copy as needed.
-6. Run \`check\` until it passes with zero errors. Localization is NOT done until \`check\` passes.
+6. Run \`check\` until outcome is "PASS" (zero errors, sufficient coverage). Localization is NOT done until \`check\` passes. Remember that deterministic checks do not establish linguistic accuracy.
 7. Run \`report\` to surface issues caught, assumptions made, and any strings worth a human look.
 
 Keep defaults zero-question: infer brand names and terminology, record assumptions via \`memory\`, and report them at the end unless config.review is "confirm".`;
+
+const READ_ONLY_ANNOTATIONS = {
+  readOnlyHint: true,
+  destructiveHint: false,
+  idempotentHint: true,
+  openWorldHint: false,
+} as const;
+
+const MUTATING_ANNOTATIONS = {
+  readOnlyHint: false,
+  destructiveHint: false,
+  idempotentHint: false,
+  openWorldHint: false,
+} as const;
+
+const StatusOutputSchema = z
+  .object({
+    initialized: z.boolean(),
+    rootDir: z.string(),
+    framework: z.string(),
+    i18nLibrary: z.string().nullable(),
+    sourceLocale: z.string(),
+    targetLocales: z.array(z.string()),
+    totalSourceKeys: z.number(),
+    orphanedKeys: z.number(),
+    checkOutcome: z.enum(["PASS", "FAIL", "INCONCLUSIVE"]).optional(),
+    checkPassed: z.boolean(),
+    errorCount: z.number(),
+    warningCount: z.number(),
+    pendingReviews: z.number(),
+  })
+  .passthrough();
+
+const ScanOutputSchema = z
+  .object({
+    framework: z.string(),
+    i18nLibrary: z.string().nullable(),
+    sourceLocale: z.string(),
+    sourceKeys: z.number(),
+    filesScanned: z.number(),
+    counts: z.object({
+      hardcodedStrings: z.number(),
+      concatenations: z.number(),
+      trackedKeys: z.number(),
+      parseFailures: z.number(),
+      documents: z.number(),
+    }),
+  })
+  .passthrough();
+
+const CheckOutputSchema = z
+  .object({
+    outcome: z.enum(["PASS", "FAIL", "INCONCLUSIVE"]),
+    passed: z.boolean(),
+    inconclusiveReasons: z.array(z.string()),
+    disclaimer: z.string(),
+    framework: z.string(),
+    sourceLocale: z.string(),
+    targetLocales: z.array(z.string()),
+    totalSourceKeys: z.number(),
+    errorCount: z.number(),
+    warningCount: z.number(),
+    infoCount: z.number(),
+  })
+  .passthrough();
+
+const GenericObjectOutputSchema = z.object({}).passthrough();
 
 export interface McpServerOptions {
   rootDir?: string;
@@ -63,11 +130,20 @@ export function createPolyglotMcpServer(options: McpServerOptions = {}): McpServ
     }
   );
 
-  server.tool(
+  server.registerTool(
     "status",
-    "Report project localization state: detected framework, locales, coverage, untranslated/stale/context-changed/orphaned counts, check pass/fail, and pending reviews.",
     {
-      rootDir: z.string().optional().describe("Project root directory (defaults to current working directory)."),
+      title: "Project Localization Status",
+      description:
+        "Read-only summary of project localization state: detected framework, locales, coverage, untranslated/stale/context-changed/orphaned counts, verification outcome, and pending reviews.",
+      inputSchema: {
+        rootDir: z
+          .string()
+          .optional()
+          .describe("Project directory inside the authorized workspace (defaults to launch root)."),
+      },
+      outputSchema: StatusOutputSchema,
+      annotations: READ_ONLY_ANNOTATIONS,
     },
     async ({ rootDir }) => {
       const status = getProjectStatus(safeRoot(rootDir));
@@ -75,19 +151,31 @@ export function createPolyglotMcpServer(options: McpServerOptions = {}): McpServ
     }
   );
 
-  server.tool(
+  server.registerTool(
     "scan",
-    "Detect framework & i18n setup; find hardcoded strings, concatenations, sentence fragments, glossary candidates, and documents. Returns compact paginated summary.",
     {
-      rootDir: z.string().optional(),
-      fileFilter: z.string().optional().describe("Optional substring filter on relative file paths."),
-      offset: z.number().int().nonnegative().optional().default(0),
-      limit: z.number().int().min(1).max(100).optional().default(25),
+      title: "Scan Source & Documents",
+      description:
+        "Detect framework & i18n setup; find hardcoded strings, concatenations, sentence fragments, parse failures, glossary candidates, and documents. Returns compact paginated summary.",
+      inputSchema: {
+        rootDir: z.string().optional(),
+        fileFilter: z.string().optional().describe("Optional substring filter on relative file paths."),
+        saveUsage: z
+          .boolean()
+          .optional()
+          .default(false)
+          .describe("If true, persist scanned key usage sites to .polyglot/usage.json (default false to remain read-only)."),
+        offset: z.number().int().nonnegative().optional().default(0),
+        limit: z.number().int().min(1).max(100).optional().default(25),
+      },
+      outputSchema: ScanOutputSchema,
+      annotations: READ_ONLY_ANNOTATIONS,
     },
-    async ({ rootDir, fileFilter, offset, limit }) => {
+    async ({ rootDir, fileFilter, saveUsage, offset, limit }) => {
       const result = scanProject({
         rootDir: safeRoot(rootDir),
         fileFilter,
+        saveUsage,
         offset,
         limit,
       });
@@ -95,17 +183,26 @@ export function createPolyglotMcpServer(options: McpServerOptions = {}): McpServ
     }
   );
 
-  server.tool(
+  server.registerTool(
     "prepare",
-    "Prepare a batch of keys (or a document with full document-level context) for a target locale with source text, usage context, glossary hits, advisory fuzzy memory matches, and locale conventions.",
     {
-      rootDir: z.string().optional(),
-      targetLocale: z.string().describe("Target BCP-47 locale (e.g. 'es-MX', 'fr', 'zh-Hans')."),
-      document: z.string().optional().describe("Optional path to a .docx, .md, or .mdx document to prepare with whole-document context."),
-      keys: z.array(z.string()).optional().describe("Optional specific keys to prepare."),
-      includeTranslated: z.boolean().optional().default(false),
-      offset: z.number().int().nonnegative().optional().default(0),
-      limit: z.number().int().min(1).max(100).optional().default(20),
+      title: "Prepare Translation Batch",
+      description:
+        "Read-only batch preparation for a target locale (software keys or a document) with source text, usage context, glossary hits, advisory fuzzy memory matches, and locale conventions.",
+      inputSchema: {
+        rootDir: z.string().optional(),
+        targetLocale: z.string().describe("Target BCP-47 locale (e.g. 'es-MX', 'fr', 'zh-Hans')."),
+        document: z
+          .string()
+          .optional()
+          .describe("Optional path to a .docx, .md, or .mdx document to prepare with document-level context."),
+        keys: z.array(z.string()).optional().describe("Optional specific keys to prepare."),
+        includeTranslated: z.boolean().optional().default(false),
+        offset: z.number().int().nonnegative().optional().default(0),
+        limit: z.number().int().min(1).max(100).optional().default(20),
+      },
+      outputSchema: GenericObjectOutputSchema,
+      annotations: READ_ONLY_ANNOTATIONS,
     },
     async ({ rootDir, targetLocale, document, keys, includeTranslated, offset, limit }) => {
       const root = safeRoot(rootDir);
@@ -131,31 +228,46 @@ export function createPolyglotMcpServer(options: McpServerOptions = {}): McpServ
     }
   );
 
-  server.tool(
+  server.registerTool(
     "apply",
-    "Validate and write translations losslessly to target locale files or documents (.docx/.md/.mdx), and record provenance & translation memory in .polyglot/. Rejects invalid placeholders, ICU syntax, plural rules, inline tags, or DNT violations.",
     {
-      rootDir: z.string().optional(),
-      targetLocale: z.string().describe("Target BCP-47 locale."),
-      document: z.string().optional().describe("Optional source document path (.docx/.md/.mdx) when applying document translations."),
-      targetFile: z.string().optional().describe("Destination file path when applying document translations."),
-      translations: z
-        .array(
-          z.object({
-            key: z.string(),
-            value: z.string(),
-            plurals: z.record(z.string(), z.string()).optional(),
-            notes: z.string().optional(),
-          })
-        )
-        .min(1),
-      strictGlossary: z.boolean().optional().default(true),
+      title: "Validate & Apply Translations",
+      description:
+        "Validate and write translations losslessly to target locale files or documents (.docx/.md/.mdx), and record provenance & translation memory in .polyglot/. Returns isError=true if any item is rejected.",
+      inputSchema: {
+        rootDir: z.string().optional(),
+        targetLocale: z.string().describe("Target BCP-47 locale."),
+        document: z
+          .string()
+          .optional()
+          .describe("Optional source document path (.docx/.md/.mdx) when applying document translations."),
+        targetFile: z
+          .string()
+          .optional()
+          .describe("Destination file path (must differ from source document and stay inside workspace)."),
+        translations: z
+          .array(
+            z.object({
+              key: z.string(),
+              value: z.string(),
+              plurals: z.record(z.string(), z.string()).optional(),
+              notes: z.string().optional(),
+            })
+          )
+          .min(1),
+        strictGlossary: z.boolean().optional().default(true),
+      },
+      outputSchema: GenericObjectOutputSchema,
+      annotations: MUTATING_ANNOTATIONS,
     },
     async ({ rootDir, targetLocale, document, targetFile, translations, strictGlossary }) => {
       const root = safeRoot(rootDir);
       if (document) {
         if (!targetFile) {
-          return mcpTextResult({ error: "targetFile is required when applying document translations" }, true);
+          return mcpTextResult(
+            { error: "targetFile is required when applying document translations" },
+            true
+          );
         }
         const docRes = applyDocumentTranslations(root, {
           sourceFile: document,
@@ -175,18 +287,24 @@ export function createPolyglotMcpServer(options: McpServerOptions = {}): McpServ
     }
   );
 
-  server.tool(
+  server.registerTool(
     "check",
-    "Run full deterministic localization verification: missing/extra/orphaned keys, placeholder/ICU/plural integrity, inline tags, glossary consistency, untranslated strings, hardcoded strings, concatenations, length risk, and staleness (source or context changed).",
     {
-      rootDir: z.string().optional(),
-      locale: z.string().optional().describe("Filter issues by target locale."),
-      severity: z.enum(["error", "warning", "info"]).optional(),
-      code: z.string().optional().describe("Filter by issue code (e.g. 'hardcoded_string', 'placeholder_mismatch')."),
-      file: z.string().optional().describe("Filter by relative file path substring."),
-      skipScan: z.boolean().optional().default(false),
-      offset: z.number().int().nonnegative().optional().default(0),
-      limit: z.number().int().min(1).max(100).optional().default(25),
+      title: "Deterministic Verification Gate",
+      description:
+        "Read-only verification returning PASS, FAIL, or INCONCLUSIVE plus coverage details: catalog parity, placeholders, framework-specific plurals, inline tags, glossary rules, untranslated/fuzzy entries, hardcoded strings, concatenations, layout/RTL risks, staleness, and configured documents.",
+      inputSchema: {
+        rootDir: z.string().optional(),
+        locale: z.string().optional().describe("Filter issues by target locale."),
+        severity: z.enum(["error", "warning", "info"]).optional(),
+        code: z.string().optional().describe("Filter by issue code."),
+        file: z.string().optional().describe("Filter by relative file path substring."),
+        skipScan: z.boolean().optional().default(false),
+        offset: z.number().int().nonnegative().optional().default(0),
+        limit: z.number().int().min(1).max(100).optional().default(25),
+      },
+      outputSchema: CheckOutputSchema,
+      annotations: READ_ONLY_ANNOTATIONS,
     },
     async ({ rootDir, locale, severity, code, file, skipScan, offset, limit }) => {
       const res = runCheck({
@@ -199,103 +317,119 @@ export function createPolyglotMcpServer(options: McpServerOptions = {}): McpServ
         offset,
         limit,
       });
-      // Strip internal metrics to keep MCP payload compact
       const { metrics: _metrics, ...compact } = res;
       return mcpTextResult(compact);
     }
   );
 
-  server.tool(
-    "memory",
-    "Look up lexical fuzzy matches and glossary entries, or record a glossary decision (propagating changes to affected keys), translation memory pair, or assumption.",
-    {
-      rootDir: z.string().optional(),
-      action: z
-        .enum(["lookup", "set_glossary", "add_assumption", "add_pair"])
-        .describe("Action to perform on .polyglot/ memory."),
-      query: z.string().optional().describe("Source text or term to look up (for 'lookup')."),
+  const MemoryOperationSchema = z.discriminatedUnion("action", [
+    z.object({
+      action: z.literal("lookup"),
+      query: z.string().min(1).describe("Source text or term to look up."),
       targetLocale: z.string().optional(),
       minScore: z.number().int().min(0).max(100).optional().default(50),
       limit: z.number().int().min(1).max(50).optional().default(10),
-      // set_glossary fields
-      term: z.string().optional(),
+    }),
+    z.object({
+      action: z.literal("set_glossary"),
+      term: z.string().min(1),
       doNotTranslate: z.boolean().optional(),
       caseSensitive: z.boolean().optional(),
       translations: z.record(z.string(), z.string()).optional(),
       notes: z.string().optional(),
       origin: z.enum(["inferred", "user", "imported"]).optional(),
-      // add_assumption fields
+    }),
+    z.object({
+      action: z.literal("add_assumption"),
       category: z
         .enum(["terminology", "brand", "tone", "disambiguation", "formatting", "scope", "other"])
         .optional(),
-      summary: z.string().optional(),
+      targetLocale: z.string().optional(),
+      summary: z.string().min(1),
       rationale: z.string().optional(),
-      // add_pair fields
-      source: z.string().optional(),
-      target: z.string().optional(),
+    }),
+    z.object({
+      action: z.literal("add_pair"),
+      source: z.string().min(1),
+      target: z.string().min(1),
+      targetLocale: z.string().min(1),
       context: z.string().optional(),
+    }),
+  ]);
+
+  server.registerTool(
+    "memory",
+    {
+      title: "Glossary, Assumptions & Translation Memory",
+      description:
+        "Look up lexical fuzzy matches and glossary entries, or record a glossary decision (propagating changes to affected keys), assumption, or translation pair.",
+      inputSchema: {
+        rootDir: z.string().optional(),
+        operation: MemoryOperationSchema.describe(
+          "Discriminated memory operation: lookup | set_glossary | add_assumption | add_pair."
+        ),
+      },
+      outputSchema: GenericObjectOutputSchema,
+      annotations: MUTATING_ANNOTATIONS,
     },
-    async (args) => {
-      const root = safeRoot(args.rootDir);
-      if (args.action === "lookup") {
-        if (!args.query) return mcpTextResult({ error: "query is required for lookup" }, true);
-        return mcpTextResult(
-          lookupMemory(root, {
-            query: args.query,
-            targetLocale: args.targetLocale,
-            minScore: args.minScore,
-            limit: args.limit,
-          })
-        );
+    async ({ rootDir, operation }) => {
+      const root = safeRoot(rootDir);
+      switch (operation.action) {
+        case "lookup":
+          return mcpTextResult(
+            lookupMemory(root, {
+              query: operation.query,
+              targetLocale: operation.targetLocale,
+              minScore: operation.minScore,
+              limit: operation.limit,
+            })
+          );
+        case "set_glossary":
+          return mcpTextResult(
+            recordGlossaryTerm(root, {
+              term: operation.term,
+              doNotTranslate: operation.doNotTranslate,
+              caseSensitive: operation.caseSensitive,
+              translations: operation.translations,
+              notes: operation.notes,
+              origin: operation.origin,
+            })
+          );
+        case "add_assumption":
+          return mcpTextResult(
+            recordAssumption(root, {
+              category: operation.category ?? "other",
+              locale: operation.targetLocale,
+              summary: operation.summary,
+              rationale: operation.rationale,
+            })
+          );
+        case "add_pair":
+          return mcpTextResult(
+            recordMemoryPair(root, {
+              source: operation.source,
+              target: operation.target,
+              targetLocale: operation.targetLocale,
+              context: operation.context,
+            })
+          );
       }
-      if (args.action === "set_glossary") {
-        if (!args.term) return mcpTextResult({ error: "term is required for set_glossary" }, true);
-        return mcpTextResult(
-          recordGlossaryTerm(root, {
-            term: args.term,
-            doNotTranslate: args.doNotTranslate,
-            caseSensitive: args.caseSensitive,
-            translations: args.translations,
-            notes: args.notes,
-            origin: args.origin,
-          })
-        );
-      }
-      if (args.action === "add_assumption") {
-        if (!args.summary) return mcpTextResult({ error: "summary is required for add_assumption" }, true);
-        return mcpTextResult(
-          recordAssumption(root, {
-            category: args.category ?? "other",
-            locale: args.targetLocale,
-            summary: args.summary,
-            rationale: args.rationale,
-          })
-        );
-      }
-      if (args.action === "add_pair") {
-        if (!args.source || !args.target || !args.targetLocale) {
-          return mcpTextResult({ error: "source, target, and targetLocale are required for add_pair" }, true);
-        }
-        return mcpTextResult(
-          recordMemoryPair(root, {
-            source: args.source,
-            target: args.target,
-            targetLocale: args.targetLocale,
-            context: args.context,
-          })
-        );
-      }
-      return mcpTextResult({ error: "Unknown memory action" }, true);
     }
   );
 
-  server.tool(
+  server.registerTool(
     "import",
-    "Import optional localization assets into .polyglot/: glossary (CSV, TBX), translation memory (TMX), or existing repository locale files.",
     {
-      rootDir: z.string().optional(),
-      file: z.string().optional().describe("Path to .csv, .tbx, or .tmx file (omit for existing locale files)."),
-      format: z.enum(["auto", "csv", "tbx", "tmx", "locales"]).optional().default("auto"),
+      title: "Import Localization Assets",
+      description:
+        "Import optional localization assets into .polyglot/: glossary (CSV, TBX), translation memory (TMX), or existing repository locale files.",
+      inputSchema: {
+        rootDir: z.string().optional(),
+        file: z.string().optional().describe("Workspace-relative path to .csv, .tbx, or .tmx file."),
+        format: z.enum(["auto", "csv", "tbx", "tmx", "locales"]).optional().default("auto"),
+      },
+      outputSchema: GenericObjectOutputSchema,
+      annotations: MUTATING_ANNOTATIONS,
     },
     async ({ rootDir, file, format }) => {
       const res = importAsset(safeRoot(rootDir), { file, format });
@@ -303,12 +437,18 @@ export function createPolyglotMcpServer(options: McpServerOptions = {}): McpServ
     }
   );
 
-  server.tool(
+  server.registerTool(
     "pseudo",
-    "Generate a pseudo-locale (accented characters, ~30-40% length expansion, bracket markers) preserving placeholders, ICU syntax, and inline tags to reveal hardcoded strings and layout truncation.",
     {
-      rootDir: z.string().optional(),
-      pseudoLocale: z.string().optional().default("en-x-pseudo"),
+      title: "Generate Pseudo-Locale & Layout Hotspots",
+      description:
+        "Generate a pseudo-locale (accented characters, ~30-40% length expansion, bracket markers) preserving placeholders, ICU syntax, and inline tags, and return layout/RTL QA hotspots.",
+      inputSchema: {
+        rootDir: z.string().optional(),
+        pseudoLocale: z.string().optional().default("en-x-pseudo"),
+      },
+      outputSchema: GenericObjectOutputSchema,
+      annotations: MUTATING_ANNOTATIONS,
     },
     async ({ rootDir, pseudoLocale }) => {
       const res = generatePseudoLocale(safeRoot(rootDir), pseudoLocale);
@@ -316,41 +456,46 @@ export function createPolyglotMcpServer(options: McpServerOptions = {}): McpServ
     }
   );
 
-  server.tool(
+  server.registerTool(
     "review",
-    "Package an MQM-style cross-model review job (with two-pass false-positive filtering instructions and output schema) for a different agent/model to run, or ingest review findings into .polyglot/reviews.json.",
     {
-      rootDir: z.string().optional(),
-      action: z.enum(["package", "ingest"]),
-      targetLocale: z.string().describe("Target BCP-47 locale."),
-      keys: z.array(z.string()).optional(),
-      outputPath: z.string().optional().describe("Optional path to write the review job JSON."),
-      offset: z.number().int().nonnegative().optional().default(0),
-      limit: z.number().int().min(1).max(200).optional().default(40),
-      // ingest fields
-      reviewer: z.string().optional().describe("Reviewing model/agent name (e.g. 'gemini-cli', 'codex')."),
-      findings: z
-        .array(
-          z.object({
-            key: z.string(),
-            locale: z.string().optional(),
-            category: z.enum([
-              "accuracy",
-              "fluency",
-              "terminology",
-              "style",
-              "locale-conventions",
-              "placeholders",
-              "other",
-            ]),
-            severity: z.enum(["critical", "major", "minor", "neutral"]),
-            span: z.string().optional(),
-            explanation: z.string(),
-            suggestion: z.string().optional(),
-            verified: z.boolean().optional().default(true),
-          })
-        )
-        .optional(),
+      title: "Cross-Model MQM Review",
+      description:
+        "Package an MQM-style cross-model review job (with two-pass false-positive filtering instructions and output schema) for a different agent/model, or ingest review findings into .polyglot/reviews.json.",
+      inputSchema: {
+        rootDir: z.string().optional(),
+        action: z.enum(["package", "ingest"]),
+        targetLocale: z.string().describe("Target BCP-47 locale."),
+        keys: z.array(z.string()).optional(),
+        outputPath: z.string().optional().describe("Optional workspace-relative path to write the review job JSON."),
+        offset: z.number().int().nonnegative().optional().default(0),
+        limit: z.number().int().min(1).max(200).optional().default(40),
+        reviewer: z.string().optional(),
+        findings: z
+          .array(
+            z.object({
+              key: z.string(),
+              locale: z.string().optional(),
+              category: z.enum([
+                "accuracy",
+                "fluency",
+                "terminology",
+                "style",
+                "locale-conventions",
+                "placeholders",
+                "other",
+              ]),
+              severity: z.enum(["critical", "major", "minor", "neutral"]),
+              span: z.string().optional(),
+              explanation: z.string(),
+              suggestion: z.string().optional(),
+              verified: z.boolean().optional().default(true),
+            })
+          )
+          .optional(),
+      },
+      outputSchema: GenericObjectOutputSchema,
+      annotations: MUTATING_ANNOTATIONS,
     },
     async (args) => {
       const root = safeRoot(args.rootDir);
@@ -377,16 +522,22 @@ export function createPolyglotMcpServer(options: McpServerOptions = {}): McpServ
     }
   );
 
-  server.tool(
+  server.registerTool(
     "escalate",
-    "Export flagged strings for a human reviewer (CSV, XLSX, and self-contained HTML page showing source, translation, context, and reason flagged), or import reviewer corrections back into locale files and memory.",
     {
-      rootDir: z.string().optional(),
-      action: z.enum(["export", "import"]),
-      locale: z.string().optional().describe("Optional locale filter for export."),
-      outputDir: z.string().optional().describe("Directory to write review files (default: .polyglot/escalations)."),
-      formats: z.array(z.enum(["csv", "xlsx", "html"])).optional(),
-      file: z.string().optional().describe("Path to reviewer corrections file (.csv, .xlsx, or .json) for import."),
+      title: "Human Review Escalation",
+      description:
+        "Export flagged strings for a human reviewer (CSV, XLSX, self-contained HTML), or import reviewer corrections back into locale files and memory.",
+      inputSchema: {
+        rootDir: z.string().optional(),
+        action: z.enum(["export", "import"]),
+        locale: z.string().optional(),
+        outputDir: z.string().optional(),
+        formats: z.array(z.enum(["csv", "xlsx", "html"])).optional(),
+        file: z.string().optional().describe("Workspace-relative path to reviewer corrections (.csv, .xlsx, or .json)."),
+      },
+      outputSchema: GenericObjectOutputSchema,
+      annotations: MUTATING_ANNOTATIONS,
     },
     async (args) => {
       const root = safeRoot(args.rootDir);
@@ -410,16 +561,22 @@ export function createPolyglotMcpServer(options: McpServerOptions = {}): McpServ
     }
   );
 
-  server.tool(
+  server.registerTool(
     "report",
-    "Generate the end-of-run localization report (issues caught, assumptions made, strings worth a native speaker's look) as structured JSON and PR-ready Markdown.",
     {
-      rootDir: z.string().optional(),
-      format: z.enum(["both", "json", "markdown"]).optional().default("both"),
+      title: "Localization Report",
+      description:
+        "Read-only end-of-run localization report (issues caught, assumptions made, strings worth a native speaker's look) as structured JSON and PR-ready Markdown.",
+      inputSchema: {
+        rootDir: z.string().optional(),
+        format: z.enum(["both", "json", "markdown"]).optional().default("both"),
+      },
+      outputSchema: GenericObjectOutputSchema,
+      annotations: READ_ONLY_ANNOTATIONS,
     },
     async ({ rootDir, format }) => {
       const rep = generateReport(safeRoot(rootDir));
-      if (format === "markdown") return mcpTextResult(rep.markdown);
+      if (format === "markdown") return mcpTextResult({ markdown: rep.markdown });
       if (format === "json") {
         const { markdown: _md, ...rest } = rep;
         return mcpTextResult(rest);
@@ -452,7 +609,7 @@ Follow these steps:
 3. Infer brand/do-not-translate terms and key UI terminology; record assumptions via \`memory\`. If config.review === "confirm", pause briefly to confirm key glossary terms first; otherwise proceed without interrupting.
 4. Use \`prepare\` in batches per target locale. Treat all fuzzy memory matches (even 100% matches) as strong suggestions to verify against component context — never blindly trust them. Write translations exclusively through \`apply\`.
 5. Run \`pseudo\` to check layout/formatting hotspots (truncation, fixed widths, overflow, RTL spacing). Where possible, visually QA rendered screens in the pseudo-locale and target locales and fix any CSS/layout or copy overflow issues.
-6. Run \`check\`. Fix every error (missing keys, remaining hardcoded strings, broken placeholders/ICU/plurals, glossary inconsistencies, stale/context-changed entries) and re-run \`check\` until clean.
+6. Run \`check\`. Fix every error until outcome is "PASS" (zero errors, sufficient coverage).
 7. Call \`report\` and present the summary: issues caught, assumptions made, and any strings worth a native speaker's review.`,
             },
           },
