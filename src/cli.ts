@@ -72,8 +72,9 @@ export function createCli(): Command {
       if (result.hookInstalled) {
         console.log(`Installed pre-commit hook: ${result.hookInstalled}`);
       }
-      console.log("\nAdd to your coding agent MCP config:");
-      console.log("  claude mcp add polyglot -- npx -y polyglot-mcp mcp");
+      console.log("\nAdd to your coding agent MCP config (from a local checkout or installed binary):");
+      console.log("  claude mcp add polyglot -- node /absolute/path/to/polyglot/dist/bin.js mcp");
+      console.log("  # or if 'polyglot' is on PATH: claude mcp add polyglot -- polyglot mcp");
     });
 
   program

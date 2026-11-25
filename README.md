@@ -71,7 +71,7 @@ claude mcp add polyglot -- node /absolute/path/to/polyglot/dist/bin.js mcp
 polyglot init --targets es-MX,fr,zh-Hans --hook
 ```
 
-This creates `.polyglot/config.json`, seeds staleness baselines for any existing translations, adds the completion rule (`Localization is not done until \`polyglot check\` passes.`) to `AGENTS.md` / `CLAUDE.md`, and installs a pre-commit hook that resolves `POLYGLOT_BIN`, `./node_modules/.bin/polyglot`, `polyglot` on `PATH`, or `./dist/bin.js`.
+This creates `.polyglot/config.json`, seeds staleness baselines for any existing translations, adds the completion rule (`Localization is not done until \`polyglot check\` passes.`) to `AGENTS.md` / `CLAUDE.md`, and installs a pre-commit hook that resolves `POLYGLOT_BIN`, `./node_modules/.bin/polyglot`, or `polyglot` on `PATH`.
 
 ---
 

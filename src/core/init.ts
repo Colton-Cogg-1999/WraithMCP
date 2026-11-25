@@ -126,11 +126,9 @@ elif [ -x "./node_modules/.bin/polyglot" ]; then
   ./node_modules/.bin/polyglot check
 elif command -v polyglot >/dev/null 2>&1; then
   polyglot check
-elif [ -f "./dist/bin.js" ] && command -v node >/dev/null 2>&1; then
-  node ./dist/bin.js check
 else
   echo "polyglot pre-commit hook: could not locate 'polyglot' CLI." >&2
-  echo "Install locally (npm install -D polyglot-mcp), put 'polyglot' on PATH, or set POLYGLOT_BIN=/path/to/polyglot." >&2
+  echo "Put 'polyglot' on PATH, install it in node_modules, or set POLYGLOT_BIN=/path/to/polyglot." >&2
   exit 1
 fi
 `;
