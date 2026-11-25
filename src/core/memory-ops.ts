@@ -194,6 +194,7 @@ export function recordGlossaryTerm(
     doNotTranslate?: boolean;
     caseSensitive?: boolean;
     translations?: Record<string, string>;
+    abbreviations?: Record<string, string>;
     notes?: string;
     origin?: GlossaryOrigin;
   }
@@ -208,6 +209,7 @@ function recordGlossaryTermUnlocked(
     doNotTranslate?: boolean;
     caseSensitive?: boolean;
     translations?: Record<string, string>;
+    abbreviations?: Record<string, string>;
     notes?: string;
     origin?: GlossaryOrigin;
   }
@@ -220,6 +222,7 @@ function recordGlossaryTermUnlocked(
     doNotTranslate: input.doNotTranslate,
     caseSensitive: input.caseSensitive,
     translations: input.translations,
+    abbreviations: input.abbreviations,
     notes: input.notes,
     origin: input.origin,
   });

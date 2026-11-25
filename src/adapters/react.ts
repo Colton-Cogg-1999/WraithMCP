@@ -3,7 +3,15 @@ import path from "node:path";
 import { parse as babelParse } from "@babel/parser";
 import _traverse, { type NodePath } from "@babel/traverse";
 import * as t from "@babel/types";
+import { HardcodedFormattingFinding, scanHardcodedFormattingInJs } from "../core/formatting-scanner.js";
 import { resolveConfinedPath, validateLocaleTag } from "../core/security.js";
+import {
+  CssLayoutRuleInfo,
+  cssRulesToFindings,
+  indexProjectCssLayoutRules,
+  inspectCssDeclarationBlock,
+  inspectInlineStyleObject,
+} from "../core/static-layout.js";
 import { UsageSite } from "../core/types.js";
 import { JsonFormatAdapter } from "../formats/json.js";
 import { PlaceholderSyntax } from "../formats/types.js";
@@ -217,12 +225,13 @@ export function scanJsTsFile(
   absFile: string,
   relFile: string,
   sourceCode: string,
-  options?: { lineOffset?: number }
+  options?: { lineOffset?: number; cssRulesByClass?: Map<string, CssLayoutRuleInfo[]> }
 ): {
   hardcodedStrings: HardcodedStringFinding[];
   concatenations: ConcatenationFinding[];
   usageByKey: Record<string, UsageSite[]>;
   layoutRisks: LayoutRiskFinding[];
+  hardcodedFormatting: HardcodedFormattingFinding[];
   parseFailures: ParseFailure[];
   dynamicKeyNamespaces: string[];
 } {
@@ -230,9 +239,15 @@ export function scanJsTsFile(
   const concatenations: ConcatenationFinding[] = [];
   const usageByKey: Record<string, UsageSite[]> = {};
   const layoutRisks: LayoutRiskFinding[] = [];
+  const hardcodedFormatting: HardcodedFormattingFinding[] = scanHardcodedFormattingInJs(
+    relFile,
+    sourceCode,
+    options?.lineOffset ?? 0
+  );
   const parseFailures: ParseFailure[] = [];
   const dynamicKeyNamespaces = new Set<string>();
   const lineOffset = options?.lineOffset ?? 0;
+  const cssRulesByClass = options?.cssRulesByClass;
 
   let ast: t.File;
   try {
@@ -265,6 +280,7 @@ export function scanJsTsFile(
       concatenations,
       usageByKey,
       layoutRisks,
+      hardcodedFormatting,
       parseFailures,
       dynamicKeyNamespaces: [],
     };
@@ -649,19 +665,47 @@ export function scanJsTsFile(
       if (!t.isJSXIdentifier(p.node.name)) return;
       const attrName = p.node.name.name;
 
-      // Inspect className / class (static strings, template literals, AND cn()/clsx()/twMerge())
+      // Inspect inline style={{ width: 96, whiteSpace: "nowrap", overflow: "hidden" }}
+      if (
+        attrName === "style" &&
+        t.isJSXExpressionContainer(p.node.value) &&
+        t.isObjectExpression(p.node.value.expression)
+      ) {
+        const line = (p.node.loc?.start.line ?? 1) + lineOffset;
+        const comp = findEnclosingComponent(p);
+        const snippet = getSnippet(p.node.loc?.start.line ?? 1);
+        for (const risk of inspectInlineStyleObject(p.node.value.expression)) {
+          layoutRisks.push({
+            file: relFile,
+            line,
+            kind: risk.kind,
+            constraint: risk.constraint,
+            component: comp,
+            suggestion: risk.suggestion,
+            snippet,
+          });
+        }
+        return;
+      }
+
+      // Inspect className / class (static strings, template literals, cn()/clsx(), CSS modules styles.foo, and plain CSS classes)
       if (attrName === "className" || attrName === "class") {
         const classStrings: string[] = [];
+        const cssModuleProps: string[] = [];
         if (t.isStringLiteral(p.node.value)) {
           classStrings.push(p.node.value.value);
         } else if (t.isJSXExpressionContainer(p.node.value)) {
           classStrings.push(...extractClassLiteralsFromExpr(p.node.value.expression));
+          const expr = p.node.value.expression;
+          if (t.isMemberExpression(expr) && t.isIdentifier(expr.property)) {
+            cssModuleProps.push(expr.property.name);
+          }
         }
         const combined = classStrings.join(" ").trim();
+        const line = (p.node.loc?.start.line ?? 1) + lineOffset;
+        const comp = findEnclosingComponent(p);
+        const snippet = getSnippet(p.node.loc?.start.line ?? 1);
         if (combined) {
-          const line = (p.node.loc?.start.line ?? 1) + lineOffset;
-          const comp = findEnclosingComponent(p);
-          const snippet = getSnippet(p.node.loc?.start.line ?? 1);
           for (const risk of inspectLayoutClasses(combined)) {
             layoutRisks.push({
               file: relFile,
@@ -672,6 +716,16 @@ export function scanJsTsFile(
               suggestion: risk.suggestion,
               snippet,
             });
+          }
+        }
+        // Match CSS Modules (styles.foo) & plain CSS classes against indexed .css/.module.css rules
+        if (cssRulesByClass && cssRulesByClass.size > 0) {
+          const allClassTokens = [...new Set([...cssModuleProps, ...combined.split(/\s+/).filter(Boolean)])];
+          for (const tok of allClassTokens) {
+            const matchedRules = cssRulesByClass.get(tok);
+            if (matchedRules) {
+              layoutRisks.push(...cssRulesToFindings(matchedRules, undefined, comp));
+            }
           }
         }
         return;
@@ -947,6 +1001,31 @@ export function scanJsTsFile(
       }
     },
 
+    TaggedTemplateExpression(p) {
+      // Inspect styled-components / emotion template literals: styled.button`width: 96px; overflow: hidden;`, css`...`
+      const tag = p.node.tag;
+      const isStyled =
+        (t.isMemberExpression(tag) && t.isIdentifier(tag.object, { name: "styled" })) ||
+        (t.isCallExpression(tag) && t.isIdentifier(tag.callee, { name: "styled" })) ||
+        t.isIdentifier(tag, { name: "css" });
+      if (!isStyled) return;
+      const cssBody = p.node.quasi.quasis.map((q) => q.value.cooked ?? q.value.raw).join(" ");
+      const line = (p.node.loc?.start.line ?? 1) + lineOffset;
+      const comp = findEnclosingComponent(p);
+      const snippet = getSnippet(p.node.loc?.start.line ?? 1);
+      for (const risk of inspectCssDeclarationBlock(cssBody)) {
+        layoutRisks.push({
+          file: relFile,
+          line,
+          kind: risk.kind,
+          constraint: `styled/css (${risk.constraint})`,
+          component: comp,
+          suggestion: risk.suggestion,
+          snippet,
+        });
+      }
+    },
+
     TemplateLiteral(p) {
       if (p.node.expressions.length === 0) return;
       if (t.isTaggedTemplateExpression(p.parent)) return;
@@ -996,11 +1075,30 @@ export function scanJsTsFile(
     },
   });
 
+  // Bind layoutRisks to translation keys — prefer exact same line first, then adjacent lines (±1)
+  const exactLineToKey = new Map<number, string>();
+  const nearLineToKey = new Map<number, string>();
+  for (const [k, sites] of Object.entries(usageByKey)) {
+    for (const s of sites) {
+      if (s.file !== relFile) continue;
+      if (!exactLineToKey.has(s.line)) exactLineToKey.set(s.line, k);
+      for (const ln of [s.line - 1, s.line + 1]) {
+        if (!nearLineToKey.has(ln)) nearLineToKey.set(ln, k);
+      }
+    }
+  }
+  for (const risk of layoutRisks) {
+    if (!risk.key && risk.file === relFile) {
+      risk.key = exactLineToKey.get(risk.line) ?? nearLineToKey.get(risk.line);
+    }
+  }
+
   return {
     hardcodedStrings,
     concatenations,
     usageByKey,
     layoutRisks,
+    hardcodedFormatting,
     parseFailures,
     dynamicKeyNamespaces: [...dynamicKeyNamespaces],
   };
@@ -1083,16 +1181,19 @@ export class ReactNextAdapter implements ScannerAdapter {
     const concatenations: ConcatenationFinding[] = [];
     const usageByKey: Record<string, UsageSite[]> = {};
     const layoutRisks: LayoutRiskFinding[] = [];
+    const hardcodedFormatting: HardcodedFormattingFinding[] = [];
     const parseFailures: ParseFailure[] = [];
     const dynamicKeyNamespaces = new Set<string>();
+    const cssRulesByClass = indexProjectCssLayoutRules(rootDir, options.sourcePaths, options.ignore);
 
     for (const absFile of files) {
       const relFile = path.relative(rootDir, absFile).replace(/\\/g, "/");
       const code = fs.readFileSync(absFile, "utf8");
-      const res = scanJsTsFile(absFile, relFile, code);
+      const res = scanJsTsFile(absFile, relFile, code, { cssRulesByClass });
       hardcodedStrings.push(...res.hardcodedStrings);
       concatenations.push(...res.concatenations);
       layoutRisks.push(...res.layoutRisks);
+      hardcodedFormatting.push(...res.hardcodedFormatting);
       parseFailures.push(...res.parseFailures);
       for (const ns of res.dynamicKeyNamespaces) dynamicKeyNamespaces.add(ns);
       for (const [k, sites] of Object.entries(res.usageByKey)) {
@@ -1106,6 +1207,7 @@ export class ReactNextAdapter implements ScannerAdapter {
       concatenations,
       usageByKey,
       layoutRisks,
+      hardcodedFormatting,
       parseFailures,
       dynamicKeyNamespaces: [...dynamicKeyNamespaces],
     };

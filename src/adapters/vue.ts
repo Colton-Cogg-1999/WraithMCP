@@ -1,6 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { parse as parseSfc } from "@vue/compiler-sfc";
+import { HardcodedFormattingFinding } from "../core/formatting-scanner.js";
 import { resolveConfinedPath, validateLocaleTag } from "../core/security.js";
 import { UsageSite } from "../core/types.js";
 import { JsonFormatAdapter } from "../formats/json.js";
@@ -277,6 +278,7 @@ export class VueNuxtAdapter implements ScannerAdapter {
     const concatenations: ConcatenationFinding[] = [];
     const usageByKey: Record<string, UsageSite[]> = {};
     const layoutRisks: LayoutRiskFinding[] = [];
+    const hardcodedFormatting: HardcodedFormattingFinding[] = [];
 
     for (const absFile of files) {
       const relFile = path.relative(rootDir, absFile).replace(/\\/g, "/");
@@ -303,6 +305,7 @@ export class VueNuxtAdapter implements ScannerAdapter {
           hardcodedStrings.push(...res.hardcodedStrings);
           concatenations.push(...res.concatenations);
           layoutRisks.push(...res.layoutRisks);
+          hardcodedFormatting.push(...res.hardcodedFormatting);
           for (const [k, sites] of Object.entries(res.usageByKey)) {
             usageByKey[k] = [...(usageByKey[k] ?? []), ...sites];
           }
@@ -312,6 +315,7 @@ export class VueNuxtAdapter implements ScannerAdapter {
         hardcodedStrings.push(...res.hardcodedStrings);
         concatenations.push(...res.concatenations);
         layoutRisks.push(...res.layoutRisks);
+        hardcodedFormatting.push(...res.hardcodedFormatting);
         for (const [k, sites] of Object.entries(res.usageByKey)) {
           usageByKey[k] = [...(usageByKey[k] ?? []), ...sites];
         }
@@ -324,6 +328,7 @@ export class VueNuxtAdapter implements ScannerAdapter {
       concatenations,
       usageByKey,
       layoutRisks,
+      hardcodedFormatting,
     };
   }
 

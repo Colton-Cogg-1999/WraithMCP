@@ -1,3 +1,4 @@
+import { HardcodedFormattingFinding } from "../core/formatting-scanner.js";
 import { FrameworkName, UsageSite } from "../core/types.js";
 import { FormatAdapter, PlaceholderSyntax } from "../formats/types.js";
 
@@ -53,6 +54,7 @@ export interface ScanSourceResult {
   concatenations: ConcatenationFinding[];
   usageByKey: Record<string, UsageSite[]>;
   layoutRisks?: LayoutRiskFinding[];
+  hardcodedFormatting?: HardcodedFormattingFinding[];
   parseFailures?: ParseFailure[];
   /** Namespaces or "*" where dynamic translation keys were encountered (prevents false orphan claims) */
   dynamicKeyNamespaces?: string[];

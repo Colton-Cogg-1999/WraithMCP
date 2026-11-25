@@ -6,6 +6,8 @@ import { ensureBootstrapped } from "../core/bootstrap.js";
 import { runCheck } from "../core/check.js";
 import { exportEscalation, importEscalationCorrections } from "../core/escalate.js";
 import { importAsset } from "../core/importers.js";
+import { runLayoutFix } from "../core/layout-codemods.js";
+import { runLayoutCheck } from "../core/layout.js";
 import {
   lookupMemory,
   recordAssumption,
@@ -14,6 +16,7 @@ import {
 } from "../core/memory-ops.js";
 import { prepareBatch } from "../core/prepare.js";
 import { generatePseudoLocale } from "../core/pseudo-locale.js";
+import { PseudoMode } from "../core/pseudo.js";
 import { generateReport } from "../core/report.js";
 import { ingestReviewResults, packageReviewJob } from "../core/review.js";
 import { scanProject } from "../core/scan.js";
@@ -31,14 +34,15 @@ import { mcpTextResult } from "./formatting.js";
 export const MCP_SERVER_INSTRUCTIONS = `Polyglot gives you memory, rules, and deterministic proof for localization. You perform all code changes and translations in full codebase context; Polyglot never calls an LLM.
 
 Definition of done:
-1. Run \`scan\` to detect framework, i18n library, hardcoded strings, and concatenations.
-2. Refactor any hardcoded strings/concatenations in source code into i18n keys (or extract document segments).
-3. Use \`prepare\` to get context, glossary terms, fuzzy memory matches, and target locale conventions.
+1. Run \`scan\` to detect framework, i18n library, hardcoded strings, concatenations, and hardcoded formatting (\`toFixed\`, locale-less \`toLocaleString\`, currency concatenation, manual dates, \`toUpperCase\`, locale-less \`localeCompare\`).
+2. Refactor any hardcoded strings/concatenations/formatting in source code into i18n keys and Intl formatters (or extract document segments).
+3. Use \`prepare\` to get context, static layout constraints & width budgets, glossary terms & approved abbreviations, fuzzy memory matches, and target locale conventions.
    - IMPORTANT: Treat ALL fuzzy memory matches (even 100% lexical matches) as strong suggestions with prior context, NOT blindly guaranteed translations. Always verify the match fits the current component, element, and surrounding UI.
 4. Always write translations through \`apply\` so placeholders, ICU syntax, plural rules, and inline tags are validated and saved to .polyglot/ memory.
-5. Run \`pseudo\` and inspect layout/formatting hotspots (and visually QA rendered routes when a dev server/browser is available) to catch text clipping, overflow, wrapping, or RTL visual continuity breaks; fix CSS/layout constraints or overly long copy as needed.
-6. Run \`check\` until outcome is "PASS" (zero errors, sufficient coverage). Localization is NOT done until \`check\` passes. Remember that deterministic checks do not establish linguistic accuracy.
-7. Run \`report\` to surface issues caught, assumptions made, and any strings worth a human look.
+5. Run \`check\` until catalog & scanner checks pass.
+6. Run \`pseudo\` with \`mode: "auto"\` to generate target-appropriate pseudo-locales (\`en-XA\`, \`ar-XB\`, \`ja-XC\`, \`th-XD\`, \`de-XE\`) with invisible zero-width key IDs, then run \`layout\` against a running dev server at 375px and 1280px.
+7. Remediate confirmed layout defects in order: (a) run \`layout_fix\` for deterministic mechanical codemods, (b) apply agent code prescriptions, (c) re-run \`prepare\` + \`apply\` for keys exceeding recorded width budgets in \`.polyglot/layout.json\` (using approved glossary abbreviations with title/aria-label where appropriate), (d) re-run \`layout\` until clean, then re-run \`check\` until outcome is "PASS".
+8. Run \`report\` to surface issues caught, assumptions made, and any strings worth a human look.
 
 Keep defaults zero-question: infer brand names and terminology, record assumptions via \`memory\`, and report them at the end unless config.review is "confirm".`;
 
@@ -88,13 +92,16 @@ const ScanOutputSchema = z
     sourceLocale: z.string(),
     sourceKeys: z.number(),
     filesScanned: z.number(),
-    counts: z.object({
-      hardcodedStrings: z.number(),
-      concatenations: z.number(),
-      trackedKeys: z.number(),
-      parseFailures: z.number(),
-      documents: z.number(),
-    }),
+    counts: z
+      .object({
+        hardcodedStrings: z.number(),
+        concatenations: z.number(),
+        hardcodedFormatting: z.number().optional(),
+        trackedKeys: z.number(),
+        parseFailures: z.number(),
+        documents: z.number(),
+      })
+      .passthrough(),
   })
   .passthrough();
 
@@ -338,6 +345,7 @@ export function createPolyglotMcpServer(options: McpServerOptions = {}): McpServ
       doNotTranslate: z.boolean().optional(),
       caseSensitive: z.boolean().optional(),
       translations: z.record(z.string(), z.string()).optional(),
+      abbreviations: z.record(z.string(), z.string()).optional(),
       notes: z.string().optional(),
       origin: z.enum(["inferred", "user", "imported"]).optional(),
     }),
@@ -393,6 +401,7 @@ export function createPolyglotMcpServer(options: McpServerOptions = {}): McpServ
               doNotTranslate: operation.doNotTranslate,
               caseSensitive: operation.caseSensitive,
               translations: operation.translations,
+              abbreviations: operation.abbreviations,
               notes: operation.notes,
               origin: operation.origin,
             })
@@ -442,18 +451,84 @@ export function createPolyglotMcpServer(options: McpServerOptions = {}): McpServ
   server.registerTool(
     "pseudo",
     {
-      title: "Generate Pseudo-Locale & Layout Hotspots",
+      title: "Generate Pseudo-Locale(s) & Layout Hotspots",
       description:
-        "Generate a pseudo-locale (accented characters, ~30-40% length expansion, bracket markers) preserving placeholders, ICU syntax, and inline tags, and return layout/RTL QA hotspots.",
+        "Generate target-aware pseudo-locale(s) (mode: auto|expand|rtl|cjk|tall|long-word|format) with IBM length-scaled expansion, invisible zero-width key IDs, and placeholder/ICU/tag preservation, plus layout/RTL hotspots.",
       inputSchema: {
         rootDir: z.string().optional(),
-        pseudoLocale: z.string().optional().default("en-x-pseudo"),
+        pseudoLocale: z.string().optional().describe("Explicit pseudo-locale tag (defaults to en-x-pseudo or mode tag like en-XA, ar-XB, ja-XC, th-XD, de-XE)."),
+        mode: z.enum(["auto", "expand", "rtl", "cjk", "tall", "long-word", "format"]).optional(),
+        embedKeyIds: z.boolean().optional().default(true),
+        formatOverlay: z.boolean().optional(),
       },
       outputSchema: GenericObjectOutputSchema,
       annotations: DESTRUCTIVE_MUTATING_ANNOTATIONS,
     },
-    async ({ rootDir, pseudoLocale }) => {
-      const res = generatePseudoLocale(safeRoot(rootDir), pseudoLocale);
+    async ({ rootDir, pseudoLocale, mode, embedKeyIds, formatOverlay }) => {
+      const res = generatePseudoLocale(safeRoot(rootDir), {
+        pseudoLocale,
+        mode: mode as PseudoMode | "auto" | undefined,
+        embedKeyIds,
+        formatOverlay,
+      });
+      return mcpTextResult(res);
+    }
+  );
+
+  server.registerTool(
+    "layout",
+    {
+      title: "Rendered Layout & Formatting Check",
+      description:
+        "Render routes with Playwright (optional peer dep) at 375px and 1280px across pseudo and target locales to detect overflow, clipping, overlap, tofu glyphs, dir/lang mismatches, and surviving hardcoded formats; maps findings back to keys and file:line and records width budgets in .polyglot/layout.json. Returns INCONCLUSIVE (never PASS) without Playwright or baseUrl.",
+      inputSchema: {
+        rootDir: z.string().optional(),
+        baseUrl: z.string().optional().describe("Running dev server URL (e.g. http://localhost:3000)."),
+        routes: z.array(z.string()).optional(),
+        locales: z.array(z.string()).optional(),
+        localeUrlPattern: z.enum(["query", "prefix", "cookie"]).optional(),
+        saveBudgets: z.boolean().optional().default(true),
+      },
+      outputSchema: GenericObjectOutputSchema,
+      annotations: READ_ONLY_ANNOTATIONS,
+    },
+    async ({ rootDir, baseUrl, routes, locales, localeUrlPattern, saveBudgets }) => {
+      const res = await runLayoutCheck({
+        rootDir: safeRoot(rootDir),
+        baseUrl,
+        routes,
+        locales,
+        localeUrlPattern,
+        saveBudgets,
+      });
+      return mcpTextResult(res);
+    }
+  );
+
+  server.registerTool(
+    "layout_fix",
+    {
+      title: "Apply Mechanical Layout Codemods",
+      description:
+        "Deterministically apply mechanical layout codemods only (Tailwind physical->logical spacing/alignment/borders/radius, fixed w-* -> min-w-* on constrained text, root <html> dir/lang, and hyphens-auto on flagged lines) and return unified diffs.",
+      inputSchema: {
+        rootDir: z.string().optional(),
+        dryRun: z.boolean().optional().default(false),
+        files: z.array(z.string()).optional(),
+        flaggedWidthLines: z.array(z.object({ file: z.string(), line: z.number().int().positive() })).optional(),
+        flaggedLongWordLines: z.array(z.object({ file: z.string(), line: z.number().int().positive() })).optional(),
+      },
+      outputSchema: GenericObjectOutputSchema,
+      annotations: DESTRUCTIVE_MUTATING_ANNOTATIONS,
+    },
+    async ({ rootDir, dryRun, files, flaggedWidthLines, flaggedLongWordLines }) => {
+      const res = runLayoutFix({
+        rootDir: safeRoot(rootDir),
+        dryRun,
+        files,
+        flaggedWidthLines,
+        flaggedLongWordLines,
+      });
       return mcpTextResult(res);
     }
   );
@@ -606,12 +681,12 @@ export function createPolyglotMcpServer(options: McpServerOptions = {}): McpServ
               text: `Localize this project using Polyglot. ${targetNote}
 
 Follow these steps:
-1. Call \`status\` and \`scan\` to understand the framework, i18n setup, hardcoded strings, concatenations, and documents.
-2. If the project has hardcoded strings or no i18n setup yet, set up the framework's standard i18n library and extract strings into source locale files.
-3. Infer brand/do-not-translate terms and key UI terminology; record assumptions via \`memory\`. If config.review === "confirm", pause briefly to confirm key glossary terms first; otherwise proceed without interrupting.
-4. Use \`prepare\` in batches per target locale. Treat all fuzzy memory matches (even 100% matches) as strong suggestions to verify against component context — never blindly trust them. Write translations exclusively through \`apply\`.
-5. Run \`pseudo\` to check layout/formatting hotspots (truncation, fixed widths, overflow, RTL spacing). Where possible, visually QA rendered screens in the pseudo-locale and target locales and fix any CSS/layout or copy overflow issues.
-6. Run \`check\`. Fix every error until outcome is "PASS" (zero errors, sufficient coverage).
+1. Call \`status\` and \`scan\` to understand the framework, i18n setup, hardcoded strings, concatenations, hardcoded formatting, and documents.
+2. If the project has hardcoded strings, concatenations, or hardcoded formatting, set up the framework's standard i18n library, extract strings into source locale files, and replace locale-unsafe formatting with Intl formatters.
+3. Infer brand/do-not-translate terms and key UI terminology (and approved abbreviations for tight UI slots); record assumptions via \`memory\`. If config.review === "confirm", pause briefly to confirm key glossary terms first; otherwise proceed without interrupting.
+4. Use \`prepare\` in batches per target locale (pay attention to \`layout\` constraints and width budgets). Treat all fuzzy memory matches (even 100% matches) as strong suggestions to verify against component context — never blindly trust them. Write translations exclusively through \`apply\`.
+5. Run \`check\` to verify catalog parity, placeholders, plurals, tags, glossary, and scanner rules.
+6. Run \`pseudo\` with \`mode: "auto"\` and then \`layout\` against the running app at 375px and 1280px. Run \`layout_fix\` for deterministic codemods, apply agent code prescriptions, and retranslate any keys over their recorded width budget via \`prepare\` + \`apply\`. Repeat \`layout\` until clean, then re-run \`check\` until outcome is "PASS".
 7. Call \`report\` and present the summary: issues caught, assumptions made, and any strings worth a native speaker's review.`,
             },
           },

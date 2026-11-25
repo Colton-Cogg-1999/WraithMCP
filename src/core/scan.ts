@@ -1,6 +1,7 @@
 import path from "node:path";
 import { detectProjectAdapter, loadLocaleCatalog } from "../adapters/registry.js";
 import { ConcatenationFinding, HardcodedStringFinding, ParseFailure } from "../adapters/types.js";
+import { HardcodedFormattingFinding } from "./formatting-scanner.js";
 import { inferGlossaryCandidates, InferredGlossaryCandidate } from "./glossary.js";
 import { computeContextFingerprint, PolyglotStore } from "./store.js";
 import { UsageFile } from "./types.js";
@@ -31,6 +32,7 @@ export interface ScanResult {
   counts: {
     hardcodedStrings: number;
     concatenations: number;
+    hardcodedFormatting: number;
     trackedKeys: number;
     parseFailures: number;
     documents: number;
@@ -45,6 +47,13 @@ export interface ScanResult {
   };
   concatenations: {
     items: ConcatenationFinding[];
+    total: number;
+    offset: number;
+    limit: number;
+    hasMore: boolean;
+  };
+  hardcodedFormatting: {
+    items: HardcodedFormattingFinding[];
     total: number;
     offset: number;
     limit: number;
@@ -74,6 +83,7 @@ export function scanProject(options: ScanOptions): ScanResult {
   let filesScanned = 0;
   let hardcodedStrings: HardcodedStringFinding[] = [];
   let concatenations: ConcatenationFinding[] = [];
+  let hardcodedFormatting: HardcodedFormattingFinding[] = [];
   let parseFailures: ParseFailure[] = [];
   let usageByKey: Record<string, UsageFile["keys"][string]["sites"]> = {};
   let sourceKeys = 0;
@@ -88,6 +98,7 @@ export function scanProject(options: ScanOptions): ScanResult {
     filesScanned = scanRes.filesScanned;
     hardcodedStrings = scanRes.hardcodedStrings;
     concatenations = scanRes.concatenations;
+    hardcodedFormatting = scanRes.hardcodedFormatting ?? [];
     parseFailures = scanRes.parseFailures ?? [];
     usageByKey = scanRes.usageByKey;
 
@@ -119,6 +130,9 @@ export function scanProject(options: ScanOptions): ScanResult {
   const filteredConcats = fileFilter
     ? concatenations.filter((c) => c.file.includes(fileFilter))
     : concatenations;
+  const filteredFormatting = fileFilter
+    ? hardcodedFormatting.filter((f) => f.file.includes(fileFilter))
+    : hardcodedFormatting;
 
   const offset = Math.max(0, options.offset ?? 0);
   const limit = Math.max(1, Math.min(options.limit ?? 25, 100));
@@ -149,6 +163,7 @@ export function scanProject(options: ScanOptions): ScanResult {
     counts: {
       hardcodedStrings: hardcodedStrings.length,
       concatenations: concatenations.length,
+      hardcodedFormatting: hardcodedFormatting.length,
       trackedKeys: Object.keys(usageByKey).length,
       parseFailures: parseFailures.length,
       documents: documents.length,
@@ -167,6 +182,13 @@ export function scanProject(options: ScanOptions): ScanResult {
       offset,
       limit,
       hasMore: offset + limit < filteredConcats.length,
+    },
+    hardcodedFormatting: {
+      items: filteredFormatting.slice(offset, offset + limit),
+      total: filteredFormatting.length,
+      offset,
+      limit,
+      hasMore: offset + limit < filteredFormatting.length,
     },
     glossaryCandidates,
     documents,

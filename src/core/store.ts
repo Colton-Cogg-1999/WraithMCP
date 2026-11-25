@@ -10,6 +10,9 @@ import {
   GlossaryEntry,
   GlossaryFile,
   GlossaryFileSchema,
+  LayoutBudgetEntry,
+  LayoutFile,
+  LayoutFileSchema,
   MemoryEntry,
   MemoryEntrySchema,
   PolyglotConfig,
@@ -168,6 +171,14 @@ export class PolyglotStore {
         ...(previous?.translations ?? {}),
         ...(entry.translations ?? {}),
       }),
+      ...(previous?.abbreviations || entry.abbreviations
+        ? {
+            abbreviations: sortRecordKeys({
+              ...(previous?.abbreviations ?? {}),
+              ...(entry.abbreviations ?? {}),
+            }),
+          }
+        : {}),
       notes: entry.notes ?? previous?.notes,
       origin: entry.origin ?? previous?.origin ?? "user",
       updatedAt: now,
@@ -343,5 +354,37 @@ export class PolyglotStore {
     this.ensureDir();
     const parsed = ReviewsFileSchema.parse(file);
     atomicWriteFileSync(this.filePath("reviews.json"), stableJson(parsed));
+  }
+
+  readLayout(): LayoutFile {
+    const p = this.filePath("layout.json");
+    if (!fs.existsSync(p)) {
+      return LayoutFileSchema.parse({});
+    }
+    return LayoutFileSchema.parse(JSON.parse(fs.readFileSync(p, "utf8")));
+  }
+
+  writeLayout(file: LayoutFile): void {
+    this.ensureDir();
+    const parsed = LayoutFileSchema.parse(file);
+    const sortedBudgets: LayoutFile["budgets"] = {};
+    for (const k of Object.keys(parsed.budgets).sort()) {
+      sortedBudgets[k] = sortRecordKeys(parsed.budgets[k]);
+    }
+    atomicWriteFileSync(
+      this.filePath("layout.json"),
+      stableJson({
+        version: 1,
+        budgets: sortedBudgets,
+        ...(parsed.lastRun ? { lastRun: parsed.lastRun } : {}),
+      })
+    );
+  }
+
+  setLayoutBudget(key: string, locale: string, entry: LayoutBudgetEntry): void {
+    const layout = this.readLayout();
+    if (!layout.budgets[key]) layout.budgets[key] = {};
+    layout.budgets[key][locale] = entry;
+    this.writeLayout(layout);
   }
 }

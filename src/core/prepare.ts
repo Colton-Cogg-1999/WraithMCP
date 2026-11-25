@@ -7,7 +7,15 @@ import { extractPlaceholders } from "./placeholders.js";
 import { computeContextFingerprint, PolyglotStore, sha256Short } from "./store.js";
 import { UsageFile, UsageSite } from "./types.js";
 
-export type PrepareReason = "missing" | "stale_source" | "context_changed" | "requested" | "flagged";
+export type PrepareReason = "missing" | "stale_source" | "context_changed" | "layout_budget_exceeded" | "requested" | "flagged";
+
+export interface PreparedLayoutInfo {
+  element?: string;
+  constraint?: string;
+  budgetChars?: number;
+  maxWidthPx?: number;
+  approvedAbbreviations?: Record<string, string>;
+}
 
 export interface PreparedMemorySuggestion extends FuzzyMatch {
   advisory: "strong_suggestion_verify_context" | "partial_suggestion_verify_context";
@@ -25,6 +33,7 @@ export interface PreparedItem {
   hasPlurals: boolean;
   advisoryPluralCategories?: Intl.LDMLPluralRule[];
   usageSites: UsageSite[];
+  layout?: PreparedLayoutInfo;
   glossaryHits: GlossaryHit[];
   /**
    * Memory matches are provided strictly as context/suggestions, never blind auto-fills.
@@ -64,6 +73,7 @@ export function prepareBatch(options: PrepareOptions): PrepareResult {
   const memory = store.readMemory();
   const records = store.readRecords();
   const usage = store.readUsage();
+  const layoutState = store.readLayout();
 
   const { adapter, detection } = detectProjectAdapter(
     store.rootDir,
@@ -125,6 +135,14 @@ export function prepareBatch(options: PrepareOptions): PrepareResult {
     }
   );
 
+  // Build key -> static layout risk constraint map from scanRes.layoutRisks
+  const staticConstraintByKey = new Map<string, string>();
+  for (const lr of scanRes.layoutRisks ?? []) {
+    if (lr.key && !staticConstraintByKey.has(lr.key)) {
+      staticConstraintByKey.set(lr.key, lr.constraint);
+    }
+  }
+
   const requestedKeys = options.keys && options.keys.length > 0 ? new Set(options.keys) : null;
   const allCandidates: PreparedItem[] = [];
 
@@ -133,6 +151,7 @@ export function prepareBatch(options: PrepareOptions): PrepareResult {
 
     const tgtEntry = tgtCatalog.entries.get(key);
     const rec = records.records[key]?.[options.targetLocale];
+    const layoutBudget = layoutState.budgets[key]?.[options.targetLocale];
     const currentHash = sha256Short(
       srcEntry.plurals ? JSON.stringify(srcEntry.plurals) : srcEntry.value
     );
@@ -154,6 +173,8 @@ export function prepareBatch(options: PrepareOptions): PrepareResult {
       reason = "stale_source";
     } else if (rec && currentFp && rec.contextFingerprint && rec.contextFingerprint !== currentFp) {
       reason = "context_changed";
+    } else if (layoutBudget && tgtEntry.value.length > layoutBudget.budgetChars) {
+      reason = "layout_budget_exceeded";
     } else if (rec?.reviewStatus === "flagged") {
       reason = "flagged";
     } else if (requestedKeys || options.includeTranslated) {
@@ -179,6 +200,25 @@ export function prepareBatch(options: PrepareOptions): PrepareResult {
     const currentContextStr = currentSites[0]
       ? `${currentSites[0].component ?? currentSites[0].file}${currentSites[0].element ? ` <${currentSites[0].element}>` : ""}`
       : "";
+
+    const staticConstraint = staticConstraintByKey.get(key);
+    const approvedAbbreviations: Record<string, string> = {};
+    for (const hit of glossaryHits) {
+      const ge = glossary.entries.find((e) => e.term.toLowerCase() === hit.term.toLowerCase());
+      const abbr = ge?.abbreviations?.[options.targetLocale];
+      if (abbr) approvedAbbreviations[hit.term] = abbr;
+    }
+    const layoutInfo: PreparedLayoutInfo | undefined =
+      layoutBudget || staticConstraint || Object.keys(approvedAbbreviations).length > 0
+        ? {
+            element: layoutBudget?.element ?? currentSites[0]?.element,
+            constraint: layoutBudget?.constraint ?? staticConstraint,
+            ...(layoutBudget
+              ? { budgetChars: layoutBudget.budgetChars, maxWidthPx: layoutBudget.maxWidthPx }
+              : {}),
+            ...(Object.keys(approvedAbbreviations).length > 0 ? { approvedAbbreviations } : {}),
+          }
+        : undefined;
 
     const fuzzyMatches: PreparedMemorySuggestion[] = rawFuzzyMatches.map((m) => {
       const contextAlignment: PreparedMemorySuggestion["contextAlignment"] =
@@ -216,19 +256,21 @@ export function prepareBatch(options: PrepareOptions): PrepareResult {
         ? { advisoryPluralCategories: conventions.advisoryPluralCategories }
         : {}),
       usageSites: currentSites,
+      ...(layoutInfo ? { layout: layoutInfo } : {}),
       glossaryHits,
       fuzzyMatches,
       comment: srcEntry.comment,
     });
   }
 
-  // Prioritize: missing -> stale_source -> context_changed -> flagged -> requested
+  // Prioritize: missing -> stale_source -> layout_budget_exceeded -> context_changed -> flagged -> requested
   const priority: Record<PrepareReason, number> = {
     missing: 0,
     stale_source: 1,
-    context_changed: 2,
-    flagged: 3,
-    requested: 4,
+    layout_budget_exceeded: 2,
+    context_changed: 3,
+    flagged: 4,
+    requested: 5,
   };
   allCandidates.sort(
     (a, b) => priority[a.reason] - priority[b.reason] || a.key.localeCompare(b.key)

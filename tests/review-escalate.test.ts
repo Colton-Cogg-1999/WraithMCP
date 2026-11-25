@@ -209,6 +209,8 @@ describe("Milestone 4: Cross-Model Review, Human Escalation, Advisory Memory, La
       "check",
       "escalate",
       "import",
+      "layout",
+      "layout_fix",
       "memory",
       "prepare",
       "pseudo",

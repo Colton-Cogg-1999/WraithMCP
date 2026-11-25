@@ -6,7 +6,10 @@ import { runCheck } from "./core/check.js";
 import { exportEscalation, importEscalationCorrections } from "./core/escalate.js";
 import { importAsset } from "./core/importers.js";
 import { initProject } from "./core/init.js";
+import { runLayoutFix } from "./core/layout-codemods.js";
+import { runLayoutCheck } from "./core/layout.js";
 import { generatePseudoLocale } from "./core/pseudo-locale.js";
+import { PseudoMode } from "./core/pseudo.js";
 import { generateReport } from "./core/report.js";
 import { ingestReviewResults, packageReviewJob } from "./core/review.js";
 import { scanProject } from "./core/scan.js";
@@ -211,18 +214,26 @@ export function createCli(): Command {
 
   program
     .command("pseudo")
-    .description("Generate a pseudo-locale to catch hardcoded strings and layout truncation")
-    .option("-l, --locale <tag>", "Pseudo-locale tag", "en-x-pseudo")
+    .description("Generate pseudo-locale(s) (expand, rtl, cjk, tall, long-word, format, or auto) with zero-width key tracing")
+    .option("-l, --locale <tag>", "Pseudo-locale tag (defaults to en-x-pseudo or mode tag)")
+    .option("-m, --mode <mode>", "Pseudo mode: auto|expand|rtl|cjk|tall|long-word|format")
+    .option("--no-key-ids", "Disable invisible zero-width key ID embedding")
+    .option("--format-overlay", "Overlay format pseudo-transforms (Arabic-Indic digits, comma decimals, D/M/Y dates, ¤ currency)")
     .option("--json", "Output JSON", false)
     .action((opts) => {
       const rootDir = program.opts().cwd;
-      const res = generatePseudoLocale(rootDir, opts.locale);
+      const res = generatePseudoLocale(rootDir, {
+        pseudoLocale: opts.locale,
+        mode: opts.mode as PseudoMode | "auto" | undefined,
+        embedKeyIds: opts.keyIds,
+        formatOverlay: opts.formatOverlay,
+      });
       if (opts.json) {
         console.log(JSON.stringify(res, null, 2));
         return;
       }
       console.log(
-        `Generated pseudo-locale ${res.pseudoLocale} (${res.keysGenerated} keys -> ${res.filesWritten.join(", ")})`
+        `Generated pseudo-locale(s): ${res.modesGenerated.map((m) => `${m.pseudoLocale} [${m.mode}]`).join(", ")} (${res.keysGenerated} keys -> ${res.filesWritten.join(", ")})`
       );
       for (const s of res.sample) {
         console.log(`  ${s.key}: "${s.source}" -> "${s.pseudo}"`);
@@ -233,6 +244,68 @@ export function createCli(): Command {
           console.log(`  ${h.file}:${h.line} [${h.constraint}] ${h.suggestion}`);
         }
       }
+    });
+
+  program
+    .command("layout")
+    .description("Render routes with Playwright to detect overflow, clipping, overlap, tofu, RTL, and hardcoded formats — or run deterministic codemods with --fix")
+    .option("--url <baseUrl>", "Running dev server base URL (e.g. http://localhost:3000)")
+    .option("--routes <list>", "Comma-separated routes to render (e.g. /,/settings)")
+    .option("-l, --locales <list>", "Comma-separated locales to check (defaults to pseudo + targetLocales)")
+    .option("--locale-pattern <pattern>", "How locale is passed: query|prefix|cookie", "query")
+    .option("--fix", "Apply deterministic mechanical codemods (Tailwind physical->logical, w-*->min-w-*, root html dir/lang)", false)
+    .option("--dry-run", "Preview mechanical codemod diffs without writing files (use with --fix)", false)
+    .option("--json", "Output JSON", false)
+    .action(async (opts) => {
+      const rootDir = program.opts().cwd;
+      if (opts.fix) {
+        const fixRes = runLayoutFix({
+          rootDir,
+          dryRun: Boolean(opts.dryRun),
+        });
+        if (opts.json) {
+          console.log(JSON.stringify(fixRes, null, 2));
+          return;
+        }
+        console.log(
+          `${fixRes.dryRun ? "[dry-run] " : ""}Layout codemods: ${fixRes.totalChanges} change(s) across ${fixRes.previews.length} file(s)`
+        );
+        for (const p of fixRes.previews) {
+          console.log(`\n${p.unifiedDiff}`);
+        }
+        return;
+      }
+
+      const res = await runLayoutCheck({
+        rootDir,
+        baseUrl: opts.url,
+        routes: parseCsvList(opts.routes),
+        locales: parseCsvList(opts.locales),
+        localeUrlPattern: opts.localePattern as "query" | "prefix" | "cookie",
+      });
+      if (opts.json) {
+        console.log(JSON.stringify(res, null, 2));
+      } else if (res.outcome === "INCONCLUSIVE") {
+        console.log(`INCONCLUSIVE · ${res.inconclusiveReason}`);
+        for (const s of res.nextSteps) console.log(`  - ${s}`);
+      } else if (res.outcome === "PASS") {
+        console.log(
+          `PASS · 0 layout defects across ${res.routesChecked.length} route(s) × ${res.localesChecked.length} locale(s) × ${res.viewportsChecked.length} viewport(s)`
+        );
+      } else {
+        console.log(`FAIL · ${res.findingCount} layout defect(s) (${JSON.stringify(res.countsByType)})`);
+        for (const f of res.findings.slice(0, 20)) {
+          const locStr = f.file ? `${f.file}:${f.line ?? 1}` : f.route;
+          console.log(
+            `  [${f.type}] (${f.locale} @ ${f.viewport.width}px) ${f.key ?? f.element} @ ${locStr}: ${f.prescription}`
+          );
+        }
+        if (res.budgetsRecorded > 0) {
+          console.log(`\nRecorded ${res.budgetsRecorded} width budget(s) in .polyglot/layout.json.`);
+        }
+      }
+      if (res.outcome === "FAIL") process.exitCode = 1;
+      else if (res.outcome === "INCONCLUSIVE") process.exitCode = 2;
     });
 
   program

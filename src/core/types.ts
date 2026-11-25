@@ -42,6 +42,26 @@ export const ConfigPathsSchema = z.object({
     ]),
 });
 
+export const LayoutViewportSchema = z.object({
+  width: z.number().int().positive(),
+  height: z.number().int().positive(),
+});
+export type LayoutViewport = z.infer<typeof LayoutViewportSchema>;
+
+export const LayoutConfigSchema = z.object({
+  baseUrl: z.string().optional(),
+  routes: z.array(z.string()).default(["/"]),
+  localeUrlPattern: z.enum(["query", "prefix", "cookie"]).default("query"),
+  viewports: z
+    .array(LayoutViewportSchema)
+    .default([
+      { width: 375, height: 812 },
+      { width: 1280, height: 800 },
+    ]),
+  screenshotsDir: z.string().default(".polyglot/screenshots"),
+});
+export type LayoutConfig = z.infer<typeof LayoutConfigSchema>;
+
 export const ConfigSchema = z.object({
   version: z.literal(1).default(1),
   sourceLocale: z.string().default("en"),
@@ -50,6 +70,7 @@ export const ConfigSchema = z.object({
   framework: FrameworkNameSchema.default("auto"),
   i18nLibrary: z.string().optional(),
   paths: ConfigPathsSchema.default({}),
+  layout: LayoutConfigSchema.optional(),
 });
 export type PolyglotConfig = z.infer<typeof ConfigSchema>;
 
@@ -61,11 +82,39 @@ export const GlossaryEntrySchema = z.object({
   doNotTranslate: z.boolean().default(false),
   caseSensitive: z.boolean().default(false),
   translations: z.record(z.string(), z.string()).default({}),
+  /** Approved short abbreviations per locale (full text kept in title or aria-label) */
+  abbreviations: z.record(z.string(), z.string()).optional(),
   notes: z.string().optional(),
   origin: GlossaryOriginSchema.default("inferred"),
   updatedAt: z.string(),
 });
 export type GlossaryEntry = z.infer<typeof GlossaryEntrySchema>;
+
+export const LayoutBudgetEntrySchema = z.object({
+  maxWidthPx: z.number().positive(),
+  budgetChars: z.number().int().positive(),
+  element: z.string().optional(),
+  constraint: z.string().optional(),
+  file: z.string().optional(),
+  line: z.number().int().nonnegative().optional(),
+  updatedAt: z.string(),
+});
+export type LayoutBudgetEntry = z.infer<typeof LayoutBudgetEntrySchema>;
+
+export const LayoutFileSchema = z.object({
+  version: z.literal(1).default(1),
+  budgets: z.record(z.string(), z.record(z.string(), LayoutBudgetEntrySchema)).default({}),
+  lastRun: z
+    .object({
+      checkedAt: z.string(),
+      outcome: z.enum(["PASS", "FAIL", "INCONCLUSIVE"]),
+      baseUrl: z.string().optional(),
+      findingCount: z.number().int().nonnegative(),
+      screenshots: z.array(z.string()).default([]),
+    })
+    .optional(),
+});
+export type LayoutFile = z.infer<typeof LayoutFileSchema>;
 
 export const GlossaryFileSchema = z.object({
   version: z.literal(1).default(1),
@@ -235,6 +284,8 @@ export type CheckIssueCode =
   | "length_expansion_risk"
   | "layout_risk"
   | "rtl_layout_risk"
+  | "layout_budget_exceeded"
+  | "hardcoded_formatting"
   | "stale_source"
   | "context_changed"
   | "manual_edit_detected"

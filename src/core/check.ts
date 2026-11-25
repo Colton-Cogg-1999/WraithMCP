@@ -146,6 +146,7 @@ export function runCheck(options: CheckOptions): CheckSummary {
   const records = store.readRecords();
   const reviews = store.readReviews();
   const prevUsage = store.readUsage();
+  const layoutState = store.readLayout();
 
   const { adapter, detection } = detectProjectAdapter(
     store.rootDir,
@@ -156,8 +157,9 @@ export function runCheck(options: CheckOptions): CheckSummary {
   const issues: CheckIssue[] = [];
   const dntTerms = glossary.entries.filter((e) => e.doNotTranslate).map((e) => e.term);
 
+  const PSEUDO_TAG_RE = /^(?:en-x-pseudo|pseudo|en-XA|ar-XB|ja-XC|th-XD|de-XE|en-XF)$/i;
   const detectedNonSourceLocales = Object.keys(detection.localeFiles)
-    .filter((l) => l !== config.sourceLocale && !l.startsWith("en-x-pseudo") && l !== "pseudo")
+    .filter((l) => l !== config.sourceLocale && !PSEUDO_TAG_RE.test(l))
     .sort();
 
   const targetLocales =
@@ -239,8 +241,20 @@ export function runCheck(options: CheckOptions): CheckSummary {
           severity: "warning",
           file: lr.file,
           line: lr.line,
+          key: lr.key,
           message: `Layout/formatting risk (${lr.constraint}): ${lr.suggestion}`,
           details: { constraint: lr.constraint, component: lr.component, snippet: lr.snippet },
+        });
+      }
+
+      for (const hf of scanRes.hardcodedFormatting ?? []) {
+        issues.push({
+          code: "hardcoded_formatting",
+          severity: "warning",
+          file: hf.file,
+          line: hf.line,
+          message: `Hardcoded formatting (${hf.rule}): ${hf.suggestion}`,
+          details: { rule: hf.rule, snippet: hf.snippet },
         });
       }
 
@@ -546,6 +560,26 @@ export function runCheck(options: CheckOptions): CheckSummary {
             key,
             message: `[${locale}] ${key}: translated length (${tgtLen}) is ${(tgtLen / srcLen).toFixed(1)}x source (${srcLen}); check UI truncation.`,
             details: { sourceLength: srcLen, targetLength: tgtLen },
+          });
+        }
+
+        // Layout width budget check (.polyglot/layout.json)
+        const budget = layoutState.budgets[key]?.[locale];
+        if (budget && tgtLen > budget.budgetChars) {
+          issues.push({
+            code: "layout_budget_exceeded",
+            severity: "error",
+            locale,
+            key,
+            file: budget.file,
+            line: budget.line,
+            message: `[${locale}] ${key}: translated length (${tgtLen} chars) exceeds recorded layout width budget (${budget.budgetChars} chars / ${budget.maxWidthPx}px on <${budget.element ?? "element"}>). Shorten copy, use an approved glossary abbreviation, or relax CSS and re-run \`polyglot layout\`.`,
+            details: {
+              targetLength: tgtLen,
+              budgetChars: budget.budgetChars,
+              maxWidthPx: budget.maxWidthPx,
+              constraint: budget.constraint,
+            },
           });
         }
 

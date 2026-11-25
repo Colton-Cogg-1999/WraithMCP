@@ -108,7 +108,8 @@ polyglot init [--source en] [--targets es-MX,fr] [--hook]
 polyglot status [--json]
 polyglot scan [--file <substr>] [--json]
 polyglot check [--locale <tag>] [--severity error|warning] [--json]   # exit 0=PASS, 1=FAIL, 2=INCONCLUSIVE
-polyglot pseudo [--locale en-x-pseudo] [--json]
+polyglot pseudo [--mode auto|expand|rtl|cjk|tall|long-word|format] [--locale en-x-pseudo] [--json]
+polyglot layout [--url http://localhost:3000] [--routes /,/settings] [--fix] [--dry-run] [--json]
 polyglot review --locale es-MX [--output job.json] | --ingest results.json
 polyglot escalate [--locale es-MX] [--output-dir .polyglot/escalations] | --import corrections.xlsx
 polyglot import [glossary.csv|terms.tbx|memory.tmx] [--format auto|csv|tbx|tmx|locales]
@@ -116,13 +117,31 @@ polyglot report [--json]
 polyglot mcp
 ```
 
+## Layout & Formatting QA (v1)
+
+Polyglot stays model-free while verifying rendered UI layout and locale formatting deterministically:
+
+- **Target-aware pseudo-locales (`polyglot pseudo --mode auto`):** generates `en-XA` (IBM length-scaled expansion + format overlay), `ar-XB` (RTL RLO/PDF with LRI/PDI isolation for placeholders & DNT brands), `ja-XC` (CJK fullwidth without spaces), `th-XD` (stacked tall diacritics), and `de-XE` (unbreakable compound words) based on `targetLocales`. Each pseudo string embeds its key ID in invisible zero-width characters so rendered browser findings map directly back to catalog keys.
+- **Rendered Playwright checks (`polyglot layout`):** renders configured routes across pseudo and target locales at 375px and 1280px to measure horizontal/vertical overflow, clipped text, overlapping sibling boxes, tofu/missing glyphs, `dir`/`lang` mismatches, and hardcoded formats surviving in `format` mode. Returns `INCONCLUSIVE` (never `PASS`) when Playwright is not installed or no `baseUrl` is configured.
+- **Remediation ladder (`polyglot layout --fix` + `.polyglot/layout.json` budgets):**
+  1. Deterministic mechanical codemods (`layout --fix`, `destructiveHint: true`): Tailwind physical→logical (`ml-/mr-`→`ms-/me-`, `pl-/pr-`→`ps-/pe-`, `left-/right-`→`start-/end-`, `text-left/right`→`text-start/end`, `rounded-l/r`, `border-l/r`), fixed `w-*`→`min-w-*` on constrained text, root `<html>` `dir`/`lang` injection across Next.js/React, Vue, SvelteKit, Rails, and Django, and `hyphens-auto` on flagged long-word elements.
+  2. Structured agent prescriptions (`file:line`, constraint, measured overflow px) for judgment edits.
+  3. Per-key/locale width budgets saved to `.polyglot/layout.json`, surfaced in `prepare`, and enforced in `check` (`layout_budget_exceeded`).
+  4. Approved locale abbreviations in `.polyglot/glossary.json` (`abbreviations`) with full labels kept in `title` / `aria-label`.
+- **Static CSS & formatting rules:** detects tight layout constraints in inline `style={{...}}`, styled-components/Emotion, CSS Modules, and plain CSS, plus `hardcoded_formatting` findings for `.toFixed()`, locale-less `toLocaleString()`/`Intl.*Format()`, currency concatenation, manually assembled dates, `.toUpperCase()`/`.toLowerCase()` on visible text, and locale-less `.localeCompare()`.
+
+### Honest Limits of Layout & Formatting v1
+- **Rendered checks require a running dev server and optional Playwright.** Without Playwright or a reachable `baseUrl`, `polyglot layout` returns `INCONCLUSIVE` and falls back to static checks only.
+- **Character-based width budgets are approximate.** v1 converts measured element pixel width into `budgetChars` using an average glyph-width heuristic (`0.56 × fontSize`), so variable-width proportional fonts and CJK/Arabic scripts should still be re-verified via `polyglot layout`.
+- **Mechanical codemods are Tailwind-first.** Automatic `--fix` rewrites target Tailwind utility classes and root HTML `dir`/`lang`; custom CSS modules, styled-components, and structural flexbox/grid refactors are emitted as agent prescriptions rather than mutated automatically.
+
 ## MCP Tools
 
-All 11 tools declare MCP behavioural `annotations` (`readOnlyHint`, `destructiveHint`, `idempotentHint`, `openWorldHint`), `outputSchema`, and return `structuredContent`:
+All 13 tools declare MCP behavioural `annotations` (`readOnlyHint`, `destructiveHint`, `idempotentHint`, `openWorldHint`), `outputSchema`, and return `structuredContent`:
 
-- **Read-only (`readOnlyHint: true`):** `status`, `scan`, `prepare`, `check`, `report`
+- **Read-only (`readOnlyHint: true`):** `status`, `scan`, `prepare`, `check`, `layout` *(persists optional width budgets to `.polyglot/layout.json`)*, `report`
 - **Mutating (`readOnlyHint: false`, `destructiveHint: false`):** `memory` (discriminated union per action), `review`
-- **Mutating / Overwriting (`readOnlyHint: false`, `destructiveHint: true`):** `apply`, `pseudo`, `escalate`, `import`
+- **Mutating / Overwriting (`readOnlyHint: false`, `destructiveHint: true`):** `apply`, `pseudo`, `layout_fix`, `escalate`, `import`
 - **Prompt:** `/localize`
 
 ---
