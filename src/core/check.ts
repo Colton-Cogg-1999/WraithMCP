@@ -4,7 +4,7 @@ import { detectProjectAdapter, loadLocaleCatalog, loadSourceCatalog } from "../a
 import { checkGlossaryCompliance } from "./glossary.js";
 import { getLocaleConventions, getPluralCategories } from "./locales.js";
 import { PluralValidationContext, validateTranslationString } from "./placeholders.js";
-import { scanDocumentsInProject } from "../documents/registry.js";
+import { evaluateDocumentForCheck, scanDocumentsInProject } from "../documents/registry.js";
 import { computeContextFingerprint, PolyglotStore, sha256Short } from "./store.js";
 import {
   CheckIssue,
@@ -592,15 +592,6 @@ export function runCheck(options: CheckOptions): CheckSummary {
 
   if (configuredDocs.length > 0) {
     executedChecks.push("documents");
-    const docStatePath = store.filePath("documents.json");
-    let docState: Record<string, Record<string, { targetFile?: string; translatedSegments?: number; totalSegments?: number }>> = {};
-    if (fs.existsSync(docStatePath)) {
-      try {
-        docState = JSON.parse(fs.readFileSync(docStatePath, "utf8"))?.documents ?? {};
-      } catch {
-        docState = {};
-      }
-    }
 
     for (const doc of configuredDocs) {
       if (targetLocales.length === 0) {
@@ -610,15 +601,20 @@ export function runCheck(options: CheckOptions): CheckSummary {
       }
       documentsChecked++;
       for (const locale of targetLocales) {
-        const entry = docState[doc.file]?.[locale];
-        const ext = path.extname(doc.file);
-        const stem = doc.file.slice(0, -ext.length);
-        const defaultTarget = path.join(store.rootDir, `${stem}.${locale}${ext}`);
-        const recordedTarget = entry?.targetFile
-          ? path.join(store.rootDir, entry.targetFile)
-          : defaultTarget;
+        const docEval = evaluateDocumentForCheck(store.rootDir, doc.file, locale);
 
-        if (!fs.existsSync(recordedTarget)) {
+        if (docEval.targetPathError) {
+          issues.push({
+            code: "missing_document_translation",
+            severity: "error",
+            locale,
+            file: doc.file,
+            message: `[${locale}] Configured document "${doc.file}" has an invalid target path: ${docEval.targetPathError}`,
+          });
+          continue;
+        }
+
+        if (!docEval.targetExists) {
           issues.push({
             code: "missing_document_translation",
             severity: "error",
@@ -626,19 +622,40 @@ export function runCheck(options: CheckOptions): CheckSummary {
             file: doc.file,
             message: `[${locale}] Configured document "${doc.file}" (${doc.segments} segments) has no translated output file.`,
           });
-        } else if (
-          entry &&
-          entry.totalSegments !== undefined &&
-          entry.translatedSegments !== undefined &&
-          entry.translatedSegments < entry.totalSegments
-        ) {
-          issues.push({
-            code: "missing_document_translation",
-            severity: "error",
-            locale,
-            file: doc.file,
-            message: `[${locale}] Configured document "${doc.file}" has only ${entry.translatedSegments}/${entry.totalSegments} segments translated.`,
-          });
+          continue;
+        }
+
+        if (docEval.hasStateRecord && docEval.evaluation) {
+          const ev = docEval.evaluation;
+          for (const seg of ev.segments) {
+            if (seg.status === "stale") {
+              staleByLocale[locale] = (staleByLocale[locale] ?? 0) + 1;
+              issues.push({
+                code: "stale_source",
+                severity: "error",
+                locale,
+                file: doc.file,
+                key: seg.segment.id,
+                message: `[${locale}] Document "${doc.file}" segment "${seg.segment.id}" source changed since last translation; re-translation required.`,
+                details: seg.staleInfo
+                  ? {
+                      previousSource: seg.staleInfo.previousSource,
+                      currentSource: seg.staleInfo.currentSource,
+                    }
+                  : undefined,
+              });
+            }
+          }
+
+          if (ev.untranslatedCount > 0) {
+            issues.push({
+              code: "missing_document_translation",
+              severity: "error",
+              locale,
+              file: doc.file,
+              message: `[${locale}] Configured document "${doc.file}" has ${ev.untranslatedCount} untranslated segment(s) (${ev.translatedCount}/${ev.segments.length} current segments translated).`,
+            });
+          }
         }
       }
     }
