@@ -85,23 +85,47 @@ function isPathInsideRoot(candidate: string, root: string): boolean {
 
 /**
  * Resolve the nearest existing ancestor of `targetPath` via `fs.realpathSync`,
+ * following dangling symlinks via `fs.lstatSync` + `fs.readlinkSync`,
  * then reconstruct the remaining relative segments so symlinks on existing OR
- * non-existent target paths cannot escape the root.
+ * non-existent target paths (including dangling symlinks) cannot escape the root.
  */
-function resolveRealPathWithAncestor(targetPath: string): string {
+function resolveRealPathWithAncestor(targetPath: string, depth = 0): string {
+  if (depth > 40) {
+    throw new SecurityBoundaryError("symlink_loop", `Too many symlink levels while resolving "${targetPath}".`);
+  }
+
   const abs = path.resolve(targetPath);
   const trailing: string[] = [];
   let curr = abs;
 
-  while (!fs.existsSync(curr)) {
+  while (true) {
+    let lstat: fs.Stats | null = null;
+    try {
+      lstat = fs.lstatSync(curr);
+    } catch {
+      lstat = null;
+    }
+
+    if (lstat) {
+      if (lstat.isSymbolicLink()) {
+        // Resolve even dangling symlinks by following readlink recursively
+        const linkTarget = fs.readlinkSync(curr);
+        const resolvedLink = path.resolve(path.dirname(curr), linkTarget);
+        const nextTarget = trailing.length > 0 ? path.join(resolvedLink, ...trailing) : resolvedLink;
+        return resolveRealPathWithAncestor(nextTarget, depth + 1);
+      }
+      const realBase = safeRealpath(curr);
+      return trailing.length > 0 ? path.join(realBase, ...trailing) : realBase;
+    }
+
     const parent = path.dirname(curr);
-    if (parent === curr) break;
+    if (parent === curr) {
+      const realBase = safeRealpath(curr);
+      return trailing.length > 0 ? path.join(realBase, ...trailing) : realBase;
+    }
     trailing.unshift(path.basename(curr));
     curr = parent;
   }
-
-  const realBase = safeRealpath(curr);
-  return trailing.length > 0 ? path.join(realBase, ...trailing) : realBase;
 }
 
 export interface ConfinedPathOptions {
@@ -279,7 +303,8 @@ export function safeUnzipSync(
     const nameBytes = zipBytes.subarray(pos + 46, pos + 46 + nameLen);
     const entryName = new TextDecoder().decode(nameBytes);
 
-    if (entryName.startsWith("/") || entryName.includes("..") || entryName.includes("\\")) {
+    const segments = entryName.split("/");
+    if (entryName.startsWith("/") || segments.includes("..") || entryName.includes("\\")) {
       throw new SecurityBoundaryError(
         "archive_path_traversal",
         `Archive entry "${entryName}" contains unsafe path traversal.`

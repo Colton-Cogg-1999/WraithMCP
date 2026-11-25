@@ -1,8 +1,18 @@
 import fs from "node:fs";
 import path from "node:path";
 import { importExistingLocales } from "./importers.js";
+import { atomicWriteFileSync, resolveConfinedPath } from "./security.js";
 import { PolyglotStore } from "./store.js";
 import { FrameworkName, PolyglotConfig, ReviewMode } from "./types.js";
+
+function existsOrSymlink(p: string): boolean {
+  try {
+    fs.lstatSync(p);
+    return true;
+  } catch {
+    return false;
+  }
+}
 
 export const AGENT_RULE_MARKER = "<!-- polyglot:rule -->";
 export const AGENT_RULE_TEXT = `${AGENT_RULE_MARKER}
@@ -79,17 +89,17 @@ export function initProject(options: InitOptions): InitResult {
   if (options.writeAgentRule !== false) {
     const candidates = ["AGENTS.md", "CLAUDE.md"];
     const existingTargets = candidates.filter((f) =>
-      fs.existsSync(path.join(store.rootDir, f))
+      existsOrSymlink(path.join(store.rootDir, f))
     );
     const targets = existingTargets.length > 0 ? existingTargets : ["AGENTS.md"];
     for (const rel of targets) {
-      const full = path.join(store.rootDir, rel);
+      const full = resolveConfinedPath(store.rootDir, rel, { label: rel });
       const existingText = fs.existsSync(full) ? fs.readFileSync(full, "utf8") : "";
       if (!existingText.includes(AGENT_RULE_MARKER) && !existingText.includes("polyglot check")) {
         const sep = existingText.length > 0 && !existingText.endsWith("\n\n")
           ? existingText.endsWith("\n") ? "\n" : "\n\n"
           : "";
-        fs.writeFileSync(full, existingText + sep + AGENT_RULE_TEXT, "utf8");
+        atomicWriteFileSync(full, existingText + sep + AGENT_RULE_TEXT);
         agentFilesUpdated.push(rel);
       }
     }
@@ -97,10 +107,17 @@ export function initProject(options: InitOptions): InitResult {
 
   let hookInstalled: string | null = null;
   if (options.installHook) {
-    const gitHooksDir = path.join(store.rootDir, ".git", "hooks");
-    if (fs.existsSync(path.join(store.rootDir, ".git"))) {
+    if (existsOrSymlink(path.join(store.rootDir, ".git"))) {
+      resolveConfinedPath(store.rootDir, ".git", { label: ".git directory" });
+      const gitHooksDir = resolveConfinedPath(store.rootDir, path.join(".git", "hooks"), {
+        label: ".git/hooks directory",
+      });
+      const hookPath = resolveConfinedPath(
+        store.rootDir,
+        path.join(".git", "hooks", "pre-commit"),
+        { label: ".git/hooks/pre-commit" }
+      );
       fs.mkdirSync(gitHooksDir, { recursive: true });
-      const hookPath = path.join(gitHooksDir, "pre-commit");
       const hookSnippet = `
 # polyglot-pre-commit
 if [ -n "\${POLYGLOT_BIN:-}" ] && [ -x "\${POLYGLOT_BIN}" ]; then
@@ -120,17 +137,13 @@ fi
       if (fs.existsSync(hookPath)) {
         const existing = fs.readFileSync(hookPath, "utf8");
         if (!existing.includes("polyglot-pre-commit")) {
-          fs.writeFileSync(hookPath, existing + hookSnippet, { mode: 0o755 });
+          atomicWriteFileSync(hookPath, existing + hookSnippet);
         }
       } else {
-        fs.writeFileSync(
-          hookPath,
-          `#!/usr/bin/env sh\nset -e${hookSnippet}`,
-          { mode: 0o755 }
-        );
+        atomicWriteFileSync(hookPath, `#!/usr/bin/env sh\nset -e${hookSnippet}`);
       }
       fs.chmodSync(hookPath, 0o755);
-      hookInstalled = path.relative(store.rootDir, hookPath);
+      hookInstalled = path.relative(store.rootDir, hookPath).replace(/\\/g, "/");
     }
   }
 

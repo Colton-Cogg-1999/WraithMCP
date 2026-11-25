@@ -2,7 +2,7 @@ import crypto from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
 import { ZodError } from "zod";
-import { atomicWriteFileSync } from "./security.js";
+import { atomicWriteFileSync, resolveConfinedPath } from "./security.js";
 import {
   AssumptionsFile,
   AssumptionsFileSchema,
@@ -73,12 +73,21 @@ export class PolyglotStore {
     return fs.existsSync(this.filePath("config.json"));
   }
 
+  confinedDir(): string {
+    return resolveConfinedPath(this.rootDir, POLYGLOT_DIR, {
+      label: ".polyglot directory",
+    });
+  }
+
   ensureDir(): void {
-    fs.mkdirSync(this.dir, { recursive: true });
+    const confined = this.confinedDir();
+    fs.mkdirSync(confined, { recursive: true });
   }
 
   filePath(name: string): string {
-    return path.join(this.dir, name);
+    return resolveConfinedPath(this.rootDir, path.join(POLYGLOT_DIR, name), {
+      label: `.polyglot/${name}`,
+    });
   }
 
   readConfig(): PolyglotConfig {
@@ -129,7 +138,7 @@ export class PolyglotStore {
         translations: sortRecordKeys(entry.translations),
       }))
       .sort((a, b) => a.term.localeCompare(b.term));
-    fs.writeFileSync(this.filePath("glossary.json"), stableJson(parsed), "utf8");
+    atomicWriteFileSync(this.filePath("glossary.json"), stableJson(parsed));
   }
 
   upsertGlossaryEntry(
@@ -200,10 +209,9 @@ export class PolyglotStore {
         ),
       };
     }
-    fs.writeFileSync(
+    atomicWriteFileSync(
       this.filePath("usage.json"),
-      stableJson({ version: 1, keys: sortedKeys }),
-      "utf8"
+      stableJson({ version: 1, keys: sortedKeys })
     );
   }
 
@@ -222,10 +230,9 @@ export class PolyglotStore {
     for (const key of Object.keys(parsed.records).sort()) {
       sorted[key] = sortRecordKeys(parsed.records[key]);
     }
-    fs.writeFileSync(
+    atomicWriteFileSync(
       this.filePath("records.json"),
-      stableJson({ version: 1, records: sorted }),
-      "utf8"
+      stableJson({ version: 1, records: sorted })
     );
   }
 
@@ -293,7 +300,7 @@ export class PolyglotStore {
   writeAssumptions(file: AssumptionsFile): void {
     this.ensureDir();
     const parsed = AssumptionsFileSchema.parse(file);
-    fs.writeFileSync(this.filePath("assumptions.json"), stableJson(parsed), "utf8");
+    atomicWriteFileSync(this.filePath("assumptions.json"), stableJson(parsed));
   }
 
   addAssumption(input: {
@@ -330,6 +337,6 @@ export class PolyglotStore {
   writeReviews(file: ReviewsFile): void {
     this.ensureDir();
     const parsed = ReviewsFileSchema.parse(file);
-    fs.writeFileSync(this.filePath("reviews.json"), stableJson(parsed), "utf8");
+    atomicWriteFileSync(this.filePath("reviews.json"), stableJson(parsed));
   }
 }

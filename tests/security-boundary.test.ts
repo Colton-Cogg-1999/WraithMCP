@@ -137,4 +137,35 @@ describe("P0 Security Boundary Regression Suite", () => {
     expect(() => new DocxDocumentAdapter().extract(path.join(repo, "bomb.docx"))).toThrow(SecurityBoundaryError);
     expect(() => parseXlsxBuffer(bomb)).toThrow(SecurityBoundaryError);
   });
+
+  it("refuses symlinked .git/hooks, dangling AGENTS.md symlinks, and symlinked .polyglot directories (B6, B7)", () => {
+    // 1. Symlinked .git/hooks pointing outside workspace
+    const repo1 = makeDir("polyglot-hook-sym-");
+    const outsideHooks = makeDir("polyglot-outside-hooks-");
+    fs.mkdirSync(path.join(repo1, ".git"), { recursive: true });
+    fs.symlinkSync(outsideHooks, path.join(repo1, ".git", "hooks"));
+    expect(() =>
+      initProject({ rootDir: repo1, sourceLocale: "en", targetLocales: ["de"], writeAgentRule: false, installHook: true })
+    ).toThrow(SecurityBoundaryError);
+    expect(fs.readdirSync(outsideHooks)).toEqual([]);
+
+    // 2. Dangling symlink AGENTS.md pointing to non-existent outside path
+    const repo2 = makeDir("polyglot-dangling-");
+    const outsideDir = makeDir("polyglot-outside-dangling-");
+    const danglingTarget = path.join(outsideDir, "would-be-created.txt");
+    fs.symlinkSync(danglingTarget, path.join(repo2, "AGENTS.md"));
+    expect(() =>
+      initProject({ rootDir: repo2, sourceLocale: "en", targetLocales: ["de"], writeAgentRule: true })
+    ).toThrow(SecurityBoundaryError);
+    expect(fs.existsSync(danglingTarget)).toBe(false);
+
+    // 3. Symlinked .polyglot/ pointing outside workspace
+    const repo3 = makeDir("polyglot-store-sym-");
+    const outsideStore = makeDir("polyglot-outside-store-");
+    fs.symlinkSync(outsideStore, path.join(repo3, ".polyglot"));
+    expect(() =>
+      initProject({ rootDir: repo3, sourceLocale: "en", targetLocales: ["de"], writeAgentRule: false })
+    ).toThrow(SecurityBoundaryError);
+    expect(fs.readdirSync(outsideStore)).toEqual([]);
+  });
 });
