@@ -1,4 +1,4 @@
-# Polyglot Architectural Decisions
+# Wraith Architectural Decisions
 
 This log records implementation choices made where the kickoff brief intentionally left details open. Every decision optimizes for: model-free determinism, minimal dependencies, permissive licenses, and zero-jargon developer experience.
 

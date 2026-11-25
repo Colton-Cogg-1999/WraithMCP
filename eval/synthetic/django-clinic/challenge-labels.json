@@ -1,0 +1,185 @@
+{
+  "items": [
+    {
+      "key": "Open",
+      "source": "Open",
+      "category": "ambiguous",
+      "component": "views.py",
+      "intendedSense": "Adjective meaning the medical clinic is currently open for patient walk-ins."
+    },
+    {
+      "key": "Close",
+      "source": "Close",
+      "category": "ambiguous",
+      "component": "appointment.html",
+      "intendedSense": "Imperative verb button to close the appointment modal."
+    },
+    {
+      "key": "Save",
+      "source": "Save",
+      "category": "ambiguous",
+      "component": "appointment.html",
+      "intendedSense": "Imperative verb button to save patient intake details."
+    },
+    {
+      "key": "Back",
+      "source": "Back",
+      "category": "ambiguous",
+      "component": "appointment.html",
+      "intendedSense": "Navigation link to return to the previous booking step."
+    },
+    {
+      "key": "Sign",
+      "source": "Sign",
+      "category": "ambiguous",
+      "component": "consent.html",
+      "intendedSense": "Imperative verb to electronically sign the HIPAA consent form."
+    },
+    {
+      "key": "Northstar Health Clinic",
+      "source": "Northstar Health Clinic",
+      "category": "dnt",
+      "component": "appointment.html",
+      "intendedSense": null
+    },
+    {
+      "key": "Records are archived securely in LedgerVault.",
+      "source": "Records are archived securely in LedgerVault.",
+      "category": "dnt",
+      "component": "consent.html",
+      "intendedSense": null
+    },
+    {
+      "key": "Select a Workspace to view patient Invoices.",
+      "source": "Select a Workspace to view patient Invoices.",
+      "category": "glossary",
+      "component": "views.py",
+      "intendedSense": null
+    },
+    {
+      "key": "Assigned %(doctor)s for %(patient)s.",
+      "source": "Assigned %(doctor)s for %(patient)s.",
+      "category": "placeholder",
+      "component": "views.py",
+      "intendedSense": null
+    },
+    {
+      "key": "Your visit is confirmed for %(date)s at %(time)s.",
+      "source": "Your visit is confirmed for %(date)s at %(time)s.",
+      "category": "placeholder",
+      "component": "appointment.html",
+      "intendedSense": null
+    },
+    {
+      "key": "Schedule",
+      "source": "Schedule",
+      "category": "tight-ui",
+      "component": "appointment.html",
+      "intendedSense": null
+    },
+    {
+      "key": "Patients",
+      "source": "Patients",
+      "category": "tight-ui",
+      "component": "appointment.html",
+      "intendedSense": null
+    },
+    {
+      "key": "Records",
+      "source": "Records",
+      "category": "tight-ui",
+      "component": "appointment.html",
+      "intendedSense": null
+    },
+    {
+      "key": "Cancel visit",
+      "source": "Cancel visit",
+      "category": "tight-ui",
+      "component": "appointment.html",
+      "intendedSense": null
+    },
+    {
+      "key": "Please arrive fifteen minutes before your scheduled appointment.",
+      "source": "Please arrive fifteen minutes before your scheduled appointment.",
+      "category": "general",
+      "component": "appointment.html",
+      "intendedSense": null
+    },
+    {
+      "key": "No upcoming laboratory results are available yet.",
+      "source": "No upcoming laboratory results are available yet.",
+      "category": "general",
+      "component": "views.py",
+      "intendedSense": null
+    }
+  ],
+  "glossary": [
+    {
+      "term": "Northstar",
+      "doNotTranslate": true,
+      "caseSensitive": true,
+      "translations": {},
+      "notes": "Company brand name — never translate."
+    },
+    {
+      "term": "Northstar Pay",
+      "doNotTranslate": true,
+      "caseSensitive": true,
+      "translations": {},
+      "notes": "Payment product name — never translate."
+    },
+    {
+      "term": "PulseGrid",
+      "doNotTranslate": true,
+      "caseSensitive": true,
+      "translations": {},
+      "notes": "Analytics suite brand — never translate."
+    },
+    {
+      "term": "LedgerVault",
+      "doNotTranslate": true,
+      "caseSensitive": true,
+      "translations": {},
+      "notes": "Compliance module brand — never translate."
+    },
+    {
+      "term": "Workspace",
+      "doNotTranslate": false,
+      "caseSensitive": false,
+      "translations": {
+        "es-MX": "espacio de trabajo",
+        "de": "Arbeitsbereich",
+        "ja": "ワークスペース",
+        "ar": "مساحة العمل",
+        "pl": "obszar roboczy"
+      },
+      "notes": "Use consistently for team container."
+    },
+    {
+      "term": "Invoice",
+      "doNotTranslate": false,
+      "caseSensitive": false,
+      "translations": {
+        "es-MX": "factura",
+        "de": "Rechnung",
+        "ja": "請求書",
+        "ar": "فاتورة",
+        "pl": "faktura"
+      },
+      "notes": "Standard billing document term."
+    },
+    {
+      "term": "Seat",
+      "doNotTranslate": false,
+      "caseSensitive": false,
+      "translations": {
+        "es-MX": "licencia",
+        "de": "Lizenz",
+        "ja": "シート",
+        "ar": "مقعد",
+        "pl": "stanowisko"
+      },
+      "notes": "Per-user subscription license."
+    }
+  ]
+}

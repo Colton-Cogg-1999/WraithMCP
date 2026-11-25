@@ -1,0 +1,40 @@
+{
+  "completedAt": "2026-11-25T05:00:50.313Z",
+  "polyglotBin": "/home/colton/Projects/Polyglot MCP/release/polyglot-linux-x64",
+  "codexModel": "gpt-6.2-astra",
+  "codexApprovalFlags": [
+    "--approve-for-me"
+  ],
+  "codexModelCutoff": "2026-03-01",
+  "judges": {
+    "claude": {
+      "cli": "claude",
+      "model": "sonnet",
+      "effort": "medium"
+    },
+    "gemini": {
+      "cli": "agy",
+      "model": "gemini-4-carbon-medium"
+    }
+  },
+  "calComSkipped": true,
+  "calComSkipReason": "audit3 MISS tests failed (MISS-1, MISS-2, MISS-3: 3 failed / 2 passed).",
+  "deeplStageCharCap": 100000,
+  "deeplUsageBaseline": {
+    "tier": "free",
+    "baseUrl": "https://api-free.deepl.com",
+    "character_count": 375506,
+    "character_limit": 1000000,
+    "remaining": 624494,
+    "checkedAt": "2026-11-25T05:00:50.312Z"
+  },
+  "pilotApp": {
+    "dir": "/home/colton/Projects/Polyglot MCP/eval/synthetic/nextjs-commerce",
+    "itemCount": 60
+  },
+  "pilotDocx": {
+    "path": "/home/colton/Projects/Polyglot MCP/eval/docx/northstar-policy.docx",
+    "libreOfficeOpened": true,
+    "pages": 1
+  }
+}

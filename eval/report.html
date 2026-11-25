@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<title>Polyglot Independent Evaluation Report</title>
+<style>
+  body { font-family: system-ui, -apple-system, sans-serif; margin: 0; padding: 24px 32px; background: #f8fafc; color: #0f172a; line-height: 1.5; }
+  h1, h2, h3 { color: #0f172a; }
+  .card { background: #fff; border: 1px solid #e2e8f0; border-radius: 10px; padding: 18px; margin-bottom: 22px; box-shadow: 0 1px 2px rgba(0,0,0,0.03); }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; margin-top: 10px; }
+  th, td { border: 1px solid #e2e8f0; padding: 8px 10px; text-align: left; vertical-align: top; }
+  th { background: #f1f5f9; font-weight: 600; }
+  .badge { display: inline-block; padding: 2px 7px; border-radius: 999px; font-size: 11px; font-weight: 600; background: #e0f2fe; color: #0369a1; }
+  .grid-2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(360px, 1fr)); gap: 16px; }
+  .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+  img { width: 100%; border: 1px solid #cbd5e1; border-radius: 6px; background: #fff; }
+  code { background: #f1f5f9; padding: 1px 4px; border-radius: 4px; font-size: 12px; }
+  .note { background: #fef3c7; border-left: 4px solid #d97706; padding: 10px 14px; border-radius: 4px; margin: 12px 0; font-size: 13px; }
+</style>
+</head>
+<body>
+  <h1>Polyglot Independent Evaluation — Visual & Side-by-Side Report</h1>
+  <p>Companion to <code>eval/REPORT.md</code>. Codex: <code>gpt-6.2-astra</code> | Judges: Claude <code>sonnet</code> + Gemini <code>gemini-4-carbon-medium</code> | Total Judged Items: <strong>1122</strong></p>
+
+  <div class="card">
+    <h2>1. Challenge Set Summary (A vs A0 vs B vs B+ctx)</h2>
+    <table>
+      <thead><tr><th>System</th><th>Challenge Win Rate (Wilson 95% CI)</th><th>Disambiguation Sense Accuracy</th><th>Challenge MQM Maj+Crit / 100</th><th>Non-Challenge Win Rate</th><th><code>check</code> Errors</th><th>Visual Defects</th></tr></thead>
+      <tbody>
+        <tr><td><strong>A (Codex + Polyglot MCP)</strong></td><td>2.8% [1.7%, 4.5%]</td><td>99.5% [98.3%, 99.9%]</td><td>4.8</td><td>6.7% [2.6%, 15.9%]</td><td>0</td><td>25</td></tr><tr><td><strong>A0 (Codex, no Polyglot)</strong></td><td>4.8% [3.3%, 6.9%]</td><td>99.8% [98.7%, 100.0%]</td><td>1.8</td><td>11.7% [5.8%, 22.2%]</td><td>28</td><td>26</td></tr><tr><td><strong>B (DeepL + XML + glossary)</strong></td><td>0.5% [0.2%, 1.6%]</td><td>59.3% [54.6%, 63.8%]</td><td>34.0</td><td>0.0% [0.0%, 6.0%]</td><td>53</td><td>66</td></tr><tr><td><strong>B+ctx (DeepL + context ≤300c)</strong></td><td>0.5% [0.2%, 1.6%]</td><td>86.7% [83.2%, 89.6%]</td><td>18.0</td><td>3.3% [0.9%, 11.4%]</td><td>42</td><td>57</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="card">
+    <h2>2. Side-by-Side Challenge Examples (<code>nextjs-commerce</code> → <code>de</code>)</h2>
+    <table>
+      <thead><tr><th>Key &amp; Category</th><th>Source (en) &amp; Sense</th><th>A (Polyglot)</th><th>A0 (No Polyglot)</th><th>B (DeepL)</th><th>B+ctx (DeepL+ctx)</th><th>Panel</th></tr></thead>
+      <tbody>
+        <tr><td><code>hours.openBadge</code><br/><span class="badge">ambiguous</span></td><td><strong>Open</strong><br/><small>Adjective meaning the retail store is currently open for business (NOT the verb 'to open' a file).</small></td><td>Geöffnet</td><td>Geöffnet</td><td>Öffnen</td><td>Geöffnet</td><td><strong>tie</strong></td></tr><tr><td><code>invoice.openAction</code><br/><span class="badge">ambiguous</span></td><td><strong>Open</strong><br/><small>Imperative verb button to open/view a PDF invoice document (NOT 'open for business').</small></td><td>Öffnen</td><td>Öffnen</td><td>Öffnen</td><td>Öffnen</td><td><strong>tie</strong></td></tr><tr><td><code>community.postHeading</code><br/><span class="badge">ambiguous</span></td><td><strong>Post</strong><br/><small>Noun referring to a published forum post / article entry (NOT the action verb 'to publish').</small></td><td>Beitrag</td><td>Beitrag</td><td>Beitrag</td><td>Beitrag</td><td><strong>tie</strong></td></tr><tr><td><code>composer.postAction</code><br/><span class="badge">ambiguous</span></td><td><strong>Post</strong><br/><small>Imperative verb button to publish/submit a new reply (NOT the noun 'a post').</small></td><td>Posten</td><td>Veröffentlichen</td><td>Beitrag</td><td>Post</td><td><strong>A0</strong></td></tr><tr><td><code>checkout.orderLabel</code><br/><span class="badge">ambiguous</span></td><td><strong>Order</strong><br/><small>Noun referring to a customer's commercial purchase order (NOT sorting sequence).</small></td><td>Bestellung</td><td>Bestellung</td><td>Bestellung</td><td>Bestellung</td><td><strong>tie</strong></td></tr><tr><td><code>catalog.orderLabel</code><br/><span class="badge">ambiguous</span></td><td><strong>Order</strong><br/><small>Noun referring to display sort sequence/arrangement of list items (NOT a purchase order).</small></td><td>Reihenfolge</td><td>Sortierreihenfolge</td><td>Bestellung</td><td>Reihenfolge</td><td><strong>tie</strong></td></tr><tr><td><code>modal.closeButton</code><br/><span class="badge">ambiguous</span></td><td><strong>Close</strong><br/><small>Imperative verb button to dismiss/close a dialog window (NOT proximity 'nearby').</small></td><td>Schließen</td><td>Schließen</td><td>Schließen</td><td>Schließen</td><td><strong>tie</strong></td></tr><tr><td><code>branch.closeBadge</code><br/><span class="badge">ambiguous</span></td><td><strong>Close</strong><br/><small>Adjective meaning geographically nearby / short distance away (NOT the verb 'close window').</small></td><td>In der Nähe</td><td>In der Nähe</td><td>Schließen</td><td>In der Nähe</td><td><strong>tie</strong></td></tr><tr><td><code>pricing.freeTag</code><br/><span class="badge">ambiguous</span></td><td><strong>Free</strong><br/><small>Adjective meaning zero cost / gratis ($0 pricing tier), NOT available disk space.</small></td><td>Kostenlos</td><td>Kostenlos</td><td>Kostenlos</td><td>Kostenlos</td><td><strong>tie</strong></td></tr><tr><td><code>storage.freeTag</code><br/><span class="badge">ambiguous</span></td><td><strong>Free</strong><br/><small>Adjective meaning unoccupied/available storage space remaining (NOT 'free of charge').</small></td><td>GB frei</td><td>frei</td><td>Kostenlos</td><td>Free</td><td><strong>A0</strong></td></tr><tr><td><code>profile.saveButton</code><br/><span class="badge">ambiguous</span></td><td><strong>Save</strong><br/><small>Imperative verb to persist/store form changes (NOT 'save money').</small></td><td>Speichern</td><td>Speichern</td><td>Speichern</td><td>Speichern</td><td><strong>tie</strong></td></tr><tr><td><code>promo.saveLabel</code><br/><span class="badge">ambiguous</span></td><td><strong>Save</strong><br/><small>Verb meaning to save money / get a price reduction on an annual plan (NOT 'save file').</small></td><td>Sparen Sie</td><td>Sparen Sie</td><td>Speichern</td><td>Sparen</td><td><strong>tie</strong></td></tr><tr><td><code>wizard.backButton</code><br/><span class="badge">ambiguous</span></td><td><strong>Back</strong><br/><small>Navigation control to return to the previous step (NOT physical back or verb 'support').</small></td><td>Zurück</td><td>Zurück</td><td>Zurück</td><td>Zurück</td><td><strong>tie</strong></td></tr><tr><td><code>warranty.backPromise</code><br/><span class="badge">ambiguous</span></td><td><strong>We back every purchase for two years.</strong><br/><small>Verb 'back' meaning to guarantee / stand behind a product warranty (NOT 'go back').</small></td><td>Wir geben Ihnen auf jeden Kauf zwei Jahre Garantie.</td><td>Bei jedem Kauf erhalten Sie zwei Jahre Garantie.</td><td>Auf jeden Kauf gewähren wir zwei Jahre Garantie.</td><td>Wir gewähren auf jeden Kauf eine zweijährige Garantie.</td><td><strong>tie</strong></td></tr><tr><td><code>billing.chargeHeading</code><br/><span class="badge">ambiguous</span></td><td><strong>Charge</strong><br/><small>Noun meaning a financial fee / line-item debit on a statement (NOT electrical battery charge).</small></td><td>Abbuchung</td><td>Belastung</td><td>Anklage</td><td>Gebühr</td><td><strong>tie</strong></td></tr><tr><td><code>device.chargeHeading</code><br/><span class="badge">ambiguous</span></td><td><strong>Charge</strong><br/><small>Noun meaning remaining electrical battery level of a hardware terminal (NOT a billing fee).</small></td><td>Akkustand</td><td>Akkustand</td><td>Anklage</td><td>Charge</td><td><strong>tie</strong></td></tr><tr><td><code>contract.signAction</code><br/><span class="badge">ambiguous</span></td><td><strong>Sign</strong><br/><small>Imperative verb to electronically sign a legal agreement (NOT a physical notice/signage).</small></td><td>Signieren</td><td>Unterschreiben</td><td>Zeichen</td><td>Sign</td><td><strong>tie</strong></td></tr><tr><td><code>storefront.signNotice</code><br/><span class="badge">ambiguous</span></td><td><strong>Check the sign at the pickup counter.</strong><br/><small>Noun meaning a physical posted notice/placard at a store counter (NOT the verb 'to sign').</small></td><td>Beachten Sie das Schild am Abholschalter.</td><td>Beachten Sie das Schild am Abholschalter.</td><td>Bitte beachten Sie das Schild am Abholschalter.</td><td>Bitte beachten Sie das Hinweisschild am Abholschalter.</td><td><strong>tie</strong></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="card">
+    <h2>3. Playwright Layout Screenshots (System A vs System B)</h2>
+    <div class="grid-2">
+      
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>4. DOCX LibreOffice Page 1 Comparisons (Source vs System A vs System B)</h2>
+    <div class="note">LOW-CONFIDENCE JUDGE VERDICT (Pilot DOCX κ = 0.34, Claude flip rate = 35%): treat DOCX judge preferences as secondary; primary DOCX conclusions rest on deterministic OOXML structure preservation, LibreOffice rendering, source-text leakage, and incremental-update integrity.</div>
+    <h3><code>northstar-policy.docx</code> → <code>de</code></h3>
+      <div class="grid-3">
+        <div><h4>Source (en)</h4><img src="results/docx/northstar-policy/render-src/src-page-1.png"/></div>
+        <div><h4>System A (Polyglot)</h4><img src="results/docx/northstar-policy/render-A/A-de-page-1.png"/></div>
+        <div><h4>System B (DeepL Document API)</h4><img src="results/docx/northstar-policy/render-B/B-de-page-1.png"/></div>
+      </div><h3><code>gov-grant-form.docx</code> → <code>ja</code></h3>
+      <div class="grid-3">
+        <div><h4>Source (en)</h4><img src="results/docx/gov-grant-form/render-src/src-page-1.png"/></div>
+        <div><h4>System A (Polyglot)</h4><img src="results/docx/gov-grant-form/render-A/A-ja-page-1.png"/></div>
+        <div><h4>System B (DeepL Document API)</h4><img src="results/docx/gov-grant-form/render-B/B-ja-page-1.png"/></div>
+      </div><h3><code>open-sustainability-report.docx</code> → <code>ar</code></h3>
+      <div class="grid-3">
+        <div><h4>Source (en)</h4><img src="results/docx/open-sustainability-report/render-src/src-page-1.png"/></div>
+        <div><h4>System A (Polyglot)</h4><img src="results/docx/open-sustainability-report/render-A/A-ar-page-1.png"/></div>
+        <div><h4>System B (DeepL Document API)</h4><img src="results/docx/open-sustainability-report/render-B/B-ar-page-1.png"/></div>
+      </div><h3><code>libreoffice-revisions.docx</code> → <code>pl</code></h3>
+      <div class="grid-3">
+        <div><h4>Source (en)</h4><img src="results/docx/libreoffice-revisions/render-src/src-page-1.png"/></div>
+        <div><h4>System A (Polyglot)</h4><img src="results/docx/libreoffice-revisions/render-A/A-pl-page-1.png"/></div>
+        <div><h4>System B (DeepL Document API)</h4><img src="results/docx/libreoffice-revisions/render-B/B-pl-page-1.png"/></div>
+      </div>
+  </div>
+  <div class="card">
+    <h2>5. Post-Eval Addendum: Layout &amp; Formatting v1 Before vs After (<code>layout-v1</code> Branch)</h2>
+    <div class="note">Stage 3 results above ran unmodified on <code>f317563</code>. After Stage 3 finished, release blockers and Layout &amp; Formatting v1 were built on <code>layout-v1</code> and only the layout check was re-run across 7 locales (375px &amp; 1280px).</div>
+    <table>
+      <thead><tr><th>Stage</th><th>Outcome</th><th>Total Rendered Defects</th><th>Clipped Text</th><th>RTL dir/lang Mismatch</th><th>Horizontal Overflow</th><th>Static Physical-RTL Risks</th></tr></thead>
+      <tbody>
+        <tr><td><strong>Baseline (f317563)</strong></td><td><code>FAIL</code></td><td><strong>26</strong></td><td>15</td><td>4</td><td>7</td><td>1</td></tr>
+        <tr><td><strong>After Step 1 (<code>layout --fix</code> mechanical codemods)</strong></td><td><code>FAIL</code></td><td>8</td><td><strong>0</strong></td><td><strong>0</strong></td><td>8</td><td><strong>0</strong></td></tr>
+        <tr><td><strong>After Step 2 (Agent applies prescribed flex-wrap edit)</strong></td><td><code>PASS</code></td><td><strong>0</strong></td><td><strong>0</strong></td><td><strong>0</strong></td><td><strong>0</strong></td><td><strong>0</strong></td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="card">
+    <h2>6. Stage 4: TM Context Ablation</h2>
+    <div class="note"><strong>DRY RUN — no model outputs yet; dataset &amp; metric pipeline validated.</strong> No Codex or judge calls were made.</div>
+    <p>482 items in 165 recurring groups; locales de, ja, ar, es; 40% of recurring patterns TM-seeded. Judge: <code>pending</code>.</p>
+    <table>
+      <thead><tr><th>Slice</th><th>Gold</th><th>Items</th><th>Unique Sources</th><th>TM Entries</th><th>A-full TM Hits</th><th>Per Locale</th></tr></thead>
+      <tbody><tr><td><code>synthetic-app</code></td><td>author-provided</td><td>256</td><td>18</td><td>28</td><td>99</td><td>de: 64, ja: 64, ar: 64, es: 64</td></tr><tr><td><code>oss-next-intl</code></td><td>human-oss</td><td>40</td><td>7</td><td>7</td><td>18</td><td>de: 24, ja: 8, es: 8</td></tr><tr><td><code>oss-hoppscotch</code></td><td>human-oss</td><td>186</td><td>37</td><td>32</td><td>77</td><td>de: 33, ja: 28, ar: 35, es: 90</td></tr></tbody>
+    </table>
+    <table>
+      <thead><tr><th>Arm</th><th>Context</th><th>TCR</th><th>ICU/Tag Parity</th><th>chrF2</th><th>TER</th><th>MQM / 100</th></tr></thead>
+      <tbody><tr><td><strong>B (source + locale)</strong></td><td>source, targetLocale</td><td colspan="5"><em>dry run — no outputs</em></td></tr><tr><td><strong>B+glossary</strong></td><td>source, targetLocale, glossary</td><td colspan="5"><em>dry run — no outputs</em></td></tr><tr><td><strong>A-no-tm (AST UI context + width budgets + glossary; tmEnabled:false)</strong></td><td>source, targetLocale, glossary, file, component, elementType, widthBudget, localeConventions</td><td colspan="5"><em>dry run — no outputs</em></td></tr><tr><td><strong>A-full (A-no-tm + top-3 fuzzy TM, minSimilarity 0.70)</strong></td><td>source, targetLocale, glossary, file, component, elementType, widthBudget, localeConventions, tmMatches</td><td colspan="5"><em>dry run — no outputs</em></td></tr></tbody>
+    </table>
+  </div>
+</body>
+</html>

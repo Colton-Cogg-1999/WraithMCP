@@ -10,6 +10,9 @@ import { runLayoutFix } from "./core/layout-codemods.js";
 import { runLayoutCheck } from "./core/layout.js";
 import { generatePseudoLocale } from "./core/pseudo-locale.js";
 import { PseudoMode } from "./core/pseudo.js";
+import { runQe } from "./core/qe.js";
+import { isXliffPath, runTmsExport, runTmsImport } from "./core/tms.js";
+import { runVisualQa } from "./core/visual-qa.js";
 import { generateReport } from "./core/report.js";
 import { ingestReviewResults, packageReviewJob } from "./core/review.js";
 import { scanProject } from "./core/scan.js";
@@ -309,6 +312,148 @@ export function createCli(): Command {
     });
 
   program
+    .command("extract")
+    .description("Deterministic extraction gate: list hardcoded strings, concatenations, and hardcoded formatting still in source (the agent performs the refactor)")
+    .option("--fail-on-unextracted", "Exit 1 when any hardcoded strings or concatenations remain", false)
+    .option("--limit <n>", "Max findings to show", "50")
+    .option("--json", "Output JSON", false)
+    .action((opts) => {
+      const rootDir = program.opts().cwd;
+      const res = scanProject({ rootDir, saveUsage: false, limit: Number.parseInt(opts.limit, 10) || 50 });
+      const unextracted = res.counts.hardcodedStrings + res.counts.concatenations;
+      const out = {
+        outcome: unextracted === 0 ? "PASS" : "FAIL",
+        framework: res.framework,
+        i18nLibrary: res.i18nLibrary,
+        filesScanned: res.filesScanned,
+        counts: res.counts,
+        hardcodedStrings: res.hardcodedStrings.items,
+        concatenations: res.concatenations.items,
+      };
+      if (opts.json) {
+        console.log(JSON.stringify(out, null, 2));
+      } else {
+        console.log(
+          `${out.outcome} · ${res.counts.hardcodedStrings} hardcoded string(s) · ${res.counts.concatenations} concatenation(s) · ${res.counts.hardcodedFormatting ?? 0} hardcoded formatting (${res.filesScanned} files scanned)`
+        );
+        for (const h of res.hardcodedStrings.items) console.log(`  ${h.file}:${h.line} [${h.kind}] "${h.text}"`);
+        for (const c of res.concatenations.items) console.log(`  ${c.file}:${c.line} ${c.expression}`);
+      }
+      if (opts.failOnUnextracted && unextracted > 0) process.exitCode = 1;
+    });
+
+  program
+    .command("visual-qa")
+    .description("Token-free DOM geometry regression check (line wraps, blowouts, truncation, occlusion, tofu, contrast) against .polyglot/visual-baseline.json")
+    .option("--capture-baseline", "Capture/overwrite the geometry baseline instead of diffing", false)
+    .option("--base <path>", "Baseline file path", ".polyglot/visual-baseline.json")
+    .option("--routes <csv>", "Comma-separated routes")
+    .option("--locales <csv>", "Comma-separated locales")
+    .option("--url <baseUrl>", "Running preview/dev server base URL")
+    .option("--locale-pattern <pattern>", "How locale is passed: query|prefix|cookie")
+    .option("--json", "Output JSON", false)
+    .action(async (opts) => {
+      const rootDir = program.opts().cwd;
+      const res = await runVisualQa({
+        rootDir,
+        baseUrl: opts.url,
+        routes: parseCsvList(opts.routes),
+        locales: parseCsvList(opts.locales),
+        captureBaseline: Boolean(opts.captureBaseline),
+        basePath: opts.base,
+        localeUrlPattern: opts.localePattern as "query" | "prefix" | "cookie" | undefined,
+      });
+      if (opts.json) {
+        console.log(JSON.stringify(res, null, 2));
+      } else if (res.outcome === "INCONCLUSIVE") {
+        console.log(`INCONCLUSIVE · ${res.inconclusiveReason}`);
+        for (const s of res.nextSteps) console.log(`  - ${s}`);
+      } else if (res.mode === "capture") {
+        console.log(`Captured baseline: ${res.elementsMeasured} traced element(s) -> ${res.baselinePath}`);
+      } else if (res.outcome === "PASS") {
+        console.log(`PASS · 0 visual regressions across ${res.elementsMeasured} traced element(s)`);
+      } else {
+        console.log(`FAIL · ${res.defectCount} visual regression(s) ${JSON.stringify(res.countsByType)}`);
+        for (const d of res.defects.slice(0, 25)) {
+          console.log(`  [${d.type}] ${d.locale} @ ${d.viewport} ${d.key}${d.file ? ` (${d.file}:${d.line ?? 1})` : ""}: ${d.message}${d.screenshot ? ` -> ${d.screenshot}` : ""}`);
+        }
+        if (res.manifestPath) console.log(`Artifacts manifest: ${res.manifestPath}`);
+      }
+      if (res.outcome === "FAIL") process.exitCode = 1;
+      else if (res.outcome === "INCONCLUSIVE") process.exitCode = 2;
+    });
+
+  program
+    .command("qe")
+    .description("Tiered quality estimation: deterministic Tier 1 gate, 3-critic LLM swarm (Tier 2, needs ANTHROPIC_API_KEY or GEMINI_API_KEY), composite risk + optional auto-repair")
+    .option("--locales <csv>", "Comma-separated target locales (default: config targetLocales)")
+    .option("--auto-repair", "Run one targeted repair pass for 25 <= risk <= 60 (writes through validated apply)", false)
+    .option("--fail-above <number>", "Exit 1 if any segment risk exceeds this score")
+    .option("--json", "Output JSON", false)
+    .action(async (opts) => {
+      const rootDir = program.opts().cwd;
+      const res = await runQe({
+        rootDir,
+        locales: parseCsvList(opts.locales),
+        autoRepair: Boolean(opts.autoRepair),
+        failAbove: opts.failAbove !== undefined ? Number(opts.failAbove) : undefined,
+      });
+      if (opts.json) {
+        console.log(JSON.stringify(res, null, 2));
+      } else {
+        const s = res.summary;
+        console.log(
+          `${res.outcome} · ${s.total} segment(s): ${s.verified} verified · ${s.needsReview} needs_review · ${s.unscored} unscored · ${s.tier1Escalations} Tier-1 escalations · mean risk ${s.meanRisk} · max ${s.maxRisk} · ${s.llmCalls} LLM call(s) (${res.model ?? "Tier 2 unavailable"})`
+        );
+        for (const f of res.flagged.slice(0, 20)) {
+          console.log(`  [${f.status}] ${f.locale} ${f.key} risk=${f.riskScore}${f.topIssue ? `: ${f.topIssue}` : ""}`);
+        }
+        for (const n of res.nextSteps) console.log(`  - ${n}`);
+        console.log(`Report: ${res.reportPath}`);
+      }
+      if (res.outcome === "FAIL") process.exitCode = 1;
+      else if (res.outcome === "INCONCLUSIVE") process.exitCode = 2;
+    });
+
+  program
+    .command("export")
+    .description("Export segments for human post-editing in a TMS: XLIFF 2.0 with metadata/notes, optional TMX 1.4b, TBX-Basic, and failure screenshots")
+    .option("--format <fmt>", "Export format (xliff2)", "xliff2")
+    .option("-o, --out <dir>", "Output directory", ".polyglot/exports/tms")
+    .option("--locales <csv>", "Comma-separated target locales")
+    .option("--only-flagged", "Only export segments with status needs_review in .polyglot/qe-report.json", false)
+    .option("--include-tm", "Write tm.tmx (TMX 1.4b)", false)
+    .option("--include-glossary", "Write glossary.tbx (TBX-Basic)", false)
+    .option("--bundle-screenshots", "Copy matching visual-qa failure crops into <out>/screenshots/", false)
+    .option("--json", "Output JSON", false)
+    .action((opts) => {
+      const rootDir = program.opts().cwd;
+      if (opts.format !== "xliff2") {
+        console.error(`Error: unsupported format "${opts.format}" (supported: xliff2)`);
+        process.exitCode = 1;
+        return;
+      }
+      const res = runTmsExport({
+        rootDir,
+        format: "xliff2",
+        outDir: opts.out,
+        locales: parseCsvList(opts.locales),
+        onlyFlagged: Boolean(opts.onlyFlagged),
+        includeTm: Boolean(opts.includeTm),
+        includeGlossary: Boolean(opts.includeGlossary),
+        bundleScreenshots: Boolean(opts.bundleScreenshots),
+      });
+      if (opts.json) {
+        console.log(JSON.stringify(res, null, 2));
+        return;
+      }
+      console.log(
+        `Exported ${Object.entries(res.unitsByLocale).map(([l, n]) => `${l}: ${n} unit(s)`).join(", ") || "no locales"} -> ${res.outDir}`
+      );
+      for (const f of res.files) console.log(`  ${f}`);
+    });
+
+  program
     .command("review")
     .description("Package an MQM cross-model review job or ingest review results")
     .option("-l, --locale <locale>", "Target locale for packaging or ingesting")
@@ -389,11 +534,41 @@ export function createCli(): Command {
 
   program
     .command("import [file]")
-    .description("Import optional assets: glossary (CSV, TBX), translation memory (TMX), or existing locale files")
-    .option("-f, --format <fmt>", "Asset format: auto|csv|tbx|tmx|locales", "auto")
+    .description("Import assets: glossary (CSV, TBX), translation memory (TMX), existing locale files, or reviewed XLIFF 2.0 from a TMS (file or directory)")
+    .option("-f, --format <fmt>", "Asset format: auto|csv|tbx|tmx|locales|xliff", "auto")
     .option("--json", "Output JSON", false)
-    .action((file, opts) => {
+    .action(async (file, opts) => {
       const rootDir = program.opts().cwd;
+      const looksXliff =
+        opts.format === "xliff" ||
+        (file &&
+          (isXliffPath(file) ||
+            (fs.existsSync(path.resolve(rootDir, file)) &&
+              fs.statSync(path.resolve(rootDir, file)).isDirectory() &&
+              fs.readdirSync(path.resolve(rootDir, file)).some((f) => isXliffPath(f)))));
+      if (looksXliff) {
+        if (!file) {
+          console.error("Error: an XLIFF file or directory is required.");
+          process.exitCode = 1;
+          return;
+        }
+        const res = await runTmsImport({ rootDir, input: file });
+        if (opts.json) {
+          console.log(JSON.stringify(res, null, 2));
+        } else {
+          console.log(
+            `TMS import (${res.files.length} file(s), ${res.locales.join(", ")}): ${res.applied} applied · ${res.unchanged} unchanged (verified) · ${res.rejected.length} rejected · ${res.tmUpserted} TM entries (human-reviewed) · ${res.qeHumanVerified} QE segments human-verified`
+          );
+          for (const d of res.diff.slice(0, 30)) {
+            console.log(`  ${d.locale} ${d.key}: ${JSON.stringify(d.before)} -> ${JSON.stringify(d.after)} [${d.state}]`);
+          }
+          for (const r of res.rejected.slice(0, 20)) console.log(`  [rejected] ${r.locale} ${r.key}: ${r.code} ${r.message}`);
+          if (res.check) console.log(`check: ${res.check.outcome} (${res.check.errorCount} errors, ${res.check.warningCount} warnings)`);
+          if (res.visualQa) console.log(`visual-qa: ${res.visualQa.outcome} (${res.visualQa.defectCount} defects)${res.visualQa.inconclusiveReason ? ` — ${res.visualQa.inconclusiveReason}` : ""}`);
+        }
+        if (!res.ok || res.check?.outcome === "FAIL") process.exitCode = 1;
+        return;
+      }
       const res = importAsset(rootDir, { file, format: opts.format });
       if (opts.json) {
         console.log(JSON.stringify(res, null, 2));

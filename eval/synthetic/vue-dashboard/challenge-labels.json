@@ -1,0 +1,248 @@
+{
+  "items": [
+    {
+      "key": "status.openBadge",
+      "source": "Open",
+      "category": "ambiguous",
+      "component": "IncidentCard.vue",
+      "intendedSense": "Adjective meaning a support ticket/incident is currently open/unresolved."
+    },
+    {
+      "key": "file.openAction",
+      "source": "Open",
+      "category": "ambiguous",
+      "component": "LogViewer.vue",
+      "intendedSense": "Imperative verb button to open a log file."
+    },
+    {
+      "key": "feed.postLabel",
+      "source": "Post",
+      "category": "ambiguous",
+      "component": "ReleaseFeed.vue",
+      "intendedSense": "Noun: a published status update post."
+    },
+    {
+      "key": "editor.postButton",
+      "source": "Post",
+      "category": "ambiguous",
+      "component": "StatusComposer.vue",
+      "intendedSense": "Imperative verb: publish a new status update."
+    },
+    {
+      "key": "dialog.closeAction",
+      "source": "Close",
+      "category": "ambiguous",
+      "component": "ConfirmModal.vue",
+      "intendedSense": "Imperative verb: close the modal dialog."
+    },
+    {
+      "key": "quota.freeLabel",
+      "source": "Free",
+      "category": "ambiguous",
+      "component": "ClusterStorage.vue",
+      "intendedSense": "Adjective: available/unoccupied memory or disk capacity."
+    },
+    {
+      "key": "form.saveAction",
+      "source": "Save",
+      "category": "ambiguous",
+      "component": "AlertRuleForm.vue",
+      "intendedSense": "Imperative verb: persist alert rule changes."
+    },
+    {
+      "key": "nav.backAction",
+      "source": "Back",
+      "category": "ambiguous",
+      "component": "StepHeader.vue",
+      "intendedSense": "Navigation button to return to the previous page."
+    },
+    {
+      "key": "alerts.archiveAction",
+      "source": "Archive",
+      "category": "ambiguous",
+      "component": "AlertToolbar.vue",
+      "intendedSense": "Imperative verb: archive selected alerts."
+    },
+    {
+      "key": "history.archiveTitle",
+      "source": "Archive",
+      "category": "ambiguous",
+      "component": "AuditSidebar.vue",
+      "intendedSense": "Noun: historical archive section."
+    },
+    {
+      "key": "brand.title",
+      "source": "PulseGrid Operations Console",
+      "category": "dnt",
+      "component": "StepHeader.vue",
+      "intendedSense": null
+    },
+    {
+      "key": "brand.sync",
+      "source": "Northstar synced your Workspace metrics to LedgerVault.",
+      "category": "dnt",
+      "component": "AuditSidebar.vue",
+      "intendedSense": null
+    },
+    {
+      "key": "glossary.seatNote",
+      "source": "Add a Seat to this Workspace before inviting engineers.",
+      "category": "glossary",
+      "component": "AlertRuleForm.vue",
+      "intendedSense": null
+    },
+    {
+      "key": "glossary.invoiceRow",
+      "source": "Download monthly Invoice",
+      "category": "glossary",
+      "component": "AuditSidebar.vue",
+      "intendedSense": null
+    },
+    {
+      "key": "plural.alerts",
+      "source": "no alerts | one alert | {count} alerts",
+      "category": "plural",
+      "component": "AlertToolbar.vue",
+      "intendedSense": null
+    },
+    {
+      "key": "plural.nodes",
+      "source": "no active nodes | one active node | {count} active nodes",
+      "category": "plural",
+      "component": "ClusterStorage.vue",
+      "intendedSense": null
+    },
+    {
+      "key": "msg.assigned",
+      "source": "{user} acknowledged incident {id}.",
+      "category": "placeholder",
+      "component": "IncidentCard.vue",
+      "intendedSense": null
+    },
+    {
+      "key": "msg.latency",
+      "source": "Average response time is {ms} ms over {window}.",
+      "category": "placeholder",
+      "component": "ClusterStorage.vue",
+      "intendedSense": null
+    },
+    {
+      "key": "tight.tabMetrics",
+      "source": "Metrics",
+      "category": "tight-ui",
+      "component": "StepHeader.vue",
+      "intendedSense": null
+    },
+    {
+      "key": "tight.tabLogs",
+      "source": "Logs",
+      "category": "tight-ui",
+      "component": "StepHeader.vue",
+      "intendedSense": null
+    },
+    {
+      "key": "tight.tabAlerts",
+      "source": "Alerts",
+      "category": "tight-ui",
+      "component": "StepHeader.vue",
+      "intendedSense": null
+    },
+    {
+      "key": "tight.btnExport",
+      "source": "Export CSV",
+      "category": "tight-ui",
+      "component": "AlertToolbar.vue",
+      "intendedSense": null
+    },
+    {
+      "key": "tight.btnReset",
+      "source": "Reset view",
+      "category": "tight-ui",
+      "component": "LogViewer.vue",
+      "intendedSense": null
+    },
+    {
+      "key": "general.emptyLogs",
+      "source": "No log lines matched your current filter.",
+      "category": "general",
+      "component": "LogViewer.vue",
+      "intendedSense": null
+    },
+    {
+      "key": "general.ruleSaved",
+      "source": "Alert thresholds take effect within thirty seconds.",
+      "category": "general",
+      "component": "AlertRuleForm.vue",
+      "intendedSense": null
+    }
+  ],
+  "glossary": [
+    {
+      "term": "Northstar",
+      "doNotTranslate": true,
+      "caseSensitive": true,
+      "translations": {},
+      "notes": "Company brand name — never translate."
+    },
+    {
+      "term": "Northstar Pay",
+      "doNotTranslate": true,
+      "caseSensitive": true,
+      "translations": {},
+      "notes": "Payment product name — never translate."
+    },
+    {
+      "term": "PulseGrid",
+      "doNotTranslate": true,
+      "caseSensitive": true,
+      "translations": {},
+      "notes": "Analytics suite brand — never translate."
+    },
+    {
+      "term": "LedgerVault",
+      "doNotTranslate": true,
+      "caseSensitive": true,
+      "translations": {},
+      "notes": "Compliance module brand — never translate."
+    },
+    {
+      "term": "Workspace",
+      "doNotTranslate": false,
+      "caseSensitive": false,
+      "translations": {
+        "es-MX": "espacio de trabajo",
+        "de": "Arbeitsbereich",
+        "ja": "ワークスペース",
+        "ar": "مساحة العمل",
+        "pl": "obszar roboczy"
+      },
+      "notes": "Use consistently for team container."
+    },
+    {
+      "term": "Invoice",
+      "doNotTranslate": false,
+      "caseSensitive": false,
+      "translations": {
+        "es-MX": "factura",
+        "de": "Rechnung",
+        "ja": "請求書",
+        "ar": "فاتورة",
+        "pl": "faktura"
+      },
+      "notes": "Standard billing document term."
+    },
+    {
+      "term": "Seat",
+      "doNotTranslate": false,
+      "caseSensitive": false,
+      "translations": {
+        "es-MX": "licencia",
+        "de": "Lizenz",
+        "ja": "シート",
+        "ar": "مقعد",
+        "pl": "stanowisko"
+      },
+      "notes": "Per-user subscription license."
+    }
+  ]
+}

@@ -286,6 +286,7 @@ export type CheckIssueCode =
   | "rtl_layout_risk"
   | "layout_budget_exceeded"
   | "hardcoded_formatting"
+  | "directional_asset"
   | "stale_source"
   | "context_changed"
   | "manual_edit_detected"

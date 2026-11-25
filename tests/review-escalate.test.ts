@@ -186,7 +186,7 @@ describe("Milestone 4: Cross-Model Review, Human Escalation, Advisory Memory, La
     expect(pseudo.qaChecklist.some((step) => step.includes('dir="rtl"'))).toBe(true);
   });
 
-  it("exposes all 11 MCP tools, /localize prompt, and keeps tool responses compact on large catalogs", async () => {
+  it("exposes all 17 MCP tools, /localize prompt, and keeps tool responses compact on large catalogs", async () => {
     const dir = makeCleanProject();
     initProject({ rootDir: dir, sourceLocale: "en", targetLocales: ["es-MX"], writeAgentRule: false });
 
@@ -214,10 +214,14 @@ describe("Milestone 4: Cross-Model Review, Human Escalation, Advisory Memory, La
       "memory",
       "prepare",
       "pseudo",
+      "qe_audit",
       "report",
       "review",
       "scan",
       "status",
+      "tms_export",
+      "tms_import",
+      "visual_qa",
     ]);
 
     const prompts = await client.listPrompts();

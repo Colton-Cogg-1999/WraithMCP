@@ -1,0 +1,213 @@
+{
+  "items": [
+    {
+      "key": "orders.index.order_heading",
+      "source": "Order",
+      "category": "ambiguous",
+      "component": "index.html.erb",
+      "intendedSense": "Noun: a customer purchase order."
+    },
+    {
+      "key": "orders.index.sort_order",
+      "source": "Order",
+      "category": "ambiguous",
+      "component": "index.html.erb",
+      "intendedSense": "Noun: display sorting order/sequence."
+    },
+    {
+      "key": "billing.show.charge_label",
+      "source": "Charge",
+      "category": "ambiguous",
+      "component": "show.html.erb",
+      "intendedSense": "Noun: financial billing charge/fee."
+    },
+    {
+      "key": "hardware.show.charge_label",
+      "source": "Charge",
+      "category": "ambiguous",
+      "component": "hardware.html.erb",
+      "intendedSense": "Noun: electrical battery level of a terminal."
+    },
+    {
+      "key": "plans.show.free_badge",
+      "source": "Free",
+      "category": "ambiguous",
+      "component": "plans.html.erb",
+      "intendedSense": "Adjective: free of cost / gratis plan."
+    },
+    {
+      "key": "agreements.show.sign_button",
+      "source": "Sign",
+      "category": "ambiguous",
+      "component": "agreements.html.erb",
+      "intendedSense": "Imperative verb: sign legal contract."
+    },
+    {
+      "key": "wizard.show.back_link",
+      "source": "Back",
+      "category": "ambiguous",
+      "component": "agreements.html.erb",
+      "intendedSense": "Navigation link to previous screen."
+    },
+    {
+      "key": "settings.edit.save_button",
+      "source": "Save",
+      "category": "ambiguous",
+      "component": "edit.html.erb",
+      "intendedSense": "Imperative verb: save account settings."
+    },
+    {
+      "key": "brand.portal_title",
+      "source": "Northstar Merchant Portal",
+      "category": "dnt",
+      "component": "index.html.erb",
+      "intendedSense": null
+    },
+    {
+      "key": "brand.vault_notice",
+      "source": "All settlements are mirrored to LedgerVault and Northstar Pay.",
+      "category": "dnt",
+      "component": "show.html.erb",
+      "intendedSense": null
+    },
+    {
+      "key": "glossary.workspace_header",
+      "source": "Manage Workspace billing and Seats",
+      "category": "glossary",
+      "component": "edit.html.erb",
+      "intendedSense": null
+    },
+    {
+      "key": "glossary.invoice_ready",
+      "source": "Your latest Invoice is ready for download.",
+      "category": "glossary",
+      "component": "show.html.erb",
+      "intendedSense": null
+    },
+    {
+      "key": "messages.greeting",
+      "source": "Welcome back, %{name}. You have %{count} open requests.",
+      "category": "placeholder",
+      "component": "index.html.erb",
+      "intendedSense": null
+    },
+    {
+      "key": "messages.subtotal",
+      "source": "Subtotal: %<amount>.2f USD before tax.",
+      "category": "placeholder",
+      "component": "show.html.erb",
+      "intendedSense": null
+    },
+    {
+      "key": "tight.tab_orders",
+      "source": "Orders",
+      "category": "tight-ui",
+      "component": "index.html.erb",
+      "intendedSense": null
+    },
+    {
+      "key": "tight.tab_payouts",
+      "source": "Payouts",
+      "category": "tight-ui",
+      "component": "index.html.erb",
+      "intendedSense": null
+    },
+    {
+      "key": "tight.tab_team",
+      "source": "Team",
+      "category": "tight-ui",
+      "component": "index.html.erb",
+      "intendedSense": null
+    },
+    {
+      "key": "tight.btn_export",
+      "source": "Export PDF",
+      "category": "tight-ui",
+      "component": "show.html.erb",
+      "intendedSense": null
+    },
+    {
+      "key": "general.empty_orders",
+      "source": "No orders have been placed in this billing cycle yet.",
+      "category": "general",
+      "component": "index.html.erb",
+      "intendedSense": null
+    },
+    {
+      "key": "general.support_footer",
+      "source": "Need help? Contact support before closing your account.",
+      "category": "general",
+      "component": "edit.html.erb",
+      "intendedSense": null
+    }
+  ],
+  "glossary": [
+    {
+      "term": "Northstar",
+      "doNotTranslate": true,
+      "caseSensitive": true,
+      "translations": {},
+      "notes": "Company brand name — never translate."
+    },
+    {
+      "term": "Northstar Pay",
+      "doNotTranslate": true,
+      "caseSensitive": true,
+      "translations": {},
+      "notes": "Payment product name — never translate."
+    },
+    {
+      "term": "PulseGrid",
+      "doNotTranslate": true,
+      "caseSensitive": true,
+      "translations": {},
+      "notes": "Analytics suite brand — never translate."
+    },
+    {
+      "term": "LedgerVault",
+      "doNotTranslate": true,
+      "caseSensitive": true,
+      "translations": {},
+      "notes": "Compliance module brand — never translate."
+    },
+    {
+      "term": "Workspace",
+      "doNotTranslate": false,
+      "caseSensitive": false,
+      "translations": {
+        "es-MX": "espacio de trabajo",
+        "de": "Arbeitsbereich",
+        "ja": "ワークスペース",
+        "ar": "مساحة العمل",
+        "pl": "obszar roboczy"
+      },
+      "notes": "Use consistently for team container."
+    },
+    {
+      "term": "Invoice",
+      "doNotTranslate": false,
+      "caseSensitive": false,
+      "translations": {
+        "es-MX": "factura",
+        "de": "Rechnung",
+        "ja": "請求書",
+        "ar": "فاتورة",
+        "pl": "faktura"
+      },
+      "notes": "Standard billing document term."
+    },
+    {
+      "term": "Seat",
+      "doNotTranslate": false,
+      "caseSensitive": false,
+      "translations": {
+        "es-MX": "licencia",
+        "de": "Lizenz",
+        "ja": "シート",
+        "ar": "مقعد",
+        "pl": "stanowisko"
+      },
+      "notes": "Per-user subscription license."
+    }
+  ]
+}

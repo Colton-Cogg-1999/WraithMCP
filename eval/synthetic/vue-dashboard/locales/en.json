@@ -1,0 +1,59 @@
+{
+  "status": {
+    "openBadge": "Open"
+  },
+  "file": {
+    "openAction": "Open"
+  },
+  "feed": {
+    "postLabel": "Post"
+  },
+  "editor": {
+    "postButton": "Post"
+  },
+  "dialog": {
+    "closeAction": "Close"
+  },
+  "quota": {
+    "freeLabel": "Free"
+  },
+  "form": {
+    "saveAction": "Save"
+  },
+  "nav": {
+    "backAction": "Back"
+  },
+  "alerts": {
+    "archiveAction": "Archive"
+  },
+  "history": {
+    "archiveTitle": "Archive"
+  },
+  "brand": {
+    "title": "PulseGrid Operations Console",
+    "sync": "Northstar synced your Workspace metrics to LedgerVault."
+  },
+  "glossary": {
+    "seatNote": "Add a Seat to this Workspace before inviting engineers.",
+    "invoiceRow": "Download monthly Invoice"
+  },
+  "plural": {
+    "alerts": "no alerts | one alert | {count} alerts",
+    "nodes": "no active nodes | one active node | {count} active nodes"
+  },
+  "msg": {
+    "assigned": "{user} acknowledged incident {id}.",
+    "latency": "Average response time is {ms} ms over {window}."
+  },
+  "tight": {
+    "tabMetrics": "Metrics",
+    "tabLogs": "Logs",
+    "tabAlerts": "Alerts",
+    "btnExport": "Export CSV",
+    "btnReset": "Reset view"
+  },
+  "general": {
+    "emptyLogs": "No log lines matched your current filter.",
+    "ruleSaved": "Alert thresholds take effect within thirty seconds."
+  }
+}

@@ -1,0 +1,513 @@
+# Polyglot localization CI.
+#
+#   deterministic-l10n-gate  pull_request          extract / check / visual-qa gate, 0 LLM tokens
+#   update-baseline          push to main          recapture .polyglot/visual-baseline.json (artifact)
+#   agentic-localize         "/localize" PR comment or workflow_dispatch: agent translates changed
+#                            keys, Polyglot verifies + QE-scores, flagged keys are exported as XLIFF
+#
+# Reusable: call from another workflow with `uses: <owner>/<repo>/.github/workflows/polyglot.yml@<ref>`.
+# See docs/GITHUB_CI.md.
+name: Polyglot L10n
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  issue_comment:
+    types: [created]
+  workflow_dispatch:
+    inputs:
+      agent:
+        description: "Coding agent for agentic-localize"
+        type: choice
+        options: [claude, codex]
+        default: claude
+      pr_number:
+        description: "PR number to localize (empty = current ref)"
+        type: string
+        required: false
+      base_ref:
+        description: "Base branch used to diff source-locale changes when no PR is given"
+        type: string
+        default: main
+  workflow_call:
+    inputs:
+      preview_build:
+        description: "Command that builds the preview app"
+        type: string
+        default: npm run build
+      preview_start:
+        description: "Command that starts the preview server (run in background)"
+        type: string
+        default: npm run start
+      preview_url:
+        description: "Base URL the preview server listens on"
+        type: string
+        default: http://localhost:3000
+      node_version:
+        type: string
+        default: "20"
+      agent:
+        description: "claude | codex"
+        type: string
+        default: claude
+    secrets:
+      ANTHROPIC_API_KEY:
+        required: false
+      OPENAI_API_KEY:
+        required: false
+      GEMINI_API_KEY:
+        required: false
+
+permissions:
+  contents: read
+
+env:
+  PREVIEW_BUILD: ${{ inputs.preview_build || 'npm run build' }}
+  PREVIEW_START: ${{ inputs.preview_start || 'npm run start' }}
+  PREVIEW_URL: ${{ inputs.preview_url || 'http://localhost:3000' }}
+  NODE_VERSION: ${{ inputs.node_version || '20' }}
+
+jobs:
+  # ---------------------------------------------------------------------------
+  # 1. Deterministic gate. No model calls, no API keys.
+  # ---------------------------------------------------------------------------
+  deterministic-l10n-gate:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      pull-requests: write
+    concurrency:
+      group: polyglot-gate-${{ github.event.pull_request.number }}
+      cancel-in-progress: true
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+
+      - run: npm ci
+
+      - name: Cache Playwright browsers
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('**/package-lock.json') }}
+
+      - run: npx playwright install --with-deps chromium
+
+      - name: Build preview
+        run: eval "$PREVIEW_BUILD"
+
+      - name: Start preview server
+        id: preview
+        continue-on-error: true
+        run: |
+          nohup bash -c "$PREVIEW_START" > "$RUNNER_TEMP/preview.log" 2>&1 &
+          for i in $(seq 1 90); do
+            if curl -fsS -o /dev/null "$PREVIEW_URL"; then echo "Preview up at $PREVIEW_URL"; exit 0; fi
+            sleep 2
+          done
+          echo "::error::Preview server did not answer at $PREVIEW_URL within 180s"
+          tail -n 100 "$RUNNER_TEMP/preview.log"
+          exit 1
+
+      - name: polyglot extract
+        id: extract
+        continue-on-error: true
+        run: |
+          mkdir -p .polyglot/artifacts/gate
+          set +e
+          npx polyglot extract --fail-on-unextracted 2>&1 | tee .polyglot/artifacts/gate/extract.txt
+          code=${PIPESTATUS[0]}
+          echo "code=$code" >> "$GITHUB_OUTPUT"
+          exit $code
+
+      - name: polyglot check
+        id: check
+        continue-on-error: true
+        run: |
+          mkdir -p .polyglot/artifacts/gate
+          set +e
+          npx polyglot check 2>&1 | tee .polyglot/artifacts/gate/check.txt
+          code=${PIPESTATUS[0]}
+          echo "code=$code" >> "$GITHUB_OUTPUT"
+          exit $code
+
+      - name: polyglot visual-qa
+        id: visualqa
+        continue-on-error: true
+        run: |
+          mkdir -p .polyglot/artifacts/gate
+          set +e
+          npx polyglot visual-qa --base .polyglot/visual-baseline.json --url "$PREVIEW_URL" 2>&1 \
+            | tee .polyglot/artifacts/gate/visual-qa.txt
+          code=${PIPESTATUS[0]}
+          echo "code=$code" >> "$GITHUB_OUTPUT"
+          exit $code
+
+      - name: Upload Polyglot artifacts
+        if: >-
+          always() && (steps.extract.outcome == 'failure' || steps.check.outcome == 'failure' ||
+          steps.visualqa.outcome == 'failure' || steps.preview.outcome == 'failure')
+        uses: actions/upload-artifact@v4
+        with:
+          name: polyglot-l10n-gate-${{ github.event.pull_request.number }}
+          path: .polyglot/artifacts/
+          if-no-files-found: ignore
+          retention-days: 14
+
+      - name: Sticky PR summary
+        if: always()
+        # Fork PRs get a read-only token; never fail the gate because the comment could not be posted.
+        continue-on-error: true
+        uses: actions/github-script@v7
+        env:
+          PREVIEW_OUTCOME: ${{ steps.preview.outcome }}
+          EXTRACT_OUTCOME: ${{ steps.extract.outcome }}
+          EXTRACT_CODE: ${{ steps.extract.outputs.code }}
+          CHECK_OUTCOME: ${{ steps.check.outcome }}
+          CHECK_CODE: ${{ steps.check.outputs.code }}
+          VISUALQA_OUTCOME: ${{ steps.visualqa.outcome }}
+          VISUALQA_CODE: ${{ steps.visualqa.outputs.code }}
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const fs = require('fs');
+            const MARKER = '<!-- polyglot-l10n-gate -->';
+            const verdict = (outcome, code) => {
+              if (outcome === 'success') return '✅ PASS';
+              if (outcome === 'skipped' || outcome === '') return '⏭️ skipped';
+              if (code === '2') return '⚠️ INCONCLUSIVE (exit 2)';
+              return `❌ FAIL (exit ${code || '?'})`;
+            };
+            const tail = (file) => {
+              try {
+                const lines = fs.readFileSync(file, 'utf8').trim().split('\n');
+                return lines.slice(-15).join('\n');
+              } catch { return ''; }
+            };
+            const e = process.env;
+            const rows = [
+              ['Preview server', e.PREVIEW_OUTCOME === 'success' ? '✅ up' : '❌ unreachable', `\`${e.PREVIEW_URL}\``],
+              ['`polyglot extract --fail-on-unextracted`', verdict(e.EXTRACT_OUTCOME, e.EXTRACT_CODE), 'hardcoded strings / concatenations'],
+              ['`polyglot check`', verdict(e.CHECK_OUTCOME, e.CHECK_CODE), 'placeholders, ICU, plurals, glossary, budgets, static layout'],
+              ['`polyglot visual-qa`', verdict(e.VISUALQA_OUTCOME, e.VISUALQA_CODE), 'geometry diff vs `.polyglot/visual-baseline.json`'],
+            ];
+            const failed = [e.EXTRACT_OUTCOME, e.CHECK_OUTCOME, e.VISUALQA_OUTCOME].some((o) => o === 'failure');
+            const runUrl = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
+            let body = `${MARKER}\n## Polyglot L10n Gate — ${failed ? '❌ failing' : '✅ passing'}\n\n`;
+            body += `Deterministic gate · 0 LLM tokens · commit \`${context.sha.slice(0, 7)}\`\n\n`;
+            body += '| Gate | Result | Covers |\n|---|---|---|\n';
+            body += rows.map((r) => `| ${r.join(' | ')} |`).join('\n') + '\n';
+            for (const [name, file] of [['extract', 'extract.txt'], ['check', 'check.txt'], ['visual-qa', 'visual-qa.txt']]) {
+              const t = tail(`.polyglot/artifacts/gate/${file}`);
+              if (t) body += `\n<details><summary>${name} output (tail)</summary>\n\n\`\`\`text\n${t}\n\`\`\`\n</details>\n`;
+            }
+            if (failed) body += `\nScreenshots and full logs: [workflow run artifacts](${runUrl}). Fix locally with the \`layout-remediation\` / \`i18n-prep\` skills.\n`;
+            const issue_number = context.payload.pull_request.number;
+            const comments = await github.paginate(github.rest.issues.listComments, { ...context.repo, issue_number, per_page: 100 });
+            const existing = comments.find((c) => c.body && c.body.includes(MARKER));
+            if (existing) {
+              await github.rest.issues.updateComment({ ...context.repo, comment_id: existing.id, body });
+            } else {
+              await github.rest.issues.createComment({ ...context.repo, issue_number, body });
+            }
+
+      - name: Enforce gate
+        if: always()
+        run: |
+          failed=0
+          for pair in "extract:${{ steps.extract.outcome }}" "check:${{ steps.check.outcome }}" "visual-qa:${{ steps.visualqa.outcome }}"; do
+            name="${pair%%:*}"; outcome="${pair#*:}"
+            if [ "$outcome" != "success" ]; then echo "::error::polyglot $name: $outcome"; failed=1; fi
+          done
+          exit $failed
+
+  # ---------------------------------------------------------------------------
+  # 2. Recapture the visual baseline on main. The baseline is uploaded as an
+  #    artifact; commit it via a PR so baseline changes are reviewed.
+  # ---------------------------------------------------------------------------
+  update-baseline:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+
+      - run: npm ci
+
+      - name: Cache Playwright browsers
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('**/package-lock.json') }}
+
+      - run: npx playwright install --with-deps chromium
+
+      - name: Build preview
+        run: eval "$PREVIEW_BUILD"
+
+      - name: Start preview server
+        run: |
+          nohup bash -c "$PREVIEW_START" > "$RUNNER_TEMP/preview.log" 2>&1 &
+          for i in $(seq 1 90); do
+            if curl -fsS -o /dev/null "$PREVIEW_URL"; then exit 0; fi
+            sleep 2
+          done
+          tail -n 100 "$RUNNER_TEMP/preview.log"
+          exit 1
+
+      - name: Capture baseline
+        run: npx polyglot visual-qa --capture-baseline --base .polyglot/visual-baseline.json --url "$PREVIEW_URL"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: polyglot-visual-baseline
+          path: .polyglot/visual-baseline.json
+          retention-days: 30
+
+  # ---------------------------------------------------------------------------
+  # 3. Agentic localization on demand. Uses model tokens (agent + optional QE Tier 2).
+  # ---------------------------------------------------------------------------
+  agentic-localize:
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event_name == 'issue_comment' &&
+       github.event.issue.pull_request &&
+       contains(github.event.comment.body, '/localize') &&
+       contains(fromJSON('["OWNER","MEMBER","COLLABORATOR"]'), github.event.comment.author_association))
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    permissions:
+      contents: write
+      pull-requests: write
+      issues: write
+    concurrency:
+      group: polyglot-localize-${{ github.event.issue.number || inputs.pr_number || github.ref }}
+      cancel-in-progress: false
+    env:
+      AGENT: ${{ inputs.agent || 'claude' }}
+      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+      CODEX_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+      GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+    steps:
+      - name: Resolve PR
+        id: pr
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const number = context.payload.issue?.number || Number(process.env.INPUT_PR || 0);
+            if (!number) {
+              core.setOutput('number', '');
+              core.setOutput('head_ref', context.ref.replace('refs/heads/', ''));
+              core.setOutput('head_repo', `${context.repo.owner}/${context.repo.repo}`);
+              core.setOutput('base_ref', process.env.INPUT_BASE || 'main');
+              return;
+            }
+            const { data: pr } = await github.rest.pulls.get({ ...context.repo, pull_number: number });
+            if (pr.head.repo.full_name !== `${context.repo.owner}/${context.repo.repo}`) {
+              core.setFailed('Refusing to run the agent with secrets against a fork PR.');
+              return;
+            }
+            core.setOutput('number', String(number));
+            core.setOutput('head_ref', pr.head.ref);
+            core.setOutput('head_repo', pr.head.repo.full_name);
+            core.setOutput('base_ref', pr.base.ref);
+            if (context.payload.comment) {
+              await github.rest.reactions.createForIssueComment({ ...context.repo, comment_id: context.payload.comment.id, content: 'eyes' });
+            }
+        env:
+          INPUT_PR: ${{ inputs.pr_number }}
+          INPUT_BASE: ${{ inputs.base_ref }}
+
+      - uses: actions/checkout@v4
+        with:
+          repository: ${{ steps.pr.outputs.head_repo }}
+          ref: ${{ steps.pr.outputs.head_ref }}
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+
+      - run: npm ci
+
+      - name: Compute changed source keys
+        id: keys
+        env:
+          BASE_REF: ${{ steps.pr.outputs.base_ref || github.base_ref || 'main' }}
+        run: |
+          git fetch --no-tags origin "$BASE_REF"
+          src=$(node -e "try{console.log(JSON.parse(require('fs').readFileSync('.polyglot/config.json','utf8')).sourceLocale||'en')}catch{console.log('en')}")
+          echo "source_locale=$src" >> "$GITHUB_OUTPUT"
+          git diff --name-only "origin/${BASE_REF}...HEAD" \
+            | grep -E "(^|/)(${src}(\.json|\.ya?ml)|${src}/[^/]+\.(json|ya?ml)|${src}/LC_MESSAGES/[^/]+\.po)$" \
+            > "$RUNNER_TEMP/changed-files.txt" || true
+          BASE="origin/${BASE_REF}" node - <<'EOF' > "$RUNNER_TEMP/changed-keys.txt"
+          const { execFileSync } = require('child_process');
+          const fs = require('fs');
+          const files = fs.readFileSync(process.env.RUNNER_TEMP + '/changed-files.txt', 'utf8').split('\n').filter(Boolean);
+          const flat = (o, p = '', out = {}) => {
+            for (const [k, v] of Object.entries(o || {})) {
+              const key = p ? `${p}.${k}` : k;
+              if (v && typeof v === 'object' && !Array.isArray(v)) flat(v, key, out); else out[key] = JSON.stringify(v);
+            }
+            return out;
+          };
+          for (const f of files) {
+            if (!f.endsWith('.json')) { console.log(`${f}\t*`); continue; }
+            let before = {};
+            try { before = flat(JSON.parse(execFileSync('git', ['show', `${process.env.BASE}:${f}`], { encoding: 'utf8' }))); } catch {}
+            let after = {};
+            try { after = flat(JSON.parse(fs.readFileSync(f, 'utf8'))); } catch {}
+            for (const k of Object.keys(after)) if (before[k] !== after[k]) console.log(`${f}\t${k}`);
+          }
+          EOF
+          count=$(wc -l < "$RUNNER_TEMP/changed-keys.txt" | tr -d ' ')
+          echo "count=$count" >> "$GITHUB_OUTPUT"
+          echo "Changed source keys: $count"; cat "$RUNNER_TEMP/changed-keys.txt"
+
+      - name: Build agent prompt
+        if: steps.keys.outputs.count != '0'
+        run: |
+          {
+            awk 'BEGIN{fm=0} /^---[[:space:]]*$/ && fm<2 {fm++; next} fm>=2' skills/localize-pr/SKILL.md
+            echo
+            echo "## Changed source keys in this PR (file<TAB>key; '*' = whole file changed)"
+            echo
+            cat "$RUNNER_TEMP/changed-keys.txt"
+          } > "$RUNNER_TEMP/prompt.md"
+          printf '{"mcpServers":{"polyglot":{"command":"npx","args":["polyglot","mcp"]}}}\n' > "$RUNNER_TEMP/mcp.json"
+
+      - name: Run agent (Claude Code)
+        if: steps.keys.outputs.count != '0' && env.AGENT == 'claude'
+        run: |
+          npm install -g @anthropic-ai/claude-code
+          claude -p "$(cat "$RUNNER_TEMP/prompt.md")" \
+            --mcp-config "$RUNNER_TEMP/mcp.json" \
+            --allowedTools "mcp__polyglot,Read,Glob,Grep,Edit,Write" \
+            --permission-mode acceptEdits
+
+      - name: Run agent (Codex)
+        if: steps.keys.outputs.count != '0' && env.AGENT == 'codex'
+        run: |
+          npm install -g @openai/codex
+          mkdir -p ~/.codex
+          printf '[mcp_servers.polyglot]\ncommand = "npx"\nargs = ["polyglot", "mcp"]\n' >> ~/.codex/config.toml
+          codex exec --full-auto "$(cat "$RUNNER_TEMP/prompt.md")"
+
+      - name: polyglot check
+        id: check
+        if: steps.keys.outputs.count != '0'
+        continue-on-error: true
+        run: |
+          mkdir -p .polyglot/artifacts
+          set +e
+          npx polyglot check 2>&1 | tee .polyglot/artifacts/check.txt
+          code=${PIPESTATUS[0]}
+          echo "code=$code" >> "$GITHUB_OUTPUT"
+          exit $code
+
+      - name: polyglot qe
+        id: qe
+        if: steps.keys.outputs.count != '0'
+        continue-on-error: true
+        run: npx polyglot qe --json > .polyglot/artifacts/qe.json
+
+      - name: Commit verified translations
+        if: steps.keys.outputs.count != '0' && steps.check.outcome == 'success'
+        env:
+          HEAD_REF: ${{ steps.pr.outputs.head_ref }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A -- . ':!.polyglot/artifacts' ':!.polyglot/exports'
+          if git diff --cached --quiet; then echo "No translation changes."; exit 0; fi
+          git commit -m "chore(l10n): localize changed keys via Polyglot [polyglot check PASS]"
+          git push origin "HEAD:${HEAD_REF}"
+
+      - name: Count escalations
+        id: esc
+        if: steps.keys.outputs.count != '0'
+        run: |
+          n=0
+          if [ -f .polyglot/qe-report.json ]; then
+            n=$(jq '[.segments[] | select(.status == "needs_review")] | length' .polyglot/qe-report.json)
+          fi
+          echo "needs_review=$n" >> "$GITHUB_OUTPUT"
+
+      - name: Export flagged keys for TMS review
+        if: steps.esc.outputs.needs_review != '' && steps.esc.outputs.needs_review != '0'
+        run: >-
+          npx polyglot export --only-flagged --include-tm --include-glossary --bundle-screenshots
+          --out .polyglot/artifacts/tms-review
+
+      - name: Upload TMS review bundle
+        if: steps.esc.outputs.needs_review != '' && steps.esc.outputs.needs_review != '0'
+        uses: actions/upload-artifact@v4
+        with:
+          name: polyglot-tms-review-${{ steps.pr.outputs.number || github.run_id }}
+          path: .polyglot/artifacts/tms-review/
+          retention-days: 30
+
+      - name: Comment result
+        if: always() && steps.pr.outputs.number != ''
+        uses: actions/github-script@v7
+        env:
+          KEY_COUNT: ${{ steps.keys.outputs.count }}
+          CHECK_OUTCOME: ${{ steps.check.outcome }}
+          CHECK_CODE: ${{ steps.check.outputs.code }}
+          NEEDS_REVIEW: ${{ steps.esc.outputs.needs_review }}
+        with:
+          script: |
+            const fs = require('fs');
+            const e = process.env;
+            const runUrl = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
+            let body = `<!-- polyglot-localize -->\n## Polyglot /localize (${e.AGENT})\n\n`;
+            if (e.KEY_COUNT === '0') {
+              body += 'No source-locale key changes found against the base branch. Nothing to localize.\n';
+            } else {
+              const check = e.CHECK_OUTCOME === 'success' ? '✅ PASS' : e.CHECK_CODE === '2' ? '⚠️ INCONCLUSIVE' : '❌ FAIL';
+              body += `| Changed source keys | \`polyglot check\` | Committed | needs_review |\n|---|---|---|---|\n`;
+              body += `| ${e.KEY_COUNT || '?'} | ${check} | ${e.CHECK_OUTCOME === 'success' ? 'yes' : 'no'} | ${e.NEEDS_REVIEW || 0} |\n`;
+              let report = null;
+              try { report = JSON.parse(fs.readFileSync('.polyglot/qe-report.json', 'utf8')); } catch {}
+              if (report) {
+                body += `\nQE model: \`${report.model || 'n/a'}\` · Tier 2: \`${report.tier2}\`\n`;
+                const flagged = (report.segments || []).filter((s) => s.status === 'needs_review')
+                  .sort((a, b) => b.riskScore - a.riskScore);
+                if (flagged.length) {
+                  body += '\n### Escalated to human review\n\n| Locale | Key | Risk | Top issue |\n|---|---|---|---|\n';
+                  for (const s of flagged.slice(0, 50)) {
+                    const issue = s.tier1 && !s.tier1.passed
+                      ? (s.tier1.issues[0] || 'tier1 failure')
+                      : ((s.swarm || []).slice().sort((a, b) => b.score - a.score)[0]?.issue || '');
+                    body += `| \`${s.locale}\` | \`${s.key}\` | ${s.riskScore} | ${String(typeof issue === 'string' ? issue : JSON.stringify(issue)).replace(/\|/g, '\\|').slice(0, 140)} |\n`;
+                  }
+                  if (flagged.length > 50) body += `\n…and ${flagged.length - 50} more.\n`;
+                  body += `\nXLIFF 2.0 / TMX / TBX review bundle: \`polyglot-tms-review\` artifact on [this run](${runUrl}). Re-import with \`polyglot import <dir>\`.\n`;
+                }
+              }
+            }
+            body += `\n[Workflow run](${runUrl})\n`;
+            await github.rest.issues.createComment({ ...context.repo, issue_number: Number('${{ steps.pr.outputs.number }}'), body });
+
+      - name: Fail if check did not pass
+        if: steps.keys.outputs.count != '0' && steps.check.outcome != 'success'
+        run: |
+          echo "::error::polyglot check did not PASS after agent run; translations were not committed."
+          exit 1

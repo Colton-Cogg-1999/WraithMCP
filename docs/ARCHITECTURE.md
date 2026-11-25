@@ -1,20 +1,79 @@
-# Polyglot Architecture
+# Wraith Architecture
 
-> Polyglot turns the coding agent you already use into a context-aware localization engineer. The agent translates. Polyglot gives it memory, rules, and proof.
+> Wraith turns the coding agent you already use into a context-aware localization engineer. The agent translates. Wraith gives it memory, rules, and proof.
 
 ## Design Philosophy
 
-Polyglot is a **model-free, deterministic, repo-native** CLI and MCP server built as a single TypeScript codebase compiled into one executable.
+Wraith is a **deterministic-first, repo-native** CLI and MCP server built as a single TypeScript codebase compiled into one executable.
 
-- **No LLM / MT calls:** Polyglot never makes network requests, never holds API keys, and never runs neural models. All translation and code refactoring are performed by the user's coding agent.
-- **Deterministic core:** Every scan, parse, check, fuzzy match, file write, and report is repeatable and works offline.
-- **Repo-native state:** All state lives in plain, diffable, canonically formatted files inside `.polyglot/`, committed alongside code.
-- **Conductor about "done", toolbox about "how":** Tools are small, orthogonal primitives. `status` reports facts like `git status`. Completion is enforced via MCP server instructions, `AGENTS.md`/`CLAUDE.md` rules, the `/localize` MCP prompt, and `polyglot check` in pre-commit/CI.
-- **Compact outputs:** MCP tools always return ranked summaries with counts and accept filters/pagination so they never bloat the agent's context window.
+- **Deterministic core, no translation calls:** Scanning, extraction gating, placeholder/ICU/plural validation, fuzzy TM, lossless writes, layout and visual QA, TMS export/import, and reporting are repeatable and offline. All translation and code refactoring are performed by the user's coding agent.
+- **One opt-in model call:** `polyglot qe` Tier 2 (three LLM critics) runs only when `ANTHROPIC_API_KEY` or `GEMINI_API_KEY`/`GOOGLE_API_KEY` is present. Without keys it is skipped and segments are `unscored` (fail-closed, never `verified`). Nothing else in Wraith calls a model.
+- **Repo-native state:** All state lives in plain, diffable, canonically formatted files in `.polyglot/`, committed alongside code.
+- **Conductor about "done", toolbox about "how":** Tools are small, orthogonal primitives. Completion is enforced by MCP server instructions, `AGENTS.md`/`CLAUDE.md` rules, the `/localize` prompt, the skills in `skills/`, and `polyglot check` / `extract` / `visual-qa` in pre-commit and CI.
+- **Fail closed:** Every gate returns `PASS` / `FAIL` / `INCONCLUSIVE`; missing Playwright, server, baseline, or coverage is `INCONCLUSIVE` (exit 2), never `PASS`.
+- **Compact outputs:** MCP tools return ranked summaries with counts and accept filters/pagination.
 
 ---
 
-## High-Level System Diagram
+## Pipeline
+
+```mermaid
+flowchart LR
+    subgraph Prep["i18n prep (deterministic)"]
+        EX["extract<br/>hardcoded strings, concatenations, formatting"]
+        LF["layout --fix<br/>Tailwind logical props, html dir/lang"]
+        CK1["check<br/>hardcoded_formatting, directional_asset, rtl_layout_risk"]
+    end
+    subgraph Translate["translate (agent tokens)"]
+        PR["prepare<br/>context, glossary, TM, budgets"]
+        AG["coding agent translates"]
+        AP["apply<br/>validated lossless write + TM"]
+    end
+    subgraph Verify["verify (deterministic)"]
+        CK2["check<br/>placeholders, ICU, plurals, glossary, budgets"]
+        PS["pseudo<br/>en-XA, ar-XB, ja-XC, th-XD, de-XE"]
+        LY["layout<br/>rendered overflow, clipping, dir/lang"]
+        VQ["visual-qa<br/>geometry diff vs baseline"]
+    end
+    subgraph QE["qe"]
+        T1["Tier 1 deterministic"]
+        T2["Tier 2 three critics (opt-in tokens)"]
+        T3["Tier 3 risk score"]
+    end
+    subgraph Human["human loop (deterministic I/O)"]
+        XO["export<br/>XLIFF 2.0, TMX, TBX, screenshots"]
+        TMS["TMS / linguist"]
+        XI["import<br/>validated, human-reviewed TM"]
+    end
+    EX --> LF --> CK1 --> PR --> AG --> AP --> CK2 --> PS --> LY --> VQ --> T1 --> T2 --> T3
+    T3 -->|"risk < 25"| Done["verified"]
+    T3 -->|"25-60 + --auto-repair"| AP
+    T3 -->|"> 60 / needs_review"| XO --> TMS --> XI --> CK2
+```
+
+## Token vs deterministic boundary
+
+| Stage | Command / MCP tool | Model tokens | Writes |
+|---|---|---|---|
+| Status, scan | `status`, `scan` | 0 | none |
+| Extraction gate | `polyglot extract` (CLI only) | 0 (agent does the refactor) | none |
+| Mechanical codemods | `layout --fix` / `layout_fix` | 0 | source files |
+| Context packaging | `prepare` | 0 | none |
+| Translation | coding agent | **agent** | — |
+| Validated write | `apply` | 0 | catalogs, `records.json`, `memory.jsonl` |
+| Verification | `check` | 0 | none |
+| Pseudo-locales | `pseudo` | 0 | pseudo catalogs |
+| Rendered layout | `layout` | 0 | `layout.json` budgets, screenshots |
+| Visual regression | `visual-qa` / `visual_qa` | 0 (no VLM) | `visual-baseline.json` (capture only), failure artifacts |
+| QE Tier 1 / Tier 3 | `qe` / `qe_audit` | 0 | `qe-report.json` |
+| QE Tier 2 critics | `qe` / `qe_audit` | **QE model (opt-in)** | `qe-report.json` |
+| QE auto-repair | `qe --auto-repair` | **QE model (opt-in)** | catalogs via `apply` path |
+| Cross-model review | `review` | agent of your choice | `reviews.json` (ingest) |
+| TMS export | `export` / `tms_export` | 0 | export dir only |
+| TMS import | `import` / `tms_import` | 0 | catalogs, `tm.json`, `qe-report.json` |
+| Report | `report` | 0 | none |
+
+## System diagram
 
 ```mermaid
 flowchart TD
@@ -23,27 +82,25 @@ flowchart TD
 
     subgraph Binary["Single Executable (polyglot)"]
         CLI["CLI Entrypoint (commander)"]
-        MCP["MCP Server (stdio, @modelcontextprotocol/sdk)"]
-
+        MCP["MCP Server (stdio, 17 tools, /localize prompt)"]
         subgraph Core["Core Engine (src/core/)"]
             Store["Repo Store (.polyglot/)"]
             Check["Deterministic Check Engine"]
-            Prepare["Context & Prompt Packager (prepare)"]
+            Prepare["Context Packager (prepare)"]
             Apply["Validated Writer (apply)"]
-            Fuzzy["Lexical Fuzzy Matcher"]
-            Pseudo["Pseudo-Locale Generator"]
-            Review["Cross-Model MQM Review Packager"]
-            Escalate["Human Escalation Export / Import"]
-            Import["Asset Importers (CSV / TBX / TMX / Locale)"]
-            Report["End-of-Run Report Builder"]
+            Fuzzy["Lexical Fuzzy Matcher + TM"]
+            Layout["Pseudo / Layout / Visual QA (Playwright)"]
+            QEng["QE (Tier 1-3)"]
+            TMSio["XLIFF 2.0 / TMX / TBX export + import"]
+            Report["Report Builder"]
         end
-
         subgraph Adapters["Two-Layer Adapter System"]
-            Format["Format Layer (Lossless Read/Write + Placeholders)"]
-            Scanner["Scanner Layer (AST Hardcoded/Concat/Usage)"]
-            Docs["Document Layer (Markdown/MDX, Byte-Preserving DOCX)"]
+            Format["Format Layer (lossless JSON / YAML / PO)"]
+            Scanner["Scanner Layer (AST hardcoded / concat / usage)"]
+            Docs["Document Layer (Markdown/MDX, DOCX)"]
         end
     end
+    QEModel["QE model API (opt-in, Tier 2 only)"]
 
     Agent <-->|"MCP stdio JSON-RPC"| MCP
     Human -->|"CLI args / --json"| CLI
@@ -51,113 +108,62 @@ flowchart TD
     MCP --> Core
     Core --> Store
     Core --> Adapters
+    QEng -.->|"only if API key set"| QEModel
 ```
 
 ---
 
-## Directory Layout
+## Data model (`.polyglot/`)
+
+| File | Contents | Written by |
+|---|---|---|
+| `config.json` | `sourceLocale`, `targetLocales`, `review`, `framework`, `paths`, `layout` (`baseUrl`, `routes`, `localeUrlPattern`, `viewports`) | `init` |
+| `glossary.json` | terms, DNT, per-locale translations, approved `abbreviations` | `memory`, `import` |
+| `usage.json` | key → usage sites (`file`, `line`, `component`, role) + context fingerprint | `scan`/`apply` |
+| `records.json` | per key/locale source hash, context fingerprint, origin, review status | `apply`, imports |
+| `memory.jsonl` | append-only translation memory log | `apply` |
+| `assumptions.json` | recorded agent assumptions (brand, tone, sense) | `memory` |
+| `reviews.json` | MQM review findings | `review --ingest` |
+| `layout.json` | per key/locale width budgets (`maxWidthPx`, `budgetChars`), last layout run | `layout` |
+| `tm.json` | `{version:1, entries:[{source,target,sourceLocale,targetLocale,key?,provenance,verifiedAt?,updatedAt}]}`; `provenance` ∈ `human-reviewed` \| `llm-generated` \| `imported`; human-reviewed outranks llm-generated in fuzzy retrieval | `apply`, `import` (XLIFF) |
+| `visual-baseline.json` | `{version:1,capturedAt,baseUrl,snapshots:{"<route>\|<WxH>\|<locale>": ElementGeometrySnapshot[]}}` | `visual-qa --capture-baseline` |
+| `qe-report.json` | `{version:1,generatedAt,model,tier2,segments[],summary}` (see [QE_AND_TMS.md](QE_AND_TMS.md)) | `qe`, `import` (XLIFF) |
+| `artifacts/visual-qa/<locale>/<key>-<WxH>.png` + `manifest.json` | failure-only screenshots | `visual-qa` |
+| `exports/tms/` | default XLIFF/TMX/TBX export bundle | `export` |
+
+---
+
+## Directory layout (core)
 
 ```
 src/
-├── index.ts                 # Public programmatic exports
-├── bin.ts                   # Single binary entrypoint (routes CLI vs `polyglot mcp`)
-├── cli.ts                   # CLI commands (init, status, scan, check, pseudo, review, escalate, import, report, mcp)
-├── mcp/
-│   ├── server.ts            # MCP server registration, instructions, tools, /localize prompt
-│   └── formatting.ts        # Compact, ranked response formatters & pagination helpers
-├── core/
-│   ├── types.ts             # Shared domain types
-│   ├── store.ts             # Deterministic read/write for .polyglot/* files + Zod validation
-│   ├── locales.ts           # Locale conventions (Intl.PluralRules, formality, punctuation, RTL)
-│   ├── placeholders.ts      # Unified placeholder/ICU/inline-tag extractor & validator
-│   ├── fuzzy.ts             # Lexical fuzzy matcher (word Levenshtein + Intl.Segmenter CJK)
-│   ├── glossary.ts          # Glossary inference, matching, and change propagation
-│   ├── check.ts             # Full deterministic verification engine
-│   ├── prepare.ts           # Batch context + memory + glossary + conventions packager
-│   ├── apply.ts             # Pre-write validation, lossless file update, memory recording
-│   ├── pseudo.ts            # Pseudo-locale generator preserving placeholders & inline tags
-│   ├── review.ts            # MQM cross-model review job packager & result ingestion
-│   ├── escalate.ts          # CSV / XLSX / self-contained HTML export & correction import
-│   ├── importers.ts         # CSV, TBX, TMX, and existing locale file importers
-│   ├── report.ts            # Structured + PR Markdown end-of-run report
-│   └── init.ts              # Project initialization, AGENTS.md/CLAUDE.md rule, git hook
-├── formats/
-│   ├── types.ts             # FormatAdapter interface
-│   ├── json.ts              # Lossless JSON (nested/flat, ICU, {{x}}, {x}, linked)
-│   ├── yaml.ts              # Lossless Rails YAML (yaml CST/Document, %{x}, plural subkeys)
-│   └── po.ts                # Lossless Django Gettext PO (%(x)s, {x}, msgid_plural)
-├── adapters/
-│   ├── types.ts             # FrameworkAdapter & ScannerAdapter interfaces
-│   ├── registry.ts          # Auto-detection & adapter lookup
-│   ├── react.ts             # React / Next.js (next-intl, react-i18next) via @babel/parser
-│   ├── vue.ts               # Vue / Nuxt (vue-i18n) via @vue/compiler-sfc + Babel
-│   ├── svelte.ts            # SvelteKit (Paraglide, svelte-i18n) via svelte/compiler + Babel
-│   ├── rails.ts             # Rails (built-in I18n) via ERB/Ruby scanner (lazy lookup & helpers)
-│   └── django.ts            # Django (gettext) via Django template & Python scanner
-└── documents/
-    ├── types.ts             # DocumentAdapter & inline tag (<x/>, <g>) types
-    ├── registry.ts          # Document dispatch, batch state (.polyglot/documents.json), compact prepareDocument
-    ├── markdown.ts          # Lossless paragraph-level Markdown / MDX segmenter & writer
-    └── docx.ts              # Byte-preserving OOXML DOCX extractor & splice writer
-fixtures/                    # Framework fixtures & LibreOffice-authored DOCX corpus
-audit/                       # Independent adversarial audit suite & historical AUDIT_REPORT.md
-examples/                    # Runnable milestone demonstration scripts
-tests/                       # Unit, golden, round-trip, and MCP compactness tests
-docs/                        # ARCHITECTURE.md, SCHEMAS.md, DECISIONS.md
-scripts/                     # Build & standalone binary packaging scripts
+├── bin.ts            # single binary entrypoint (CLI vs `polyglot mcp`)
+├── cli.ts            # init, status, scan, extract, check, pseudo, layout, visual-qa, qe,
+│                     # review, escalate, import, export, report, mcp
+├── mcp/server.ts     # MCP tools, annotations, instructions, /localize prompt
+├── core/             # check, prepare, apply, fuzzy, glossary, pseudo, layout, codemods,
+│                     # static layout/formatting scanners, review, escalate, importers, report
+├── formats/          # lossless JSON / YAML / PO
+├── adapters/         # React/Next, Vue/Nuxt, SvelteKit, Rails, Django scanners
+└── documents/        # Markdown/MDX, byte-preserving DOCX
+skills/               # agent skills (i18n-prep, localize-pr, layout-remediation, qe-triage, tms-roundtrip)
+.github/workflows/    # polyglot.yml (CI gate + /localize), release.yml
+eval/                 # independent benchmark harness + REPORT.md
 ```
 
 ---
 
-## Two-Layer Adapter Architecture
+## Two-layer adapter architecture
 
-Every supported software stack splits into two cleanly separated layers:
+1. **Format layer (`src/formats/`)** — cheap lossless I/O. Normalized key → entry map; writes preserve key order, formatting, comments, trailing newlines. Declares placeholder grammar (`icu`, `double-mustache`, `single-brace`, `percent-brace`, `python-printf`).
+2. **Scanner layer (`src/adapters/`)** — each ecosystem's reference parser. Detects framework/library, hardcoded user-facing strings, concatenations, and usage sites with a SHA-256 context fingerprint.
 
-### 1. Format Layer (`src/formats/`)
-**Cheap, zero-AST-scanning, lossless I/O.**
-- Reads locale files into a normalized key → entry map (`value`, `plurals?`, `comments?`, `line?`).
-- Writes updates **losslessly**, preserving key order, formatting, indentation, comments, blank lines, and trailing newlines.
-- Declares its placeholder grammar (`icu`, `double-mustache`, `single-brace`, `percent-brace`, `python-printf`) and provides placeholder extraction.
+## Documents (`src/documents/`)
 
-### 2. Scanner Layer (`src/adapters/`)
-**Source-code analysis using each ecosystem's reference parser.**
-- Detects framework, i18n library, and locale file locations.
-- Extracts **hardcoded user-facing strings** (JSX/HTML text, `aria-label`, `placeholder`, `title`, `alt`, toasts/alerts) while filtering technical tokens (CSS classes, URLs, identifiers, `data-testid`).
-- Detects **string concatenations & sentence fragments** that break word order in other languages.
-- Records **usage sites** for every i18n key (`file`, `line`, `component`, `elementRole`, `surroundingStrings`) and computes a deterministic SHA-256 **context fingerprint**.
+Whole-document context, segment-level memory. Inline markup is protected as `<x/>` / `<g>` tags. DOCX is never deserialized into a lossy DOM: XML parts are span-tokenized, adjacent identical runs merged, tracked changes protected, and translations spliced into `<w:t>` spans; unchanged round-trips are byte-identical.
 
----
+## Core flows
 
-## Document Architecture (`src/documents/`)
-
-Documents use a **whole-document context, segment-level memory** model:
-- `prepare` provides document-level metadata and neighboring paragraphs so the agent translates coherently.
-- Inline markup (formatting runs, hyperlinks, fields, code spans, breaks) is encoded using XLIFF-inspired protected inline tags:
-  - Self-closing placeholder: `<x id="1" type="field"/>`
-  - Paired span wrapper: `<g id="2" type="bold">text</g>`
-- **DOCX byte-preservation:** Polyglot never deserializes OOXML into a lossy document object model. Instead it:
-  1. Unzips the `.docx` archive with `fflate`, keeping untouched entries unmodified.
-  2. Parses XML parts (`word/document.xml`, headers, footers, footnotes, endnotes, comments) with a span-tracking XML tokenizer that records exact character offsets.
-  3. Merges adjacent `<w:r>` runs with identical `<w:rPr>` formatting prior to extraction.
-  4. Skips or protects tracked changes (`w:ins`, `w:del`, `w:moveFrom`, `w:moveTo`).
-  5. On `apply`, splices translated text strictly into the target `<w:t>` spans, keeping every surrounding XML attribute, namespace, relationship, style, and drawing untouched. Unchanged reinsertion is byte-identical at the XML level.
-
----
-
-## Core Data Flows
-
-### First-Run Localization Flow
-1. `scan` detects stack, i18n library, hardcoded strings, concatenations, and existing usage sites.
-2. Coding agent sets up i18n library and extracts strings into source locale files.
-3. `prepare` returns batches of untranslated/stale keys with source text, usage sites, neighboring strings, glossary hits, fuzzy memory matches, and target locale conventions.
-4. Coding agent translates in context and calls `apply` — which validates placeholders, ICU syntax, plural rules, and inline tags before writing losslessly and recording into `.polyglot/`.
-5. `check` runs all deterministic checks and returns ranked failures/warnings.
-6. Coding agent fixes issues and re-runs `check` until clean.
-7. `report` outputs issues caught, assumptions made, and any strings worth human or cross-model review.
-
-### Context-Change & Glossary-Propagation Flow
-- On every `scan` / `check`, usage sites are re-extracted and compared against `.polyglot/usage.json` and `.polyglot/records.json`.
-- If `sourceHash` changed → flagged `stale_source`.
-- If `sourceHash` is identical but `contextFingerprint` changed → flagged `context_changed` (e.g. `"Open"` moved from File menu to store-hours banner).
-- If a key no longer appears in source → flagged `orphaned`.
-- When a glossary entry is updated via `memory`, Polyglot scans all source strings matching the term and lists every affected key/locale pair for re-translation.
+- **First run:** `scan` → agent extracts (gated by `extract`) → `prepare` → agent translates → `apply` (validates placeholders/ICU/plurals/tags) → `check` until `PASS` → `pseudo` + `layout` + `visual-qa` → `qe` → `report`.
+- **Context change:** `sourceHash` changed → `stale_source`; same hash, new fingerprint → `context_changed`; key gone → `orphaned`. Glossary updates list every affected key/locale.
+- **Human loop:** `qe` `needs_review` → `export --only-flagged` → TMS → `import` → `human-reviewed` TM + `human-verified` QE status → `check`.

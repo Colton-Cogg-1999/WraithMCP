@@ -1,0 +1,81 @@
+msgid ""
+msgstr ""
+"Language: ar\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=6; plural=(n==0 ? 0 : n==1 ? 1 : n==2 ? 2 : n%100>=3 && n%100<=10 ? 3 : n%100>=11 ? 4 : 5);\n"
+
+#: clinic/views.py
+msgid "Open"
+msgstr ""
+
+#: clinic/appointment.html
+msgid "Close"
+msgstr ""
+
+#: clinic/appointment.html
+msgid "Save"
+msgstr ""
+
+#: clinic/appointment.html
+msgid "Back"
+msgstr ""
+
+#: clinic/consent.html
+msgid "Sign"
+msgstr ""
+
+#: clinic/appointment.html
+msgid "Northstar Health Clinic"
+msgstr ""
+
+#: clinic/consent.html
+msgid "Records are archived securely in LedgerVault."
+msgstr ""
+
+#: clinic/views.py
+msgid "Select a Workspace to view patient Invoices."
+msgstr ""
+
+#: clinic/views.py
+msgid "Assigned %(doctor)s for %(patient)s."
+msgstr ""
+
+#: clinic/appointment.html
+msgid "Your visit is confirmed for %(date)s at %(time)s."
+msgstr ""
+
+#: clinic/appointment.html
+msgid "Schedule"
+msgstr ""
+
+#: clinic/appointment.html
+msgid "Patients"
+msgstr ""
+
+#: clinic/appointment.html
+msgid "Records"
+msgstr ""
+
+#: clinic/appointment.html
+msgid "Cancel visit"
+msgstr ""
+
+#: clinic/appointment.html
+msgid "Please arrive fifteen minutes before your scheduled appointment."
+msgstr ""
+
+#: clinic/views.py
+msgid "No upcoming laboratory results are available yet."
+msgstr ""
+
+#: clinic/views.py
+msgid "%(count)d appointment remaining"
+msgid_plural "%(count)d appointments remaining"
+msgstr[0] ""
+msgstr[1] ""
+msgstr[2] ""
+msgstr[3] ""
+msgstr[4] ""
+msgstr[5] ""

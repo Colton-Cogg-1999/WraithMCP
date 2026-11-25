@@ -1,0 +1,114 @@
+{
+  "hours": {
+    "openBadge": "Open"
+  },
+  "invoice": {
+    "openAction": "Open"
+  },
+  "community": {
+    "postHeading": "Post"
+  },
+  "composer": {
+    "postAction": "Post"
+  },
+  "checkout": {
+    "orderLabel": "Order"
+  },
+  "catalog": {
+    "orderLabel": "Order"
+  },
+  "modal": {
+    "closeButton": "Close"
+  },
+  "branch": {
+    "closeBadge": "Close"
+  },
+  "pricing": {
+    "freeTag": "Free"
+  },
+  "storage": {
+    "freeTag": "Free"
+  },
+  "profile": {
+    "saveButton": "Save"
+  },
+  "promo": {
+    "saveLabel": "Save"
+  },
+  "wizard": {
+    "backButton": "Back"
+  },
+  "warranty": {
+    "backPromise": "We back every purchase for two years."
+  },
+  "billing": {
+    "chargeHeading": "Charge"
+  },
+  "device": {
+    "chargeHeading": "Charge"
+  },
+  "contract": {
+    "signAction": "Sign"
+  },
+  "storefront": {
+    "signNotice": "Check the sign at the pickup counter."
+  },
+  "inbox": {
+    "archiveAction": "Archive"
+  },
+  "docs": {
+    "archiveHeading": "Archive"
+  },
+  "brand": {
+    "welcome": "Welcome to Northstar Commerce",
+    "payCta": "Pay faster with Northstar Pay",
+    "analyticsDesc": "PulseGrid tracks live checkout conversion without cookies.",
+    "auditExport": "Export signed tax records to LedgerVault.",
+    "footerNote": "Powered by Northstar and PulseGrid.",
+    "vaultSync": "LedgerVault synced your latest receipt."
+  },
+  "glossary": {
+    "workspaceCreate": "Create a new Workspace for your retail team.",
+    "workspaceSwitch": "Switch Workspace",
+    "invoiceDownload": "Download PDF Invoice",
+    "invoicePaid": "This Invoice was paid on time.",
+    "seatAssign": "Assign a Seat to a new teammate.",
+    "seatLimit": "Your Workspace includes one complimentary Seat."
+  },
+  "icu": {
+    "cartItems": "{count, plural, one {# item in cart} other {# items in cart}}",
+    "unreadAlerts": "{count, plural, =0 {No unread alerts} one {# unread alert} other {# unread alerts}}",
+    "seatsRemaining": "{count, plural, one {# team Seat remaining} other {# team Seats remaining}}",
+    "rankOrdinal": "Ranked {rank, selectordinal, one {#st} two {#nd} few {#rd} other {#th}} in regional sales",
+    "memberRole": "{role, select, owner {Workspace owner} admin {Administrator} billing {Billing manager} other {Team member}}",
+    "orderPipeline": "{status, select, pending {{count, plural, one {# pending order} other {# pending orders}}} shipped {{count, plural, one {# shipped order} other {# shipped orders}}} other {No active orders}}",
+    "totalDue": "Total due: {amount, number, ::currency/USD}",
+    "renewalDate": "Subscription renews on {date, date, medium}.",
+    "promoThreshold": "{discount}% off orders over {minTotal}",
+    "ticketAssign": "{actor} assigned ticket {ticket} to {assignee}."
+  },
+  "rich": {
+    "termsAccept": "By continuing, you agree to the <link>Terms of Service</link>.",
+    "deleteWarn": "This action is <b>permanent</b> and cannot be undone.",
+    "shippingFast": "Orders placed before <strong>3:00 PM</strong> ship the same day.",
+    "helpLink": "Need billing assistance? Visit the <link>Northstar Help Center</link>.",
+    "backupNotice": "Automatic snapshots are stored in <b>LedgerVault</b> every <codeTag>24h</codeTag>.",
+    "trialEnd": "Your trial ends in <strong>{days} days</strong>; <link>upgrade now</link> to keep PulseGrid active."
+  },
+  "tight": {
+    "tabOverview": "Overview",
+    "tabSettings": "Settings",
+    "tabBilling": "Billing",
+    "btnRefund": "Issue refund",
+    "btnFilters": "Clear filters",
+    "badgeVerified": "Verified"
+  },
+  "general": {
+    "emptyInbox": "You are all caught up. New customer messages and payout notices will appear here.",
+    "networkError": "We could not reach the payment gateway. Please check your connection and try again.",
+    "hoursSubtitle": "Mon–Fri 9:00 AM – 6:00 PM local time. Holiday hours may vary by branch.",
+    "batteryTip": "Place the card reader on its dock overnight to maintain full battery health.",
+    "profileSaved": "Your account details have been updated across all active devices.",
+    "exportHint": "Exports include itemized taxes, refunds, and settlement timestamps in UTC."
+  }
+}

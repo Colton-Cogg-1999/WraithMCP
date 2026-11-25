@@ -1,0 +1,56 @@
+{
+  "type": "object",
+  "properties": {
+    "candidates": {
+      "type": "array",
+      "minItems": 2,
+      "maxItems": 4,
+      "items": {
+        "type": "object",
+        "properties": {
+          "label": { "type": "string", "enum": ["X", "Y", "Z", "W"] },
+          "errors": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "category": {
+                  "type": "string",
+                  "enum": [
+                    "accuracy",
+                    "terminology",
+                    "fluency",
+                    "style",
+                    "locale-conventions",
+                    "placeholders"
+                  ]
+                },
+                "severity": {
+                  "type": "string",
+                  "enum": ["minor", "major", "critical"]
+                },
+                "explanation": { "type": "string" }
+              },
+              "required": ["category", "severity", "explanation"],
+              "additionalProperties": false
+            }
+          },
+          "conveysIntendedSense": { "type": ["boolean", "null"] }
+        },
+        "required": ["label", "errors", "conveysIntendedSense"],
+        "additionalProperties": false
+      }
+    },
+    "preference": {
+      "type": "string",
+      "enum": ["X", "Y", "Z", "W", "tie"]
+    },
+    "worstCandidate": {
+      "type": ["string", "null"],
+      "enum": ["X", "Y", "Z", "W", null]
+    },
+    "rationale": { "type": "string" }
+  },
+  "required": ["candidates", "preference", "worstCandidate", "rationale"],
+  "additionalProperties": false
+}

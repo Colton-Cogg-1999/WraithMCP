@@ -79,13 +79,13 @@ const DEFAULT_VIEWPORTS: LayoutViewport[] = [
   { width: 1280, height: 800 },
 ];
 
-const SYSTEM_CHROMIUM_PATHS = [
+export const SYSTEM_CHROMIUM_PATHS = [
   "/usr/bin/chromium",
   "/usr/bin/chromium-browser",
   "/usr/bin/google-chrome",
 ];
 
-function buildRouteUrl(
+export function buildRouteUrl(
   baseUrl: string,
   route: string,
   locale: string,
@@ -112,7 +112,7 @@ function expectedDirectionForLocale(locale: string): "ltr" | "rtl" {
   return getLocaleConventions(locale).direction;
 }
 
-async function defaultPlaywrightLoader(): Promise<unknown> {
+export async function defaultPlaywrightLoader(): Promise<unknown> {
   // 1. Standard ESM/CJS resolution from local node_modules
   try {
     const modName = "playwright";

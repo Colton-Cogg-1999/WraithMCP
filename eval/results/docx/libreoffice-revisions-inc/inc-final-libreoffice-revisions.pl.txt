@@ -1,0 +1,10 @@
+﻿PILNA ZMIANA: O oknach serwisowych na potrzeby prac awaryjnych należy informować z czterdziestoośmiogodzinnym wyprzedzeniem.
+Standard bezpieczeństwa platformy i reagowania na incydenty
+Wszystkie klastry produkcyjne muszą co sześć godzin kończyć tworzenie zaszyfrowanych kopii zapasowych w zewnętrznej lokalizacji, bez przerw w tym cyklu.
+Inżynierowie pełniący dyżur muszą potwierdzić przyjęcie zgłoszenia incydentu o poziomie ważności 1 w ciągu piętnastu minut i opublikować dla klientów komunikat o aktualnym stanie incydentu.1
+Rada ds. bezpieczeństwa jednogłośnie temporarily wprowadziła obowiązek stosowania sprzętowych kluczy bezpieczeństwa we wszystkich sesjach SSH w środowisku produkcyjnym.
+Poziom ważności	Częstotliwość komunikatów dla klientów
+Poziom ważności 1 — awaria krytyczna	Co trzydzieści minut do czasu ograniczenia skutków awarii
+Poziom ważności 2 — pogorszenie jakości usługi	Co dwie godziny do czasu rozwiązania problemu
+Raporty z analizy przyczyn źródłowych incydentów są archiwizowane w systemie LedgerVault, a odnośniki do nich są dostępne w portalu zaufania Northstar.
+Kierownictwo działu inżynierii co tydzień dokonuje przeglądu zadań, które nadal wymagają realizacji.

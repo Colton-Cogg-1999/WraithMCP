@@ -1,0 +1,40 @@
+{
+  "expected": [
+    "Northstar Studio",
+    "Create project",
+    "Import repository",
+    "Search projects...",
+    "Filter by region",
+    "Deployments",
+    "Environment variables",
+    "Billing overview",
+    "All systems operational",
+    "Last deployed 4 minutes ago",
+    "Production branch",
+    "Preview builds enabled",
+    "Confirm deletion",
+    "Delete workspace",
+    "Enter your workspace slug",
+    "Must be lowercase letters and numbers",
+    "Deployment succeeded",
+    "Unable to connect to build runner",
+    "Upgrade to unlock unlimited seats",
+    "Contact sales",
+    "Read the documentation",
+    "Company brand mark",
+    "You have",
+    "active builds"
+  ],
+  "mustNotFlag": [
+    "application/json",
+    "Bearer ",
+    "/api/v1/deployments/",
+    "X-Trace-Id",
+    "SELECT id FROM projects",
+    "console.info",
+    "build_status_ok",
+    "us-west-2",
+    "flex items-center gap-2",
+    "https://status.northstar.example"
+  ]
+}

@@ -1,0 +1,17 @@
+<header>
+  <h1><%= t('brand.portal_title') %></h1>
+  <nav role="tablist">
+    <button class="w-24 truncate whitespace-nowrap overflow-hidden"><%= t('tight.tab_orders') %></button>
+    <button class="w-24 truncate whitespace-nowrap overflow-hidden"><%= t('tight.tab_payouts') %></button>
+    <button class="w-24 truncate whitespace-nowrap overflow-hidden"><%= t('tight.tab_team') %></button>
+  </nav>
+</header>
+<section>
+  <!-- Purchase order heading -->
+  <h2><%= t('.order_heading') %></h2>
+  <!-- Sort dropdown label -->
+  <label><%= t('.sort_order') %></label>
+  <p><%= t('.items_count', count: @count) %></p>
+  <p><%= t('messages.greeting', name: @user.name, count: @open_count) %></p>
+  <p><%= t('general.empty_orders') %></p>
+</section>

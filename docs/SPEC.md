@@ -1,17 +1,17 @@
-# Polyglot — Product Specification (Original Kickoff Brief)
+# Wraith — Product Specification (Original Kickoff Brief)
 
 > Restored verbatim from the original project kickoff specification for historical traceability.
 
 ## 1. Thesis
 
-> Polyglot turns the coding agent you already use into a context-aware localization engineer. The agent translates. Polyglot gives it memory, rules, and proof.
+> Wraith turns the coding agent you already use into a context-aware localization engineer. The agent translates. Wraith gives it memory, rules, and proof.
 
-Traditional localization pipelines extract strings, strip their context, translate segments in isolation, and reinsert them. A coding agent can translate *while looking at* the component, route, neighbouring strings, and product purpose. Polyglot's job is to make that context-aware translation **consistent, verifiable, and maintainable**.
+Traditional localization pipelines extract strings, strip their context, translate segments in isolation, and reinsert them. A coding agent can translate *while looking at* the component, route, neighbouring strings, and product purpose. Wraith's job is to make that context-aware translation **consistent, verifiable, and maintainable**.
 
 ## 2. Non-negotiable principles
 
-1. **Model-free.** Polyglot never calls an LLM, MT engine, or any generative/judging model. The user's coding agent is the only engine. No API keys, no provider config.
-2. **Deterministic core.** Everything Polyglot does on its own (scanning, checking, matching, file I/O, reporting) is deterministic and works offline.
+1. **Model-free.** Wraith never calls an LLM, MT engine, or any generative/judging model. The user's coding agent is the only engine. No API keys, no provider config.
+2. **Deterministic core.** Everything Wraith does on its own (scanning, checking, matching, file I/O, reporting) is deterministic and works offline.
 3. **State lives in the repo.** All memory is plain, human-readable, diffable files under `.polyglot/`, committed with the code. No database, no server, no cloud, no auth, no dashboard.
 4. **No localization jargon in the default experience.** A developer who has never heard of a TM, termbase, TMX, or MQM must never need to. Expert features exist but are opt-in.
 5. **Not a TMS.** No projects, vendors, jobs, workflows, pricing, user accounts, or web UI.

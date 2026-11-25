@@ -1,0 +1,10 @@
+﻿2026 Open Climate and Data Center Efficiency Report
+Published under Creative Commons Attribution 4.0 International by the OpenGrid Consortium.
+Executive Summary
+Regional compute clusters reduced average water consumption by twenty-eight percent compared to the previous baseline year.1
+Raw telemetry datasets remain freely downloadable from the OpenGrid Data Archive for independent verification.
+Region	Renewable Share	Annual PUE
+Northern Europe Hub	Ninety-four percent hydro and wind	1.14 measured average
+Middle East Solar Cluster	Seventy-six percent utility solar	1.26 measured average
+
+Quarterly third-party audits confirm zero unverified carbon offsets were included in operational totals.

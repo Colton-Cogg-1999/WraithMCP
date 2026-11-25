@@ -1,0 +1,14 @@
+﻿Richtlinie von Northstar zur Rechnungsstellung und Datenaufbewahrung
+Diese Richtlinie erläutert, wie Northstar Abonnementzahlungen über Northstar Pay abwickelt und Compliance-Unterlagen in LedgerVault archiviert.
+1. Abonnementrechnungen und Zahlungsfristen
+Jeder Workspace erhält am ersten Werktag des Abrechnungszyklus eine detaillierte Monatsrechnung.
+Sollte eine Zahlung fehlschlagen, führen wir vierzehn Kalendertage lang automatisch erneute Zahlungsversuche durch, bevor wir nicht wesentliche Analyseexporte aussetzen.1
+Bitte lesen Sie die vollständigen Steuerunterlagen im Northstar-Hilfezentrum durch, bevor Sie eine Befreiungsbescheinigung einreichen.
+2. Servicestufen und Aufbewahrungsfristen
+Tarifstufe	Aufbewahrungsfrist für Audit-Protokolle	Zielwert für die Support-Reaktionszeit
+Starter-Arbeitsbereich	90 Tage durchsuchbare Aktivitäten	Zwei Werktage per E-Mail
+Unternehmensarbeitsbereich	Sieben Jahre in LedgerVault	Vier Stunden mit vorrangiger Eskalation
+3. Genehmigte rechtliche Änderungen
+Der Compliance-Ausschuss hat unteroffiziell provisionally  vierteljährliche Löschprüfungen für inaktive Händlerkonten genehmigt.
+Kontoinhaber können nach Begleichung aller offenen Rechnungen die sofortige Löschung archivierter Exporte beantragen.
+Sicherheitsbenachrichtigungen werden an den Hauptadministrator gesendet und in PulseGrid protokolliert.

@@ -1,0 +1,9 @@
+﻿Standard bezpieczeństwa platformy i reagowania na incydenty
+Wszystkie klastry produkcyjne muszą bez przerwy wykonywać szyfrowane kopie zapasowe poza siedzibą firmy co dwanaście godzin.
+Inżynierowie dyżurni muszą potwierdzić otrzymanie zgłoszenia o incydencie o poziomie ważności 1 w ciągu piętnastu minut oraz opublikować aktualizację statusu dla klienta.1
+Rada ds. bezpieczeństwa jednogłośnietemporarily  wprowadziła obowiązek stosowania sprzętowych kluczy bezpieczeństwa we wszystkich produkcyjnych sesjach SSH.
+Poziom ważności	Częstotliwość komunikacji z klientem
+Poziom ważności 1 — krytyczna awaria	Co trzydzieści minut do czasu usunięcia awarii
+Poziom ważności 2 — Ograniczona dostępność usług	Co dwie godziny do czasu rozwiązania problemu
+Raporty dotyczące przyczyn źródłowych zdarzeń są archiwizowane w systemie LedgerVault i udostępniane za pośrednictwem portalu Northstar Trust.
+Nierozwiązane zadania są co tydzień analizowane przez kierownictwo działu inżynierii.

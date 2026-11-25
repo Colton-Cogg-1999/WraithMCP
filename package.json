@@ -1,18 +1,21 @@
 {
-  "name": "polyglot-mcp",
+  "name": "wraith",
   "version": "0.1.0",
-  "description": "Model-free, deterministic MCP server and CLI that turns your coding agent into a context-aware localization engineer.",
+  "description": "Wraith: deterministic MCP server and CLI that turns your coding agent into a context-aware localization engineer (visual QA, tiered QE, TMS round-trip).",
   "license": "MIT",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "bin": {
-    "polyglot": "./dist/bin.js"
+    "polyglot": "./dist/bin.js",
+    "wraith": "./dist/bin.js"
   },
   "files": [
     "dist",
     "README.md",
-    "LICENSE"
+    "LICENSE",
+    "skills",
+    "docs"
   ],
   "engines": {
     "node": ">=20.0.0"

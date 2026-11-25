@@ -1,0 +1,9 @@
+﻿Standard bezpieczeństwa platformy i reagowania na incydenty
+Wszystkie klastry produkcyjne muszą co dwanaście godzin kończyć tworzenie zaszyfrowanych kopii zapasowych w odrębnej lokalizacji, bez przerw w tym cyklu.
+Inżynierowie pełniący dyżur muszą potwierdzić przyjęcie zgłoszenia incydentu poziomu 1 w ciągu piętnastu minut i opublikować komunikat dla klientów o bieżącej sytuacji.1
+Rada ds. bezpieczeństwa jednogłośnie temporarily wprowadziła obowiązek używania sprzętowych kluczy bezpieczeństwa we wszystkich sesjach SSH w środowisku produkcyjnym.
+Poziom ważności incydentu	Częstotliwość komunikatów dla klientów
+Poziom 1 – awaria krytyczna	Co trzydzieści minut do czasu ograniczenia skutków awarii
+Poziom 2 – pogorszenie jakości usługi	Co dwie godziny do czasu rozwiązania problemu
+Raporty z analizy przyczyn źródłowych incydentów są archiwizowane w systemie LedgerVault, a odsyłacze do nich są dostępne na portalu zaufania Northstar.
+Kierownictwo działu inżynierii co tydzień przegląda zadania, które nadal czekają na realizację.

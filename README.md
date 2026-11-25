@@ -1,6 +1,32 @@
-# Polyglot
+# Wraith
 
-**Turn the coding agent you already use into a context-aware localization engineer. The agent translates. Polyglot gives it memory, rules, and proof.**
+**Your coding agent already writes the code. Wraith turns it into a localization engineer.** The agent does the translating. Wraith gives it memory, rules and deterministic checks: placeholders, ICU plurals, glossary, staleness, and rendered layout down to the pixel. Except for one opt-in quality-estimation step, no model is called.
+
+> CLI: `polyglot` (alias `wraith`) · MCP server: `polyglot mcp` · state lives in `.polyglot/`
+
+## Results
+
+An independent, judge-validated evaluation (two judges, blinded and position-swapped, 100% planted-corruption detection). Full report: **[eval/REPORT.md](eval/REPORT.md)** · [report.html](eval/report.html)
+
+**4 framework stacks × 5 languages (es-MX, de, ja, ar, pl)**
+
+| System | Sense accuracy on ambiguous strings | Deterministic check errors |
+|---|---:|---:|
+| **Codex + Wraith (A)** | **99.5%** | **0** |
+| Codex alone (A0) | 99.8% | 28 |
+| DeepL + glossary (B) | 59.3% | 53 |
+| DeepL + `context` (B+ctx) | 86.7% | 42 |
+
+- **5 real OSS repos** (next-intl, hoppscotch, immich, mastodon, wagtail): check errors **A 6** · A0 67 · B 116
+- **Release replay (N → N+1):** stale-source detection precision = recall = **1.0**
+- **Rendered layout (nextjs-commerce, 7 locales, 375/1280 px):** **26 → 8 → 0** defects (baseline → `layout --fix` codemods → one prescribed agent edit)
+- **Stage 4 (TM context ablation, 482 items):** dataset and metrics pipeline validated in a dry run; full run pending ([Section 13](eval/REPORT.md))
+
+The agent alone translates about as well as with Wraith. What Wraith adds is that the output ships: no broken placeholders, plurals or glossary terms, no stale strings, and no clipped or mirrored-wrong UI.
+
+---
+
+## Example session
 
 ```text
 > Make my site available in Mexican Spanish, French and Simplified Chinese.
@@ -30,15 +56,16 @@
 
 ---
 
-## Why Polyglot?
+## Why Wraith?
 
-- **Model-free:** Polyglot never calls an LLM or MT API. No API keys, no provider config, no cloud. Your coding agent (Claude Code, Codex, Gemini CLI, etc.) is the only engine.
+- **Model-free translation:** Wraith never translates and never calls an MT API. Your coding agent (Claude Code, Codex, Gemini CLI, etc.) is the only translation engine. The single opt-in model call is `polyglot qe` Tier 2 (three LLM critics), which runs only if `ANTHROPIC_API_KEY` or `GEMINI_API_KEY`/`GOOGLE_API_KEY` is set; without keys it is skipped and segments are `unscored`, never `verified`.
 - **Deterministic core:** Scanning, placeholder/ICU/plural verification, fuzzy matching, lossless file writes, and reporting are 100% deterministic and work offline.
 - **Explicit verification outcomes (`PASS` / `FAIL` / `INCONCLUSIVE`):** `polyglot check` fails closed — unsupported projects, monorepos with unconfigured apps, or zero scanned coverage return `INCONCLUSIVE` (exit code `2`) rather than a false `PASS`. Deterministic verification checks structure, placeholders, plurals, glossary rules, and static scanner heuristics; it does **not** establish linguistic accuracy or native fluency.
 - **State lives in git:** All memory is plain, diffable JSON/JSONL inside `.polyglot/`, committed alongside your code. `status`, `check`, `prepare`, and `report` are strictly read-only.
 - **Workspace security boundary:** All reads, writes, locale identifiers, reviewer imports, document outputs, and MCP `rootDir` parameters are confined to the authorized project workspace with symlink and archive-size protections.
 - **Advisory memory, never blind auto-fill:** Even 100% lexical matches are surfaced as strong contextual suggestions with prior usage context so your agent verifies meaning before reusing them.
-- **Visual & layout QA:** Pseudo-locale generation (`polyglot pseudo`) plus layout/RTL hazard detection (`whitespace-nowrap`, `truncate`, narrow fixed widths, `cn()`/`clsx()`, and physical `ml-`/`mr-` classes for RTL locales) help your agent catch and fix visual breakage.
+- **Visual & layout QA:** Pseudo-locales (`polyglot pseudo`), rendered layout checks (`polyglot layout`), and a baseline geometry diff (`polyglot visual-qa`, 0 LLM tokens, no VLM) catch truncation, overflow, wrap regressions, occlusion, tofu, contrast, and RTL breakage.
+- **CI and human loop:** A deterministic PR gate (`extract` + `check` + `visual-qa`), an on-demand `/localize` agent job, QE risk routing, and XLIFF 2.0 / TMX / TBX round-trips with any TMS.
 
 ---
 
@@ -103,23 +130,31 @@ This creates `.polyglot/config.json`, seeds staleness baselines for any existing
 
 ## CLI Commands (Works Without Any Agent)
 
-```bash
-polyglot init [--source en] [--targets es-MX,fr] [--hook]
-polyglot status [--json]
-polyglot scan [--file <substr>] [--json]
-polyglot check [--locale <tag>] [--severity error|warning] [--json]   # exit 0=PASS, 1=FAIL, 2=INCONCLUSIVE
-polyglot pseudo [--mode auto|expand|rtl|cjk|tall|long-word|format] [--locale en-x-pseudo] [--json]
-polyglot layout [--url http://localhost:3000] [--routes /,/settings] [--fix] [--dry-run] [--json]
-polyglot review --locale es-MX [--output job.json] | --ingest results.json
-polyglot escalate [--locale es-MX] [--output-dir .polyglot/escalations] | --import corrections.xlsx
-polyglot import [glossary.csv|terms.tbx|memory.tmx] [--format auto|csv|tbx|tmx|locales]
-polyglot report [--json]
-polyglot mcp
-```
+Global option: `-C, --cwd <dir>` (project root). Gates exit `0` PASS · `1` FAIL · `2` INCONCLUSIVE.
+
+| Command | Purpose | Key options |
+|---|---|---|
+| `polyglot init` | create `.polyglot/config.json`, agent rule, optional hook | `--source en` `--targets es-MX,fr` `--hook` |
+| `polyglot status` | project facts (read-only) | `--json` |
+| `polyglot scan` | hardcoded strings, concatenations, usage | `--file <substr>` `--json` |
+| `polyglot extract` | deterministic extraction gate: hardcoded strings / concatenations / hardcoded formatting left in source (reports; the agent refactors) | `--fail-on-unextracted` `--json` |
+| `polyglot check` | deterministic verification gate | `-l <locale>` `--severity` `--code` `--json` |
+| `polyglot pseudo` | pseudo-locales with zero-width key IDs | `--mode auto\|expand\|rtl\|cjk\|tall\|long-word\|format` `--no-key-ids` `--format-overlay` |
+| `polyglot layout` | rendered layout checks + codemods | `--url` `--routes` `-l` `--locale-pattern query\|prefix\|cookie` `--fix` `--dry-run` |
+| `polyglot visual-qa` | geometry regression diff vs baseline | `--capture-baseline` `--base <path>` `--routes` `--locales` `--url` `--locale-pattern` `--json` |
+| `polyglot qe` | tiered quality estimation → `.polyglot/qe-report.json` | `--locales` `--auto-repair` `--fail-above <n>` `--json` |
+| `polyglot review` | package / ingest cross-model MQM review | `--locale` `--output` `--ingest` |
+| `polyglot escalate` | CSV/XLSX/HTML human review export / import | `--locale` `--output-dir` `--import` |
+| `polyglot export` | TMS bundle: XLIFF 2.0, TMX 1.4b, TBX-Basic, screenshots | `--format xliff2` `--out` `--locales` `--only-flagged` `--include-tm` `--include-glossary` `--bundle-screenshots` |
+| `polyglot import <file-or-dir>` | glossary/TM/locale assets, or reviewed `.xliff`/`.xlf` (auto-detected, validated, stored as human-reviewed TM) | `--format auto\|csv\|tbx\|tmx\|locales\|xliff` |
+| `polyglot report` | end-of-run Markdown/JSON report | `--json` |
+| `polyglot mcp` | start the MCP server (stdio) | |
+
+Exit codes for `visual-qa`: `1` regression, `2` no Playwright/server/baseline. `qe` exits `1` if any segment risk > `--fail-above` or any `needs_review`. `extract --fail-on-unextracted` exits `1` while hardcoded strings or concatenations remain.
 
 ## Layout & Formatting QA (v1)
 
-Polyglot stays model-free while verifying rendered UI layout and locale formatting deterministically:
+Wraith stays model-free while verifying rendered UI layout and locale formatting deterministically:
 
 - **Target-aware pseudo-locales (`polyglot pseudo --mode auto`):** generates `en-XA` (IBM length-scaled expansion + format overlay), `ar-XB` (RTL RLO/PDF with LRI/PDI isolation for placeholders & DNT brands), `ja-XC` (CJK fullwidth without spaces), `th-XD` (stacked tall diacritics), and `de-XE` (unbreakable compound words) based on `targetLocales`. Each pseudo string embeds its key ID in invisible zero-width characters so rendered browser findings map directly back to catalog keys.
 - **Rendered Playwright checks (`polyglot layout`):** renders configured routes across pseudo and target locales at 375px and 1280px to measure horizontal/vertical overflow, clipped text, overlapping sibling boxes, tofu/missing glyphs, `dir`/`lang` mismatches, and hardcoded formats surviving in `format` mode. Returns `INCONCLUSIVE` (never `PASS`) when Playwright is not installed or no `baseUrl` is configured.
@@ -135,14 +170,54 @@ Polyglot stays model-free while verifying rendered UI layout and locale formatti
 - **Character-based width budgets are approximate.** v1 converts measured element pixel width into `budgetChars` using an average glyph-width heuristic (`0.56 × fontSize`), so variable-width proportional fonts and CJK/Arabic scripts should still be re-verified via `polyglot layout`.
 - **Mechanical codemods are Tailwind-first.** Automatic `--fix` rewrites target Tailwind utility classes and root HTML `dir`/`lang`; custom CSS modules, styled-components, and structural flexbox/grid refactors are emitted as agent prescriptions rather than mutated automatically.
 
+### Visual QA, QE & TMS
+
+- **`visual-qa`:** per-element geometry (`lineCount`, size, overflow, clipping, occlusion, font load, contrast) diffed against `.polyglot/visual-baseline.json`; rules `line_wrap_regression`, `container_blowout`, `text_truncation`, `element_occlusion`, `missing_glyph_tofu`, `contrast_regression`. Failure-only screenshots in `.polyglot/artifacts/visual-qa/`. See [docs/VISUAL_QA.md](docs/VISUAL_QA.md).
+- **`qe`:** Tier 1 deterministic (check validations + width budget) → Tier 2 three critics (terminology/TM drift, UI context, semantic/omission; opt-in tokens) → Tier 3 risk `0–100`. `<25` verified, `25–60` one optional `--auto-repair` pass, otherwise `needs_review`.
+- **`export` / `import`:** XLIFF 2.0 units carry `mda:` metadata (file, line, component, risk, `max_chars`, `max_width_px`, TM similarity) and critic notes; reviewed XLIFF is re-validated and stored in `.polyglot/tm.json` as `human-reviewed`, which outranks `llm-generated` TM. See [docs/QE_AND_TMS.md](docs/QE_AND_TMS.md).
+- **`directional_asset` check (warning):** directional icons (`ArrowLeft/Right`, `ChevronLeft/Right`, `CaretLeft/Right`, back/next arrows, directional svg/img names) without `rtl:rotate-180`, `rtl:-scale-x-100`, dir-aware mirroring, or a logical swap — only when `ar`, `he`, `fa`, or `ur` is a target.
+
 ## MCP Tools
 
-All 13 tools declare MCP behavioural `annotations` (`readOnlyHint`, `destructiveHint`, `idempotentHint`, `openWorldHint`), `outputSchema`, and return `structuredContent`:
+17 tools, each with `annotations` (`readOnlyHint`, `destructiveHint`, `idempotentHint`, `openWorldHint`), `outputSchema`, and `structuredContent`:
 
-- **Read-only (`readOnlyHint: true`):** `status`, `scan`, `prepare`, `check`, `layout` *(persists optional width budgets to `.polyglot/layout.json`)*, `report`
-- **Mutating (`readOnlyHint: false`, `destructiveHint: false`):** `memory` (discriminated union per action), `review`
-- **Mutating / Overwriting (`readOnlyHint: false`, `destructiveHint: true`):** `apply`, `pseudo`, `layout_fix`, `escalate`, `import`
-- **Prompt:** `/localize`
+| Tool | Annotation | Notes |
+|---|---|---|
+| `status`, `scan`, `prepare`, `check`, `report` | read-only | |
+| `layout` | read-only | persists optional width budgets to `.polyglot/layout.json` |
+| `visual_qa` | read-only | writes failure artifacts / baseline only when capturing |
+| `tms_export` | read-only | writes only to the explicit export dir |
+| `memory`, `review` | mutating, non-destructive | |
+| `apply`, `pseudo`, `layout_fix`, `escalate`, `import` | destructive | |
+| `qe_audit` | destructive | `autoRepair` may write catalogs; otherwise only writes `qe-report.json` |
+| `tms_import` | destructive | validated catalog writes + human-reviewed TM |
+
+Prompt: `/localize`. Agent playbooks: [`skills/`](skills/) — `i18n-prep`, `localize-pr`, `layout-remediation`, `qe-triage`, `tms-roundtrip` ([docs/SKILLS.md](docs/SKILLS.md)).
+
+## CI Quickstart
+
+[`.github/workflows/polyglot.yml`](.github/workflows/polyglot.yml) (also usable via `workflow_call`):
+
+- **`deterministic-l10n-gate`** (pull_request, 0 LLM tokens): `polyglot extract --fail-on-unextracted`, `polyglot check`, `polyglot visual-qa --base .polyglot/visual-baseline.json`; sticky PR summary; artifacts on failure.
+- **`update-baseline`** (push to main): recaptures the baseline as an artifact; commit it via a reviewed PR.
+- **`agentic-localize`** (`/localize` comment by OWNER/MEMBER/COLLABORATOR, or manual): Claude Code or Codex translates changed source keys via the `localize-pr` skill, then `check` + `qe`; commits only on `PASS`; `needs_review` keys are exported as XLIFF and commented with risk scores.
+
+Set `preview_build` / `preview_start` / `preview_url` (defaults `npm run build`, `npm run start`, `http://localhost:3000`) and secrets `ANTHROPIC_API_KEY` or `OPENAI_API_KEY` for `/localize`. Details: [docs/GITHUB_CI.md](docs/GITHUB_CI.md).
+
+## Benchmarks
+
+From [eval/REPORT.md](eval/REPORT.md) (Stage 3, 4 synthetic stacks × 5 languages; A = Codex + Wraith MCP, A0 = Codex alone, B = DeepL + XML + glossary, B+ctx = DeepL with `context`):
+
+| System | Challenge sense accuracy | `polyglot check` errors |
+|---|---|---|
+| A | 99.5% | 0 |
+| A0 | 99.8% | 28 |
+| B | 59.3% | 53 |
+| B+ctx | 86.7% | 42 |
+
+Layout & Formatting v1 (`nextjs-commerce`, 7 locales, 375/1280px): **26 → 8 → 0** rendered defects (baseline → `layout --fix` → one prescribed agent edit).
+
+Stage 4 (TM ablation: human-reviewed TM + QE routing) is **dry-run validated; full run pending** — `node eval/run.mjs run --scopes tm-ablation`, results to `eval/REPORT.md` Section 13.
 
 ---
 
@@ -164,6 +239,11 @@ POLYGLOT_NODE_BIN=/path/to/official/node npm run build:sea
 - [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)
 - [docs/SCHEMAS.md](docs/SCHEMAS.md)
 - [docs/DECISIONS.md](docs/DECISIONS.md)
+- [docs/VISUAL_QA.md](docs/VISUAL_QA.md)
+- [docs/QE_AND_TMS.md](docs/QE_AND_TMS.md)
+- [docs/GITHUB_CI.md](docs/GITHUB_CI.md)
+- [docs/SKILLS.md](docs/SKILLS.md)
+- [eval/REPORT.md](eval/REPORT.md)
 - [REMEDIATION.md](REMEDIATION.md)
 - [audit/AUDIT_REPORT.md](audit/AUDIT_REPORT.md) (historical audit record)
 

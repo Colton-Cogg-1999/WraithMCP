@@ -17,6 +17,9 @@ import {
 import { prepareBatch } from "../core/prepare.js";
 import { generatePseudoLocale } from "../core/pseudo-locale.js";
 import { PseudoMode } from "../core/pseudo.js";
+import { runQe } from "../core/qe.js";
+import { runTmsExport, runTmsImport } from "../core/tms.js";
+import { runVisualQa } from "../core/visual-qa.js";
 import { generateReport } from "../core/report.js";
 import { ingestReviewResults, packageReviewJob } from "../core/review.js";
 import { scanProject } from "../core/scan.js";
@@ -31,7 +34,7 @@ import {
 import { applyDocumentTranslations, prepareDocument } from "../documents/registry.js";
 import { mcpTextResult } from "./formatting.js";
 
-export const MCP_SERVER_INSTRUCTIONS = `Polyglot gives you memory, rules, and deterministic proof for localization. You perform all code changes and translations in full codebase context; Polyglot never calls an LLM.
+export const MCP_SERVER_INSTRUCTIONS = `Polyglot gives you memory, rules, and deterministic proof for localization. You perform all code changes and translations in full codebase context; Polyglot never calls an LLM (the single opt-in exception is \`qe_audit\` Tier 2 critics, which run only when a model API key is configured).
 
 Definition of done:
 1. Run \`scan\` to detect framework, i18n library, hardcoded strings, concatenations, and hardcoded formatting (\`toFixed\`, locale-less \`toLocaleString\`, currency concatenation, manual dates, \`toUpperCase\`, locale-less \`localeCompare\`).
@@ -42,7 +45,8 @@ Definition of done:
 5. Run \`check\` until catalog & scanner checks pass.
 6. Run \`pseudo\` with \`mode: "auto"\` to generate target-appropriate pseudo-locales (\`en-XA\`, \`ar-XB\`, \`ja-XC\`, \`th-XD\`, \`de-XE\`) with invisible zero-width key IDs, then run \`layout\` against a running dev server at 375px and 1280px.
 7. Remediate confirmed layout defects in order: (a) run \`layout_fix\` for deterministic mechanical codemods, (b) apply agent code prescriptions, (c) re-run \`prepare\` + \`apply\` for keys exceeding recorded width budgets in \`.polyglot/layout.json\` (using approved glossary abbreviations with title/aria-label where appropriate), (d) re-run \`layout\` until clean, then re-run \`check\` until outcome is "PASS".
-8. Run \`report\` to surface issues caught, assumptions made, and any strings worth a human look.
+8. Optionally run \`visual_qa\` (DOM geometry regression vs .polyglot/visual-baseline.json, 0 tokens) and \`qe_audit\` (tiered QE; only Tier 2 uses a model). Export \`needs_review\` segments with \`tms_export\` and bring human edits back with \`tms_import\`.
+9. Run \`report\` to surface issues caught, assumptions made, and any strings worth a human look.
 
 Keep defaults zero-question: infer brand names and terminology, record assumptions via \`memory\`, and report them at the end unless config.review is "confirm".`;
 
@@ -530,6 +534,113 @@ export function createPolyglotMcpServer(options: McpServerOptions = {}): McpServ
         flaggedLongWordLines,
       });
       return mcpTextResult(res);
+    }
+  );
+
+  server.registerTool(
+    "visual_qa",
+    {
+      title: "Token-Free Visual QA (DOM Geometry Regression)",
+      description:
+        "Render routes with Playwright and fingerprint every zero-width-traced element (lineCount, size, overflow, clipping, occlusion, font/tofu, WCAG contrast). captureBaseline writes .polyglot/visual-baseline.json; otherwise diffs against it and flags line_wrap_regression, container_blowout, text_truncation, element_occlusion, missing_glyph_tofu, contrast_regression with failure-only element crops. 0 LLM tokens. INCONCLUSIVE without Playwright/baseUrl/baseline.",
+      inputSchema: {
+        rootDir: z.string().optional(),
+        baseUrl: z.string().optional(),
+        routes: z.array(z.string()).optional(),
+        locales: z.array(z.string()).optional(),
+        captureBaseline: z.boolean().optional().default(false),
+        basePath: z.string().optional().describe("Baseline path (default .polyglot/visual-baseline.json)."),
+        localeUrlPattern: z.enum(["query", "prefix", "cookie"]).optional(),
+      },
+      outputSchema: GenericObjectOutputSchema,
+      annotations: READ_ONLY_ANNOTATIONS,
+    },
+    async ({ rootDir, baseUrl, routes, locales, captureBaseline, basePath, localeUrlPattern }) => {
+      const res = await runVisualQa({
+        rootDir: safeRoot(rootDir),
+        baseUrl,
+        routes,
+        locales,
+        captureBaseline,
+        basePath,
+        localeUrlPattern,
+      });
+      return mcpTextResult({ ...res, defects: res.defects.slice(0, 25), defectsTruncated: res.defects.length > 25 });
+    }
+  );
+
+  server.registerTool(
+    "qe_audit",
+    {
+      title: "Tiered Quality Estimation & Error Swarm",
+      description:
+        "Score translated segments: Tier 1 deterministic gate (check + width budgets, 0 tokens; failures escalate at risk 100), Tier 2 three parallel critics (terminology/TM drift, UI context/conciseness, semantic/omission) on a fast model when ANTHROPIC_API_KEY or GEMINI_API_KEY is set, Tier 3 composite risk with routing (<25 verified, 25-60 one auto-repair pass when autoRepair=true, else needs_review). Writes .polyglot/qe-report.json; only modifies locale catalogs when autoRepair=true (through validated apply). Without a model key, segments are 'unscored' (never verified).",
+      inputSchema: {
+        rootDir: z.string().optional(),
+        locales: z.array(z.string()).optional(),
+        keys: z.array(z.string()).optional(),
+        autoRepair: z.boolean().optional().default(false),
+        failAbove: z.number().min(0).max(100).optional(),
+      },
+      outputSchema: GenericObjectOutputSchema,
+      annotations: DESTRUCTIVE_MUTATING_ANNOTATIONS,
+    },
+    async ({ rootDir, locales, keys, autoRepair, failAbove }) => {
+      const res = await runQe({ rootDir: safeRoot(rootDir), locales, keys, autoRepair, failAbove });
+      return mcpTextResult(res);
+    }
+  );
+
+  server.registerTool(
+    "tms_export",
+    {
+      title: "Export for TMS Post-Editing (XLIFF 2.0 / TMX / TBX)",
+      description:
+        "Export segments as XLIFF 2.0 (<unit> per key with mda metadata: file, line, component, qe_risk_score, max_chars, max_width_px, tm_similarity; <notes> with QE flags and top fuzzy TM; placeholders as <ph disp/>), optionally TMX 1.4b (tm.tmx), TBX-Basic (glossary.tbx), and visual-qa failure crops. Writes only inside the explicit output directory. 0 LLM tokens.",
+      inputSchema: {
+        rootDir: z.string().optional(),
+        outDir: z.string().optional().describe("Workspace-relative output dir (default .polyglot/exports/tms)."),
+        locales: z.array(z.string()).optional(),
+        onlyFlagged: z.boolean().optional().default(false),
+        includeTm: z.boolean().optional().default(false),
+        includeGlossary: z.boolean().optional().default(false),
+        bundleScreenshots: z.boolean().optional().default(false),
+      },
+      outputSchema: GenericObjectOutputSchema,
+      annotations: { ...READ_ONLY_ANNOTATIONS, idempotentHint: true },
+    },
+    async ({ rootDir, outDir, locales, onlyFlagged, includeTm, includeGlossary, bundleScreenshots }) => {
+      const res = runTmsExport({
+        rootDir: safeRoot(rootDir),
+        format: "xliff2",
+        outDir,
+        locales,
+        onlyFlagged,
+        includeTm,
+        includeGlossary,
+        bundleScreenshots,
+      });
+      return mcpTextResult(res);
+    }
+  );
+
+  server.registerTool(
+    "tms_import",
+    {
+      title: "Import Reviewed XLIFF 2.0 from a TMS",
+      description:
+        "Import human post-edited XLIFF 2.0 (file or directory): validates every target through the apply pipeline (placeholders, ICU, tags, glossary), writes locale catalogs preserving key order, upserts .polyglot/tm.json with provenance human-reviewed + verifiedAt, marks qe-report segments human-verified, then runs check (and visual_qa when layout.baseUrl is configured). Returns a compact diff.",
+      inputSchema: {
+        rootDir: z.string().optional(),
+        input: z.string().describe("Workspace-relative .xliff/.xlf file or directory."),
+        runVerification: z.boolean().optional().default(true),
+      },
+      outputSchema: GenericObjectOutputSchema,
+      annotations: DESTRUCTIVE_MUTATING_ANNOTATIONS,
+    },
+    async ({ rootDir, input, runVerification }) => {
+      const res = await runTmsImport({ rootDir: safeRoot(rootDir), input, runVerification });
+      return mcpTextResult({ ...res, diff: res.diff.slice(0, 50) }, !res.ok);
     }
   );
 

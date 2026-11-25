@@ -1,0 +1,104 @@
+{
+  "generatedAt": "2026-11-25T17:08:07.143Z",
+  "app": "nextjs-commerce",
+  "localesTested": [
+    "en-XA",
+    "ar-XB",
+    "de",
+    "es-MX",
+    "ja",
+    "ar",
+    "pl"
+  ],
+  "pseudoModesGenerated": [
+    {
+      "mode": "expand",
+      "pseudoLocale": "en-XA",
+      "keysGenerated": 60
+    },
+    {
+      "mode": "rtl",
+      "pseudoLocale": "ar-XB",
+      "keysGenerated": 56
+    },
+    {
+      "mode": "cjk",
+      "pseudoLocale": "ja-XC",
+      "keysGenerated": 60
+    },
+    {
+      "mode": "long-word",
+      "pseudoLocale": "de-XE",
+      "keysGenerated": 60
+    }
+  ],
+  "before": {
+    "staticRtlLayoutRisks": 1,
+    "staticLayoutRisks": 7,
+    "renderedOutcome": "FAIL",
+    "renderedTotalFindings": 26,
+    "renderedByType": {
+      "horizontal_overflow": 7,
+      "clipped_text": 15,
+      "dir_lang_mismatch": 4
+    },
+    "tracedKeysCount": 13,
+    "budgetsRecorded": 13
+  },
+  "codemodsApplied": {
+    "filesModified": [
+      "src/app/layout.tsx",
+      "src/components/HeaderNav.tsx",
+      "src/components/InvoiceActions.tsx",
+      "src/components/SortToolbar.tsx",
+      "src/components/WarrantyCard.tsx"
+    ],
+    "totalChanges": 8,
+    "diffsPreview": [
+      "--- a/src/app/layout.tsx\n+++ b/src/app/layout.tsx\n@@ -3,1 +3,1 @@\n-    <html>\n+    <html lang=\"en\" dir=\"ltr\">\n@@ -4,1 +4,1 @@\n-      <body className=\"ml-4 mr-2 pl-3 text-left border-l border-slate-200\">{children}</body>\n+      <body className=\"ms-4 me-2 ps-3 text-start border-s border-slate-200\">{children}</body>",
+      "--- a/src/components/HeaderNav.tsx\n+++ b/src/components/HeaderNav.tsx\n@@ -14,1 +14,1 @@\n-        <button role=\"tab\" className=\"w-24 truncate whitespace-nowrap overflow-hidden\">{tight(\"tabOverview\")}</button>\n+        <button role=\"tab\" className=\"min-w-24 truncate whitespace-nowrap overflow-hidden\">{tight(\"tabOverview\")}</button>\n@@ -15,1 +15,1 @@\n-        <button role=\"tab\" className=\"w-24 truncate whitespace-nowrap overflow-hidden\">{tight(\"tabSettings\")}</button>\n+        <button role=\"tab\" className=\"min-w-24 truncate whitespace-nowrap overflow-hidden\">{tight(\"tabSettings\")}</button>\n@@ -16,1 +16,1 @@\n-        <button role=\"tab\" className=\"w-24 truncate whitespace-nowrap overflow-hidden\">{tight(\"tabBilling\")}</button>\n+        <button role=\"tab\" className=\"min-w-24 truncate whitespace-nowrap overflow-hidden\">{tight(\"tabBilling\")}</button>",
+      "--- a/src/components/InvoiceActions.tsx\n+++ b/src/components/InvoiceActions.tsx\n@@ -13,1 +13,1 @@\n-      <button type=\"button\" className=\"w-28 truncate whitespace-nowrap overflow-hidden\">{tight(\"btnRefund\")}</button>\n+      <button type=\"button\" className=\"min-w-28 truncate whitespace-nowrap overflow-hidden\">{tight(\"btnRefund\")}</button>",
+      "--- a/src/components/SortToolbar.tsx\n+++ b/src/components/SortToolbar.tsx\n@@ -11,1 +11,1 @@\n-      <button type=\"button\" className=\"w-28 truncate whitespace-nowrap overflow-hidden\">{tight(\"btnFilters\")}</button>\n+      <button type=\"button\" className=\"min-w-28 truncate whitespace-nowrap overflow-hidden\">{tight(\"btnFilters\")}</button>",
+      "--- a/src/components/WarrantyCard.tsx\n+++ b/src/components/WarrantyCard.tsx\n@@ -9,1 +9,1 @@\n-      <span className=\"w-20 truncate whitespace-nowrap overflow-hidden\">{tight(\"badgeVerified\")}</span>\n+      <span className=\"min-w-20 truncate whitespace-nowrap overflow-hidden\">{tight(\"badgeVerified\")}</span>"
+    ]
+  },
+  "afterMechanicalCodemods": {
+    "staticRtlLayoutRisks": 0,
+    "staticLayoutRisks": 7,
+    "renderedOutcome": "FAIL",
+    "renderedTotalFindings": 8,
+    "renderedByType": {
+      "horizontal_overflow": 8
+    },
+    "step2PrescriptionsSample": [
+      {
+        "locale": "en-XA",
+        "viewport": "375x812",
+        "type": "horizontal_overflow",
+        "remediationStep": "copy_budget_retranslate",
+        "prescription": "Element <document> (viewport scrollWidth (604px) > innerWidth (375px)) clipped by 229px at 375px. Recorded width budget (40 chars / 375px) for \"brand.welcome\" (en-XA) in .polyglot/layout.json — re-run `prepare` and shorten translation, or relax CSS if wrapping is acceptable."
+      },
+      {
+        "locale": "en-XA",
+        "viewport": "375x812",
+        "type": "horizontal_overflow",
+        "remediationStep": "copy_budget_retranslate",
+        "prescription": "Element <button> (width: 95px) clipped by 28px at 375px. Recorded width budget (11 chars / 95px) for \"tight.tabOverview\" (en-XA) in .polyglot/layout.json — re-run `prepare` and shorten translation, or relax CSS if wrapping is acceptable."
+      },
+      {
+        "locale": "ar-XB",
+        "viewport": "375x812",
+        "type": "horizontal_overflow",
+        "remediationStep": "copy_budget_retranslate",
+        "prescription": "Element <document> (viewport scrollWidth (534px) > innerWidth (375px)) clipped by 159px at 375px. Recorded width budget (40 chars / 375px) for \"brand.welcome\" (ar-XB) in .polyglot/layout.json — re-run `prepare` and shorten translation, or relax CSS if wrapping is acceptable."
+      }
+    ]
+  },
+  "after": {
+    "staticRtlLayoutRisks": 0,
+    "staticLayoutRisks": 7,
+    "renderedOutcome": "PASS",
+    "renderedTotalFindings": 0,
+    "renderedByType": {}
+  }
+}

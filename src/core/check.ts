@@ -1,4 +1,5 @@
 import fs from "node:fs";
+import { RTL_BASE_LANGS, scanDirectionalAssets } from "./static-layout.js";
 import path from "node:path";
 import { detectProjectAdapter, loadLocaleCatalog, loadSourceCatalog } from "../adapters/registry.js";
 import { detectUnscannedFileTypes } from "../adapters/utils.js";
@@ -256,6 +257,19 @@ export function runCheck(options: CheckOptions): CheckSummary {
           message: `Hardcoded formatting (${hf.rule}): ${hf.suggestion}`,
           details: { rule: hf.rule, snippet: hf.snippet },
         });
+      }
+
+      if (targetLocales.some((l) => RTL_BASE_LANGS.has(l.toLowerCase().split("-")[0]))) {
+        for (const da of scanDirectionalAssets(store.rootDir, config.paths.source, config.paths.ignore)) {
+          issues.push({
+            code: "directional_asset",
+            severity: "warning",
+            file: da.file,
+            line: da.line,
+            message: `Directional asset (${da.asset}) does not mirror in RTL: ${da.suggestion}`,
+            details: { asset: da.asset, snippet: da.snippet },
+          });
+        }
       }
 
       if (Object.keys(scanRes.usageByKey).length > 0) {

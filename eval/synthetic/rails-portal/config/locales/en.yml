@@ -1,0 +1,43 @@
+en:
+  orders:
+    index:
+      order_heading: "Order"
+      sort_order: "Order"
+      items_count:
+        one: "1 order item"
+        other: "%{count} order items"
+  billing:
+    show:
+      charge_label: "Charge"
+  hardware:
+    show:
+      charge_label: "Charge"
+  plans:
+    show:
+      free_badge: "Free"
+  agreements:
+    show:
+      sign_button: "Sign"
+  wizard:
+    show:
+      back_link: "Back"
+  settings:
+    edit:
+      save_button: "Save"
+  brand:
+    portal_title: "Northstar Merchant Portal"
+    vault_notice: "All settlements are mirrored to LedgerVault and Northstar Pay."
+  glossary:
+    workspace_header: "Manage Workspace billing and Seats"
+    invoice_ready: "Your latest Invoice is ready for download."
+  messages:
+    greeting: "Welcome back, %{name}. You have %{count} open requests."
+    subtotal: "Subtotal: %<amount>.2f USD before tax."
+  tight:
+    tab_orders: "Orders"
+    tab_payouts: "Payouts"
+    tab_team: "Team"
+    btn_export: "Export PDF"
+  general:
+    empty_orders: "No orders have been placed in this billing cycle yet."
+    support_footer: "Need help? Contact support before closing your account."

@@ -1,0 +1,17 @@
+{% load i18n %}
+<header>
+  <h1>{% translate "Northstar Health Clinic" %}</h1>
+  <nav role="tablist">
+    <button class="w-24 truncate whitespace-nowrap overflow-hidden">{% translate "Schedule" %}</button>
+    <button class="w-24 truncate whitespace-nowrap overflow-hidden">{% translate "Patients" %}</button>
+    <button class="w-24 truncate whitespace-nowrap overflow-hidden">{% translate "Records" %}</button>
+  </nav>
+</header>
+<section>
+  <p>{% blocktranslate %}Your visit is confirmed for {{ date }} at {{ time }}.{% endblocktranslate %}</p>
+  <p>{% translate "Please arrive fifteen minutes before your scheduled appointment." %}</p>
+  <button>{% translate "Save" %}</button>
+  <button>{% translate "Close" %}</button>
+  <a>{% translate "Back" %}</a>
+  <button class="w-28 truncate whitespace-nowrap overflow-hidden">{% translate "Cancel visit" %}</button>
+</section>

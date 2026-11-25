@@ -1,6 +1,6 @@
-# Polyglot `.polyglot/` File Schemas
+# Wraith `.polyglot/` File Schemas
 
-All Polyglot state lives inside `.polyglot/` in the repository root. Every file is plain UTF-8 text, human-readable, deterministically sorted for clean git diffs, and validated at runtime with Zod.
+All Wraith state lives inside `.polyglot/` in the repository root. Every file is plain UTF-8 text, human-readable, deterministically sorted for clean git diffs, and validated at runtime with Zod.
 
 ---
 

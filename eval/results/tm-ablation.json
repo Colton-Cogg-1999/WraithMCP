@@ -1,0 +1,269 @@
+{
+  "generatedAt": "2026-11-25T17:46:03.206Z",
+  "datasetPath": "work/tm-ablation/dataset.json",
+  "dataset": {
+    "locales": [
+      "de",
+      "ja",
+      "ar",
+      "es"
+    ],
+    "slices": {
+      "synthetic-app": {
+        "kind": "synthetic",
+        "goldProvenance": "author-provided",
+        "totalItems": 256,
+        "uniqueSources": 18,
+        "components": 12,
+        "glossaryTerms": 4,
+        "tmEntries": 28,
+        "tmPath": "work/tm-ablation/synthetic-app/.polyglot/tm.json",
+        "afullItemsWithTmHit": 99,
+        "contextSources": {
+          "synthetic-ast": 256
+        },
+        "byLocale": {
+          "de": {
+            "items": 64,
+            "recurringGroups": 18,
+            "tmSeededGroups": 7,
+            "tmSeededItems": 25,
+            "distinctFiles": 12
+          },
+          "ja": {
+            "items": 64,
+            "recurringGroups": 18,
+            "tmSeededGroups": 7,
+            "tmSeededItems": 25,
+            "distinctFiles": 12
+          },
+          "ar": {
+            "items": 64,
+            "recurringGroups": 18,
+            "tmSeededGroups": 7,
+            "tmSeededItems": 24,
+            "distinctFiles": 12
+          },
+          "es": {
+            "items": 64,
+            "recurringGroups": 18,
+            "tmSeededGroups": 7,
+            "tmSeededItems": 25,
+            "distinctFiles": 12
+          }
+        }
+      },
+      "oss-next-intl": {
+        "kind": "oss",
+        "goldProvenance": "human-oss",
+        "totalItems": 40,
+        "uniqueSources": 7,
+        "components": 12,
+        "glossaryTerms": 0,
+        "tmEntries": 7,
+        "tmPath": "work/tm-ablation/oss-next-intl/.polyglot/tm.json",
+        "afullItemsWithTmHit": 18,
+        "contextSources": {
+          "catalog-namespace": 40
+        },
+        "byLocale": {
+          "de": {
+            "items": 24,
+            "recurringGroups": 7,
+            "tmSeededGroups": 3,
+            "tmSeededItems": 10,
+            "distinctFiles": 18
+          },
+          "ja": {
+            "items": 8,
+            "recurringGroups": 4,
+            "tmSeededGroups": 2,
+            "tmSeededItems": 4,
+            "distinctFiles": 7
+          },
+          "es": {
+            "items": 8,
+            "recurringGroups": 4,
+            "tmSeededGroups": 2,
+            "tmSeededItems": 4,
+            "distinctFiles": 7
+          }
+        }
+      },
+      "oss-hoppscotch": {
+        "kind": "oss",
+        "goldProvenance": "human-oss",
+        "totalItems": 186,
+        "uniqueSources": 37,
+        "components": 55,
+        "glossaryTerms": 0,
+        "tmEntries": 32,
+        "tmPath": "work/tm-ablation/oss-hoppscotch/.polyglot/tm.json",
+        "afullItemsWithTmHit": 77,
+        "contextSources": {
+          "catalog-namespace": 44,
+          "grep-usage-site": 142
+        },
+        "byLocale": {
+          "de": {
+            "items": 33,
+            "recurringGroups": 14,
+            "tmSeededGroups": 6,
+            "tmSeededItems": 14,
+            "distinctFiles": 33
+          },
+          "ja": {
+            "items": 28,
+            "recurringGroups": 12,
+            "tmSeededGroups": 5,
+            "tmSeededItems": 13,
+            "distinctFiles": 28
+          },
+          "ar": {
+            "items": 35,
+            "recurringGroups": 15,
+            "tmSeededGroups": 6,
+            "tmSeededItems": 14,
+            "distinctFiles": 35
+          },
+          "es": {
+            "items": 90,
+            "recurringGroups": 37,
+            "tmSeededGroups": 15,
+            "tmSeededItems": 36,
+            "distinctFiles": 70
+          }
+        }
+      }
+    },
+    "totalItems": 482,
+    "totalGroups": 165,
+    "tmSeedFraction": 0.4,
+    "prompts": {
+      "total": 64,
+      "perArm": {
+        "B": 16,
+        "Bgl": 16,
+        "Anotm": 16,
+        "Afull": 16
+      },
+      "avgCharsPerArm": {
+        "B": 2702,
+        "Bgl": 2765,
+        "Anotm": 6701,
+        "Afull": 8276
+      },
+      "dir": "work/tm-ablation/<slice>/prompts/"
+    }
+  },
+  "arms": [
+    {
+      "id": "B",
+      "label": "B (source + locale)",
+      "context": [
+        "source",
+        "targetLocale"
+      ],
+      "tmEnabled": false
+    },
+    {
+      "id": "Bgl",
+      "label": "B+glossary",
+      "context": [
+        "source",
+        "targetLocale",
+        "glossary"
+      ],
+      "tmEnabled": false
+    },
+    {
+      "id": "Anotm",
+      "label": "A-no-tm (AST UI context + width budgets + glossary; tmEnabled:false)",
+      "context": [
+        "source",
+        "targetLocale",
+        "glossary",
+        "file",
+        "component",
+        "elementType",
+        "widthBudget",
+        "localeConventions"
+      ],
+      "tmEnabled": false
+    },
+    {
+      "id": "Afull",
+      "label": "A-full (A-no-tm + top-3 fuzzy TM, minSimilarity 0.70)",
+      "context": [
+        "source",
+        "targetLocale",
+        "glossary",
+        "file",
+        "component",
+        "elementType",
+        "widthBudget",
+        "localeConventions",
+        "tmMatches"
+      ],
+      "tmEnabled": true
+    }
+  ],
+  "tmRetrieval": {
+    "topK": 3,
+    "minSimilarity": 0.7,
+    "similarity": "lexicalSimilarity (local port of src/core/fuzzy.ts)"
+  },
+  "metricDefinitions": {
+    "tcr": "1 - (uniqueVariants-1)/(N-1) per recurring (slice, locale, source) group; N=1 -> 1.0; unweighted mean over groups.",
+    "parity": "Share of items whose {var} set, inline tag multiset and ICU select keys match source exactly; plural keeps other + =N + source categories used by target CLDR.",
+    "chrF2": "Character n-gram F-beta, n=1..6 averaged, beta=2, whitespace stripped, 0..100, vs gold.",
+    "ter": "Plain word edit distance (no shifts) / reference length x100 (upper bound on true TER); graphemes for ja.",
+    "mqm": "Dual-judge (Claude + Gemini) MQM via eval/lib/judges.mjs runDualJudgeEvaluation; Terminology/Inconsistency + Accuracy categories."
+  },
+  "mode": "dry-run",
+  "metrics": null,
+  "sanity": {
+    "label": "SANITY: gold-vs-gold (hypothesis = reference). Not a system result.",
+    "perSlice": {
+      "synthetic-app": {
+        "n": 256,
+        "groups": 72,
+        "tcr": 1,
+        "parity": 1,
+        "chrF2": 100,
+        "ter": 0,
+        "nWithGold": 256,
+        "note": "Author-provided gold is consistent by construction: expect TCR 1.0, parity 1.0, chrF2 100, TER 0.",
+        "parityFailExamples": []
+      },
+      "oss-next-intl": {
+        "n": 40,
+        "groups": 15,
+        "tcr": 0.92,
+        "parity": 1,
+        "chrF2": 100,
+        "ter": 0,
+        "nWithGold": 40,
+        "note": "chrF2/TER are 100/0 by definition; TCR/parity < 1 measure inconsistency/structure drift INSIDE the human OSS gold itself (human baseline).",
+        "parityFailExamples": []
+      },
+      "oss-hoppscotch": {
+        "n": 186,
+        "groups": 78,
+        "tcr": 0.6944,
+        "parity": 1,
+        "chrF2": 100,
+        "ter": 0,
+        "nWithGold": 186,
+        "note": "chrF2/TER are 100/0 by definition; TCR/parity < 1 measure inconsistency/structure drift INSIDE the human OSS gold itself (human baseline).",
+        "parityFailExamples": []
+      }
+    },
+    "selfChecks": {
+      "chrF_identical": 100,
+      "ter_identical": 0,
+      "parity_dropped_var": false
+    }
+  },
+  "judge": "pending"
+}

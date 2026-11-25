@@ -1,0 +1,14 @@
+﻿Northstar Billing and Data Retention Policy
+This policy explains how Northstar processes subscription payments through Northstar Pay and archives compliance records in LedgerVault.
+1. Subscription Invoices and Grace Periods
+Every Workspace receives an itemized monthly Invoice on the first business day of the billing cycle.
+If a payment fails, we retry automatically for fourteen calendar days before pausing non-essential analytics exports.1
+Review full tax documentation on the Northstar Help Center before submitting an exemption certificate.
+2. Service Tiers and Retention Schedule
+Plan Tier	Audit Log Retention	Support Response Target
+Starter Workspace	Ninety days of searchable activity	Two business days via email
+Enterprise Workspace	Seven years in LedgerVault	Four hours with priority escalation
+3. Approved Legal Revisions
+The compliance committee formally provisionally approved quarterly deletion audits for inactive merchant accounts.
+Account owners may request immediate deletion of archived exports after settling every open Invoice.
+Security notifications are delivered to the primary administrator and recorded in PulseGrid.

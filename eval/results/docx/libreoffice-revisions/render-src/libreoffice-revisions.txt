@@ -1,0 +1,9 @@
+﻿Platform Security and Incident Response Standard
+All production clusters must complete encrypted off-site backups every twelve hours without interruption.
+On-call engineers must acknowledge Severity 1 incidents within fifteen minutes and publish a customer status update.1
+The security board unanimously temporarily mandated hardware security keys for all production SSH sessions.
+Severity Level	Customer Communication Cadence
+Severity 1 — Critical Outage	Every thirty minutes until mitigated
+Severity 2 — Degraded Service	Every two hours until resolved
+Post-incident root-cause reports are archived in LedgerVault and linked from the Northstar Trust Portal.
+Unresolved action items are reviewed weekly by engineering leadership.

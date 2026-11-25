@@ -1,0 +1,493 @@
+{
+  "items": [
+    {
+      "key": "hours.openBadge",
+      "source": "Open",
+      "category": "ambiguous",
+      "component": "StoreHoursCard.tsx",
+      "intendedSense": "Adjective meaning the retail store is currently open for business (NOT the verb 'to open' a file)."
+    },
+    {
+      "key": "invoice.openAction",
+      "source": "Open",
+      "category": "ambiguous",
+      "component": "InvoiceActions.tsx",
+      "intendedSense": "Imperative verb button to open/view a PDF invoice document (NOT 'open for business')."
+    },
+    {
+      "key": "community.postHeading",
+      "source": "Post",
+      "category": "ambiguous",
+      "component": "CommunityFeed.tsx",
+      "intendedSense": "Noun referring to a published forum post / article entry (NOT the action verb 'to publish')."
+    },
+    {
+      "key": "composer.postAction",
+      "source": "Post",
+      "category": "ambiguous",
+      "component": "CommentComposer.tsx",
+      "intendedSense": "Imperative verb button to publish/submit a new reply (NOT the noun 'a post')."
+    },
+    {
+      "key": "checkout.orderLabel",
+      "source": "Order",
+      "category": "ambiguous",
+      "component": "CheckoutSummary.tsx",
+      "intendedSense": "Noun referring to a customer's commercial purchase order (NOT sorting sequence)."
+    },
+    {
+      "key": "catalog.orderLabel",
+      "source": "Order",
+      "category": "ambiguous",
+      "component": "SortToolbar.tsx",
+      "intendedSense": "Noun referring to display sort sequence/arrangement of list items (NOT a purchase order)."
+    },
+    {
+      "key": "modal.closeButton",
+      "source": "Close",
+      "category": "ambiguous",
+      "component": "ModalHeader.tsx",
+      "intendedSense": "Imperative verb button to dismiss/close a dialog window (NOT proximity 'nearby')."
+    },
+    {
+      "key": "branch.closeBadge",
+      "source": "Close",
+      "category": "ambiguous",
+      "component": "NearbyBranchCard.tsx",
+      "intendedSense": "Adjective meaning geographically nearby / short distance away (NOT the verb 'close window')."
+    },
+    {
+      "key": "pricing.freeTag",
+      "source": "Free",
+      "category": "ambiguous",
+      "component": "PricingBanner.tsx",
+      "intendedSense": "Adjective meaning zero cost / gratis ($0 pricing tier), NOT available disk space."
+    },
+    {
+      "key": "storage.freeTag",
+      "source": "Free",
+      "category": "ambiguous",
+      "component": "StorageQuota.tsx",
+      "intendedSense": "Adjective meaning unoccupied/available storage space remaining (NOT 'free of charge')."
+    },
+    {
+      "key": "profile.saveButton",
+      "source": "Save",
+      "category": "ambiguous",
+      "component": "ProfileForm.tsx",
+      "intendedSense": "Imperative verb to persist/store form changes (NOT 'save money')."
+    },
+    {
+      "key": "promo.saveLabel",
+      "source": "Save",
+      "category": "ambiguous",
+      "component": "PromoBadge.tsx",
+      "intendedSense": "Verb meaning to save money / get a price reduction on an annual plan (NOT 'save file')."
+    },
+    {
+      "key": "wizard.backButton",
+      "source": "Back",
+      "category": "ambiguous",
+      "component": "WizardNav.tsx",
+      "intendedSense": "Navigation control to return to the previous step (NOT physical back or verb 'support')."
+    },
+    {
+      "key": "warranty.backPromise",
+      "source": "We back every purchase for two years.",
+      "category": "ambiguous",
+      "component": "WarrantyCard.tsx",
+      "intendedSense": "Verb 'back' meaning to guarantee / stand behind a product warranty (NOT 'go back')."
+    },
+    {
+      "key": "billing.chargeHeading",
+      "source": "Charge",
+      "category": "ambiguous",
+      "component": "BillingStatement.tsx",
+      "intendedSense": "Noun meaning a financial fee / line-item debit on a statement (NOT electrical battery charge)."
+    },
+    {
+      "key": "device.chargeHeading",
+      "source": "Charge",
+      "category": "ambiguous",
+      "component": "DeviceBatteryStatus.tsx",
+      "intendedSense": "Noun meaning remaining electrical battery level of a hardware terminal (NOT a billing fee)."
+    },
+    {
+      "key": "contract.signAction",
+      "source": "Sign",
+      "category": "ambiguous",
+      "component": "ContractFooter.tsx",
+      "intendedSense": "Imperative verb to electronically sign a legal agreement (NOT a physical notice/signage)."
+    },
+    {
+      "key": "storefront.signNotice",
+      "source": "Check the sign at the pickup counter.",
+      "category": "ambiguous",
+      "component": "StorefrontAlert.tsx",
+      "intendedSense": "Noun meaning a physical posted notice/placard at a store counter (NOT the verb 'to sign')."
+    },
+    {
+      "key": "inbox.archiveAction",
+      "source": "Archive",
+      "category": "ambiguous",
+      "component": "InboxToolbar.tsx",
+      "intendedSense": "Imperative verb button to move selected notifications to the archive (NOT the noun 'archive')."
+    },
+    {
+      "key": "docs.archiveHeading",
+      "source": "Archive",
+      "category": "ambiguous",
+      "component": "DocsSidebar.tsx",
+      "intendedSense": "Noun referring to the historical collection/repository of past releases (NOT action verb)."
+    },
+    {
+      "key": "brand.welcome",
+      "source": "Welcome to Northstar Commerce",
+      "category": "dnt",
+      "component": "HeaderNav.tsx",
+      "intendedSense": null
+    },
+    {
+      "key": "brand.payCta",
+      "source": "Pay faster with Northstar Pay",
+      "category": "dnt",
+      "component": "CheckoutSummary.tsx",
+      "intendedSense": null
+    },
+    {
+      "key": "brand.analyticsDesc",
+      "source": "PulseGrid tracks live checkout conversion without cookies.",
+      "category": "dnt",
+      "component": "AnalyticsPanel.tsx",
+      "intendedSense": null
+    },
+    {
+      "key": "brand.auditExport",
+      "source": "Export signed tax records to LedgerVault.",
+      "category": "dnt",
+      "component": "BillingStatement.tsx",
+      "intendedSense": null
+    },
+    {
+      "key": "brand.footerNote",
+      "source": "Powered by Northstar and PulseGrid.",
+      "category": "dnt",
+      "component": "ContractFooter.tsx",
+      "intendedSense": null
+    },
+    {
+      "key": "brand.vaultSync",
+      "source": "LedgerVault synced your latest receipt.",
+      "category": "dnt",
+      "component": "InvoiceActions.tsx",
+      "intendedSense": null
+    },
+    {
+      "key": "glossary.workspaceCreate",
+      "source": "Create a new Workspace for your retail team.",
+      "category": "glossary",
+      "component": "HeaderNav.tsx",
+      "intendedSense": null
+    },
+    {
+      "key": "glossary.workspaceSwitch",
+      "source": "Switch Workspace",
+      "category": "glossary",
+      "component": "HeaderNav.tsx",
+      "intendedSense": null
+    },
+    {
+      "key": "glossary.invoiceDownload",
+      "source": "Download PDF Invoice",
+      "category": "glossary",
+      "component": "InvoiceActions.tsx",
+      "intendedSense": null
+    },
+    {
+      "key": "glossary.invoicePaid",
+      "source": "This Invoice was paid on time.",
+      "category": "glossary",
+      "component": "BillingStatement.tsx",
+      "intendedSense": null
+    },
+    {
+      "key": "glossary.seatAssign",
+      "source": "Assign a Seat to a new teammate.",
+      "category": "glossary",
+      "component": "ProfileForm.tsx",
+      "intendedSense": null
+    },
+    {
+      "key": "glossary.seatLimit",
+      "source": "Your Workspace includes one complimentary Seat.",
+      "category": "glossary",
+      "component": "PricingBanner.tsx",
+      "intendedSense": null
+    },
+    {
+      "key": "icu.cartItems",
+      "source": "{count, plural, one {# item in cart} other {# items in cart}}",
+      "category": "icu",
+      "component": "CheckoutSummary.tsx",
+      "intendedSense": null
+    },
+    {
+      "key": "icu.unreadAlerts",
+      "source": "{count, plural, =0 {No unread alerts} one {# unread alert} other {# unread alerts}}",
+      "category": "icu",
+      "component": "InboxToolbar.tsx",
+      "intendedSense": null
+    },
+    {
+      "key": "icu.seatsRemaining",
+      "source": "{count, plural, one {# team Seat remaining} other {# team Seats remaining}}",
+      "category": "icu",
+      "component": "PricingBanner.tsx",
+      "intendedSense": null
+    },
+    {
+      "key": "icu.rankOrdinal",
+      "source": "Ranked {rank, selectordinal, one {#st} two {#nd} few {#rd} other {#th}} in regional sales",
+      "category": "icu",
+      "component": "AnalyticsPanel.tsx",
+      "intendedSense": null
+    },
+    {
+      "key": "icu.memberRole",
+      "source": "{role, select, owner {Workspace owner} admin {Administrator} billing {Billing manager} other {Team member}}",
+      "category": "icu",
+      "component": "ProfileForm.tsx",
+      "intendedSense": null
+    },
+    {
+      "key": "icu.orderPipeline",
+      "source": "{status, select, pending {{count, plural, one {# pending order} other {# pending orders}}} shipped {{count, plural, one {# shipped order} other {# shipped orders}}} other {No active orders}}",
+      "category": "icu",
+      "component": "CheckoutSummary.tsx",
+      "intendedSense": null
+    },
+    {
+      "key": "icu.totalDue",
+      "source": "Total due: {amount, number, ::currency/USD}",
+      "category": "icu",
+      "component": "BillingStatement.tsx",
+      "intendedSense": null
+    },
+    {
+      "key": "icu.renewalDate",
+      "source": "Subscription renews on {date, date, medium}.",
+      "category": "icu",
+      "component": "BillingStatement.tsx",
+      "intendedSense": null
+    },
+    {
+      "key": "icu.promoThreshold",
+      "source": "{discount}% off orders over {minTotal}",
+      "category": "icu",
+      "component": "PromoBadge.tsx",
+      "intendedSense": null
+    },
+    {
+      "key": "icu.ticketAssign",
+      "source": "{actor} assigned ticket {ticket} to {assignee}.",
+      "category": "icu",
+      "component": "InboxToolbar.tsx",
+      "intendedSense": null
+    },
+    {
+      "key": "rich.termsAccept",
+      "source": "By continuing, you agree to the <link>Terms of Service</link>.",
+      "category": "rich-text",
+      "component": "ContractFooter.tsx",
+      "intendedSense": null
+    },
+    {
+      "key": "rich.deleteWarn",
+      "source": "This action is <b>permanent</b> and cannot be undone.",
+      "category": "rich-text",
+      "component": "ModalHeader.tsx",
+      "intendedSense": null
+    },
+    {
+      "key": "rich.shippingFast",
+      "source": "Orders placed before <strong>3:00 PM</strong> ship the same day.",
+      "category": "rich-text",
+      "component": "CheckoutSummary.tsx",
+      "intendedSense": null
+    },
+    {
+      "key": "rich.helpLink",
+      "source": "Need billing assistance? Visit the <link>Northstar Help Center</link>.",
+      "category": "rich-text",
+      "component": "BillingStatement.tsx",
+      "intendedSense": null
+    },
+    {
+      "key": "rich.backupNotice",
+      "source": "Automatic snapshots are stored in <b>LedgerVault</b> every <codeTag>24h</codeTag>.",
+      "category": "rich-text",
+      "component": "StorageQuota.tsx",
+      "intendedSense": null
+    },
+    {
+      "key": "rich.trialEnd",
+      "source": "Your trial ends in <strong>{days} days</strong>; <link>upgrade now</link> to keep PulseGrid active.",
+      "category": "rich-text",
+      "component": "PricingBanner.tsx",
+      "intendedSense": null
+    },
+    {
+      "key": "tight.tabOverview",
+      "source": "Overview",
+      "category": "tight-ui",
+      "component": "HeaderNav.tsx",
+      "intendedSense": null
+    },
+    {
+      "key": "tight.tabSettings",
+      "source": "Settings",
+      "category": "tight-ui",
+      "component": "HeaderNav.tsx",
+      "intendedSense": null
+    },
+    {
+      "key": "tight.tabBilling",
+      "source": "Billing",
+      "category": "tight-ui",
+      "component": "HeaderNav.tsx",
+      "intendedSense": null
+    },
+    {
+      "key": "tight.btnRefund",
+      "source": "Issue refund",
+      "category": "tight-ui",
+      "component": "InvoiceActions.tsx",
+      "intendedSense": null
+    },
+    {
+      "key": "tight.btnFilters",
+      "source": "Clear filters",
+      "category": "tight-ui",
+      "component": "SortToolbar.tsx",
+      "intendedSense": null
+    },
+    {
+      "key": "tight.badgeVerified",
+      "source": "Verified",
+      "category": "tight-ui",
+      "component": "WarrantyCard.tsx",
+      "intendedSense": null
+    },
+    {
+      "key": "general.emptyInbox",
+      "source": "You are all caught up. New customer messages and payout notices will appear here.",
+      "category": "general",
+      "component": "InboxToolbar.tsx",
+      "intendedSense": null
+    },
+    {
+      "key": "general.networkError",
+      "source": "We could not reach the payment gateway. Please check your connection and try again.",
+      "category": "general",
+      "component": "CheckoutSummary.tsx",
+      "intendedSense": null
+    },
+    {
+      "key": "general.hoursSubtitle",
+      "source": "Mon–Fri 9:00 AM – 6:00 PM local time. Holiday hours may vary by branch.",
+      "category": "general",
+      "component": "StoreHoursCard.tsx",
+      "intendedSense": null
+    },
+    {
+      "key": "general.batteryTip",
+      "source": "Place the card reader on its dock overnight to maintain full battery health.",
+      "category": "general",
+      "component": "DeviceBatteryStatus.tsx",
+      "intendedSense": null
+    },
+    {
+      "key": "general.profileSaved",
+      "source": "Your account details have been updated across all active devices.",
+      "category": "general",
+      "component": "ProfileForm.tsx",
+      "intendedSense": null
+    },
+    {
+      "key": "general.exportHint",
+      "source": "Exports include itemized taxes, refunds, and settlement timestamps in UTC.",
+      "category": "general",
+      "component": "DocsSidebar.tsx",
+      "intendedSense": null
+    }
+  ],
+  "glossary": [
+    {
+      "term": "Northstar",
+      "doNotTranslate": true,
+      "caseSensitive": true,
+      "translations": {},
+      "notes": "Company brand name — never translate."
+    },
+    {
+      "term": "Northstar Pay",
+      "doNotTranslate": true,
+      "caseSensitive": true,
+      "translations": {},
+      "notes": "Payment product name — never translate."
+    },
+    {
+      "term": "PulseGrid",
+      "doNotTranslate": true,
+      "caseSensitive": true,
+      "translations": {},
+      "notes": "Analytics suite brand — never translate."
+    },
+    {
+      "term": "LedgerVault",
+      "doNotTranslate": true,
+      "caseSensitive": true,
+      "translations": {},
+      "notes": "Compliance module brand — never translate."
+    },
+    {
+      "term": "Workspace",
+      "doNotTranslate": false,
+      "caseSensitive": false,
+      "translations": {
+        "es-MX": "espacio de trabajo",
+        "de": "Arbeitsbereich",
+        "ja": "ワークスペース",
+        "ar": "مساحة العمل",
+        "pl": "obszar roboczy"
+      },
+      "notes": "Use consistently for team container."
+    },
+    {
+      "term": "Invoice",
+      "doNotTranslate": false,
+      "caseSensitive": false,
+      "translations": {
+        "es-MX": "factura",
+        "de": "Rechnung",
+        "ja": "請求書",
+        "ar": "فاتورة",
+        "pl": "faktura"
+      },
+      "notes": "Standard billing document term."
+    },
+    {
+      "term": "Seat",
+      "doNotTranslate": false,
+      "caseSensitive": false,
+      "translations": {
+        "es-MX": "licencia",
+        "de": "Lizenz",
+        "ja": "シート",
+        "ar": "مقعد",
+        "pl": "stanowisko"
+      },
+      "notes": "Per-user subscription license."
+    }
+  ]
+}

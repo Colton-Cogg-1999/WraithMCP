@@ -196,3 +196,110 @@ export function cssRulesToFindings(
     snippet: r.snippet,
   }));
 }
+
+// ---------------------------------------------------------------------------
+// directional_asset: directional icons/assets that do not mirror in RTL
+// ---------------------------------------------------------------------------
+
+export interface DirectionalAssetFinding {
+  file: string;
+  line: number;
+  asset: string;
+  snippet: string;
+  suggestion: string;
+}
+
+export const RTL_BASE_LANGS = new Set(["ar", "he", "iw", "fa", "ur", "ps", "sd", "yi", "ckb", "dv", "ug"]);
+
+const DIRECTIONAL_COMPONENT_RE =
+  /<((?:[A-Za-z]+\.)?(?:Arrow|Chevron|Caret|Angle|Triangle)(?:Small|Double|Narrow|Circle|Square)?(?:Left|Right)\w*)\b/g;
+const DIRECTIONAL_TAG_RE = /<(svg|img|use|i|span|Icon|image|ion-icon|mat-icon)\b[^>]*>/gi;
+const DIRECTIONAL_NAME_RE =
+  /\b(?:back-arrow|next-arrow|arrow[-_]?(?:left|right|back|forward)|chevron[-_]?(?:left|right)|caret[-_]?(?:left|right)|angle[-_]?(?:left|right)|(?:left|right)[-_]arrow)\b/i;
+const MIRROR_OK_RE =
+  /rtl:(?:-?rotate-180|-?scale-x-(?:100|\[-1\])|scale-x-\[-1\]|hidden|block|inline|flex)|ltr:|\bisRtl\b|\bisRTL\b|\brtl\s*\?|dir\s*={1,3}\s*['"]rtl['"]|\[dir=["']?rtl|flip-rtl|rtl-flip|rtl-mirror|mirror-rtl|\bmirror(?:ed|InRtl)?\b|\bflipInRtl\b|\bflipRtl\b|\bmatchTextDirection\b|scaleX\(\s*-1\s*\)|data-mirror|:dir\(rtl\)|\bInlineStart\b|\bInlineEnd\b/i;
+
+const DIR_TERNARY_RE =
+  /(?:\bisRtl\b|\bisRTL\b|\brtl\b|dir\s*={2,3}\s*['"]rtl['"]|direction\s*={2,3}\s*['"]rtl['"])\s*\?|rtl:|ltr:/;
+
+const DIRECTIONAL_EXTS = new Set([".jsx", ".tsx", ".js", ".ts", ".vue", ".svelte", ".html", ".erb"]);
+
+/**
+ * Scan JSX/TSX, Vue, and Svelte templates for directional icons/assets (ArrowLeft, ChevronRight,
+ * CaretLeft, back-arrow.svg, ...) that lack RTL mirroring (`rtl:rotate-180`, `rtl:-scale-x-100`,
+ * dir-aware ternaries, or logical icon swaps). Deterministic; intended only for projects targeting RTL.
+ */
+export function scanDirectionalAssets(
+  rootDir: string,
+  sourcePaths: string[],
+  ignore: string[]
+): DirectionalAssetFinding[] {
+  const out: DirectionalAssetFinding[] = [];
+  const files = walkFiles(rootDir, sourcePaths, ignore, DIRECTIONAL_EXTS);
+  for (const abs of files) {
+    let content: string;
+    try {
+      content = fs.readFileSync(abs, "utf8");
+    } catch {
+      continue;
+    }
+    if (!/(arrow|chevron|caret|angle|triangle)/i.test(content)) continue;
+    const rel = path.relative(rootDir, abs).replace(/\\/g, "/");
+    out.push(...scanDirectionalAssetsInText(content, rel));
+  }
+  return out;
+}
+
+/** Pure text scanner (exported for tests). */
+export function scanDirectionalAssetsInText(content: string, relFile: string): DirectionalAssetFinding[] {
+  const out: DirectionalAssetFinding[] = [];
+  const lineAt = (idx: number) => content.slice(0, idx).split(/\r?\n/).length;
+  const tagSpan = (start: number) => {
+    // Element opening tag up to the closing '>' (handles multi-line JSX props, '=>' arrows tolerated)
+    let depth = 0;
+    for (let i = start + 1; i < Math.min(content.length, start + 1200); i++) {
+      const ch = content[i];
+      if (ch === "{") depth++;
+      else if (ch === "}") depth = Math.max(0, depth - 1);
+      else if (ch === ">" && depth === 0 && content[i - 1] !== "=") return content.slice(start, i + 1);
+    }
+    return content.slice(start, start + 200);
+  };
+  const lineText = (idx: number) => {
+    const s = content.lastIndexOf("\n", idx) + 1;
+    const e = content.indexOf("\n", idx);
+    return content.slice(s, e === -1 ? content.length : e);
+  };
+  const seen = new Set<number>();
+  const consider = (idx: number, asset: string) => {
+    const line = lineAt(idx);
+    if (seen.has(line)) return;
+    const tag = tagSpan(idx);
+    const ctxLine = lineText(idx);
+    // Mirroring on the element itself, or a dir-aware ternary / logical swap on the same line
+    if (MIRROR_OK_RE.test(tag) || DIR_TERNARY_RE.test(ctxLine)) return;
+    seen.add(line);
+    out.push({
+      file: relFile,
+      line,
+      asset,
+      snippet: tag.replace(/\s+/g, " ").slice(0, 120),
+      suggestion:
+        "Directional icon/asset will point the wrong way in RTL. Add `rtl:-scale-x-100` (or `rtl:rotate-180`), mirror via `[dir=rtl]` CSS, or swap to a logical icon (e.g. isRtl ? ChevronLeft : ChevronRight).",
+    });
+  };
+
+  for (const m of content.matchAll(DIRECTIONAL_COMPONENT_RE)) {
+    const idx = m.index ?? 0;
+    if (/^\s*import\b/.test(lineText(idx))) continue;
+    consider(idx, m[1]);
+  }
+  for (const m of content.matchAll(DIRECTIONAL_TAG_RE)) {
+    const idx = m.index ?? 0;
+    const tag = tagSpan(idx);
+    const nameMatch = DIRECTIONAL_NAME_RE.exec(tag);
+    if (!nameMatch) continue;
+    consider(idx, nameMatch[0]);
+  }
+  return out.sort((a, b) => a.line - b.line);
+}

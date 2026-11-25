@@ -1,0 +1,12 @@
+﻿Public Research Grant Application — Form SF-424
+Complete all required sections in plain language and submit through GrantsPortal before the published federal deadline.
+Section A: Applicant Organization Details
+Field Name	Filing Instruction
+Legal Entity Name	Enter the registered legal name matching tax records.
+Requested Federal Funding	Round all direct and indirect costs to the nearest whole dollar.
+Project Performance Period	Specify start and end dates spanning up to thirty-six months.
+Section B: Compliance Certification
+By signing this form, the authorized representative certifies that all financial disclosures are true, complete, and accurate.
+Late or incomplete applications will not be forwarded for peer review.
+Applicants must retain supporting payroll and equipment receipts for three years after final closeout.
+Questions regarding eligibility may be directed to the Office of Sponsored Programs during regular business hours.
