@@ -234,12 +234,29 @@ export function applyTranslations(options: ApplyOptions): ApplyResult {
   // Record provenance & memory automatically (unless pseudo)
   const now = new Date().toISOString();
   if (!options.isPseudo && validItems.length > 0) {
+    // Compute live usage sites so contextFingerprint is ALWAYS recorded even if apply() runs before scan() (M1)
+    let liveUsage: UsageFile = usage;
+    const scanRes = adapter.scanSource(store.rootDir, {
+      sourcePaths: config.paths.source,
+      ignore: config.paths.ignore,
+      i18nLibrary: config.i18nLibrary ?? detection.i18nLibrary,
+    });
+    if (Object.keys(scanRes.usageByKey).length > 0) {
+      liveUsage = { version: 1, keys: {} };
+      for (const [k, sites] of Object.entries(scanRes.usageByKey)) {
+        liveUsage.keys[k] = {
+          fingerprint: computeContextFingerprint(sites),
+          sites,
+        };
+      }
+    }
+
     const memoryAdditions: MemoryEntry[] = [];
     for (const v of validItems) {
       const sourceHash = sha256Short(
         v.sourcePlurals ? JSON.stringify(v.sourcePlurals) : v.sourceValue
       );
-      const contextFingerprint = usage.keys[v.input.key]?.fingerprint ?? "";
+      const contextFingerprint = liveUsage.keys[v.input.key]?.fingerprint ?? "";
       if (!records.records[v.input.key]) {
         records.records[v.input.key] = {};
       }
@@ -253,7 +270,7 @@ export function applyTranslations(options: ApplyOptions): ApplyResult {
         notes: v.input.notes,
       };
 
-      const site = usage.keys[v.input.key]?.sites[0];
+      const site = liveUsage.keys[v.input.key]?.sites[0];
       memoryAdditions.push({
         sourceLocale: config.sourceLocale,
         targetLocale: options.targetLocale,

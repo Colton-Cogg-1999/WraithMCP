@@ -51,10 +51,39 @@ export function matchGlossaryTerms(
   return hits.sort((a, b) => b.term.length - a.term.length || a.term.localeCompare(b.term));
 }
 
+/** Strip combining diacritics (e.g. German Beiträge -> beitrage) for inflection-tolerant stem matching. */
+function foldDiacritics(s: string): string {
+  return s.normalize("NFD").replace(/\p{M}/gu, "").toLowerCase();
+}
+
+/**
+ * Light inflection-tolerant term matching (handles plurals/case endings like
+ * English post/posts, German Beitrag/Beiträge, French/Spanish -s/-es) while still
+ * requiring whole-word stem alignment so unrelated words never match.
+ */
+export function textContainsTermInflected(
+  text: string,
+  term: string,
+  caseSensitive = false
+): boolean {
+  if (textContainsTerm(text, term, caseSensitive)) return true;
+  if (caseSensitive || term.includes(" ") || term.length < 3) return false;
+
+  const foldedTerm = foldDiacritics(term);
+  const foldedText = foldDiacritics(text);
+  // Allow common Latin inflection suffixes (s, es, e, en, er, n, a, o, i, y) on the folded word stem
+  const re = new RegExp(
+    `(?<![\\p{L}\\p{N}_])${escapeRegExp(foldedTerm)}(?:s|es|e|en|er|n|a|o|i)?(?![\\p{L}\\p{N}_])`,
+    "u"
+  );
+  return re.test(foldedText);
+}
+
 export interface GlossaryViolation {
   code: "dnt_violation" | "glossary_inconsistency";
   term: string;
   expected: string;
+  origin: GlossaryEntry["origin"];
   message: string;
 }
 
@@ -66,7 +95,10 @@ export function checkGlossaryCompliance(
 ): GlossaryViolation[] {
   const violations: GlossaryViolation[] = [];
   for (const entry of entries) {
-    if (!textContainsTerm(sourceText, entry.term, entry.caseSensitive)) continue;
+    const matchesSource = entry.doNotTranslate
+      ? textContainsTerm(sourceText, entry.term, entry.caseSensitive)
+      : textContainsTermInflected(sourceText, entry.term, entry.caseSensitive);
+    if (!matchesSource) continue;
 
     if (entry.doNotTranslate) {
       if (!textContainsTerm(targetText, entry.term, entry.caseSensitive)) {
@@ -74,6 +106,7 @@ export function checkGlossaryCompliance(
           code: "dnt_violation",
           term: entry.term,
           expected: entry.term,
+          origin: entry.origin,
           message: `Do-not-translate term "${entry.term}" is missing or altered in ${targetLocale} translation.`,
         });
       }
@@ -81,11 +114,12 @@ export function checkGlossaryCompliance(
     }
 
     const preferred = entry.translations[targetLocale];
-    if (preferred && !textContainsTerm(targetText, preferred, false)) {
+    if (preferred && !textContainsTermInflected(targetText, preferred, false)) {
       violations.push({
         code: "glossary_inconsistency",
         term: entry.term,
         expected: preferred,
+        origin: entry.origin,
         message: `Glossary prefers "${preferred}" for "${entry.term}" in ${targetLocale}.`,
       });
     }
@@ -140,26 +174,31 @@ export function inferGlossaryCandidates(
   const brandCounts = new Map<string, number>();
   const shortTermCounts = new Map<string, number>();
 
-  const commonWords = new Set([
+  const commonUiWords = new Set([
     "The", "This", "That", "Your", "Our", "New", "All", "Get", "Set", "Add", "Are",
     "You", "Please", "Welcome", "Sign", "Log", "Create", "Delete", "Save", "Cancel",
     "Back", "Next", "Done", "Error", "Success", "Warning", "Loading",
+    // Generic Title-Case UI nouns that must NOT be proposed as do-not-translate brands
+    "Account", "Settings", "Team", "Members", "User", "Users", "Profile", "Billing",
+    "History", "Privacy", "Policy", "Terms", "Service", "Help", "Center", "Support",
+    "Contact", "Dashboard", "Home", "Overview", "Projects", "Project", "Workspace",
+    "Notifications", "Security", "Password", "Email", "Address", "Payment", "Method",
+    "Plan", "Plans", "Pricing", "Admin", "Panel", "Order", "Orders", "Cart", "Checkout",
   ]);
 
   for (const raw of sourceStrings) {
-    // Strip placeholders & inline tags before scanning
     const text = raw
       .replace(/\{\{[^}]+\}\}/g, " ")
       .replace(/\{[^}]+\}/g, " ")
       .replace(/<[^>]+>/g, " ");
 
-    // Multi-word Proper Nouns mid-sentence or repeated (e.g. "Acme Pulse")
+    // Multi-word Proper Nouns (only when not composed solely of ordinary UI labels)
     for (const m of text.matchAll(/\b([A-Z][a-zA-Z0-9]+(?:\s+[A-Z][a-zA-Z0-9]+)+)\b/g)) {
       const phrase = m[1].trim();
-      const firstWord = phrase.split(/\s+/)[0];
-      if (!commonWords.has(firstWord)) {
-        brandCounts.set(phrase, (brandCounts.get(phrase) ?? 0) + 1);
-      }
+      const words = phrase.split(/\s+/);
+      if (words.every((w) => commonUiWords.has(w))) continue;
+      if (commonUiWords.has(words[0])) continue;
+      brandCounts.set(phrase, (brandCounts.get(phrase) ?? 0) + 1);
     }
 
     // Repeated short 1-2 word UI labels (e.g. "Post", "Open", "Workspace")

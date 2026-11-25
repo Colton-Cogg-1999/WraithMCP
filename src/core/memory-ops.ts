@@ -1,4 +1,4 @@
-import { detectProjectAdapter, loadLocaleCatalog } from "../adapters/registry.js";
+import { detectProjectAdapter, loadLocaleCatalog, loadSourceCatalog } from "../adapters/registry.js";
 import { findFuzzyMatches, FuzzyMatch } from "./fuzzy.js";
 import {
   AffectedKeyInfo,
@@ -6,7 +6,7 @@ import {
   GlossaryHit,
   matchGlossaryTerms,
 } from "./glossary.js";
-import { PolyglotStore } from "./store.js";
+import { PolyglotStore, sha256Short } from "./store.js";
 import { AssumptionCategory, GlossaryOrigin } from "./types.js";
 
 export interface MemoryLookupResult {
@@ -59,8 +59,41 @@ export function lookupMemory(
     }
   }
 
+  // Reconcile memory against authoritative locale files (L2):
+  // If a recorded agent translation was manually overwritten in the target locale file,
+  // exclude the superseded old target string from fuzzy suggestions!
+  const supersededTargets = new Set<string>();
+  if (options.targetLocale) {
+    const records = store.readRecords();
+    const { adapter, detection } = detectProjectAdapter(
+      store.rootDir,
+      config.framework,
+      config.paths.locales
+    );
+    if (adapter) {
+      const tgtFiles = detection.localeFiles[options.targetLocale] ?? [];
+      if (tgtFiles.length > 0) {
+        const srcCatalog = loadSourceCatalog(adapter, detection, config.sourceLocale);
+        const tgtCatalog = loadLocaleCatalog(adapter, tgtFiles, options.targetLocale);
+        for (const [key, byLocale] of Object.entries(records.records)) {
+          const rec = byLocale[options.targetLocale];
+          const liveTgt = tgtCatalog.entries.get(key);
+          const liveSrc = srcCatalog.entries.get(key);
+          if (rec && liveTgt && liveSrc && liveTgt.value !== rec.translation) {
+            supersededTargets.add(`${liveSrc.value}\0${rec.translation}`);
+          }
+        }
+      }
+    }
+  }
+
+  const activeMemory =
+    supersededTargets.size > 0
+      ? memory.filter((m) => !supersededTargets.has(`${m.source}\0${m.target}`))
+      : memory;
+
   const fuzzyMatches = options.targetLocale
-    ? findFuzzyMatches(options.query, memory, {
+    ? findFuzzyMatches(options.query, activeMemory, {
         sourceLocale: config.sourceLocale,
         targetLocale: options.targetLocale,
         minScore: options.minScore ?? 50,
@@ -110,14 +143,19 @@ export function recordGlossaryTerm(
 ): UpsertGlossaryResult {
   const store = new PolyglotStore(rootDir);
   const config = store.readConfig();
-  const { changed } = store.upsertGlossaryEntry({
+  // O1: Pass undefined when omitted so upsertGlossaryEntry preserves previous doNotTranslate/caseSensitive!
+  const { changed, glossary } = store.upsertGlossaryEntry({
     term: input.term,
-    doNotTranslate: input.doNotTranslate ?? false,
-    caseSensitive: input.caseSensitive ?? false,
-    translations: input.translations ?? {},
+    doNotTranslate: input.doNotTranslate,
+    caseSensitive: input.caseSensitive,
+    translations: input.translations,
     notes: input.notes,
-    origin: input.origin ?? "user",
+    origin: input.origin,
   });
+
+  const savedEntry = glossary.entries.find(
+    (e) => e.term.toLowerCase() === input.term.toLowerCase()
+  );
 
   let affectedKeys: AffectedKeyInfo[] = [];
   let flaggedRecords = 0;
@@ -129,30 +167,53 @@ export function recordGlossaryTerm(
       config.paths.locales
     );
     if (adapter) {
-      const srcFiles = detection.localeFiles[config.sourceLocale] ?? [];
-      if (srcFiles.length > 0) {
-        const srcCatalog = loadLocaleCatalog(adapter, srcFiles, config.sourceLocale);
+      const srcCatalog = loadSourceCatalog(adapter, detection, config.sourceLocale);
+      if (srcCatalog.entries.size > 0) {
         const targetLocales =
           input.translations && Object.keys(input.translations).length > 0
             ? Object.keys(input.translations)
             : config.targetLocales;
         affectedKeys = findAffectedKeysForTerm(
           input.term,
-          input.caseSensitive ?? false,
+          savedEntry?.caseSensitive ?? false,
           srcCatalog.entries,
           targetLocales
         );
 
-        // Flag existing records so prepare() and check() surface them for re-translation
+        // Flag BOTH existing records AND keys translated manually outside apply() (O2)!
         const records = store.readRecords();
+        const now = new Date().toISOString();
         let mutated = false;
+        const tgtCatalogs = new Map<string, ReturnType<typeof loadLocaleCatalog>>();
+        for (const loc of targetLocales) {
+          const files = detection.localeFiles[loc] ?? [];
+          tgtCatalogs.set(loc, loadLocaleCatalog(adapter, files, loc));
+        }
+
         for (const item of affectedKeys) {
           for (const loc of item.locales) {
             const rec = records.records[item.key]?.[loc];
-            if (rec && rec.reviewStatus !== "flagged") {
-              rec.reviewStatus = "flagged";
-              flaggedRecords++;
-              mutated = true;
+            if (rec) {
+              if (rec.reviewStatus !== "flagged") {
+                rec.reviewStatus = "flagged";
+                flaggedRecords++;
+                mutated = true;
+              }
+            } else {
+              const tgtEntry = tgtCatalogs.get(loc)?.entries.get(item.key);
+              if (tgtEntry && tgtEntry.value.trim()) {
+                if (!records.records[item.key]) records.records[item.key] = {};
+                records.records[item.key][loc] = {
+                  sourceHash: sha256Short(item.source),
+                  contextFingerprint: "",
+                  translation: tgtEntry.value,
+                  updatedAt: now,
+                  origin: "imported",
+                  reviewStatus: "flagged",
+                };
+                flaggedRecords++;
+                mutated = true;
+              }
             }
           }
         }

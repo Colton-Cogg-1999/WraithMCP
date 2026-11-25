@@ -30,24 +30,21 @@ export function sha256Short(input: string, len = 16): string {
 }
 
 /**
- * Deterministic context fingerprint for a key's usage sites.
- * Excludes line numbers so unrelated edits elsewhere in a file do not trigger
- * false-positive context_changed warnings.
+ * Deterministic semantic context fingerprint for a key's usage sites.
+ * Hashes sorted unique (component, element) tuples — excluding line numbers,
+ * file paths, and sibling copy text so refactoring/moving a file or tweaking a
+ * neighbor's label never causes false-positive context_changed alerts, while
+ * moving a key to a different component/element or adding a new usage context does.
  */
 export function computeContextFingerprint(sites: UsageSite[]): string {
   if (sites.length === 0) return "";
-  const canonical = sites
-    .map((s) => ({
-      file: s.file.replace(/\\/g, "/"),
-      component: s.component ?? "",
-      element: s.element ?? "",
-      surrounding: [...s.surrounding].sort(),
-    }))
-    .sort((a, b) =>
-      `${a.file}|${a.component}|${a.element}|${a.surrounding.join(",")}`.localeCompare(
-        `${b.file}|${b.component}|${b.element}|${b.surrounding.join(",")}`
-      )
-    );
+  const tuples = new Set<string>();
+  for (const s of sites) {
+    const comp = (s.component ?? path.basename(s.file, path.extname(s.file))).trim();
+    const elem = (s.element ?? "").trim();
+    tuples.add(`${comp}|${elem}`);
+  }
+  const canonical = [...tuples].sort();
   return sha256Short(JSON.stringify(canonical), 16);
 }
 
@@ -135,7 +132,15 @@ export class PolyglotStore {
     fs.writeFileSync(this.filePath("glossary.json"), stableJson(parsed), "utf8");
   }
 
-  upsertGlossaryEntry(entry: Omit<GlossaryEntry, "updatedAt"> & { updatedAt?: string }): {
+  upsertGlossaryEntry(
+    entry: Omit<GlossaryEntry, "updatedAt" | "doNotTranslate" | "caseSensitive" | "translations" | "origin"> & {
+      doNotTranslate?: boolean;
+      caseSensitive?: boolean;
+      translations?: Record<string, string>;
+      origin?: GlossaryEntry["origin"];
+      updatedAt?: string;
+    }
+  ): {
     glossary: GlossaryFile;
     previous?: GlossaryEntry;
     changed: boolean;
@@ -148,8 +153,8 @@ export class PolyglotStore {
     const previous = idx >= 0 ? glossary.entries[idx] : undefined;
     const next: GlossaryEntry = {
       term: entry.term,
-      doNotTranslate: entry.doNotTranslate ?? false,
-      caseSensitive: entry.caseSensitive ?? false,
+      doNotTranslate: entry.doNotTranslate ?? previous?.doNotTranslate ?? false,
+      caseSensitive: entry.caseSensitive ?? previous?.caseSensitive ?? false,
       translations: sortRecordKeys({
         ...(previous?.translations ?? {}),
         ...(entry.translations ?? {}),

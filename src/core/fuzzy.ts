@@ -1,4 +1,5 @@
 import { isCjkText } from "./locales.js";
+import { canonicalizeLocaleTag } from "./security.js";
 import { MemoryEntry } from "./types.js";
 
 function levenshtein<T>(a: readonly T[], b: readonly T[]): number {
@@ -23,8 +24,15 @@ function levenshtein<T>(a: readonly T[], b: readonly T[]): number {
   return prev[n];
 }
 
+const PLACEHOLDER_NORM_RE =
+  /\{\{[^}]+\}\}|%\{[^}]+\}|%\([^)]+\)[a-zA-Z]|%<[^>]+>[.0-9]*[a-zA-Z]|\{[a-zA-Z0-9_.-]+\}/g;
+
+function normalizePlaceholders(text: string): string {
+  return text.replace(PLACEHOLDER_NORM_RE, " __ph__ ");
+}
+
 function tokenizeForMatch(text: string, locale?: string): string[] {
-  const cleaned = text.normalize("NFKC").toLowerCase().trim();
+  const cleaned = normalizePlaceholders(text).normalize("NFKC").toLowerCase().trim();
   if (!cleaned) return [];
 
   if (isCjkText(cleaned) || (locale && /^(zh|ja|ko|th|lo|km)\b/i.test(locale))) {
@@ -52,6 +60,7 @@ function tokenizeForMatch(text: string, locale?: string): string[] {
  * Deterministic lexical fuzzy similarity score in [0..100].
  * Uses word-level Levenshtein for space-delimited languages and
  * grapheme-level Levenshtein (via Intl.Segmenter) for CJK/scriptio continua.
+ * Placeholder-only renames ({name} -> {firstName}) score high (95) rather than low.
  */
 export function lexicalSimilarity(a: string, b: string, locale?: string): number {
   if (a === b) return 100;
@@ -59,6 +68,9 @@ export function lexicalSimilarity(a: string, b: string, locale?: string): number
   const normB = b.normalize("NFKC").trim();
   if (normA === normB) return 100;
   if (normA.toLowerCase() === normB.toLowerCase()) return 98;
+  if (normalizePlaceholders(normA).toLowerCase() === normalizePlaceholders(normB).toLowerCase()) {
+    return 92;
+  }
 
   const tokA = tokenizeForMatch(normA, locale);
   const tokB = tokenizeForMatch(normB, locale);
@@ -68,6 +80,16 @@ export function lexicalSimilarity(a: string, b: string, locale?: string): number
   const dist = levenshtein(tokA, tokB);
   const score = Math.round(((maxLen - dist) / maxLen) * 100);
   return Math.max(0, Math.min(100, score));
+}
+
+function localeMatches(entryLocale: string, requestedLocale: string): boolean {
+  const a = canonicalizeLocaleTag(entryLocale).toLowerCase();
+  const b = canonicalizeLocaleTag(requestedLocale).toLowerCase();
+  if (a === b) return true;
+  // Base-language fallback (e.g. TMX "DE-DE" matches "de", "EN-US" matches "en")
+  const baseA = a.split("-")[0];
+  const baseB = b.split("-")[0];
+  return baseA === baseB;
 }
 
 export interface FuzzyMatch {
@@ -93,8 +115,8 @@ export function findFuzzyMatches(
   const matches: FuzzyMatch[] = [];
 
   for (const entry of entries) {
-    if (entry.targetLocale !== options.targetLocale) continue;
-    if (options.sourceLocale && entry.sourceLocale !== options.sourceLocale) continue;
+    if (!localeMatches(entry.targetLocale, options.targetLocale)) continue;
+    if (options.sourceLocale && !localeMatches(entry.sourceLocale, options.sourceLocale)) continue;
 
     const score = lexicalSimilarity(query, entry.source, options.sourceLocale);
     if (score >= minScore) {

@@ -395,7 +395,7 @@ export function runCheck(options: CheckOptions): CheckSummary {
           });
         }
 
-        // Glossary consistency & DNT
+        // Glossary consistency & DNT (explicit user/imported glossary rules are blocking errors -> O4)
         const glossaryViolations = checkGlossaryCompliance(
           srcEntry.value,
           tgtEntry.value,
@@ -405,7 +405,7 @@ export function runCheck(options: CheckOptions): CheckSummary {
         for (const v of glossaryViolations) {
           issues.push({
             code: v.code,
-            severity: v.code === "dnt_violation" ? "error" : "warning",
+            severity: v.code === "dnt_violation" || v.origin !== "inferred" ? "error" : "warning",
             locale,
             key,
             message: `[${locale}] ${key}: ${v.message}`,
@@ -447,11 +447,32 @@ export function runCheck(options: CheckOptions): CheckSummary {
           });
         }
 
-        // Staleness: source changed & context changed
+        // Staleness: source changed, context changed, manual edit divergence, & glossary-flagged records
         const rec = records.records[key]?.[locale];
         const currentHash = sha256Short(
           srcEntry.plurals ? JSON.stringify(srcEntry.plurals) : srcEntry.value
         );
+        const liveSerializedTarget = tgtEntry.plurals
+          ? JSON.stringify(tgtEntry.plurals)
+          : tgtEntry.value;
+        if (rec && rec.reviewStatus === "flagged" && glossaryViolations.length === 0) {
+          issues.push({
+            code: "glossary_flagged",
+            severity: "error",
+            locale,
+            key,
+            message: `[${locale}] ${key}: flagged for re-translation after glossary or review update.`,
+          });
+        }
+        if (rec && rec.translation && rec.translation !== liveSerializedTarget) {
+          issues.push({
+            code: "manual_edit_detected",
+            severity: "info",
+            locale,
+            key,
+            message: `[${locale}] ${key}: target file differs from last recorded translation (manual edit detected).`,
+          });
+        }
         if (rec && rec.sourceHash !== currentHash) {
           staleByLocale[locale]++;
           issues.push({

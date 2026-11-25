@@ -1,7 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
-import { detectProjectAdapter, loadLocaleCatalog } from "../adapters/registry.js";
-import { resolveConfinedPath } from "./security.js";
+import { detectProjectAdapter, loadLocaleCatalog, loadSourceCatalog } from "../adapters/registry.js";
+import { canonicalizeLocaleTag, resolveConfinedPath } from "./security.js";
 import { PolyglotStore, sha256Short } from "./store.js";
 import { MemoryEntry } from "./types.js";
 
@@ -63,6 +63,15 @@ export function parseCsv(content: string): string[][] {
   return rows;
 }
 
+function safeFromCodePoint(cp: number): string {
+  if (!Number.isFinite(cp) || cp < 0 || cp > 0x10ffff) return "";
+  try {
+    return String.fromCodePoint(cp);
+  } catch {
+    return "";
+  }
+}
+
 function decodeXmlEntities(s: string): string {
   return s
     .replace(/&lt;/g, "<")
@@ -70,12 +79,19 @@ function decodeXmlEntities(s: string): string {
     .replace(/&quot;/g, '"')
     .replace(/&apos;/g, "'")
     .replace(/&amp;/g, "&")
-    .replace(/&#(\d+);/g, (_, n) => String.fromCodePoint(Number.parseInt(n, 10)))
-    .replace(/&#x([0-9a-fA-F]+);/g, (_, h) => String.fromCodePoint(Number.parseInt(h, 16)));
+    .replace(/&#(\d+);/g, (_, n) => safeFromCodePoint(Number.parseInt(n, 10)))
+    .replace(/&#x([0-9a-fA-F]+);/g, (_, h) => safeFromCodePoint(Number.parseInt(h, 16)));
 }
 
 function stripXmlTags(s: string): string {
-  return decodeXmlEntities(s.replace(/<[^>]+>/g, "")).replace(/\s+/g, " ").trim();
+  // Strip TMX/TBX inline code wrapper elements AND their escaped code contents (<bpt>, <ept>, <ph>, <it>, <ut>)
+  const withoutInlineCode = s.replace(
+    /<(bpt|ept|ph|it|ut)\b[^>]*>[\s\S]*?<\/\1>/gi,
+    ""
+  );
+  return decodeXmlEntities(withoutInlineCode.replace(/<[^>]+>/g, ""))
+    .replace(/\s+/g, " ")
+    .trim();
 }
 
 export interface ImportResult {
@@ -288,10 +304,11 @@ export function importMemoryTmx(rootDir: string, filePath: string): ImportResult
 
     for (const [lang, seg] of segments) {
       if (lang === resolvedSrcLang) continue;
-      locales.add(lang);
+      const canonLang = canonicalizeLocaleTag(lang);
+      locales.add(canonLang);
       additions.push({
-        sourceLocale: config.sourceLocale,
-        targetLocale: lang,
+        sourceLocale: canonicalizeLocaleTag(config.sourceLocale),
+        targetLocale: canonLang,
         source: sourceSeg,
         target: seg,
         origin: `tmx:${path.basename(filePath)}`,
@@ -338,8 +355,7 @@ export function importExistingLocales(rootDir: string): ImportResult {
     };
   }
 
-  const srcFiles = detection.localeFiles[config.sourceLocale] ?? [];
-  const srcCatalog = loadLocaleCatalog(adapter, srcFiles, config.sourceLocale);
+  const srcCatalog = loadSourceCatalog(adapter, detection, config.sourceLocale);
   const now = new Date().toISOString();
 
   const memoryEntries: MemoryEntry[] = [];
@@ -361,16 +377,34 @@ export function importExistingLocales(rootDir: string): ImportResult {
         srcEntry.plurals ? JSON.stringify(srcEntry.plurals) : srcEntry.value
       );
       const contextFingerprint = usage.keys[key]?.fingerprint ?? "";
+      const serializedTarget = tgtEntry.plurals
+        ? JSON.stringify(tgtEntry.plurals)
+        : tgtEntry.value;
 
       if (!records.records[key]) records.records[key] = {};
-      records.records[key][locale] = {
-        sourceHash,
-        contextFingerprint,
-        translation: tgtEntry.plurals ? JSON.stringify(tgtEntry.plurals) : tgtEntry.value,
-        updatedAt: now,
-        origin: "imported",
-        reviewStatus: "unreviewed",
-      };
+      const existing = records.records[key][locale];
+
+      if (existing) {
+        // L3: If the target translation is unchanged from the existing record, do NOT reset sourceHash (preserves staleness!)
+        // L4: NEVER downgrade reviewStatus (approved/reviewed/flagged) during import!
+        if (existing.translation === serializedTarget) {
+          continue;
+        }
+        records.records[key][locale] = {
+          ...existing,
+          translation: serializedTarget,
+          updatedAt: now,
+        };
+      } else {
+        records.records[key][locale] = {
+          sourceHash,
+          contextFingerprint,
+          translation: serializedTarget,
+          updatedAt: now,
+          origin: "imported",
+          reviewStatus: "unreviewed",
+        };
+      }
       recordsImported++;
 
       memoryEntries.push({

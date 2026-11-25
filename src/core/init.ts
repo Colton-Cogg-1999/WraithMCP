@@ -1,5 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
+import { importExistingLocales } from "./importers.js";
 import { PolyglotStore } from "./store.js";
 import { FrameworkName, PolyglotConfig, ReviewMode } from "./types.js";
 
@@ -63,6 +64,15 @@ export function initProject(options: InitOptions): InitResult {
   }
   if (!fs.existsSync(store.filePath("reviews.json"))) {
     store.writeReviews({ version: 1, reviews: [] });
+  }
+
+  // Establish staleness baseline for any pre-existing target locale translations (L1)
+  if (!existed) {
+    try {
+      importExistingLocales(store.rootDir);
+    } catch {
+      // Never fail init if locale files are not yet valid or absent
+    }
   }
 
   const agentFilesUpdated: string[] = [];
