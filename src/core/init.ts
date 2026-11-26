@@ -139,9 +139,9 @@ export function initProject(options: InitOptions): InitResult {
       fs.mkdirSync(gitHooksDir, { recursive: true });
       const hookSnippet = `
 # wraith-pre-commit
-if [ -n "\${WRAITH_BIN:-}" ] && [ -x "\${WRAITH_BIN}" ]; then
+if [ -n "\${WRAITH_BIN:-}" ] && { [ -x "\${WRAITH_BIN}" ] || [ -f "\${WRAITH_BIN}" ]; }; then
   "\${WRAITH_BIN}" check
-elif [ -x "./node_modules/.bin/wraith" ]; then
+elif [ -x "./node_modules/.bin/wraith" ] || [ -f "./node_modules/.bin/wraith" ]; then
   ./node_modules/.bin/wraith check
 elif command -v wraith >/dev/null 2>&1; then
   wraith check
