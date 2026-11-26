@@ -4,7 +4,7 @@ import path from "node:path";
 import { detectProjectAdapter, loadLocaleCatalog, loadSourceCatalog } from "../adapters/registry.js";
 import { detectUnscannedFileTypes } from "../adapters/utils.js";
 import { checkGlossaryCompliance } from "./glossary.js";
-import { charCount, listQuestions, questionsFor, resolveCharLimit } from "./context.js";
+import { charCount, listAssumptions, listQuestions, questionsFor, resolveCharLimit } from "./context.js";
 import { getLocaleConventions, getPluralCategories } from "./locales.js";
 import { findMissingAdvisoryPluralCategories, PluralValidationContext, validateTranslationString } from "./placeholders.js";
 import { evaluateDocumentForCheck, scanDocumentsInProject } from "../documents/registry.js";
@@ -886,6 +886,19 @@ export function runCheck(options: CheckOptions): CheckSummary {
         details: { reviewId: rev.id, suggestion: rev.suggestion },
       });
     }
+  }
+
+  // 6b. Human overrides of agent assumptions not yet reflected in the translations
+  for (const a of listAssumptions(store.rootDir)) {
+    if (a.status !== "overridden") continue;
+    if (a.locale && !targetLocales.includes(a.locale)) continue;
+    issues.push({
+      code: "assumption_overridden",
+      severity: "warning",
+      ...(a.locale ? { locale: a.locale } : {}),
+      message: `${a.label} was overridden${a.locale ? ` for ${a.locale}` : ""}: "${a.override}" (was: ${a.summary}). Revisit the affected strings, then mark ${a.label} applied.`,
+      details: { label: a.label },
+    });
   }
 
   // 7. Determine coverage sufficiency (fail closed: INCONCLUSIVE when nothing verifiable was checked

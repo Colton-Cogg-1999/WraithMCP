@@ -145,12 +145,12 @@ Global option: `-C, --cwd <dir>` (project root). Gates exit `0` PASS · `1` FAIL
 | `wraith visual-qa` | geometry regression diff vs baseline | `--capture-baseline` `--base <path>` `--routes` `--locales` `--url` `--locale-pattern` `--json` |
 | `wraith qe` | ok/flag review by your agent in code context → `.wraith/qe-verdicts.json` | `--prepare` `--all` `--submit <file>` `--locales` `--json` |
 | `wraith questions` | Open Questions the agent filed about strings it couldn't interpret | `--status open\|answered\|resolved\|all` `--json` |
-| `wraith answer <id> <text>` | answer an Open Question; the agent then revisits the affected strings | |
+| `wraith answer <id> <text>` | answer an Open Question (`Q2`) or override an assumption (`A3`); the agent then revisits the affected strings | |
 | `wraith review` | package / ingest cross-model MQM review | `--locale` `--output` `--ingest` |
 | `wraith escalate` | CSV/XLSX/HTML human review export / import | `--locale` `--output-dir` `--import` |
 | `wraith export` | TMS bundle: XLIFF 2.0, TMX 1.4b, TBX-Basic, screenshots | `--format xliff2` `--out` `--locales` `--only-flagged` `--include-tm` `--include-glossary` `--bundle-screenshots` |
 | `wraith import <file-or-dir>` | glossary/TM/locale assets, or reviewed `.xliff`/`.xlf` (auto-detected, validated, stored as human-reviewed TM) | `--format auto\|csv\|tbx\|tmx\|locales\|xliff` |
-| `wraith report` | end-of-run Markdown/JSON report | `--json` |
+| `wraith report` | end-of-run report: translated, needs attention, caught and fixed, open questions (Q1…), assumptions (A1…) | `--since <iso>` `--json` |
 | `wraith mcp` | start the MCP server (stdio) | |
 
 Exit codes for `visual-qa`: `1` regression, `2` no Playwright/server/baseline. `qe` exits `1` if any string is flagged and `2` if any is unreviewed. `extract --fail-on-unextracted` exits `1` while hardcoded strings or concatenations remain.
@@ -172,6 +172,19 @@ Wraith stays model-free while verifying rendered UI layout and locale formatting
 - **Rendered checks require a running dev server and optional Playwright.** Without Playwright or a reachable `baseUrl`, `wraith layout` returns `INCONCLUSIVE` and falls back to static checks only.
 - **Character-based width budgets are approximate.** v1 converts measured element pixel width into `budgetChars` using an average glyph-width heuristic (`0.56 × fontSize`), so variable-width proportional fonts and CJK/Arabic scripts should still be re-verified via `wraith layout`.
 - **Mechanical codemods are Tailwind-first.** Automatic `--fix` rewrites target Tailwind utility classes and root HTML `dir`/`lang`; custom CSS modules, styled-components, and structural flexbox/grid refactors are emitted as agent prescriptions rather than mutated automatically.
+
+### The report and follow-ups
+
+`wraith report` (MCP `report`) is what the agent shows you at the end of a run:
+
+- **Translated:** per locale, with how many strings were written this run and how many were reviewed ok, flagged, or not reviewed yet.
+- **Needs attention:** `check` errors and strings flagged in QE review, with reasons and suggested fixes.
+- **Caught and fixed:** errors Wraith blocked or the reviewer flagged during this run that were then fixed, e.g. a dropped placeholder rejected by `apply`. These come from a local run log (`.wraith/run-log.jsonl`, gitignored). A new run starts after an hour of inactivity, or set the start with `--since`.
+- **Still ambiguous:** open questions (`Q1`…) with the agent's current guess.
+- **Assumptions:** `A1`… (register, brand handling, terminology), including any you overrode.
+- **Same English, different meaning:** strings like "Open" (status) vs "Open" (button) that were translated differently on purpose and reviewed in context, each shown with its Context Note, so you can confirm them at a glance instead of wading through warnings.
+
+To follow up, reply with an ID: `Q1: it's a social-media post` answers a question, and `A2: use informal du` overrides an assumption. You can also use `wraith answer A2 "…"`. Overrides are binding: `prepare` and QE review pass them on as project decisions, and `check` warns (`assumption_overridden`) until the agent has applied them. On long runs the agent posts a one-line progress update after each batch.
 
 ### Context Notes, Character Limits & Open Questions
 

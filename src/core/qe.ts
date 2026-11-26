@@ -4,7 +4,8 @@ import { runCheck } from "./check.js";
 import { prepareBatch, PreparedItem } from "./prepare.js";
 import { atomicWriteFileSync } from "./security.js";
 import { WraithStore } from "./store.js";
-import { latestAnswerAt, listQuestions } from "./context.js";
+import { latestAnswerAt, listQuestions, projectDecisions } from "./context.js";
+import { appendRunEvents } from "./run-log.js";
 
 /* ------------------------------------------------------------------------------------------------
  * Quality review (QE)
@@ -90,7 +91,7 @@ export interface QePrepareResult {
   instructions: string;
   responseFormat: string;
   /** Project-level decisions (register, brand handling, …) the reviewer must respect. */
-  projectDecisions: Array<{ locale?: string; category: string; summary: string }>;
+  projectDecisions: ReturnType<typeof projectDecisions>;
   tasks: QeReviewTask[];
   toReview: number;
   alreadyReviewed: number;
@@ -243,16 +244,11 @@ export function prepareQeReview(options: QeOptions & { includeReviewed?: boolean
     }
   }
 
-  const projectDecisions = store
-    .readAssumptions()
-    .assumptions.filter((a) => !a.locale || locales.includes(a.locale))
-    .map((a) => ({ locale: a.locale, category: a.category, summary: a.summary }));
-
   const taskList = [...tasks.values()];
   const result: QePrepareResult = {
     instructions: QE_REVIEW_INSTRUCTIONS,
     responseFormat: QE_RESPONSE_FORMAT,
-    projectDecisions,
+    projectDecisions: projectDecisions(options.rootDir, locales),
     tasks: taskList,
     toReview: taskList.reduce((n, t) => n + t.strings.length, 0),
     alreadyReviewed,
@@ -319,6 +315,12 @@ export function submitQeVerdicts(options: { rootDir: string; verdicts: unknown }
     });
   }
   if (records.length > 0) upsertRecords(options.rootDir, records);
+  appendRunEvents(
+    options.rootDir,
+    records
+      .filter((r) => r.verdict === "flag")
+      .map((r) => ({ type: "caught" as const, by: "qe" as const, locale: r.locale, key: r.key, code: "qe_flag", message: r.reason ?? "", at: now }))
+  );
   return { accepted: records.length, rejected, summary: summarizeQe({ rootDir: options.rootDir, locales: [...new Set(verdicts.map((v) => v.locale))] }).summary };
 }
 

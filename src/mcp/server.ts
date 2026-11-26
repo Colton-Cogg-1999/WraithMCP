@@ -18,7 +18,7 @@ import { prepareBatch } from "../core/prepare.js";
 import { generatePseudoLocale } from "../core/pseudo-locale.js";
 import { PseudoMode } from "../core/pseudo.js";
 import { prepareQeReview, submitQeVerdicts, summarizeQe } from "../core/qe.js";
-import { answerQuestion, askQuestion, listQuestions, resolveQuestion, setContextNoteForKey } from "../core/context.js";
+import { answerQuestion, applyAssumptionOverride, askQuestion, listQuestions, overrideAssumption, resolveQuestion, setContextNoteForKey } from "../core/context.js";
 import { runTmsExport, runTmsImport } from "../core/tms.js";
 import { runVisualQa } from "../core/visual-qa.js";
 import { generateReport } from "../core/report.js";
@@ -49,7 +49,9 @@ Definition of done:
 6. Run \`pseudo\` with \`mode: "auto"\` to generate target-appropriate pseudo-locales (\`en-XA\`, \`ar-XB\`, \`ja-XC\`, \`th-XD\`, \`de-XE\`) with invisible zero-width key IDs, then run \`layout\` against a running dev server at 375px and 1280px.
 7. Remediate confirmed layout defects in order: (a) run \`layout_fix\` for deterministic mechanical codemods, (b) apply agent code prescriptions, (c) re-run \`prepare\` + \`apply\` for keys exceeding recorded width budgets in \`.wraith/layout.json\` (using approved glossary abbreviations with title/aria-label where appropriate), (d) re-run \`layout\` until clean, then re-run \`check\` until outcome is "PASS".
 8. Optionally run \`visual_qa\` (DOM geometry regression vs .wraith/visual-baseline.json, 0 tokens) and \`qe_audit\` (ok/flag review of each string in its code context, done by you in a fresh context). Export flagged strings with \`tms_export\` and bring human edits back with \`tms_import\`.
-9. Run \`report\` to surface issues caught, assumptions made, and any strings worth a human look.
+9. Run \`report\` and show its Markdown as your final message: translated, needs attention, caught and fixed, still ambiguous (Q1…), assumptions (A1…), and how to follow up.
+
+Progress: on long runs, post a one-line update after each \`apply\` batch or locale, using its \`progress\` field (e.g. "de: 40/63 translated, 1 open question so far"). When the user replies to an ID from the report ("Q1: …", "A2: …"), record it (answer_question / override_assumption), revisit only the affected strings, re-review them, then resolve_question / apply_override.
 
 Keep defaults low-question: infer brand names and terminology, record assumptions via \`memory\`, and report them at the end unless config.review is "confirm". Ask only what the code cannot tell you, as Open Questions batched at the end.`;
 
@@ -389,6 +391,15 @@ export function createWraithMcpServer(options: McpServerOptions = {}): McpServer
       status: z.enum(["open", "answered", "resolved", "all"]).optional().default("open"),
     }),
     z.object({
+      action: z.literal("override_assumption"),
+      id: z.string().describe("Assumption label from the report, e.g. A3."),
+      decision: z.string().min(1).describe("The human's decision, verbatim. Only record overrides the user actually gave."),
+    }),
+    z.object({
+      action: z.literal("apply_override"),
+      id: z.string().describe("Overridden assumption whose strings now follow the override."),
+    }),
+    z.object({
       action: z.literal("set_context_note"),
       key: z.string(),
       note: z.string().min(1),
@@ -407,11 +418,11 @@ export function createWraithMcpServer(options: McpServerOptions = {}): McpServer
     {
       title: "Glossary, Assumptions & Translation Memory",
       description:
-        "Look up lexical fuzzy matches and glossary entries, or record a glossary decision (propagating changes to affected keys), assumption, translation pair, or Context Note. Open Questions: add_question when a string's meaning is unclear even after reading the code (translate your best guess meanwhile); ask the user the open questions in one batch at the end of your run; answer_question records their reply; resolve_question once the affected strings reflect it.",
+        "Look up lexical fuzzy matches and glossary entries, or record a glossary decision (propagating changes to affected keys), assumption, translation pair, or Context Note. Open Questions: add_question when a string's meaning is unclear even after reading the code (translate your best guess meanwhile); ask the user the open questions in one batch at the end of your run; answer_question records their reply; resolve_question once the affected strings reflect it. When the user overrides an assumption from the report (\"A3: use du\"), record it with override_assumption, revisit the affected strings, then apply_override.",
       inputSchema: {
         rootDir: z.string().optional(),
         operation: MemoryOperationSchema.describe(
-          "Discriminated memory operation: lookup | set_glossary | add_assumption | add_question | answer_question | resolve_question | list_questions | set_context_note | add_pair."
+          "Discriminated memory operation: lookup | set_glossary | add_assumption | add_question | answer_question | resolve_question | list_questions | override_assumption | apply_override | set_context_note | add_pair."
         ),
       },
       outputSchema: GenericObjectOutputSchema,
@@ -458,6 +469,10 @@ export function createWraithMcpServer(options: McpServerOptions = {}): McpServer
           return mcpTextResult({ question: resolveQuestion(root, operation.id) });
         case "list_questions":
           return mcpTextResult({ questions: listQuestions(root, operation.status) });
+        case "override_assumption":
+          return mcpTextResult({ assumption: overrideAssumption(root, { label: operation.id, decision: operation.decision, via: "agent" }) });
+        case "apply_override":
+          return mcpTextResult({ assumption: applyAssumptionOverride(root, operation.id) });
         case "set_context_note":
           return mcpTextResult({ ok: true, ...setContextNoteForKey(root, operation.key, operation.note) });
         case "add_pair":
@@ -812,16 +827,17 @@ export function createWraithMcpServer(options: McpServerOptions = {}): McpServer
     {
       title: "Localization Report",
       description:
-        "Read-only end-of-run localization report (issues caught, assumptions made, strings worth a native speaker's look) as structured JSON and PR-ready Markdown.",
+        "Read-only end-of-run report as JSON and PR-ready Markdown: translated per locale, strings that need attention, errors caught and fixed this run, open questions (Q1…), assumptions (A1…) with any human overrides, same-English-different-meaning groups with their Context Notes, and how to follow up. Show the Markdown to the user as your final message.",
       inputSchema: {
         rootDir: z.string().optional(),
         format: z.enum(["both", "json", "markdown"]).optional().default("both"),
+        since: z.string().optional().describe("ISO time to count 'this run' from (default: start of the latest burst of activity)."),
       },
       outputSchema: GenericObjectOutputSchema,
       annotations: READ_ONLY_ANNOTATIONS,
     },
-    async ({ rootDir, format }) => {
-      const rep = generateReport(safeRoot(rootDir));
+    async ({ rootDir, format, since }) => {
+      const rep = generateReport(safeRoot(rootDir), { since });
       if (format === "markdown") return mcpTextResult({ markdown: rep.markdown });
       if (format === "json") {
         const { markdown: _md, ...rest } = rep;

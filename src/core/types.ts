@@ -203,6 +203,12 @@ export const AssumptionSchema = z.object({
   summary: z.string(),
   rationale: z.string().optional(),
   createdAt: z.string(),
+  /** A human overrode the assumption; the agent revisits affected strings, then marks it applied. */
+  status: z.enum(["assumed", "overridden", "applied"]).optional(),
+  override: z.string().optional(),
+  overriddenAt: z.string().optional(),
+  overriddenVia: z.string().optional(),
+  appliedAt: z.string().optional(),
 });
 export type Assumption = z.infer<typeof AssumptionSchema>;
 
@@ -291,6 +297,7 @@ export type CheckIssueCode =
   | "char_limit_inferred"
   | "open_question"
   | "answer_pending"
+  | "assumption_overridden"
   | "hardcoded_formatting"
   | "directional_asset"
   | "stale_source"

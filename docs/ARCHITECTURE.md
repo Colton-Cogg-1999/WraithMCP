@@ -121,6 +121,7 @@ flowchart TD
 | `memory.jsonl` | append-only translation memory log | `apply` |
 | `assumptions.json` | recorded agent assumptions (brand, tone, sense) | `memory` |
 | `context-notes.json` | `{version:1,notes{key:{note,sourceHash,updatedAt}}}`: plain-language meaning per source string, stale when the source hash changes | `apply` (`contextNote`), `memory` set_context_note |
+| `run-log.jsonl` | local, gitignored: `caught` (apply rejection, QE flag) and `applied` events, pruned to 14 days; feeds the report's "caught and fixed" | `apply`, `qe --submit` |
 | `questions.json` | `{version:1,questions[{id:"Q1",keys,locale?,question,status:open\|answered\|resolved,answer?,…}]}` | `memory` add/answer/resolve_question, `wraith answer` |
 | `reviews.json` | MQM review findings | `review --ingest` |
 | `layout.json` | per key/locale width budgets (`maxWidthPx`, `budgetChars`), last layout run | `layout` |

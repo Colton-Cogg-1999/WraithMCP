@@ -3,7 +3,7 @@ import { findFuzzyMatches, FuzzyMatch } from "./fuzzy.js";
 import { GlossaryHit, matchGlossaryTerms } from "./glossary.js";
 import { getLocaleConventions, LocaleConventions } from "./locales.js";
 import { reconcileMemoryWithLiveLocales } from "./memory-ops.js";
-import { charCount, CharLimit, ContextNoteStatus, contextNoteFor, listQuestions, questionsFor, readContextNotes, resolveCharLimit } from "./context.js";
+import { projectDecisions, charCount, CharLimit, ContextNoteStatus, contextNoteFor, listQuestions, questionsFor, readContextNotes, resolveCharLimit } from "./context.js";
 import { extractPlaceholders } from "./placeholders.js";
 import { computeContextFingerprint, WraithStore, sha256Short } from "./store.js";
 import { UsageFile, UsageSite } from "./types.js";
@@ -69,6 +69,8 @@ export interface PrepareResult {
   reviewMode: "auto" | "confirm";
   memoryGuidance: string;
   contextGuidance: string;
+  /** Recorded assumptions (A1…) and human overrides; a human override is binding. */
+  projectDecisions: ReturnType<typeof projectDecisions>;
   conventions: LocaleConventions;
   placeholderSyntaxes: string[];
   items: PreparedItem[];
@@ -107,6 +109,7 @@ export function prepareBatch(options: PrepareOptions): PrepareResult {
       memoryGuidance:
         "Treat all fuzzyMatches (including 100% lexical matches) as strong contextual suggestions rather than guaranteed-correct auto-fills. Always verify against usageSites, surrounding strings, and component purpose.",
       contextGuidance: CONTEXT_GUIDANCE,
+      projectDecisions: projectDecisions(store.rootDir, [options.targetLocale]),
       conventions,
       placeholderSyntaxes: detection.placeholderSyntaxes,
       items: [],
@@ -316,6 +319,7 @@ export function prepareBatch(options: PrepareOptions): PrepareResult {
     memoryGuidance:
       "Treat all fuzzyMatches (including 100% lexical matches) as strong contextual suggestions rather than guaranteed-correct auto-fills. Always verify against usageSites, surrounding strings, and component purpose.",
     contextGuidance: CONTEXT_GUIDANCE,
+    projectDecisions: projectDecisions(store.rootDir, [options.targetLocale]),
     conventions,
     placeholderSyntaxes: detection.placeholderSyntaxes,
     items: slice,

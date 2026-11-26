@@ -1,4 +1,5 @@
 import { setContextNotes } from "./context.js";
+import { appendRunEvents } from "./run-log.js";
 import path from "node:path";
 import { detectProjectAdapter, loadLocaleCatalog, loadSourceCatalog } from "../adapters/registry.js";
 import { FormatWriteUpdate } from "../formats/types.js";
@@ -42,6 +43,8 @@ export interface ApplyResult {
   filesWritten: string[];
   errors: ApplyError[];
   warnings: ApplyError[];
+  /** Translated keys in this locale after the write, for progress updates ("de: 40/63"). */
+  progress?: { locale: string; translated: number; total: number };
 }
 
 export function applyTranslations(options: ApplyOptions): ApplyResult {
@@ -308,9 +311,29 @@ function applyTranslationsUnlocked(options: ApplyOptions): ApplyResult {
     }
   }
 
+  let progress: ApplyResult["progress"];
+  if (!options.isPseudo) {
+    const now = new Date().toISOString();
+    appendRunEvents(store.rootDir, [
+      ...errors
+        .filter((e) => e.key !== "*")
+        .map((e) => ({ type: "caught" as const, by: "apply" as const, locale: options.targetLocale, key: e.key, code: e.code, message: e.message, at: now })),
+      ...validItems.map((v) => ({ type: "applied" as const, locale: options.targetLocale, key: v.input.key, at: now })),
+    ]);
+    const fresh = detectProjectAdapter(store.rootDir, config.framework, config.paths.locales).detection;
+    const tgt = loadLocaleCatalog(adapter, fresh.localeFiles[options.targetLocale] ?? [], options.targetLocale);
+    let translated = 0;
+    for (const key of srcCatalog.entries.keys()) {
+      const e = tgt.entries.get(key);
+      if (e && e.value.trim() !== "" && !e.fuzzy) translated++;
+    }
+    progress = { locale: options.targetLocale, translated, total: srcCatalog.entries.size };
+  }
+
   return {
     ok: errors.length === 0,
     targetLocale: options.targetLocale,
+    ...(progress ? { progress } : {}),
     appliedCount: validItems.length,
     rejectedCount: errors.length,
     filesWritten: filesWritten.sort(),

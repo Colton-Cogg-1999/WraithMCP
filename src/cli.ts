@@ -11,7 +11,7 @@ import { runLayoutCheck } from "./core/layout.js";
 import { generatePseudoLocale } from "./core/pseudo-locale.js";
 import { PseudoMode } from "./core/pseudo.js";
 import { prepareQeReview, submitQeVerdicts, summarizeQe } from "./core/qe.js";
-import { answerQuestion, listQuestions } from "./core/context.js";
+import { answerQuestion, listQuestions, overrideAssumption } from "./core/context.js";
 import { resolveConfinedPath } from "./core/security.js";
 import { isXliffPath, runTmsExport, runTmsImport } from "./core/tms.js";
 import { runVisualQa } from "./core/visual-qa.js";
@@ -451,9 +451,14 @@ export function createCli(): Command {
 
   program
     .command("answer <id> <answer...>")
-    .description("Answer an Open Question; the agent then revisits the affected strings (check shows answer_pending until it does)")
+    .description("Answer an Open Question (Q2) or override an assumption (A3) from the report; the agent then revisits the affected strings")
     .action((id: string, answerParts: string[]) => {
       const rootDir = program.opts().cwd;
+      if (/^A\d+$/i.test(id)) {
+        const a = overrideAssumption(rootDir, { label: id, decision: answerParts.join(" "), via: "cli" });
+        console.log(`${a.label} overridden: "${a.override}". Ask your agent to revisit the affected strings (check shows assumption_overridden until it marks ${a.label} applied).`);
+        return;
+      }
       const q = answerQuestion(rootDir, { id, answer: answerParts.join(" "), via: "cli" });
       console.log(`${q.id} answered. Affected keys: ${q.keys.join(", ")}. Ask your agent to revisit them (they now show in prepare with reason question_answered).`);
     });
@@ -624,11 +629,12 @@ export function createCli(): Command {
 
   program
     .command("report")
-    .description("Generate end-of-run localization report (Markdown or JSON)")
+    .description("End-of-run report: translated, needs attention, caught and fixed, still ambiguous (Q1…), assumptions (A1…)")
+    .option("--since <iso>", "Count 'this run' from this time (default: start of the latest burst of activity)")
     .option("--json", "Output JSON", false)
     .action((opts) => {
       const rootDir = program.opts().cwd;
-      const rep = generateReport(rootDir);
+      const rep = generateReport(rootDir, { since: opts.since });
       if (opts.json) {
         console.log(JSON.stringify(rep, null, 2));
         return;

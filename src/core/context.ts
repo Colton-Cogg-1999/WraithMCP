@@ -3,7 +3,7 @@ import { z } from "zod";
 import { detectProjectAdapter, loadSourceCatalog } from "../adapters/registry.js";
 import { atomicWriteFileSync } from "./security.js";
 import { sha256Short, WraithStore } from "./store.js";
-import { LayoutFile, WraithConfig } from "./types.js";
+import { Assumption, LayoutFile, WraithConfig } from "./types.js";
 
 /* ------------------------------------------------------------------------------------------------
  * Context the agent needs to translate a string correctly, beyond the code itself:
@@ -269,4 +269,61 @@ export function latestAnswerAt(questions: Question[], key: string, locale?: stri
     if (q.answeredAt && (!latest || q.answeredAt > latest)) latest = q.answeredAt;
   }
   return latest;
+}
+
+/* ------------------------------- Assumptions (A1, A2, …) ------------------------------------ */
+
+export interface LabeledAssumption extends Assumption {
+  label: string;
+}
+
+/** Assumptions are append-only, so their position gives a stable short label: A1, A2, … */
+export function listAssumptions(rootDir: string): LabeledAssumption[] {
+  return new WraithStore(rootDir).readAssumptions().assumptions.map((a, i) => ({ ...a, label: `A${i + 1}` }));
+}
+
+function updateAssumption(rootDir: string, label: string, fn: (a: Assumption) => void): LabeledAssumption {
+  const store = new WraithStore(rootDir);
+  const file = store.readAssumptions();
+  const idx = Number(/^A(\d+)$/i.exec(label.trim())?.[1]) - 1;
+  const a = file.assumptions[idx];
+  if (!a) throw new Error(`no assumption ${label}`);
+  fn(a);
+  store.writeAssumptions(file);
+  return { ...a, label: `A${idx + 1}` };
+}
+
+/** A human overrides an assumption ("A3: use informal du"). The override is binding from now on. */
+export function overrideAssumption(rootDir: string, input: { label: string; decision: string; via?: string }): LabeledAssumption {
+  const decision = input.decision.trim();
+  if (!decision) throw new Error("an override cannot be empty");
+  return updateAssumption(rootDir, input.label, (a) => {
+    a.status = "overridden";
+    a.override = decision;
+    a.overriddenAt = new Date().toISOString();
+    if (input.via) a.overriddenVia = input.via;
+    delete a.appliedAt;
+  });
+}
+
+/** The agent marks an override applied once every affected string follows it. */
+export function applyAssumptionOverride(rootDir: string, label: string): LabeledAssumption {
+  return updateAssumption(rootDir, label, (a) => {
+    if (a.status !== "overridden") throw new Error(`${label} has no pending override`);
+    a.status = "applied";
+    a.appliedAt = new Date().toISOString();
+  });
+}
+
+/** Decisions the translator and reviewer must follow: an override replaces the original assumption. */
+export function projectDecisions(rootDir: string, locales?: string[]): Array<{ label: string; locale?: string; category: string; decision: string; source: "agent" | "human" }> {
+  return listAssumptions(rootDir)
+    .filter((a) => !a.locale || !locales || locales.includes(a.locale))
+    .map((a) => ({
+      label: a.label,
+      ...(a.locale ? { locale: a.locale } : {}),
+      category: a.category,
+      decision: a.override ?? a.summary,
+      source: a.override ? ("human" as const) : ("agent" as const),
+    }));
 }
