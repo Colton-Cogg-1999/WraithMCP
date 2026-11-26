@@ -2,7 +2,10 @@ import fs from "node:fs";
 import path from "node:path";
 import { FrameworkName } from "../core/types.js";
 import { LocaleEntry } from "../formats/types.js";
+import { AndroidAdapter } from "./android.js";
+import { AstroAdapter } from "./astro.js";
 import { DjangoAdapter } from "./django.js";
+import { FlutterAdapter } from "./flutter.js";
 import { RailsAdapter } from "./rails.js";
 import { ReactNextAdapter } from "./react.js";
 import { SvelteKitAdapter } from "./svelte.js";
@@ -14,6 +17,9 @@ const adapters: ScannerAdapter[] = [
   new ReactNextAdapter(),
   new VueNuxtAdapter(),
   new SvelteKitAdapter(),
+  new AstroAdapter(),
+  new FlutterAdapter(),
+  new AndroidAdapter(),
   new RailsAdapter(),
   new DjangoAdapter(),
 ];
