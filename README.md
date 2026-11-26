@@ -218,7 +218,16 @@ Prompt: `/localize`. Agent playbooks: [`skills/`](skills/) — `i18n-prep`, `loc
 
 ## CI Quickstart
 
-[`.github/workflows/wraith.yml`](.github/workflows/wraith.yml) (also usable via `workflow_call`):
+**Simplest:** add the Wraith Action. It runs the gate on every PR, posts the report as a sticky comment, and records `/wraith answer Q1 …` replies. There are no model calls and no secrets. The full snippet is in [docs/GITHUB_CI.md](docs/GITHUB_CI.md#quick-start-the-wraith-action):
+
+```yaml
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 20 }
+      - uses: Colton-Cogg-1999/WraithMCP@v1
+```
+
+**Full workflow:** [`.github/workflows/wraith.yml`](.github/workflows/wraith.yml) (also usable via `workflow_call`):
 
 - **`deterministic-l10n-gate`** (pull_request, 0 LLM tokens): `wraith extract --fail-on-unextracted`, `wraith check`, `wraith visual-qa --base .wraith/visual-baseline.json`; sticky PR summary; artifacts on failure.
 - **`update-baseline`** (push to main): recaptures the baseline as an artifact; commit it via a reviewed PR.

@@ -1,7 +1,31 @@
 {
-  "name": "wraith",
+  "name": "wraith-mcp",
   "version": "0.1.0",
-  "description": "Wraith: deterministic MCP server and CLI that turns your coding agent into a context-aware localization engineer (visual QA, tiered QE, TMS round-trip).",
+  "description": "MCP server and CLI that turns your coding agent into a context-aware localization engineer: deterministic checks, in-context QE review, Context Notes, Character Limits, Open Questions, visual QA, and XLIFF/Crowdin round-trips. Never calls a model.",
+  "keywords": [
+    "i18n",
+    "l10n",
+    "localization",
+    "translation",
+    "mcp",
+    "model-context-protocol",
+    "claude",
+    "codex",
+    "xliff",
+    "crowdin",
+    "next-intl",
+    "vue-i18n",
+    "rails",
+    "django"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Colton-Cogg-1999/WraithMCP.git"
+  },
+  "homepage": "https://github.com/Colton-Cogg-1999/WraithMCP#readme",
+  "bugs": {
+    "url": "https://github.com/Colton-Cogg-1999/WraithMCP/issues"
+  },
   "license": "MIT",
   "type": "module",
   "main": "./dist/index.js",
@@ -26,7 +50,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "dev": "tsx src/bin.ts",
-    "check:licenses": "node scripts/check-licenses.mjs"
+    "check:licenses": "node scripts/check-licenses.mjs",
+    "prepublishOnly": "npm run typecheck && npm run build && npm test"
   },
   "dependencies": {
     "@babel/parser": "^7.26.0",
@@ -56,5 +81,8 @@
     "tsx": "^4.19.0",
     "typescript": "^5.7.0",
     "vitest": "^3.0.0"
+  },
+  "publishConfig": {
+    "access": "public"
   }
 }

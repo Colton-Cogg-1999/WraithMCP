@@ -1,0 +1,177 @@
+name: Wraith localization
+description: Localization gate for pull requests (extract + check, no model calls) with the Wraith report as a sticky PR comment, and `/wraith answer Q1 …` replies from PR comments.
+author: Colton Coggins
+branding:
+  icon: globe
+  color: purple
+
+inputs:
+  command:
+    description: "gate (pull_request: run checks and comment the report) | answer (issue_comment: record `/wraith answer <Q#|A#> <text>` lines)"
+    default: gate
+  working-directory:
+    description: Directory containing .wraith/ (the app root)
+    default: "."
+  wraith-version:
+    description: "npm version of wraith-mcp to use. Empty = this action's own version (from npm if published, otherwise built from the action's source). 'source' forces a source build."
+    default: ""
+  fail-on-unextracted:
+    description: Fail the gate while hardcoded strings or concatenations remain in source
+    default: "true"
+  comment:
+    description: Post or update a sticky PR comment with the report
+    default: "true"
+  github-token:
+    description: Token for PR comments (gate) and for pushing answers to the PR branch (answer)
+    default: ${{ github.token }}
+
+outputs:
+  check:
+    description: "PASS | FAIL | INCONCLUSIVE"
+    value: ${{ steps.gate.outputs.check }}
+  flagged:
+    description: Strings flagged in QE review
+    value: ${{ steps.gate.outputs.flagged }}
+  open-questions:
+    description: Open Questions waiting for an answer
+    value: ${{ steps.gate.outputs.open_questions }}
+
+runs:
+  using: composite
+  steps:
+    - name: Set up Wraith
+      shell: bash
+      env:
+        WANT: ${{ inputs.wraith-version }}
+      run: |
+        set -euo pipefail
+        v="$WANT"
+        [ -z "$v" ] && v=$(node -p "require(process.env.GITHUB_ACTION_PATH + '/package.json').version")
+        if [ "$v" != "source" ] && npm view "wraith-mcp@$v" version >/dev/null 2>&1; then
+          npm install --global --no-audit --no-fund "wraith-mcp@$v" >/dev/null
+          echo "WRAITH_BIN=$(command -v wraith)" >> "$GITHUB_ENV"
+          echo "Using wraith-mcp@$v from npm"
+        else
+          echo "Building Wraith from the action's source"
+          (cd "$GITHUB_ACTION_PATH" && npm ci --no-audit --no-fund >/dev/null && npm run build >/dev/null)
+          echo "WRAITH_BIN=$GITHUB_ACTION_PATH/dist/bin.js" >> "$GITHUB_ENV"
+        fi
+
+    - name: Gate
+      id: gate
+      if: inputs.command == 'gate'
+      shell: bash
+      working-directory: ${{ inputs.working-directory }}
+      env:
+        FAIL_ON_UNEXTRACTED: ${{ inputs.fail-on-unextracted }}
+      run: |
+        set +e
+        w() { node "$WRAITH_BIN" "$@"; }
+        mkdir -p "$RUNNER_TEMP/wraith"
+        out="$RUNNER_TEMP/wraith"
+        if [ "$FAIL_ON_UNEXTRACTED" = "true" ]; then w extract --fail-on-unextracted > "$out/extract.txt" 2>&1; else w extract > "$out/extract.txt" 2>&1; fi
+        echo "extract=$?" >> "$GITHUB_OUTPUT"
+        w check > "$out/check.txt" 2>&1
+        code=$?
+        echo "check_code=$code" >> "$GITHUB_OUTPUT"
+        case $code in 0) echo "check=PASS";; 2) echo "check=INCONCLUSIVE";; *) echo "check=FAIL";; esac >> "$GITHUB_OUTPUT"
+        w report > "$out/report.md" 2> "$out/report.err"
+        w report --json > "$out/report.json" 2>/dev/null
+        node -e '
+          const r = JSON.parse(require("fs").readFileSync(process.argv[1], "utf8"));
+          console.log("flagged=" + (r.summary?.flagged ?? 0));
+          console.log("open_questions=" + (r.summary?.openQuestions ?? 0));
+        ' "$out/report.json" >> "$GITHUB_OUTPUT" 2>/dev/null || true
+        cat "$out/check.txt"
+        exit 0
+
+    - name: Sticky PR comment
+      if: inputs.command == 'gate' && inputs.comment == 'true' && github.event.pull_request
+      uses: actions/github-script@v7
+      env:
+        EXTRACT: ${{ steps.gate.outputs.extract }}
+        CHECK: ${{ steps.gate.outputs.check }}
+      with:
+        github-token: ${{ inputs.github-token }}
+        script: |
+          const fs = require('fs');
+          const dir = `${process.env.RUNNER_TEMP}/wraith`;
+          const read = (f) => { try { return fs.readFileSync(`${dir}/${f}`, 'utf8'); } catch { return ''; } };
+          const marker = '<!-- wraith-report -->';
+          const icon = (s) => (s === 'PASS' ? '✅' : s === 'INCONCLUSIVE' ? '⚠️' : '❌');
+          const extract = process.env.EXTRACT === '0' ? 'PASS' : 'FAIL';
+          let body = `${marker}\n| \`extract\` | \`check\` |\n|---|---|\n| ${icon(extract)} ${extract} | ${icon(process.env.CHECK)} ${process.env.CHECK} |\n\n`;
+          body += read('report.md') || '_No report (is Wraith initialized? run `wraith init`)._';
+          body += '\n\n<sub>Answer a question or override an assumption by commenting `/wraith answer Q1 <answer>` or `/wraith answer A2 <decision>`.</sub>\n';
+          if (body.length > 65000) body = body.slice(0, 64000) + '\n\n…truncated; full report in the workflow log.';
+          const { owner, repo } = context.repo;
+          const issue_number = context.payload.pull_request.number;
+          const comments = await github.paginate(github.rest.issues.listComments, { owner, repo, issue_number, per_page: 100 });
+          const mine = comments.find((c) => c.body && c.body.startsWith(marker));
+          if (mine) await github.rest.issues.updateComment({ owner, repo, comment_id: mine.id, body });
+          else await github.rest.issues.createComment({ owner, repo, issue_number, body });
+
+    - name: Enforce gate
+      if: inputs.command == 'gate'
+      shell: bash
+      env:
+        EXTRACT: ${{ steps.gate.outputs.extract }}
+        CHECK: ${{ steps.gate.outputs.check }}
+        FAIL_ON_UNEXTRACTED: ${{ inputs.fail-on-unextracted }}
+      run: |
+        failed=0
+        if [ "$FAIL_ON_UNEXTRACTED" = "true" ] && [ "$EXTRACT" != "0" ]; then echo "::error::wraith extract: hardcoded strings or concatenations remain"; failed=1; fi
+        if [ "$CHECK" != "PASS" ]; then echo "::error::wraith check: $CHECK"; failed=1; fi
+        exit $failed
+
+    - name: Record answers from the PR comment
+      if: inputs.command == 'answer'
+      uses: actions/github-script@v7
+      env:
+        WORKDIR: ${{ inputs.working-directory }}
+      with:
+        github-token: ${{ inputs.github-token }}
+        script: |
+          const { execFileSync } = require('child_process');
+          const path = require('path');
+          const c = context.payload.comment;
+          const issue = context.payload.issue;
+          if (!c || !issue || !issue.pull_request) { core.info('Not a PR comment; nothing to do.'); return; }
+          if (!['OWNER', 'MEMBER', 'COLLABORATOR'].includes(c.author_association)) {
+            core.info(`Ignoring /wraith answer from ${c.author_association}`);
+            return;
+          }
+          const cwd = path.resolve(process.env.WORKDIR || '.');
+          const lines = String(c.body).split(/\r?\n/);
+          const done = [];
+          const failed = [];
+          for (const line of lines) {
+            const m = /^\s*\/wraith\s+answer\s+([QA]\d+)\s*:?\s+(.+?)\s*$/i.exec(line);
+            if (!m) continue;
+            try {
+              // argv array, no shell: comment text can never be executed
+              execFileSync('node', [process.env.WRAITH_BIN, 'answer', m[1].toUpperCase(), m[2]], { cwd, stdio: 'pipe' });
+              done.push(`**${m[1].toUpperCase()}**: ${m[2]}`);
+            } catch (e) {
+              failed.push(`**${m[1].toUpperCase()}**: ${String(e.stderr || e.message).trim().split('\n')[0]}`);
+            }
+          }
+          if (done.length === 0 && failed.length === 0) { core.info('No /wraith answer lines found.'); return; }
+          const { owner, repo } = context.repo;
+          let pushed = false;
+          if (done.length > 0) {
+            const git = (...args) => execFileSync('git', args, { cwd, stdio: 'pipe' }).toString().trim();
+            git('config', 'user.name', 'github-actions[bot]');
+            git('config', 'user.email', '41898282+github-actions[bot]@users.noreply.github.com');
+            git('add', '.wraith/questions.json', '.wraith/assumptions.json');
+            if (git('status', '--porcelain', '--', '.wraith/questions.json', '.wraith/assumptions.json')) {
+              git('commit', '-m', `chore(l10n): record answers from PR comment (${done.length})`);
+              git('push');
+              pushed = true;
+            }
+          }
+          let body = '';
+          if (done.length) body += `Recorded:\n${done.map((d) => `- ${d}`).join('\n')}\n\n${pushed ? 'Committed to this branch. ' : ''}The affected strings now show as \`answer_pending\` / \`assumption_overridden\` until an agent revisits them (comment \`/localize\` if the Wraith localize workflow is installed).\n`;
+          if (failed.length) body += `\nCould not record:\n${failed.map((f) => `- ${f}`).join('\n')}\n`;
+          await github.rest.issues.createComment({ owner, repo, issue_number: issue.number, body });
+          if (failed.length) core.setFailed(`${failed.length} answer(s) could not be recorded`);

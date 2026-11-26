@@ -1,5 +1,47 @@
 # GitHub CI
 
+## Quick start: the Wraith Action
+
+For most repos this is all you need. It makes no model calls and needs no secrets:
+
+```yaml
+# .github/workflows/wraith.yml in your app repo
+name: Wraith
+on:
+  pull_request:
+  issue_comment:
+    types: [created]
+permissions:
+  contents: write
+  pull-requests: write
+jobs:
+  gate:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 20 }
+      - uses: Colton-Cogg-1999/WraithMCP@v1
+  answer:
+    if: github.event.issue.pull_request && contains(github.event.comment.body, '/wraith answer')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: gh pr checkout ${{ github.event.issue.number }}
+        env: { GH_TOKEN: "${{ github.token }}" }
+      - uses: actions/setup-node@v4
+        with: { node-version: 20 }
+      - uses: Colton-Cogg-1999/WraithMCP@v1
+        with: { command: answer }
+```
+
+- **`gate`** (every PR): runs `wraith extract --fail-on-unextracted` and `wraith check`, and fails the job unless both pass. It posts the Wraith report as one sticky PR comment, updated on each push, covering what needs attention, what was caught and fixed, open questions (`Q1`…) and assumptions (`A1`…). Inputs: `working-directory`, `fail-on-unextracted`, `comment`, `wraith-version`. Outputs: `check`, `flagged`, `open-questions`.
+- **`answer`** (PR comments): a comment line `/wraith answer Q1 it's a social-media post` (or `A2 use informal du`) from an owner, member or collaborator is recorded with `wraith answer`, committed to the PR branch, and confirmed in a reply. Comment text is passed to Wraith as a plain argument, never through a shell. Then comment `/localize` (full workflow below) or run your agent locally to revisit the affected strings. Pushing to PRs from forks isn't possible with `GITHUB_TOKEN`.
+- **Wraith version:** by default the Action installs its own version of `wraith-mcp` from npm, falling back to building from its source when that version isn't published. Set `wraith-version` to pin one.
+
+## Full workflow (visual QA + `/localize` agent)
+
 Workflow: [`.github/workflows/wraith.yml`](../.github/workflows/wraith.yml)
 
 | Job | Trigger | Tokens | Purpose |
@@ -10,7 +52,7 @@ Workflow: [`.github/workflows/wraith.yml`](../.github/workflows/wraith.yml)
 
 ## Setup
 
-1. Add Wraith as a dev dependency so `npx wraith` resolves (until published, install from a tarball/git URL), and commit `.wraith/config.json` with `layout.routes` and `layout.localeUrlPattern`.
+1. Add Wraith as a dev dependency (`npm i -D wraith-mcp`) so `npx wraith` resolves, and commit `.wraith/config.json` with `layout.routes` and `layout.localeUrlPattern`.
 2. Add `playwright` as a dev dependency (visual-qa uses the optional peer).
 3. Copy `wraith.yml` into `.github/workflows/` and adjust `PREVIEW_BUILD` / `PREVIEW_START` / `PREVIEW_URL` (defaults: `npm run build`, `npm run start`, `http://localhost:3000`), or call it as a reusable workflow:
 
