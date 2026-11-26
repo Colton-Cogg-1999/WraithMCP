@@ -127,7 +127,7 @@ flowchart TD
 | `layout.json` | per key/locale width budgets (`maxWidthPx`, `budgetChars`), last layout run | `layout` |
 | `tm.json` | `{version:1, entries:[{source,target,sourceLocale,targetLocale,key?,provenance,verifiedAt?,updatedAt}]}`; `provenance` ∈ `human-reviewed` \| `llm-generated` \| `imported`; human-reviewed outranks llm-generated in fuzzy retrieval | `apply`, `import` (XLIFF) |
 | `visual-baseline.json` | `{version:1,capturedAt,baseUrl,snapshots:{"<route>\|<WxH>\|<locale>": ElementGeometrySnapshot[]}}` | `visual-qa --capture-baseline` |
-| `qe-verdicts.json` | `{version:2,records[{locale,key,source,target,verdict,reason?,suggestedFix?,reviewedAt}]}` (see [QE_AND_TMS.md](QE_AND_TMS.md)) | `qe --submit`, `import` (XLIFF) |
+| `qe-verdicts.json` | `{version:2,records[{locale,key,source,target,verdict,reason?,suggestedFix?,reviewedAt}]}` (see [QE_REVIEW.md](QE_REVIEW.md)) | `qe --submit`, `import` (XLIFF) |
 | `artifacts/visual-qa/<locale>/<key>-<WxH>.png` + `manifest.json` | failure-only screenshots | `visual-qa` |
 | `exports/tms/` | default XLIFF/TMX/TBX export bundle | `export` |
 

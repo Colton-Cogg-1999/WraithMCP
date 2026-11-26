@@ -21,7 +21,7 @@ An independent, judge-validated evaluation (two judges, blinded and position-swa
 - **Release replay (N → N+1):** stale-source detection precision = recall = **1.0**
 - **Rendered layout (nextjs-commerce, 7 locales, 375/1280 px):** **26 → 8 → 0** defects (baseline → `layout --fix` codemods → one prescribed agent edit)
 - **Stage 4 (TM context ablation, 482 items):** dataset and metrics pipeline validated in a dry run; full run pending ([Section 13](eval/REPORT.md))
-- **Proof of concept, not publishable evidence (de, 50 strings):** an Opus reviewer working in code context flagged **25/25** planted meaning errors, including 5/5 on strings that appear only once, which deterministic checks missed entirely (0/25). It flagged **0/25** clean strings ([details](docs/QE_AND_TMS.md#proof-of-concept-2026-11-25-not-publishable-evidence))
+- **Proof of concept, not publishable evidence (de, 50 strings):** an Opus reviewer working in code context flagged **25/25** planted meaning errors, including 5/5 on strings that appear only once, which deterministic checks missed entirely (0/25). It flagged **0/25** clean strings ([details](docs/QE_REVIEW.md#proof-of-concept-2026-11-25-not-publishable-evidence))
 
 The agent alone translates about as well as with Wraith. What Wraith adds is that the output ships: no broken placeholders, plurals or glossary terms, no stale strings, and no clipped or mirrored-wrong UI.
 
@@ -195,8 +195,8 @@ To follow up, reply with an ID: `Q1: it's a social-media post` answers a questio
 ### Visual QA, QE & TMS
 
 - **`visual-qa`:** per-element geometry (`lineCount`, size, overflow, clipping, occlusion, font load, contrast) diffed against `.wraith/visual-baseline.json`; rules `line_wrap_regression`, `container_blowout`, `text_truncation`, `element_occlusion`, `missing_glyph_tofu`, `contrast_regression`. Failure-only screenshots in `.wraith/artifacts/visual-qa/`. See [docs/VISUAL_QA.md](docs/VISUAL_QA.md).
-- **`qe`:** your coding agent reviews each translated string in a fresh context, reading the file where it is used, and gives an `ok` or `flag` verdict with a reason. Verdicts are pinned to the exact text, so only changed strings are re-reviewed.
-- **`export` / `import`:** XLIFF 2.0 units carry `mda:` metadata (file, line, component, `qe_status`, `max_chars`, `max_width_px`, TM similarity) and review notes; reviewed XLIFF is re-validated and stored in `.wraith/tm.json` as `human-reviewed`, which outranks `llm-generated` TM. See [docs/QE_AND_TMS.md](docs/QE_AND_TMS.md).
+- **`qe`:** your coding agent reviews each translated string in a fresh context, reading the file where it is used, and gives an `ok` or `flag` verdict with a reason. Verdicts are pinned to the exact text, so only changed strings are re-reviewed. See [docs/QE_REVIEW.md](docs/QE_REVIEW.md).
+- **`export` / `import`:** XLIFF 2.0 units carry `mda:` metadata (file, line, component, `qe_status`, `max_chars`, `max_width_px`, TM similarity) and review notes; reviewed XLIFF is re-validated and stored in `.wraith/tm.json` as `human-reviewed`, which outranks `llm-generated` TM. See [docs/TMS.md](docs/TMS.md).
 - **`directional_asset` check (warning):** directional icons (`ArrowLeft/Right`, `ChevronLeft/Right`, `CaretLeft/Right`, back/next arrows, directional svg/img names) without `rtl:rotate-180`, `rtl:-scale-x-100`, dir-aware mirroring, or a logical swap — only when `ar`, `he`, `fa`, or `ur` is a target.
 
 ## MCP Tools
@@ -271,7 +271,9 @@ WRAITH_NODE_BIN=/path/to/official/node npm run build:sea
 - [docs/SCHEMAS.md](docs/SCHEMAS.md)
 - [docs/DECISIONS.md](docs/DECISIONS.md)
 - [docs/VISUAL_QA.md](docs/VISUAL_QA.md)
-- [docs/QE_AND_TMS.md](docs/QE_AND_TMS.md)
+- [docs/QE_REVIEW.md](docs/QE_REVIEW.md)
+- [docs/TMS.md](docs/TMS.md)
+- [docs/END_TO_END_ARCHITECTURE.md](docs/END_TO_END_ARCHITECTURE.md)
 - [docs/GITHUB_CI.md](docs/GITHUB_CI.md)
 - [docs/SKILLS.md](docs/SKILLS.md)
 - [eval/REPORT.md](eval/REPORT.md)

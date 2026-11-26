@@ -132,6 +132,6 @@ Review the diff like code: a baseline that absorbs a regression disables the gat
    - Codex: `codex exec --full-auto …` with `[mcp_servers.wraith]` in `~/.codex/config.toml`
    Agent CLI flags change between releases; pin versions if you depend on them.
 4. The agent reviews its translations with the **qe-review** skill in a fresh subagent context. Then `wraith check` and `wraith qe --json` (review status). Translations are committed and pushed only if `check` passes. Commits pushed with `GITHUB_TOKEN` do not retrigger workflows; re-run the gate or push a commit to re-check.
-5. If any strings are flagged, the job runs `wraith export --only-flagged --include-tm --include-glossary --bundle-screenshots --out .wraith/artifacts/tms-review`, uploads it as `wraith-tms-review-<PR>`, and comments a table of flagged keys with their reasons. Linguists return the XLIFF; import it with `wraith import <dir>` (see [QE_AND_TMS.md](QE_AND_TMS.md)).
+5. If any strings are flagged, the job runs `wraith export --only-flagged --include-tm --include-glossary --bundle-screenshots --out .wraith/artifacts/tms-review`, uploads it as `wraith-tms-review-<PR>`, and comments a table of flagged keys with their reasons. Linguists return the XLIFF; import it with `wraith import <dir>` (see [TMS.md](TMS.md)).
 
 `issue_comment` workflows always run the workflow file from the default branch, so changes to `wraith.yml` take effect for `/localize` only after merge.
