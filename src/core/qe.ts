@@ -4,6 +4,7 @@ import { runCheck } from "./check.js";
 import { prepareBatch, PreparedItem } from "./prepare.js";
 import { atomicWriteFileSync } from "./security.js";
 import { WraithStore } from "./store.js";
+import { latestAnswerAt, listQuestions } from "./context.js";
 
 /* ------------------------------------------------------------------------------------------------
  * Quality review (QE)
@@ -56,7 +57,7 @@ export const QE_REVIEW_INSTRUCTIONS = `You are reviewing translations as they wi
 For each task: open the file and read how each key is actually used: the element, the surrounding UI, the neighbouring strings, what the code does when the user acts on it.
 Mark a string "flag" only if a user of this UI in the target locale would find it wrong, misleading or broken, for example: the wrong sense of the word for this UI (save money vs. save a file), meaning added, dropped, negated or inverted, a grammatical form that does not fit the element, a term that differs from how the project translates the same thing elsewhere with no contextual reason, or a conflict with a project decision, an Answer, or a Term Base entry.
 Otherwise mark it "ok". Style preferences and acceptable alternatives are "ok".
-Every flag needs a one-line reason; add suggestedFix (the full corrected target, every placeholder, ICU branch and tag preserved) when the fix is clear. If the source's meaning itself is unclear even after reading the code, flag it with a reason starting "Unclear meaning:".`;
+Every flag needs a one-line reason; add suggestedFix (the full corrected target, every placeholder, ICU branch and tag preserved) when the fix is clear. If the source's meaning itself is unclear even after reading the code, flag it with a reason starting "Unclear meaning:", unless the string already lists openQuestions: that ambiguity is already waiting on a human, so judge such a string only for other errors.`;
 
 export const QE_RESPONSE_FORMAT =
   'Return one verdict per string: {"locale","key","verdict":"ok"|"flag","reason"?,"suggestedFix"?}. Submit with `wraith qe --submit <file>` or qe_audit mode=submit.';
@@ -131,9 +132,14 @@ function upsertRecords(rootDir: string, records: QeRecord[]): void {
   writeQeVerdicts(rootDir, { version: 2, records: [...byId.values()] });
 }
 
-/** Status of one string: a stored verdict only counts if it judged this exact source + target. */
-export function qeStatusOf(record: QeRecord | undefined, source: string, target: string | undefined): QeStatus {
+/**
+ * Status of one string: a stored verdict only counts if it judged this exact source + target, and
+ * (for agent verdicts) was given after the latest human Answer about the string: an Answer is new
+ * context, so the string must be reviewed again.
+ */
+export function qeStatusOf(record: QeRecord | undefined, source: string, target: string | undefined, answeredAt?: string): QeStatus {
   if (!record || target === undefined || record.source !== source || record.target !== target) return "unreviewed";
+  if (answeredAt && record.verdict !== "human-verified" && record.reviewedAt < answeredAt) return "unreviewed";
   if (record.verdict === "human-verified") return "human-verified";
   return record.verdict === "ok" ? "ok" : "flagged";
 }
@@ -186,6 +192,7 @@ export function prepareQeReview(options: QeOptions & { includeReviewed?: boolean
   const config = store.readConfig();
   const locales = options.locales && options.locales.length > 0 ? options.locales : config.targetLocales;
   const index = qeIndex(options.rootDir);
+  const questions = listQuestions(options.rootDir);
   const tasks = new Map<string, QeReviewTask>();
   const blockedByCheck: QePrepareResult["blockedByCheck"] = [];
   let alreadyReviewed = 0;
@@ -203,7 +210,7 @@ export function prepareQeReview(options: QeOptions & { includeReviewed?: boolean
         blockedByCheck.push({ locale, key: item.key, issue: err });
         continue;
       }
-      const status = qeStatusOf(index.get(`${locale}\0${item.key}`), item.source, item.currentTarget);
+      const status = qeStatusOf(index.get(`${locale}\0${item.key}`), item.source, item.currentTarget, latestAnswerAt(questions, item.key, locale));
       if (status !== "unreviewed" && !options.includeReviewed) {
         alreadyReviewed++;
         continue;
@@ -336,12 +343,13 @@ export function summarizeQe(options: QeOptions): QeStatusResult {
   const store = new WraithStore(options.rootDir);
   const locales = options.locales && options.locales.length > 0 ? options.locales : store.readConfig().targetLocales;
   const index = qeIndex(options.rootDir);
+  const questions = listQuestions(options.rootDir);
   const summary: QeSummary = { total: 0, ok: 0, flagged: 0, unreviewed: 0, humanVerified: 0 };
   const flagged: QeStatusResult["flagged"] = [];
   for (const locale of locales) {
     for (const item of collectTranslated(options.rootDir, locale, options.keys)) {
       const rec = index.get(`${locale}\0${item.key}`);
-      const status = qeStatusOf(rec, item.source, item.currentTarget);
+      const status = qeStatusOf(rec, item.source, item.currentTarget, latestAnswerAt(questions, item.key, locale));
       summary.total++;
       if (status === "ok") summary.ok++;
       else if (status === "human-verified") summary.humanVerified++;

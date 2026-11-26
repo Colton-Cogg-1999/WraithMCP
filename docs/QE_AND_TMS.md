@@ -171,4 +171,15 @@ The three misses in the earlier design (dropped "E-Mail", a noun used for a butt
 
 The last row changed both the design and the model, so the comparison doesn't show which helped more. The planted errors are also blunt ones written by the evaluator. Read this as "the loop works end to end," not as an accuracy figure. Results: `eval/results/poc-qe-opus.json` and `eval/results/poc-qe-three-critic-sonnet.json`.
 
+**Behavioural trial: Context Notes, Character Limits, Open Questions.** A headless Claude Code agent with Wraith over MCP and the `localize-pr` + `qe-review` skills localized `nextjs-commerce` (63 strings) into de. The app has 20 short strings whose meaning the code settles (Open/Post/Close/Save…). We added 3 whose meaning it can't settle ("Cover", "Lead", "Drop") and 2 declared limits.
+
+- **Round 1** ($1.27, 2.8 min): 63/63 translated, `check` PASS. The agent filed **1 question covering all 3 seeded strings**, with best guesses and alternatives, and asked about **none** of the 60 others; all 20 short ambiguous ones were resolved correctly from code. Both declared limits held ("Optionen" 8/10, "Erstatten" 9/14). It wrote Context Notes for 63/63 (median 76 chars, all specific). The fresh-context QE review found 60 ok and flagged 3, the same strings as the question.
+- **Round 2**, after answering Q1 with two answers that contradicted the agent's guesses ($0.49, 42 s): exactly those two strings changed ("Titelbild" → "Hülle", "Neuheit" → "Reduziert"). The correct guess was kept, all three notes were rewritten, Q1 was resolved, and QE ended at 63/63 ok.
+
+The trial led to two fixes:
+- The reviewer no longer flags strings that already have an open question.
+- A new Answer now resets the QE verdicts of the strings it covers.
+
+Results: `eval/results/poc-trial.json`; harness: `eval/poc/trial.mjs`.
+
 **TM context (Stage 4 arms Anotm vs Afull, synthetic-app, 60 items):** both arms reached TCR 1.0, so within one batch the model is already consistent. Afull matched the project's established phrasing more closely: chrF2 97.5 vs 90.3. On items whose gold translation was in the TM the scores were 100 vs 85.4, which is expected copying. On unseeded items they were 96.0 vs 93.3. TM's real value is consistency across runs and sessions, which a single-batch test cannot show.

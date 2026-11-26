@@ -17,7 +17,7 @@ import {
 } from "../src/core/context.js";
 import { initProject } from "../src/core/init.js";
 import { prepareBatch } from "../src/core/prepare.js";
-import { prepareQeReview } from "../src/core/qe.js";
+import { prepareQeReview, submitQeVerdicts, summarizeQe } from "../src/core/qe.js";
 import { WraithStore } from "../src/core/store.js";
 
 ensureBootstrapped();
@@ -132,7 +132,7 @@ describe("Context Notes", () => {
 });
 
 describe("Open Questions", () => {
-  it("flow open → answered → resolved, surface in check, prepare and QE review", () => {
+  it("flow open → answered → resolved, surface in check, prepare and QE review", async () => {
     const dir = project({ btnSave: "Speichern", intro: "Veröffentliche dein erstes Update", "checkout.total": "Summe", "checkout.couponHint": "Gutschein?" });
     const q1 = askQuestion(dir, { keys: ["intro"], question: "Is 'Post' a verb (publish) or a noun (a social post) here?" });
     expect(q1).toMatchObject({ created: true, question: { id: "Q1", status: "open" } });
@@ -142,7 +142,12 @@ describe("Open Questions", () => {
     expect(codes(dir, "open_question").map((i) => i.key).sort()).toEqual(["checkout.total", "intro"]);
     expect(() => resolveQuestion(dir, "Q1")).toThrow(/only answered/);
 
+    // A flag given before the answer must not stick once the answer arrives (same text, new context)
+    submitQeVerdicts({ rootDir: dir, verdicts: [{ locale: "de", key: "intro", verdict: "flag", reason: "Unclear meaning: Post verb or noun?" }] });
+    expect(summarizeQe({ rootDir: dir, locales: ["de"] }).summary.flagged).toBe(1);
+    await new Promise((r) => setTimeout(r, 5));
     answerQuestion(dir, { id: "q1", answer: "Verb: it asks the user to publish their first update.", via: "cli" });
+    expect(summarizeQe({ rootDir: dir, locales: ["de"] }).summary.flagged).toBe(0);
     const item = prepareBatch({ rootDir: dir, targetLocale: "de", includeTranslated: true }).items.find((i) => i.key === "intro")!;
     expect(item.reason).toBe("question_answered");
     expect(item.questions?.[0]).toMatchObject({ id: "Q1", status: "answered", answer: expect.stringContaining("Verb") });

@@ -4,6 +4,7 @@ import { applyTranslations } from "./apply.js";
 import { runCheck } from "./check.js";
 import { prepareBatch, PreparedItem } from "./prepare.js";
 import { markHumanVerified, qeIndex, QeStatus, qeStatusOf } from "./qe.js";
+import { latestAnswerAt, listQuestions } from "./context.js";
 import { atomicWriteFileSync, resolveConfinedPath } from "./security.js";
 import { WraithStore } from "./store.js";
 import { findTmMatches, readTm, TmEntry, upsertTmEntries } from "./tm.js";
@@ -280,6 +281,7 @@ export function runTmsExport(options: TmsExportOptions): TmsExportResult {
   const config = store.readConfig();
   const layout = store.readLayout();
   const verdicts = qeIndex(options.rootDir);
+  const questions = listQuestions(options.rootDir);
   const outRel = options.outDir ?? ".wraith/exports/tms";
   const outAbs = resolveConfinedPath(store.rootDir, outRel, { label: "TMS export directory" });
   fs.mkdirSync(outAbs, { recursive: true });
@@ -300,7 +302,7 @@ export function runTmsExport(options: TmsExportOptions): TmsExportResult {
         continue;
       }
       const verdict = verdicts.get(`${locale}\0${item.key}`);
-      const qeStatus = qeStatusOf(verdict, item.source, item.currentTarget);
+      const qeStatus = qeStatusOf(verdict, item.source, item.currentTarget, latestAnswerAt(questions, item.key, locale));
       if (options.onlyFlagged && qeStatus !== "flagged") continue;
       const site = item.usageSites[0];
       const budget = layout.budgets[item.key]?.[locale];

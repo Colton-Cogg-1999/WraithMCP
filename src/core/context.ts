@@ -261,3 +261,12 @@ export function listQuestions(rootDir: string, status?: QuestionStatus | "all"):
 export function questionsFor(questions: Question[], key: string, locale?: string): Question[] {
   return questions.filter((q) => q.keys.includes(key) && (!q.locale || !locale || q.locale === locale));
 }
+
+/** Most recent Answer time for any question touching this key (ISO string), if any. */
+export function latestAnswerAt(questions: Question[], key: string, locale?: string): string | undefined {
+  let latest: string | undefined;
+  for (const q of questionsFor(questions, key, locale)) {
+    if (q.answeredAt && (!latest || q.answeredAt > latest)) latest = q.answeredAt;
+  }
+  return latest;
+}

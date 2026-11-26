@@ -1,0 +1,124 @@
+{
+  "kind": "behavioural trial (not publishable evidence)",
+  "app": "eval/synthetic/nextjs-commerce + 3 seeded ambiguous strings + 2 declared limits",
+  "locale": "de",
+  "agent": "claude -p (Claude Code headless) with Wraith MCP, localize-pr + qe-review skills",
+  "round1": {
+    "costUsd": 1.27,
+    "durationS": 167,
+    "translated": "63/63",
+    "checkOutcome": "PASS",
+    "countsByCode": {
+      "glossary_inconsistency": 9,
+      "layout_risk": 7,
+      "open_question": 3
+    },
+    "questions": [
+      {
+        "id": "Q1",
+        "keys": [
+          "extras.coverLabel",
+          "extras.dropLabel",
+          "extras.leadLabel"
+        ],
+        "status": "open",
+        "question": "In the catalog item extras (CatalogExtras), what do the labels 'Cover', 'Lead' and 'Drop' mean? They appear as a tag, a column label and a badge next to a product name with no other context. Current German guesses: Cover = cover image ('Titelbild'), Lead = lead/delivery time ('Lieferzeit'), Drop = new product release ('Neuheit'). Alternatives include Cover = protective case, Lead = sales lead or featured item, Drop = price drop."
+      }
+    ],
+    "seededAsked": [
+      "extras.coverLabel",
+      "extras.leadLabel",
+      "extras.dropLabel"
+    ],
+    "unseededAsked": [],
+    "declaredLimits": [
+      {
+        "key": "tight.btnRefund",
+        "max": 14,
+        "target": "Erstatten",
+        "chars": 9
+      },
+      {
+        "key": "tight.tabSettings",
+        "max": 10,
+        "target": "Optionen",
+        "chars": 8
+      }
+    ],
+    "notes": {
+      "written": 63,
+      "missing": []
+    },
+    "qe": {
+      "total": 63,
+      "ok": 60,
+      "flagged": 3,
+      "unreviewed": 0,
+      "humanVerified": 0
+    },
+    "flagged": [
+      {
+        "locale": "de",
+        "key": "extras.coverLabel",
+        "source": "Cover",
+        "target": "Titelbild",
+        "reason": "Unclear meaning: CatalogExtras renders 'Cover' as a bare tag next to item.name with no other context; 'Titelbild' is a guess (could be protective case/cover, insurance cover). Open question Q1 unresolved."
+      },
+      {
+        "locale": "de",
+        "key": "extras.dropLabel",
+        "source": "Drop",
+        "target": "Neuheit",
+        "reason": "Unclear meaning: 'Drop' badge has no context in code; 'Neuheit' (new drop) is a guess vs. price drop ('Preissenkung'). Open question Q1 unresolved."
+      },
+      {
+        "locale": "de",
+        "key": "extras.leadLabel",
+        "source": "Lead",
+        "target": "Lieferzeit",
+        "reason": "Unclear meaning: 'Lead' column label has no context in code (no value rendered); 'Lieferzeit' is a guess vs. sales lead or featured item. Open question Q1 unresolved."
+      }
+    ],
+    "assumptions": [
+      "tone/de: German uses formal 'Sie' throughout.",
+      "brand/de: Northstar, Northstar Commerce, Northstar Pay, PulseGrid and LedgerVault are kept untranslated; 'Northstar Help Center' is rendered descriptively as 'Northstar-Hilfecenter'.",
+      "terminology/de: Workspace kept as loanword 'Workspace'; Seat = 'Lizenz'; Invoice = 'Rechnung'.",
+      "formatting/de: tight.tabSettings uses 'Optionen' instead of 'Einstellungen'; tight.btnRefund uses the verb 'Erstatten'; tight.badgeVerified uses 'Geprüft'.",
+      "other/de: Source-side i18n issues left as-is (out of scope for translation): rich.trialEnd '{days} days' has no plural (de reads '1 Tagen' when days=1); PromoBadge hardcodes ' 20%' after promo.saveLabel; StorageQuota renders '{gb} Free' without a unit; icu.memberRole uses generic masculine role names."
+    ]
+  },
+  "round2_after_answering_Q1": {
+    "costUsd": 0.49,
+    "durationS": 42,
+    "checkOutcome": "PASS",
+    "countsByCode": {
+      "glossary_inconsistency": 9,
+      "layout_risk": 7
+    },
+    "questions": [
+      {
+        "id": "Q1",
+        "keys": [
+          "extras.coverLabel",
+          "extras.dropLabel",
+          "extras.leadLabel"
+        ],
+        "status": "resolved",
+        "question": "In the catalog item extras (CatalogExtras), what do the labels 'Cover', 'Lead' and 'Drop' mean? They appear as a tag, a column label and a badge next to a product name with no other context. Current German guesses: Cover = cover image ('Titelbild'), Lead = lead/delivery time ('Lieferzeit'), Drop = new product release ('Neuheit'). Alternatives include Cover = protective case, Lead = sales lead or featured item, Drop = price drop.",
+        "answer": "Cover is a protective phone case (an accessory). Lead is the lead time until the item ships. Drop means a price drop: the item was just reduced."
+      }
+    ],
+    "qe": {
+      "total": 63,
+      "ok": 63,
+      "flagged": 0,
+      "unreviewed": 0,
+      "humanVerified": 0
+    },
+    "extras": {
+      "coverLabel": "Hülle",
+      "leadLabel": "Lieferzeit",
+      "dropLabel": "Reduziert"
+    }
+  }
+}
