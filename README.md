@@ -218,7 +218,7 @@ Prompt: `/localize`. Agent playbooks: [`skills/`](skills/) — `i18n-prep`, `loc
 
 ## CI Quickstart
 
-**Simplest:** add the Wraith Action. It runs the gate on every PR, posts the report as a sticky comment, and records `/wraith answer Q1 …` replies. There are no model calls and no secrets. The full snippet is in [docs/GITHUB_CI.md](docs/GITHUB_CI.md#quick-start-the-wraith-action):
+**Simplest:** add the Wraith Action. The 3-step `gate` job runs on every PR and posts the report as a sticky comment (add the companion `answer` job in [docs/GITHUB_CI.md](docs/GITHUB_CI.md#quick-start-the-wraith-action) to record `/wraith answer Q1 …` replies from PR comments). There are no model calls and no secrets:
 
 ```yaml
       - uses: actions/checkout@v4

@@ -12,20 +12,32 @@ on:
   issue_comment:
     types: [created]
 permissions:
-  contents: write
-  pull-requests: write
+  contents: read
 jobs:
   gate:
     if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with: { node-version: 20 }
       - uses: Colton-Cogg-1999/WraithMCP@v1
   answer:
-    if: github.event.issue.pull_request && contains(github.event.comment.body, '/wraith answer')
+    if: >-
+      github.event_name == 'issue_comment' &&
+      github.event.issue.pull_request &&
+      contains(github.event.comment.body, '/wraith answer') &&
+      contains(fromJSON('["OWNER","MEMBER","COLLABORATOR"]'), github.event.comment.author_association)
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    concurrency:
+      group: wraith-answer-pr-${{ github.event.issue.number }}
+      cancel-in-progress: false
     steps:
       - uses: actions/checkout@v4
       - run: gh pr checkout ${{ github.event.issue.number }}
@@ -36,8 +48,8 @@ jobs:
         with: { command: answer }
 ```
 
-- **`gate`** (every PR): runs `wraith extract --fail-on-unextracted` and `wraith check`, and fails the job unless both pass. It posts the Wraith report as one sticky PR comment, updated on each push, covering what needs attention, what was caught and fixed, open questions (`Q1`…) and assumptions (`A1`…). Inputs: `working-directory`, `fail-on-unextracted`, `comment`, `wraith-version`. Outputs: `check`, `flagged`, `open-questions`.
-- **`answer`** (PR comments): a comment line `/wraith answer Q1 it's a social-media post` (or `A2 use informal du`) from an owner, member or collaborator is recorded with `wraith answer`, committed to the PR branch, and confirmed in a reply. Comment text is passed to Wraith as a plain argument, never through a shell. Then comment `/localize` (full workflow below) or run your agent locally to revisit the affected strings. Pushing to PRs from forks isn't possible with `GITHUB_TOKEN`.
+- **`gate`** (every PR): runs `wraith extract --fail-on-unextracted` and `wraith check`, and fails the job unless both pass. It writes the Wraith report to the job summary and posts/updates one sticky PR comment (on fork PRs where `GITHUB_TOKEN` is read-only, it falls back cleanly to the job summary while still enforcing the gate). Inputs: `working-directory`, `fail-on-unextracted`, `comment`, `wraith-version`. Outputs: `check`, `flagged`, `open-questions`.
+- **`answer`** (PR comments): a comment line `/wraith answer Q1 it's a social-media post` (or `A2 use informal du`) from an owner, member or collaborator is recorded with `wraith answer`, committed to the PR branch, and confirmed in a reply. Comment text is passed to Wraith as a plain argument after `--`, never through a shell. Note: commits pushed with the default `GITHUB_TOKEN` do not re-trigger `pull_request` workflows (and fork PR branches cannot be pushed with `GITHUB_TOKEN`); pass a PAT or GitHub App token via `with: { github-token: ... }` if required status checks must re-run automatically. Then comment `/localize` (full workflow below) or run your agent locally to revisit the affected strings.
 - **Wraith version:** by default the Action installs its own version of `wraith-mcp` from npm, falling back to building from its source when that version isn't published. Set `wraith-version` to pin one.
 
 ## Full workflow (visual QA + `/localize` agent)
