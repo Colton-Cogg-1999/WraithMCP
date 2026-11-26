@@ -71,6 +71,8 @@ export const ConfigSchema = z.object({
   i18nLibrary: z.string().optional(),
   paths: ConfigPathsSchema.default({}),
   layout: LayoutConfigSchema.optional(),
+  /** Declared Character Limits: key or glob pattern ("checkout.*") → max characters. Binding: exceeding fails check. */
+  charLimits: z.record(z.string(), z.number().int().positive()).optional(),
 });
 export type WraithConfig = z.infer<typeof ConfigSchema>;
 
@@ -285,6 +287,10 @@ export type CheckIssueCode =
   | "layout_risk"
   | "rtl_layout_risk"
   | "layout_budget_exceeded"
+  | "char_limit_exceeded"
+  | "char_limit_inferred"
+  | "open_question"
+  | "answer_pending"
   | "hardcoded_formatting"
   | "directional_asset"
   | "stale_source"

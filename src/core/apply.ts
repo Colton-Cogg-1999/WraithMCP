@@ -1,3 +1,4 @@
+import { setContextNotes } from "./context.js";
 import path from "node:path";
 import { detectProjectAdapter, loadLocaleCatalog, loadSourceCatalog } from "../adapters/registry.js";
 import { FormatWriteUpdate } from "../formats/types.js";
@@ -12,6 +13,8 @@ export interface ApplyTranslationInput {
   value: string;
   plurals?: Record<string, string>;
   notes?: string;
+  /** Plain-language meaning of the source string (stored as its Context Note, pinned to the source). */
+  contextNote?: string;
 }
 
 export interface ApplyOptions {
@@ -293,6 +296,10 @@ function applyTranslationsUnlocked(options: ApplyOptions): ApplyResult {
     }
     store.writeRecords(records);
     store.appendMemory(memoryAdditions);
+    const notes = validItems
+      .filter((v) => v.input.contextNote && v.input.contextNote.trim())
+      .map((v) => ({ key: v.input.key, source: v.sourceValue, note: v.input.contextNote! }));
+    if (notes.length > 0) setContextNotes(store.rootDir, notes);
 
     // Ensure targetLocale is tracked in config if config exists
     if (store.exists() && !config.targetLocales.includes(options.targetLocale)) {

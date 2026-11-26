@@ -4,6 +4,7 @@ import path from "node:path";
 import { detectProjectAdapter, loadLocaleCatalog, loadSourceCatalog } from "../adapters/registry.js";
 import { detectUnscannedFileTypes } from "../adapters/utils.js";
 import { checkGlossaryCompliance } from "./glossary.js";
+import { charCount, listQuestions, questionsFor, resolveCharLimit } from "./context.js";
 import { getLocaleConventions, getPluralCategories } from "./locales.js";
 import { findMissingAdvisoryPluralCategories, PluralValidationContext, validateTranslationString } from "./placeholders.js";
 import { evaluateDocumentForCheck, scanDocumentsInProject } from "../documents/registry.js";
@@ -148,6 +149,7 @@ export function runCheck(options: CheckOptions): CheckSummary {
   const reviews = store.readReviews();
   const prevUsage = store.readUsage();
   const layoutState = store.readLayout();
+  const questions = listQuestions(store.rootDir);
 
   const { adapter, detection } = detectProjectAdapter(
     store.rootDir,
@@ -577,24 +579,46 @@ export function runCheck(options: CheckOptions): CheckSummary {
           });
         }
 
-        // Layout width budget check (.wraith/layout.json)
-        const budget = layoutState.budgets[key]?.[locale];
-        if (budget && tgtLen > budget.budgetChars) {
+        // Character Limits: Declared (config) fail check; Inferred (rendered measurement or a length
+        // budget for constrained elements) are advisory: the agent shortens, or asks if it cannot.
+        const site0 = liveUsage.keys[key]?.sites?.[0];
+        const limit = resolveCharLimit({ config, layout: layoutState, key, locale, source: srcEntry.value, element: site0?.element });
+        const tgtChars = charCount(tgtEntry.value);
+        if (limit && tgtChars > limit.maxChars) {
+          const budget = layoutState.budgets[key]?.[locale];
+          const code = limit.kind === "declared" ? "char_limit_exceeded" : limit.basis === "rendered" ? "layout_budget_exceeded" : "char_limit_inferred";
+          const why =
+            limit.basis === "config"
+              ? "declared Character Limit (.wraith/config.json charLimits)"
+              : limit.basis === "rendered"
+                ? `width measured in the rendered UI (${budget?.maxWidthPx}px on <${budget?.element ?? "element"}>)`
+                : `inferred length budget for a <${site0?.element ?? "element"}> label`;
           issues.push({
-            code: "layout_budget_exceeded",
-            severity: "error",
+            code,
+            severity: limit.kind === "declared" ? "error" : "warning",
             locale,
             key,
-            file: budget.file,
-            line: budget.line,
-            message: `[${locale}] ${key}: translated length (${tgtLen} chars) exceeds recorded layout width budget (${budget.budgetChars} chars / ${budget.maxWidthPx}px on <${budget.element ?? "element"}>). Shorten copy, use an approved glossary abbreviation, or relax CSS and re-run \`wraith layout\`.`,
-            details: {
-              targetLength: tgtLen,
-              budgetChars: budget.budgetChars,
-              maxWidthPx: budget.maxWidthPx,
-              constraint: budget.constraint,
-            },
+            file: budget?.file ?? site0?.file,
+            line: budget?.line ?? site0?.line,
+            message: `[${locale}] ${key}: ${tgtChars} chars exceeds the ${limit.maxChars}-char ${why}. Shorten it (an approved glossary abbreviation may help, keeping the full label in title/aria-label)${limit.kind === "inferred" ? "; if it cannot be shortened without losing meaning, record an Open Question" : ""}.`,
+            details: { targetLength: tgtChars, maxChars: limit.maxChars, kind: limit.kind, basis: limit.basis, ...(budget ? { maxWidthPx: budget.maxWidthPx, constraint: budget.constraint } : {}) },
           });
+        }
+
+        // Open Questions about this string: still open, or answered but not yet reflected
+        for (const q of questionsFor(questions, key, locale)) {
+          if (q.status === "open") {
+            issues.push({ code: "open_question", severity: "warning", locale, key, message: `[${locale}] ${key}: ${q.id} is open: ${q.question}`, details: { id: q.id } });
+          } else if (q.status === "answered") {
+            issues.push({
+              code: "answer_pending",
+              severity: "warning",
+              locale,
+              key,
+              message: `[${locale}] ${key}: ${q.id} was answered ("${q.answer}"). Revisit this translation, then resolve ${q.id}.`,
+              details: { id: q.id },
+            });
+          }
         }
 
         // Staleness: source changed, context changed, manual edit divergence, & glossary-flagged records

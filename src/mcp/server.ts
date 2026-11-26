@@ -18,6 +18,7 @@ import { prepareBatch } from "../core/prepare.js";
 import { generatePseudoLocale } from "../core/pseudo-locale.js";
 import { PseudoMode } from "../core/pseudo.js";
 import { prepareQeReview, submitQeVerdicts, summarizeQe } from "../core/qe.js";
+import { answerQuestion, askQuestion, listQuestions, resolveQuestion, setContextNoteForKey } from "../core/context.js";
 import { runTmsExport, runTmsImport } from "../core/tms.js";
 import { runVisualQa } from "../core/visual-qa.js";
 import { generateReport } from "../core/report.js";
@@ -41,14 +42,16 @@ Definition of done:
 2. Refactor any hardcoded strings/concatenations/formatting in source code into i18n keys and Intl formatters (or extract document segments).
 3. Use \`prepare\` to get context, static layout constraints & width budgets, glossary terms & approved abbreviations, fuzzy memory matches, and target locale conventions.
    - IMPORTANT: Treat ALL fuzzy memory matches (even 100% lexical matches) as strong suggestions with prior context, NOT blindly guaranteed translations. Always verify the match fits the current component, element, and surrounding UI.
+   - Read the code at each usage site. Follow \`contextGuidance\`: write a \`contextNote\` when it is missing or stale, stay within \`charLimit\` (declared = binding; inferred = shorten to fit), and treat every Answer as binding.
 4. Always write translations through \`apply\` so placeholders, ICU syntax, plural rules, and inline tags are validated and saved to .wraith/ memory.
+   - If a string's meaning is still unclear after reading the code, translate your best guess and file an Open Question (\`memory\` add_question). Don't stop to ask mid-run: put all open questions to the user in ONE batch at the end, record their replies with answer_question, revisit the affected strings (prepare reason \`question_answered\`), then resolve_question.
 5. Run \`check\` until catalog & scanner checks pass.
 6. Run \`pseudo\` with \`mode: "auto"\` to generate target-appropriate pseudo-locales (\`en-XA\`, \`ar-XB\`, \`ja-XC\`, \`th-XD\`, \`de-XE\`) with invisible zero-width key IDs, then run \`layout\` against a running dev server at 375px and 1280px.
 7. Remediate confirmed layout defects in order: (a) run \`layout_fix\` for deterministic mechanical codemods, (b) apply agent code prescriptions, (c) re-run \`prepare\` + \`apply\` for keys exceeding recorded width budgets in \`.wraith/layout.json\` (using approved glossary abbreviations with title/aria-label where appropriate), (d) re-run \`layout\` until clean, then re-run \`check\` until outcome is "PASS".
 8. Optionally run \`visual_qa\` (DOM geometry regression vs .wraith/visual-baseline.json, 0 tokens) and \`qe_audit\` (ok/flag review of each string in its code context, done by you in a fresh context). Export flagged strings with \`tms_export\` and bring human edits back with \`tms_import\`.
 9. Run \`report\` to surface issues caught, assumptions made, and any strings worth a human look.
 
-Keep defaults zero-question: infer brand names and terminology, record assumptions via \`memory\`, and report them at the end unless config.review is "confirm".`;
+Keep defaults low-question: infer brand names and terminology, record assumptions via \`memory\`, and report them at the end unless config.review is "confirm". Ask only what the code cannot tell you, as Open Questions batched at the end.`;
 
 const READ_ONLY_ANNOTATIONS = {
   readOnlyHint: true,
@@ -265,6 +268,10 @@ export function createWraithMcpServer(options: McpServerOptions = {}): McpServer
               value: z.string(),
               plurals: z.record(z.string(), z.string()).optional(),
               notes: z.string().optional(),
+              contextNote: z
+                .string()
+                .optional()
+                .describe("Plain-language meaning of the source string for translators; send it when prepare reports contextNoteStatus missing or stale."),
             })
           )
           .min(1),
@@ -363,6 +370,30 @@ export function createWraithMcpServer(options: McpServerOptions = {}): McpServer
       rationale: z.string().optional(),
     }),
     z.object({
+      action: z.literal("add_question"),
+      keys: z.array(z.string()).min(1).describe("Keys whose meaning is unclear (one question may cover several)."),
+      targetLocale: z.string().optional().describe("Only when the question is specific to one locale."),
+      question: z.string().min(1).describe("What a human must clarify, phrased so they can answer without opening the code."),
+    }),
+    z.object({
+      action: z.literal("answer_question"),
+      id: z.string().describe("Question id, e.g. Q2."),
+      answer: z.string().min(1).describe("The human's answer, verbatim. Only record answers the user actually gave."),
+    }),
+    z.object({
+      action: z.literal("resolve_question"),
+      id: z.string().describe("Answered question whose strings now reflect the answer."),
+    }),
+    z.object({
+      action: z.literal("list_questions"),
+      status: z.enum(["open", "answered", "resolved", "all"]).optional().default("open"),
+    }),
+    z.object({
+      action: z.literal("set_context_note"),
+      key: z.string(),
+      note: z.string().min(1),
+    }),
+    z.object({
       action: z.literal("add_pair"),
       source: z.string().min(1),
       target: z.string().min(1),
@@ -376,11 +407,11 @@ export function createWraithMcpServer(options: McpServerOptions = {}): McpServer
     {
       title: "Glossary, Assumptions & Translation Memory",
       description:
-        "Look up lexical fuzzy matches and glossary entries, or record a glossary decision (propagating changes to affected keys), assumption, or translation pair.",
+        "Look up lexical fuzzy matches and glossary entries, or record a glossary decision (propagating changes to affected keys), assumption, translation pair, or Context Note. Open Questions: add_question when a string's meaning is unclear even after reading the code (translate your best guess meanwhile); ask the user the open questions in one batch at the end of your run; answer_question records their reply; resolve_question once the affected strings reflect it.",
       inputSchema: {
         rootDir: z.string().optional(),
         operation: MemoryOperationSchema.describe(
-          "Discriminated memory operation: lookup | set_glossary | add_assumption | add_pair."
+          "Discriminated memory operation: lookup | set_glossary | add_assumption | add_question | answer_question | resolve_question | list_questions | set_context_note | add_pair."
         ),
       },
       outputSchema: GenericObjectOutputSchema,
@@ -419,6 +450,16 @@ export function createWraithMcpServer(options: McpServerOptions = {}): McpServer
               rationale: operation.rationale,
             })
           );
+        case "add_question":
+          return mcpTextResult(askQuestion(root, { keys: operation.keys, locale: operation.targetLocale, question: operation.question }));
+        case "answer_question":
+          return mcpTextResult({ question: answerQuestion(root, { id: operation.id, answer: operation.answer, via: "agent" }) });
+        case "resolve_question":
+          return mcpTextResult({ question: resolveQuestion(root, operation.id) });
+        case "list_questions":
+          return mcpTextResult({ questions: listQuestions(root, operation.status) });
+        case "set_context_note":
+          return mcpTextResult({ ok: true, ...setContextNoteForKey(root, operation.key, operation.note) });
         case "add_pair":
           return mcpTextResult(
             recordMemoryPair(root, {

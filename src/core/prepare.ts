@@ -3,11 +3,12 @@ import { findFuzzyMatches, FuzzyMatch } from "./fuzzy.js";
 import { GlossaryHit, matchGlossaryTerms } from "./glossary.js";
 import { getLocaleConventions, LocaleConventions } from "./locales.js";
 import { reconcileMemoryWithLiveLocales } from "./memory-ops.js";
+import { charCount, CharLimit, ContextNoteStatus, contextNoteFor, listQuestions, questionsFor, readContextNotes, resolveCharLimit } from "./context.js";
 import { extractPlaceholders } from "./placeholders.js";
 import { computeContextFingerprint, WraithStore, sha256Short } from "./store.js";
 import { UsageFile, UsageSite } from "./types.js";
 
-export type PrepareReason = "missing" | "stale_source" | "context_changed" | "layout_budget_exceeded" | "requested" | "flagged";
+export type PrepareReason = "missing" | "stale_source" | "question_answered" | "context_changed" | "layout_budget_exceeded" | "char_limit_exceeded" | "requested" | "flagged";
 
 export interface PreparedLayoutInfo {
   element?: string;
@@ -34,6 +35,13 @@ export interface PreparedItem {
   advisoryPluralCategories?: Intl.LDMLPluralRule[];
   usageSites: UsageSite[];
   layout?: PreparedLayoutInfo;
+  /** Plain-language meaning of the source. "missing"/"stale": write one (apply contextNote) after reading the code. */
+  contextNote?: string;
+  contextNoteStatus: ContextNoteStatus;
+  /** Declared limits are binding; inferred ones are a budget to shorten toward. */
+  charLimit?: CharLimit;
+  /** Open Questions and Answers about this string. Answers are binding context. */
+  questions?: Array<{ id: string; status: "open" | "answered" | "resolved"; question: string; answer?: string }>;
   glossaryHits: GlossaryHit[];
   /**
    * Memory matches are provided strictly as context/suggestions, never blind auto-fills.
@@ -42,6 +50,9 @@ export interface PreparedItem {
   fuzzyMatches: PreparedMemorySuggestion[];
   comment?: string;
 }
+
+export const CONTEXT_GUIDANCE =
+  "Read the code at usageSites before translating. When contextNoteStatus is missing or stale, pass contextNote to apply: one plain-language sentence a translator could use, saying what the string means and where it appears (e.g. \"Button that saves the open document, not about saving money\"). Respect charLimit: a declared limit is binding; an inferred one is a budget, so shorten to fit and only if that loses meaning file an Open Question. Treat every Answer in questions as binding. If the meaning is still unclear after reading the code, translate your best guess and file an Open Question (memory add_question) instead of stopping; after an Answer, revisit the string and resolve the question.";
 
 export interface PrepareOptions {
   rootDir: string;
@@ -57,6 +68,7 @@ export interface PrepareResult {
   targetLocale: string;
   reviewMode: "auto" | "confirm";
   memoryGuidance: string;
+  contextGuidance: string;
   conventions: LocaleConventions;
   placeholderSyntaxes: string[];
   items: PreparedItem[];
@@ -74,6 +86,8 @@ export function prepareBatch(options: PrepareOptions): PrepareResult {
   const records = store.readRecords();
   const usage = store.readUsage();
   const layoutState = store.readLayout();
+  const contextNotes = readContextNotes(store.rootDir);
+  const allQuestions = listQuestions(store.rootDir);
 
   const { adapter, detection } = detectProjectAdapter(
     store.rootDir,
@@ -92,6 +106,7 @@ export function prepareBatch(options: PrepareOptions): PrepareResult {
       reviewMode: config.review,
       memoryGuidance:
         "Treat all fuzzyMatches (including 100% lexical matches) as strong contextual suggestions rather than guaranteed-correct auto-fills. Always verify against usageSites, surrounding strings, and component purpose.",
+      contextGuidance: CONTEXT_GUIDANCE,
       conventions,
       placeholderSyntaxes: detection.placeholderSyntaxes,
       items: [],
@@ -164,6 +179,11 @@ export function prepareBatch(options: PrepareOptions): PrepareResult {
     const targetChangedManually = Boolean(rec && tgtEntry && rec.translation !== liveSerialized);
     const baselineHash = records.sourceBaselines?.[key];
 
+    const keyQuestions = questionsFor(allQuestions, key, options.targetLocale);
+    const firstSite = liveUsage.keys[key]?.sites?.[0];
+    const charLimit = resolveCharLimit({ config, layout: layoutState, key, locale: options.targetLocale, source: srcEntry.value, element: firstSite?.element });
+    const overLimit = Boolean(charLimit && tgtEntry && charCount(tgtEntry.value) > charLimit.maxChars);
+
     let reason: PrepareReason | null = null;
     if (!tgtEntry || tgtEntry.value.trim() === "" || tgtEntry.fuzzy) {
       reason = "missing";
@@ -171,10 +191,12 @@ export function prepareBatch(options: PrepareOptions): PrepareResult {
       reason = "stale_source";
     } else if (!rec && baselineHash && baselineHash !== currentHash) {
       reason = "stale_source";
+    } else if (keyQuestions.some((q) => q.status === "answered")) {
+      reason = "question_answered";
     } else if (rec && currentFp && rec.contextFingerprint && rec.contextFingerprint !== currentFp) {
       reason = "context_changed";
-    } else if (layoutBudget && tgtEntry.value.length > layoutBudget.budgetChars) {
-      reason = "layout_budget_exceeded";
+    } else if (overLimit) {
+      reason = charLimit!.basis === "rendered" ? "layout_budget_exceeded" : "char_limit_exceeded";
     } else if (rec?.reviewStatus === "flagged") {
       reason = "flagged";
     } else if (requestedKeys || options.includeTranslated) {
@@ -257,6 +279,14 @@ export function prepareBatch(options: PrepareOptions): PrepareResult {
         : {}),
       usageSites: currentSites,
       ...(layoutInfo ? { layout: layoutInfo } : {}),
+      ...(() => {
+        const cn = contextNoteFor(contextNotes, key, srcEntry.value);
+        return { ...(cn.note ? { contextNote: cn.note } : {}), contextNoteStatus: cn.status };
+      })(),
+      ...(charLimit ? { charLimit } : {}),
+      ...(keyQuestions.length > 0
+        ? { questions: keyQuestions.map((q) => ({ id: q.id, status: q.status, question: q.question, ...(q.answer ? { answer: q.answer } : {}) })) }
+        : {}),
       glossaryHits,
       fuzzyMatches,
       comment: srcEntry.comment,
@@ -267,10 +297,12 @@ export function prepareBatch(options: PrepareOptions): PrepareResult {
   const priority: Record<PrepareReason, number> = {
     missing: 0,
     stale_source: 1,
-    layout_budget_exceeded: 2,
-    context_changed: 3,
-    flagged: 4,
-    requested: 5,
+    question_answered: 2,
+    layout_budget_exceeded: 3,
+    char_limit_exceeded: 3,
+    context_changed: 4,
+    flagged: 5,
+    requested: 6,
   };
   allCandidates.sort(
     (a, b) => priority[a.reason] - priority[b.reason] || a.key.localeCompare(b.key)
@@ -283,6 +315,7 @@ export function prepareBatch(options: PrepareOptions): PrepareResult {
     reviewMode: config.review,
     memoryGuidance:
       "Treat all fuzzyMatches (including 100% lexical matches) as strong contextual suggestions rather than guaranteed-correct auto-fills. Always verify against usageSites, surrounding strings, and component purpose.",
+    contextGuidance: CONTEXT_GUIDANCE,
     conventions,
     placeholderSyntaxes: detection.placeholderSyntaxes,
     items: slice,

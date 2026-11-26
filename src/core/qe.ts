@@ -54,7 +54,7 @@ type QeVerdictsFile = z.infer<typeof QeVerdictsFileSchema>;
 
 export const QE_REVIEW_INSTRUCTIONS = `You are reviewing translations as they will appear in the product. Work in a fresh context (a subagent if your host supports one), not the context that produced the translations.
 For each task: open the file and read how each key is actually used: the element, the surrounding UI, the neighbouring strings, what the code does when the user acts on it.
-Mark a string "flag" only if a user of this UI in the target locale would find it wrong, misleading or broken, for example: the wrong sense of the word for this UI (save money vs. save a file), meaning added, dropped, negated or inverted, a grammatical form that does not fit the element, a term that differs from how the project translates the same thing elsewhere with no contextual reason, or a conflict with a project decision or Term Base entry.
+Mark a string "flag" only if a user of this UI in the target locale would find it wrong, misleading or broken, for example: the wrong sense of the word for this UI (save money vs. save a file), meaning added, dropped, negated or inverted, a grammatical form that does not fit the element, a term that differs from how the project translates the same thing elsewhere with no contextual reason, or a conflict with a project decision, an Answer, or a Term Base entry.
 Otherwise mark it "ok". Style preferences and acceptable alternatives are "ok".
 Every flag needs a one-line reason; add suggestedFix (the full corrected target, every placeholder, ICU branch and tag preserved) when the fix is clear. If the source's meaning itself is unclear even after reading the code, flag it with a reason starting "Unclear meaning:".`;
 
@@ -67,6 +67,12 @@ export interface QeReviewString {
   target: string;
   line?: number;
   comment?: string;
+  /** Plain-language meaning recorded for the source string. */
+  contextNote?: string;
+  /** Human answers about this string: binding. */
+  answers?: Array<{ id: string; question: string; answer: string }>;
+  /** Strings with open questions are reviewed against the best guess; flag only clear errors. */
+  openQuestions?: Array<{ id: string; question: string }>;
   termBase?: Array<{ term: string; approved: string | null; doNotTranslate: boolean }>;
   /** How the same source text is translated elsewhere in the project (other keys, same locale). */
   sameSourceElsewhere?: Array<{ key: string; target: string; file?: string }>;
@@ -210,6 +216,11 @@ export function prepareQeReview(options: QeOptions & { includeReviewed?: boolean
       const str: QeReviewString = { key: item.key, source: item.source, target: item.currentTarget! };
       if (site?.line) str.line = site.line;
       if (item.comment) str.comment = item.comment;
+      if (item.contextNote && item.contextNoteStatus === "current") str.contextNote = item.contextNote;
+      const answered = (item.questions ?? []).filter((q) => q.answer);
+      if (answered.length > 0) str.answers = answered.map((q) => ({ id: q.id, question: q.question, answer: q.answer! }));
+      const open = (item.questions ?? []).filter((q) => q.status === "open");
+      if (open.length > 0) str.openQuestions = open.map((q) => ({ id: q.id, question: q.question }));
       if (item.glossaryHits.length > 0) {
         str.termBase = item.glossaryHits.map((g) => ({
           term: g.term,

@@ -120,6 +120,8 @@ flowchart TD
 | `records.json` | per key/locale source hash, context fingerprint, origin, review status | `apply`, imports |
 | `memory.jsonl` | append-only translation memory log | `apply` |
 | `assumptions.json` | recorded agent assumptions (brand, tone, sense) | `memory` |
+| `context-notes.json` | `{version:1,notes{key:{note,sourceHash,updatedAt}}}`: plain-language meaning per source string, stale when the source hash changes | `apply` (`contextNote`), `memory` set_context_note |
+| `questions.json` | `{version:1,questions[{id:"Q1",keys,locale?,question,status:open\|answered\|resolved,answer?,…}]}` | `memory` add/answer/resolve_question, `wraith answer` |
 | `reviews.json` | MQM review findings | `review --ingest` |
 | `layout.json` | per key/locale width budgets (`maxWidthPx`, `budgetChars`), last layout run | `layout` |
 | `tm.json` | `{version:1, entries:[{source,target,sourceLocale,targetLocale,key?,provenance,verifiedAt?,updatedAt}]}`; `provenance` ∈ `human-reviewed` \| `llm-generated` \| `imported`; human-reviewed outranks llm-generated in fuzzy retrieval | `apply`, `import` (XLIFF) |

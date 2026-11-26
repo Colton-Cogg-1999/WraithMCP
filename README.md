@@ -144,6 +144,8 @@ Global option: `-C, --cwd <dir>` (project root). Gates exit `0` PASS · `1` FAIL
 | `wraith layout` | rendered layout checks + codemods | `--url` `--routes` `-l` `--locale-pattern query\|prefix\|cookie` `--fix` `--dry-run` |
 | `wraith visual-qa` | geometry regression diff vs baseline | `--capture-baseline` `--base <path>` `--routes` `--locales` `--url` `--locale-pattern` `--json` |
 | `wraith qe` | ok/flag review by your agent in code context → `.wraith/qe-verdicts.json` | `--prepare` `--all` `--submit <file>` `--locales` `--json` |
+| `wraith questions` | Open Questions the agent filed about strings it couldn't interpret | `--status open\|answered\|resolved\|all` `--json` |
+| `wraith answer <id> <text>` | answer an Open Question; the agent then revisits the affected strings | |
 | `wraith review` | package / ingest cross-model MQM review | `--locale` `--output` `--ingest` |
 | `wraith escalate` | CSV/XLSX/HTML human review export / import | `--locale` `--output-dir` `--import` |
 | `wraith export` | TMS bundle: XLIFF 2.0, TMX 1.4b, TBX-Basic, screenshots | `--format xliff2` `--out` `--locales` `--only-flagged` `--include-tm` `--include-glossary` `--bundle-screenshots` |
@@ -170,6 +172,12 @@ Wraith stays model-free while verifying rendered UI layout and locale formatting
 - **Rendered checks require a running dev server and optional Playwright.** Without Playwright or a reachable `baseUrl`, `wraith layout` returns `INCONCLUSIVE` and falls back to static checks only.
 - **Character-based width budgets are approximate.** v1 converts measured element pixel width into `budgetChars` using an average glyph-width heuristic (`0.56 × fontSize`), so variable-width proportional fonts and CJK/Arabic scripts should still be re-verified via `wraith layout`.
 - **Mechanical codemods are Tailwind-first.** Automatic `--fix` rewrites target Tailwind utility classes and root HTML `dir`/`lang`; custom CSS modules, styled-components, and structural flexbox/grid refactors are emitted as agent prescriptions rather than mutated automatically.
+
+### Context Notes, Character Limits & Open Questions
+
+- **Context Notes:** the first time the agent translates a string, it writes one plain sentence saying what the string means and where it appears, for example "Button that saves the open document, not about saving money." The note is stored in `.wraith/context-notes.json`, pinned to the source text, and reused by every later translation, QE review and TMS export. If the source changes, the note is marked stale and gets rewritten.
+- **Character Limits:** you can declare them in `.wraith/config.json` (`"charLimits": {"checkout.*": 24, "nav.home": 10}`). Declared limits are binding: exceeding one fails `check`. Everything else gets an **inferred** limit: a width measured by `wraith layout` when available, otherwise a length budget for buttons, tabs, badges and similar labels based on the IBM expansion guideline (short labels may triple, longer ones grow less). Inferred limits only warn. The agent shortens to fit, and if it can't without losing meaning, it asks.
+- **Open Questions:** when a string's meaning is unclear even after reading the code, the agent translates its best guess, files a question (`Q1`, `Q2`, …) in `.wraith/questions.json`, and asks you all of them in one batch at the end of the run. Answer in chat or with `wraith answer Q2 "it's a social-media post"`. Answers are committed with the repo, so nothing is asked twice. `check` warns (`open_question`, `answer_pending`) until each affected string reflects its answer.
 
 ### Visual QA, QE & TMS
 

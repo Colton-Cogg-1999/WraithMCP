@@ -11,6 +11,7 @@ import { runLayoutCheck } from "./core/layout.js";
 import { generatePseudoLocale } from "./core/pseudo-locale.js";
 import { PseudoMode } from "./core/pseudo.js";
 import { prepareQeReview, submitQeVerdicts, summarizeQe } from "./core/qe.js";
+import { answerQuestion, listQuestions } from "./core/context.js";
 import { resolveConfinedPath } from "./core/security.js";
 import { isXliffPath, runTmsExport, runTmsImport } from "./core/tms.js";
 import { runVisualQa } from "./core/visual-qa.js";
@@ -425,6 +426,36 @@ export function createCli(): Command {
       }
       if (res.outcome === "FAIL") process.exitCode = 1;
       else if (res.outcome === "INCONCLUSIVE") process.exitCode = 2;
+    });
+
+  program
+    .command("questions")
+    .description("List Open Questions the agent filed about strings it could not interpret from context")
+    .option("--status <status>", "open | answered | resolved | all", "open")
+    .option("--json", "Output JSON", false)
+    .action((opts) => {
+      const rootDir = program.opts().cwd;
+      const qs = listQuestions(rootDir, opts.status);
+      if (opts.json) {
+        console.log(JSON.stringify({ questions: qs }, null, 2));
+        return;
+      }
+      if (qs.length === 0) console.log(`No ${opts.status === "all" ? "" : `${opts.status} `}questions.`);
+      for (const q of qs) {
+        console.log(`${q.id} [${q.status}]${q.locale ? ` (${q.locale})` : ""} ${q.question}`);
+        console.log(`   keys: ${q.keys.join(", ")}`);
+        if (q.answer) console.log(`   answer: ${q.answer}`);
+      }
+      if (opts.status === "open" && qs.length > 0) console.log(`Answer with: wraith answer <id> "<answer>"`);
+    });
+
+  program
+    .command("answer <id> <answer...>")
+    .description("Answer an Open Question; the agent then revisits the affected strings (check shows answer_pending until it does)")
+    .action((id: string, answerParts: string[]) => {
+      const rootDir = program.opts().cwd;
+      const q = answerQuestion(rootDir, { id, answer: answerParts.join(" "), via: "cli" });
+      console.log(`${q.id} answered. Affected keys: ${q.keys.join(", ")}. Ask your agent to revisit them (they now show in prepare with reason question_answered).`);
     });
 
   program
