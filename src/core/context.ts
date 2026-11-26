@@ -2,7 +2,7 @@ import { parse as parseIcu, TYPE, type MessageFormatElement } from "@formatjs/ic
 import fs from "node:fs";
 import { z } from "zod";
 import { detectProjectAdapter, loadSourceCatalog } from "../adapters/registry.js";
-import { atomicWriteFileSync } from "./security.js";
+import { atomicWriteFileSync, withWorkspaceLock } from "./security.js";
 import { sha256Short, WraithStore } from "./store.js";
 import { Assumption, LayoutFile, WraithConfig } from "./types.js";
 
@@ -59,31 +59,35 @@ export function readContextNotes(rootDir: string): ContextNotesFile {
 
 /** Store Context Notes, each pinned to the source text it describes. */
 export function setContextNotes(rootDir: string, entries: Array<{ key: string; source: string; note: string }>): number {
-  const file = readContextNotes(rootDir);
-  const now = new Date().toISOString();
-  let n = 0;
-  for (const e of entries) {
-    const note = e.note.trim();
-    if (!note) continue;
-    file.notes[e.key] = { note, sourceHash: sourceHashOf(e.source), updatedAt: now };
-    n++;
-  }
-  const sorted: ContextNotesFile["notes"] = {};
-  for (const k of Object.keys(file.notes).sort()) sorted[k] = file.notes[k];
-  writeJson(rootDir, NOTES_FILE, { version: 1, notes: sorted });
-  return n;
+  return withWorkspaceLock(rootDir, () => {
+    const file = readContextNotes(rootDir);
+    const now = new Date().toISOString();
+    let n = 0;
+    for (const e of entries) {
+      const note = e.note.trim();
+      if (!note) continue;
+      file.notes[e.key] = { note, sourceHash: sourceHashOf(e.source), updatedAt: now };
+      n++;
+    }
+    const sorted: ContextNotesFile["notes"] = {};
+    for (const k of Object.keys(file.notes).sort()) sorted[k] = file.notes[k];
+    writeJson(rootDir, NOTES_FILE, { version: 1, notes: sorted });
+    return n;
+  });
 }
 
 /** Set one Context Note by key, reading its current source text from the source catalog. */
 export function setContextNoteForKey(rootDir: string, key: string, note: string): { key: string; source: string } {
-  const store = new WraithStore(rootDir);
-  const config = store.readConfig();
-  const { adapter, detection } = detectProjectAdapter(store.rootDir, config.framework, config.paths.locales);
-  if (!adapter) throw new Error("no supported i18n setup detected");
-  const source = loadSourceCatalog(adapter, detection, config.sourceLocale).entries.get(key)?.value;
-  if (source === undefined) throw new Error(`no source string with key ${key}`);
-  setContextNotes(rootDir, [{ key, source, note }]);
-  return { key, source };
+  return withWorkspaceLock(rootDir, () => {
+    const store = new WraithStore(rootDir);
+    const config = store.readConfig();
+    const { adapter, detection } = detectProjectAdapter(store.rootDir, config.framework, config.paths.locales);
+    if (!adapter) throw new Error("no supported i18n setup detected");
+    const source = loadSourceCatalog(adapter, detection, config.sourceLocale).entries.get(key)?.value;
+    if (source === undefined) throw new Error(`no source string with key ${key}`);
+    setContextNotes(rootDir, [{ key, source, note }]);
+    return { key, source };
+  });
 }
 
 export function contextNoteFor(file: ContextNotesFile, key: string, source: string): { note?: string; status: ContextNoteStatus } {
@@ -313,26 +317,28 @@ function writeQuestions(rootDir: string, file: QuestionsFile): void {
 
 /** File an Open Question. An identical open question (same keys, locale and text) is returned instead of duplicated. */
 export function askQuestion(rootDir: string, input: { keys: string[]; locale?: string; question: string }): { question: Question; created: boolean } {
-  const file = readQuestions(rootDir);
-  const keys = [...new Set(input.keys)].sort();
-  const text = input.question.trim();
-  if (keys.length === 0 || !text) throw new Error("a question needs at least one key and some text");
-  const dup = file.questions.find(
-    (q) => q.status === "open" && q.question === text && (q.locale ?? "") === (input.locale ?? "") && q.keys.join("\0") === keys.join("\0")
-  );
-  if (dup) return { question: dup, created: false };
-  const next = file.questions.reduce((m, q) => Math.max(m, Number(q.id.slice(1))), 0) + 1;
-  const question: Question = {
-    id: `Q${next}`,
-    keys,
-    ...(input.locale ? { locale: input.locale } : {}),
-    question: text,
-    status: "open",
-    askedAt: new Date().toISOString(),
-  };
-  file.questions.push(question);
-  writeQuestions(rootDir, file);
-  return { question, created: true };
+  return withWorkspaceLock(rootDir, () => {
+    const file = readQuestions(rootDir);
+    const keys = [...new Set(input.keys)].sort();
+    const text = input.question.trim();
+    if (keys.length === 0 || !text) throw new Error("a question needs at least one key and some text");
+    const dup = file.questions.find(
+      (q) => q.status === "open" && q.question === text && (q.locale ?? "") === (input.locale ?? "") && q.keys.join("\0") === keys.join("\0")
+    );
+    if (dup) return { question: dup, created: false };
+    const next = file.questions.reduce((m, q) => Math.max(m, Number(q.id.slice(1))), 0) + 1;
+    const question: Question = {
+      id: `Q${next}`,
+      keys,
+      ...(input.locale ? { locale: input.locale } : {}),
+      question: text,
+      status: "open",
+      askedAt: new Date().toISOString(),
+    };
+    file.questions.push(question);
+    writeQuestions(rootDir, file);
+    return { question, created: true };
+  });
 }
 
 function findQuestion(file: QuestionsFile, id: string): Question {
@@ -343,28 +349,32 @@ function findQuestion(file: QuestionsFile, id: string): Question {
 
 /** Record a human's Answer. The affected strings must then be revisited and the question resolved. */
 export function answerQuestion(rootDir: string, input: { id: string; answer: string; via?: string }): Question {
-  const file = readQuestions(rootDir);
-  const q = findQuestion(file, input.id);
-  const answer = input.answer.trim();
-  if (!answer) throw new Error("an answer cannot be empty");
-  q.answer = answer;
-  q.status = "answered";
-  q.answeredAt = new Date().toISOString();
-  if (input.via) q.answeredVia = input.via;
-  delete q.resolvedAt;
-  writeQuestions(rootDir, file);
-  return q;
+  return withWorkspaceLock(rootDir, () => {
+    const file = readQuestions(rootDir);
+    const q = findQuestion(file, input.id);
+    const answer = input.answer.trim();
+    if (!answer) throw new Error("an answer cannot be empty");
+    q.answer = answer;
+    q.status = "answered";
+    q.answeredAt = new Date().toISOString();
+    if (input.via) q.answeredVia = input.via;
+    delete q.resolvedAt;
+    writeQuestions(rootDir, file);
+    return q;
+  });
 }
 
 /** The agent marks an answered question resolved once every affected string reflects the Answer. */
 export function resolveQuestion(rootDir: string, id: string): Question {
-  const file = readQuestions(rootDir);
-  const q = findQuestion(file, id);
-  if (q.status !== "answered") throw new Error(`${q.id} is ${q.status}; only answered questions can be resolved`);
-  q.status = "resolved";
-  q.resolvedAt = new Date().toISOString();
-  writeQuestions(rootDir, file);
-  return q;
+  return withWorkspaceLock(rootDir, () => {
+    const file = readQuestions(rootDir);
+    const q = findQuestion(file, id);
+    if (q.status !== "answered") throw new Error(`${q.id} is ${q.status}; only answered questions can be resolved`);
+    q.status = "resolved";
+    q.resolvedAt = new Date().toISOString();
+    writeQuestions(rootDir, file);
+    return q;
+  });
 }
 
 export function listQuestions(rootDir: string, status?: QuestionStatus | "all"): Question[] {
@@ -398,14 +408,16 @@ export function listAssumptions(rootDir: string): LabeledAssumption[] {
 }
 
 function updateAssumption(rootDir: string, label: string, fn: (a: Assumption) => void): LabeledAssumption {
-  const store = new WraithStore(rootDir);
-  const file = store.readAssumptions();
-  const idx = Number(/^A(\d+)$/i.exec(label.trim())?.[1]) - 1;
-  const a = file.assumptions[idx];
-  if (!a) throw new Error(`no assumption ${label}`);
-  fn(a);
-  store.writeAssumptions(file);
-  return { ...a, label: `A${idx + 1}` };
+  return withWorkspaceLock(rootDir, () => {
+    const store = new WraithStore(rootDir);
+    const file = store.readAssumptions();
+    const idx = Number(/^A(\d+)$/i.exec(label.trim())?.[1]) - 1;
+    const a = file.assumptions[idx];
+    if (!a) throw new Error(`no assumption ${label}`);
+    fn(a);
+    store.writeAssumptions(file);
+    return { ...a, label: `A${idx + 1}` };
+  });
 }
 
 /** A human overrides an assumption ("A3: use informal du"). The override is binding from now on. */

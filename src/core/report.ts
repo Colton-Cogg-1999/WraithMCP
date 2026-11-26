@@ -2,7 +2,7 @@ import { detectProjectAdapter, loadLocaleCatalog } from "../adapters/registry.js
 import { runCheck } from "./check.js";
 import { contextNoteFor, LabeledAssumption, latestAnswerAt, listAssumptions, listQuestions, Question, readContextNotes } from "./context.js";
 import { qeIndex, QeStatus, qeStatusOf } from "./qe.js";
-import { currentRunStart, Mitigation, mitigationsSince, readRunLog } from "./run-log.js";
+import { currentRunStart, Mitigation, mitigationsSince, normalizeSince, readRunLog } from "./run-log.js";
 import { WraithStore } from "./store.js";
 import { CheckIssue } from "./types.js";
 
@@ -73,24 +73,36 @@ const AMBIGUOUS_UI_TERMS = new Set([
   "draft", "issue", "book", "run", "match", "check", "order", "view", "file", "bill",
 ]);
 
-const esc = (s: string) => s.replace(/\|/g, "\\|").replace(/\n/g, " ");
+// Escape Markdown table/line breaks and insert zero-width joiner in @mentions so PR comments never ping GitHub users.
+const esc = (s: string) =>
+  s
+    .replace(/\|/g, "\\|")
+    .replace(/\r?\n/g, " ")
+    .replace(/@([a-zA-Z0-9_-])/g, "@\u200B$1");
 
 export function generateReport(rootDir: string, options: { since?: string } = {}): LocalizationReport {
+  const normalizedSince = normalizeSince(options.since);
   const store = new WraithStore(rootDir);
   const config = store.readConfig();
   const reviewsFile = store.readReviews();
   const usage = store.readUsage();
   const check = runCheck({ rootDir, limit: 10_000 });
   const assumptions = listAssumptions(rootDir);
-  const questions = listQuestions(rootDir).filter((q) => q.status !== "resolved");
+  const allQuestions = listQuestions(rootDir);
+  const questions = allQuestions.filter((q) => q.status !== "resolved");
   const notes = readContextNotes(rootDir);
   const verdicts = qeIndex(rootDir);
   const events = readRunLog(rootDir);
-  const runStartedAt = options.since ?? currentRunStart(events);
+  const runStartedAt = normalizedSince ?? currentRunStart(events);
+  const runStartedMs = runStartedAt ? Date.parse(runStartedAt) : undefined;
   const mitigations = mitigationsSince(events, runStartedAt);
 
   const { adapter, detection } = detectProjectAdapter(store.rootDir, config.framework, config.paths.locales);
   const srcCatalog = adapter ? loadLocaleCatalog(adapter, detection.localeFiles[config.sourceLocale] ?? [], config.sourceLocale) : null;
+  const tgtCatalogs = new Map<string, ReturnType<typeof loadLocaleCatalog> | null>();
+  for (const locale of check.targetLocales) {
+    tgtCatalogs.set(locale, adapter ? loadLocaleCatalog(adapter, detection.localeFiles[locale] ?? [], locale) : null);
+  }
   const siteOf = (key: string) => {
     const s = usage.keys[key]?.sites[0];
     return s ? `${s.file}:${s.line} (${s.component ?? s.element ?? ""})` : undefined;
@@ -109,17 +121,21 @@ export function generateReport(rootDir: string, options: { since?: string } = {}
   };
 
   for (const locale of check.targetLocales) {
-    const tgt = adapter ? loadLocaleCatalog(adapter, detection.localeFiles[locale] ?? [], locale) : null;
+    const tgt = tgtCatalogs.get(locale) ?? null;
     const source = (key: string) => srcCatalog?.entries.get(key)?.value ?? "";
     const target = (key: string) => tgt?.entries.get(key)?.value ?? "";
     const qeOf = (key: string): QeStatus =>
-      qeStatusOf(verdicts.get(`${locale}\0${key}`), source(key), tgt?.entries.get(key)?.value, latestAnswerAt(questions, key, locale));
+      qeStatusOf(verdicts.get(`${locale}\0${key}`), source(key), tgt?.entries.get(key)?.value, latestAnswerAt(allQuestions, key, locale));
     const issues = check.issues.items.filter((i) => i.locale === locale);
 
     // Translated + QE coverage
     const qeCounts: Record<QeStatus, number> = { ok: 0, flagged: 0, unreviewed: 0, "human-verified": 0 };
     if (srcCatalog && tgt) for (const key of srcCatalog.entries.keys()) if (target(key)) qeCounts[qeOf(key)]++;
-    const changed = new Set(events.filter((e) => e.type === "applied" && e.locale === locale && (!runStartedAt || e.at >= runStartedAt)).map((e) => e.key));
+    const changed = new Set(
+      events
+        .filter((e) => e.type === "applied" && e.locale === locale && (runStartedMs === undefined || Date.parse(e.at) >= runStartedMs))
+        .map((e) => e.key)
+    );
     translated.push({ locale, translated: check.metrics.translatedByLocale[locale] ?? 0, total: check.totalSourceKeys, changedThisRun: changed.size, qe: qeCounts });
 
     // Flagged: check errors on strings, then QE flags
@@ -225,9 +241,8 @@ export function generateReport(rootDir: string, options: { since?: string } = {}
     for (const q of questions) {
       const guesses = q.keys.map((k) => {
         const t = check.targetLocales.filter((l) => !q.locale || l === q.locale).map((l) => {
-          const cat = adapter ? loadLocaleCatalog(adapter, detection.localeFiles[l] ?? [], l) : null;
-          const v = cat?.entries.get(k)?.value;
-          return v ? `${l}: "${v}"` : null;
+          const v = tgtCatalogs.get(l)?.entries.get(k)?.value;
+          return v ? `${l}: "${esc(v)}"` : null;
         }).filter(Boolean);
         return `\`${k}\`${t.length ? ` (${t.join(", ")})` : ""}`;
       });

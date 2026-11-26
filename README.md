@@ -209,9 +209,9 @@ To follow up, reply with an ID: `Q1: it's a social-media post` answers a questio
 | `layout` | read-only | persists optional width budgets to `.wraith/layout.json` |
 | `visual_qa` | read-only | writes failure artifacts / baseline only when capturing |
 | `tms_export` | read-only | writes only to the explicit export dir |
-| `memory`, `review` | mutating, non-destructive | |
-| `apply`, `pseudo`, `layout_fix`, `escalate`, `import` | destructive | |
-| `qe_audit` | mutating, non-destructive | writes `qe-tasks.json` / `qe-verdicts.json`; never edits catalogs |
+| `memory`, `review` | mutating, non-destructive | writes `.wraith/glossary.json`, `assumptions.json`, `questions.json`, `context-notes.json`, `memory.json`, `reviews.json` |
+| `apply`, `pseudo`, `layout_fix`, `escalate`, `import` | destructive | edits locale catalogs / source codemods (`apply` also appends `.wraith/run-log.jsonl`) |
+| `qe_audit` | mutating, non-destructive | writes `qe-tasks.json` / `qe-verdicts.json` / `run-log.jsonl`; never edits catalogs |
 | `tms_import` | destructive | validated catalog writes + human-reviewed TM |
 
 Prompt: `/localize`. Agent playbooks: [`skills/`](skills/) — `i18n-prep`, `localize-pr`, `layout-remediation`, `qe-review`, `tms-roundtrip`, `crowdin-sync` ([docs/SKILLS.md](docs/SKILLS.md)).

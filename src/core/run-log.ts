@@ -1,5 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
+import { atomicWriteFileSync, withWorkspaceLock } from "./security.js";
 import { WraithStore } from "./store.js";
 
 /* ------------------------------------------------------------------------------------------------
@@ -36,19 +37,48 @@ export function readRunLog(rootDir: string): RunEvent[] {
   return out;
 }
 
-export function appendRunEvents(rootDir: string, events: RunEvent[]): void {
-  if (events.length === 0) return;
+export function ensureWraithGitignore(rootDir: string): void {
   const store = new WraithStore(rootDir);
   store.ensureDir();
-  const ignore = store.filePath(".gitignore");
-  if (!fs.existsSync(ignore)) fs.writeFileSync(ignore, `${LOG_FILE}\nqe-tasks.json\n`);
-  const cutoff = Date.now() - RETENTION_MS;
-  const existing = readRunLog(rootDir);
-  if (existing.length > 0 && Date.parse(existing[0].at) < cutoff) {
-    const kept = existing.filter((e) => Date.parse(e.at) >= cutoff);
-    fs.writeFileSync(logPath(rootDir), kept.map((e) => JSON.stringify(e)).join("\n") + (kept.length ? "\n" : ""));
+  const ignorePath = store.filePath(".gitignore");
+  const required = [LOG_FILE, "qe-tasks.json"];
+  if (!fs.existsSync(ignorePath)) {
+    atomicWriteFileSync(ignorePath, `${required.join("\n")}\n`);
+    return;
   }
-  fs.appendFileSync(logPath(rootDir), events.map((e) => JSON.stringify(e)).join("\n") + "\n");
+  const existing = fs.readFileSync(ignorePath, "utf8");
+  const lines = new Set(existing.split(/\r?\n/).map((l) => l.trim()));
+  const missing = required.filter((entry) => !lines.has(entry));
+  if (missing.length === 0) return;
+  const sep = existing.length === 0 || existing.endsWith("\n") ? "" : "\n";
+  atomicWriteFileSync(ignorePath, `${existing}${sep}${missing.join("\n")}\n`);
+}
+
+export function normalizeSince(since: string | undefined): string | undefined {
+  if (since === undefined) return undefined;
+  const trimmed = since.trim();
+  if (!trimmed) throw new Error('Invalid --since timestamp "": expected an ISO-8601 date or timestamp.');
+  const ms = Date.parse(trimmed);
+  if (Number.isNaN(ms)) {
+    throw new Error(`Invalid --since timestamp "${since}": expected a valid ISO-8601 date or timestamp (e.g. "2026-11-26T10:00:00Z").`);
+  }
+  return new Date(ms).toISOString();
+}
+
+export function appendRunEvents(rootDir: string, events: RunEvent[]): void {
+  if (events.length === 0) return;
+  withWorkspaceLock(rootDir, () => {
+    ensureWraithGitignore(rootDir);
+    const cutoff = Date.now() - RETENTION_MS;
+    const existing = readRunLog(rootDir);
+    if (existing.length > 0 && Date.parse(existing[0].at) < cutoff) {
+      const kept = existing.filter((e) => Date.parse(e.at) >= cutoff);
+      const nextLines = [...kept, ...events].map((e) => JSON.stringify(e)).join("\n") + "\n";
+      atomicWriteFileSync(logPath(rootDir), nextLines);
+      return;
+    }
+    fs.appendFileSync(logPath(rootDir), events.map((e) => JSON.stringify(e)).join("\n") + "\n");
+  });
 }
 
 /** Start of the current run: the first event after the last gap of more than an hour. */
@@ -73,12 +103,15 @@ export interface Mitigation {
 
 /** Every catch in the window that a later successful apply of the same string fixed. */
 export function mitigationsSince(events: RunEvent[], since?: string): Mitigation[] {
-  const inWindow = since ? events.filter((e) => e.at >= since) : events;
+  const normalizedSince = normalizeSince(since);
+  const sinceMs = normalizedSince ? Date.parse(normalizedSince) : undefined;
+  const inWindow = sinceMs !== undefined ? events.filter((e) => Date.parse(e.at) >= sinceMs) : events;
   const out: Mitigation[] = [];
   const seen = new Set<string>();
   for (const e of inWindow) {
     if (e.type !== "caught") continue;
-    const fix = inWindow.find((f) => f.type === "applied" && f.locale === e.locale && f.key === e.key && f.at > e.at);
+    const eMs = Date.parse(e.at);
+    const fix = inWindow.find((f) => f.type === "applied" && f.locale === e.locale && f.key === e.key && Date.parse(f.at) > eMs);
     if (!fix) continue;
     const id = `${e.locale}\0${e.key}\0${e.code}`;
     if (seen.has(id)) continue;
