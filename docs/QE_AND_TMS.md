@@ -59,7 +59,7 @@ Every unit carries the translator context Wraith has:
 - answered **Open Questions** (`Clarified:`)
 - the QE flag reason, the closest TM match, and any layout constraint
 
-**`--format xliff12`** writes the dialect Crowdin documents: `source.xlf` (source strings only) plus `<locale>.xlf` (with targets). Each fact is a separate `<note>`, which Crowdin shows as string context. Character Limits become `maxwidth="N" size-unit="char"`. Placeholders and tags become `<ph id="n">{name}</ph>`. Target `state` is `translated`, `needs-review-translation` (flagged in QE) or `final` (human-verified). Import accepts both 1.2 and 2.0, skips source-only files, and matches a TMS language code to your locale (`de-DE` → `de`, or by file name). See the **crowdin-sync** skill for the full Crowdin push/pull loop.
+**`--format xliff12`** writes the dialect Crowdin documents: `source.xlf` plus `<locale>.xlf` (with targets). `source.xlf` always holds every source string (it ignores `--only-flagged`, because `crowdin upload sources` removes strings missing from it) and only context that holds for every language: meaning, location, required limits and answers that aren't locale-specific. Each fact is a separate `<note>`; Crowdin shows the source file's notes as string context. Declared Character Limits become `maxwidth="N" size-unit="char"`; estimated limits stay in a note, because a TMS enforces `maxwidth` as a hard limit. Placeholders and tags become `<ph id="n">{name}</ph>`. Target `state` is `translated`, `needs-review-translation` (flagged in QE) or `final` (human-verified). Import accepts both 1.2 and 2.0, skips source-only files, and matches a TMS language code to your locale (`de-DE` → `de`, or by file name). Only approved/final units are recorded as human-verified. See the **crowdin-sync** skill for the full Crowdin push/pull loop.
 
 | File | Format |
 |---|---|
@@ -154,9 +154,8 @@ wraith import reviewed/ --format xliff
 
 1. Validates the target through the same placeholder / ICU / plural / glossary pipeline as `apply`; failing units are rejected and listed.
 2. Writes catalogs losslessly, preserving key order.
-3. Upserts `.wraith/tm.json` with `provenance: "human-reviewed"` and `verifiedAt`.
-4. Records the string as `human-verified` in `qe-verdicts.json`.
-5. Runs `check` (and `visual-qa` when `layout.baseUrl` is configured) and prints a diff summary.
+3. For units the TMS marks as reviewed (XLIFF 2.0 `state="reviewed"`/`"final"`, XLIFF 1.2 `approved="yes"` or `state="final"`): upserts `.wraith/tm.json` with `provenance: "human-reviewed"` and `verifiedAt`, and records the string as `human-verified` in `qe-verdicts.json`. Any other state (e.g. `translated`, `needs-review-translation`) is still validated and written if the text changed, but is counted as `notReviewed` and never becomes human-verified. Re-importing Wraith's own export therefore verifies nothing.
+4. Runs `check` (and `visual-qa` when `layout.baseUrl` is configured) and prints a diff summary.
 
 `tms_import` is `destructiveHint: true`. CSV / TBX / TMX / locale-file asset import is unchanged (`--format auto|csv|tbx|tmx|locales`).
 

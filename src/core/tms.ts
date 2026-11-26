@@ -4,7 +4,7 @@ import { applyTranslations } from "./apply.js";
 import { runCheck } from "./check.js";
 import { prepareBatch, PreparedItem } from "./prepare.js";
 import { markHumanVerified, qeIndex, QeStatus, qeStatusOf } from "./qe.js";
-import { latestAnswerAt, listQuestions } from "./context.js";
+import { latestAnswerAt, listQuestions, Question } from "./context.js";
 import { atomicWriteFileSync, resolveConfinedPath } from "./security.js";
 import { WraithStore } from "./store.js";
 import { findTmMatches, readTm, TmEntry, upsertTmEntries } from "./tm.js";
@@ -53,6 +53,8 @@ export interface TmsImportResult {
   unitsParsed: number;
   applied: number;
   unchanged: number;
+  /** Units imported or left unchanged without a reviewed/approved state: not recorded as human-verified. */
+  notReviewed: number;
   rejected: Array<{ key: string; locale: string; code: string; message: string }>;
   tmUpserted: number;
   qeHumanVerified: number;
@@ -262,6 +264,31 @@ function xliffState(status: QeStatus, target: string | undefined): "initial" | "
 
 /* ------------------------------- export ------------------------------------------------------ */
 
+function declaredMaxChars(item: PreparedItem): number | undefined {
+  return item.charLimit?.kind === "declared" ? item.charLimit.maxChars : undefined;
+}
+
+function locationNote(item: PreparedItem): { category: string; text: string } | undefined {
+  const site = item.usageSites[0];
+  if (!site) return undefined;
+  const where = [site.component, site.element ? `<${site.element}>` : undefined].filter(Boolean).join(" ");
+  return { category: "location", text: `${site.file}:${site.line}${where ? ` (${where})` : ""}` };
+}
+
+/** A source.xlf unit: no target, and only context that holds for every target locale. */
+function sourceUnitFor(item: PreparedItem, questions: Question[]): ExportUnit {
+  const notes: Array<{ category: string; text: string }> = [];
+  if (item.contextNote && item.contextNoteStatus === "current") notes.push({ category: "context", text: item.contextNote });
+  const loc = locationNote(item);
+  if (loc) notes.push(loc);
+  const maxChars = declaredMaxChars(item);
+  if (maxChars) notes.push({ category: "limit", text: `max ${maxChars} characters (required)` });
+  for (const q of questions) {
+    if (!q.locale && q.answer && q.keys.includes(item.key)) notes.push({ category: "answer", text: `${q.question} → ${q.answer}` });
+  }
+  return { key: item.key, source: item.source, state: "initial", maxChars, meta: {}, notes };
+}
+
 export function buildXliff2(input: {
   srcLang: string;
   trgLang: string;
@@ -396,11 +423,16 @@ export function runTmsExport(options: TmsExportOptions): TmsExportResult {
 
   for (const locale of locales) {
     const units: ExportUnit[] = [];
+    // xliff12: source.xlf is what the TMS treats as the full source set (`crowdin upload sources` removes
+    // strings missing from it), so it holds every key, ignores onlyFlagged and carries only facts that
+    // don't depend on a target locale.
+    const srcUnits: ExportUnit[] | undefined = format === "xliff12" && !sourceUnits ? [] : undefined;
     for (const item of collectItems(store.rootDir, locale)) {
       if (item.sourcePlurals) {
         skippedPluralObjectKeys++;
         continue;
       }
+      if (srcUnits) srcUnits.push(sourceUnitFor(item, questions));
       const verdict = verdicts.get(`${locale}\0${item.key}`);
       const qeStatus = qeStatusOf(verdict, item.source, item.currentTarget, latestAnswerAt(questions, item.key, locale));
       if (options.onlyFlagged && qeStatus !== "flagged") continue;
@@ -414,10 +446,8 @@ export function runTmsExport(options: TmsExportOptions): TmsExportResult {
         })[0];
       const notes: Array<{ category: string; text: string }> = [];
       if (item.contextNote && item.contextNoteStatus === "current") notes.push({ category: "context", text: item.contextNote });
-      if (site) {
-        const where = [site.component, site.element ? `<${site.element}>` : undefined].filter(Boolean).join(" ");
-        notes.push({ category: "location", text: `${site.file}:${site.line}${where ? ` (${where})` : ""}` });
-      }
+      const loc = locationNote(item);
+      if (loc) notes.push(loc);
       if (item.charLimit) {
         notes.push({
           category: "limit",
@@ -448,7 +478,8 @@ export function runTmsExport(options: TmsExportOptions): TmsExportResult {
         target: item.currentTarget,
         state: xliffState(qeStatus, item.currentTarget),
         flagged: qeStatus === "flagged",
-        maxChars: item.charLimit?.maxChars,
+        // A TMS enforces maxwidth as a hard limit, so only declared limits go there; estimates stay in the note
+        maxChars: declaredMaxChars(item),
         meta: {
           file: site?.file,
           line: site?.line,
@@ -464,10 +495,10 @@ export function runTmsExport(options: TmsExportOptions): TmsExportResult {
     }
     if (format === "xliff12") {
       // One source file for the TMS plus one bilingual file per locale (existing translations to review)
-      if (!sourceUnits) {
-        sourceUnits = units;
+      if (srcUnits) {
+        sourceUnits = srcUnits;
         const srcAbs = path.join(outAbs, "source.xlf");
-        atomicWriteFileSync(srcAbs, buildXliff12({ srcLang: config.sourceLocale, original: "source.xlf", units }));
+        atomicWriteFileSync(srcAbs, buildXliff12({ srcLang: config.sourceLocale, original: "source.xlf", units: srcUnits }));
         files.push(rel(srcAbs));
       }
       const fileAbs = path.join(outAbs, `${locale}.xlf`);
@@ -585,6 +616,11 @@ export function isXliffPath(p: string): boolean {
   return /\.(xliff|xlf)$/i.test(p);
 }
 
+/** Human sign-off states: XLIFF 2.0 `reviewed`/`final`; XLIFF 1.2 `approved="yes"`/`final` (parsed as `reviewed`). */
+export function isReviewedState(state: string): boolean {
+  return state === "reviewed" || state === "final";
+}
+
 function collectXliffFiles(rootDir: string, input: string): string[] {
   const abs = resolveConfinedPath(rootDir, input, { label: "XLIFF input" });
   if (!fs.existsSync(abs)) throw new Error(`XLIFF input not found: ${input}`);
@@ -610,6 +646,7 @@ export async function runTmsImport(options: TmsImportOptions): Promise<TmsImport
     unitsParsed: 0,
     applied: 0,
     unchanged: 0,
+    notReviewed: 0,
     rejected: [],
     tmUpserted: 0,
     qeHumanVerified: 0,
@@ -630,8 +667,7 @@ export async function runTmsImport(options: TmsImportOptions): Promise<TmsImport
     const current = new Map<string, PreparedItem>();
     for (const item of collectItems(store.rootDir, locale)) current.set(item.key, item);
 
-    const updates: Array<{ key: string; value: string }> = [];
-    const unitState = new Map<string, string>();
+    const updates: Array<{ key: string; value: string; reviewed: boolean }> = [];
     for (const u of parsed.units) {
       if (u.target === undefined || u.target === "") continue;
       const cur = current.get(u.key);
@@ -639,13 +675,16 @@ export async function runTmsImport(options: TmsImportOptions): Promise<TmsImport
         result.rejected.push({ key: u.key, locale, code: "unknown_key", message: "Key not present in source catalog" });
         continue;
       }
-      unitState.set(u.key, u.state);
+      // Only a reviewed/approved unit is human sign-off. Anything else (including Wraith's own
+      // export with state="translated") must not become human-verified or human-reviewed TM.
+      const reviewed = isReviewedState(u.state);
       if (cur.currentTarget === u.target) {
         result.unchanged++;
-        verified.push({ key: u.key, locale, source: cur.source, target: u.target });
+        if (reviewed) verified.push({ key: u.key, locale, source: cur.source, target: u.target });
+        else result.notReviewed++;
         continue;
       }
-      updates.push({ key: u.key, value: u.target });
+      updates.push({ key: u.key, value: u.target, reviewed });
       result.diff.push({ key: u.key, locale, before: cur.currentTarget ?? null, after: u.target, state: u.state });
     }
 
@@ -653,7 +692,7 @@ export async function runTmsImport(options: TmsImportOptions): Promise<TmsImport
       const applied = applyTranslations({
         rootDir: store.rootDir,
         targetLocale: locale,
-        translations: updates.map((u) => ({ ...u, notes: "TMS import (human-reviewed)" })),
+        translations: updates.map((u) => ({ key: u.key, value: u.value, notes: u.reviewed ? "TMS import (human-reviewed)" : "TMS import (not yet reviewed)" })),
         origin: "human",
       });
       const rejectedKeys = new Set(applied.errors.map((e) => e.key));
@@ -661,7 +700,8 @@ export async function runTmsImport(options: TmsImportOptions): Promise<TmsImport
       for (const u of updates) {
         if (rejectedKeys.has(u.key) || rejectedKeys.has("*")) continue;
         result.applied++;
-        verified.push({ key: u.key, locale, source: current.get(u.key)!.source, target: u.value });
+        if (u.reviewed) verified.push({ key: u.key, locale, source: current.get(u.key)!.source, target: u.value });
+        else result.notReviewed++;
       }
       result.diff = result.diff.filter((d) => d.locale !== locale || !rejectedKeys.has(d.key));
     }

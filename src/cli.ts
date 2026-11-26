@@ -605,7 +605,7 @@ export function createCli(): Command {
           console.log(JSON.stringify(res, null, 2));
         } else {
           console.log(
-            `TMS import (${res.files.length} file(s), ${res.locales.join(", ")}): ${res.applied} applied · ${res.unchanged} unchanged (verified) · ${res.rejected.length} rejected · ${res.tmUpserted} TM entries (human-reviewed) · ${res.qeHumanVerified} QE segments human-verified`
+            `TMS import (${res.files.length} file(s), ${res.locales.join(", ")}): ${res.applied} applied · ${res.unchanged} unchanged · ${res.notReviewed} not reviewed in the TMS (not verified) · ${res.rejected.length} rejected · ${res.tmUpserted} TM entries (human-reviewed) · ${res.qeHumanVerified} QE segments human-verified`
           );
           for (const d of res.diff.slice(0, 30)) {
             console.log(`  ${d.locale} ${d.key}: ${JSON.stringify(d.before)} -> ${JSON.stringify(d.after)} [${d.state}]`);

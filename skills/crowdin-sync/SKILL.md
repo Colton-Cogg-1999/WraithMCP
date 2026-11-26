@@ -34,7 +34,7 @@ MCP tool names below are the Wraith server's tools (in Claude Code: `mcp__wraith
 
 1. `check` (CLI `wraith check`) must not `FAIL`. Linguists shouldn't be fixing placeholders.
 2. Make sure strings have Context Notes (`prepare` shows `contextNoteStatus`). Write any missing ones first; they are the translator's main context.
-3. Export: `tms_export` with `format: "xliff12"`, `outDir: ".wraith/crowdin"` (CLI `wraith export --format xliff12 --out .wraith/crowdin`). Add `onlyFlagged: true` to send only strings flagged in QE review. This writes `source.xlf` (source strings with notes and limits) and `<locale>.xlf` (your current translations).
+3. Export: `tms_export` with `format: "xliff12"`, `outDir: ".wraith/crowdin"` (CLI `wraith export --format xliff12 --out .wraith/crowdin`). Add `onlyFlagged: true` to send only strings flagged in QE review; that limits the `<locale>.xlf` files only. This writes `source.xlf` (every source string, with notes and required limits; never filtered, since `crowdin upload sources` removes strings missing from it) and `<locale>.xlf` (your current translations).
 4. `crowdin upload sources`
 5. `crowdin upload translations --import-eq-suggestions`. The agent translations go up as suggestions to review. Don't pass `--auto-approve-imported`: approval is the linguist's job.
 6. Screenshots (only if the user asked for them): capture the source-locale UI with `wraith layout --url <dev server> --locales <sourceLocale>` (screenshots land in `.wraith/screenshots/`), then run `crowdin screenshot upload .wraith/screenshots/ --auto-tag --file /.wraith/crowdin/source.xlf`. Auto-tag matches strings by reading the image, so tell the user to check the tags in Crowdin.
@@ -51,5 +51,5 @@ MCP tool names below are the Wraith server's tools (in Claude Code: `mcp__wraith
 
 - Never store, print or commit Crowdin tokens.
 - Never auto-approve agent translations in Crowdin.
-- Never import a download made without `--export-only-approved`. Unreviewed strings would be recorded as human-verified.
+- Never import a download made without `--export-only-approved`. Wraith only records approved/`final` units as human-verified, but unapproved text that differs from the catalog would still be written to it.
 - Never hand-edit locale catalogs to apply Crowdin results; always go through `tms_import`.

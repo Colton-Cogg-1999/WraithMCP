@@ -6,7 +6,7 @@ import { applyTranslations } from "../src/core/apply.js";
 import { ensureBootstrapped } from "../src/core/bootstrap.js";
 import { answerQuestion, askQuestion } from "../src/core/context.js";
 import { initProject } from "../src/core/init.js";
-import { qeIndex } from "../src/core/qe.js";
+import { qeIndex, submitQeVerdicts } from "../src/core/qe.js";
 import { WraithStore } from "../src/core/store.js";
 import { fromXliff12Inline, parseXliff12, resolveImportLocale, runTmsExport, runTmsImport, toXliff12Inline } from "../src/core/tms.js";
 
@@ -101,5 +101,62 @@ describe("XLIFF 1.2 (Crowdin dialect)", () => {
     expect(imp.applied).toBe(1);
     expect(JSON.parse(fs.readFileSync(path.join(dir, "messages/de.json"), "utf8")).greeting).toBe("Hi {name}");
     expect(qeIndex(dir).get("de\0greeting")?.verdict).toBe("human-verified");
+  });
+
+  it("never verifies unapproved units: re-importing Wraith's own export or a non-final edit stays unreviewed", async () => {
+    const dir = project();
+    applyTranslations({
+      rootDir: dir,
+      targetLocale: "de",
+      translations: [
+        { key: "save", value: "Speichern" },
+        { key: "greeting", value: "Hallo {name}" },
+        { key: "terms", value: "Lies die <b>Bedingungen</b>" },
+      ],
+    });
+    runTmsExport({ rootDir: dir, format: "xliff12", outDir: ".wraith/crowdin" });
+
+    // The export itself (state="translated") imported straight back
+    const back = await runTmsImport({ rootDir: dir, input: ".wraith/crowdin", runVerification: false });
+    expect(back.rejected).toEqual([]);
+    expect(back.unchanged).toBe(3);
+    expect(back.notReviewed).toBe(3);
+    expect(back.qeHumanVerified).toBe(0);
+    expect(back.tmUpserted).toBe(0);
+    expect(qeIndex(dir).get("de\0save")).toBeUndefined();
+
+    // A linguist edit that is translated but not approved is written, but not verified
+    const de = fs.readFileSync(path.join(dir, ".wraith/crowdin/de.xlf"), "utf8").replace(">Speichern<", ">Sichern<");
+    fs.mkdirSync(path.join(dir, "in"), { recursive: true });
+    fs.writeFileSync(path.join(dir, "in/de.xlf"), de);
+    const edit = await runTmsImport({ rootDir: dir, input: "in", runVerification: false });
+    expect(edit.applied).toBe(1);
+    expect(edit.qeHumanVerified).toBe(0);
+    expect(JSON.parse(fs.readFileSync(path.join(dir, "messages/de.json"), "utf8")).save).toBe("Sichern");
+    expect(qeIndex(dir).get("de\0save")).toBeUndefined();
+  });
+
+  it("builds source.xlf from every source string, independent of locale and onlyFlagged", () => {
+    const dir = project();
+    const store = new WraithStore(dir);
+    store.writeConfig({ ...store.readConfig(), targetLocales: ["de", "fr"] });
+    fs.writeFileSync(path.join(dir, "messages/fr.json"), "{}");
+    applyTranslations({ rootDir: dir, targetLocale: "de", translations: [{ key: "save", value: "Speichern" }, { key: "greeting", value: "Hallo {name}" }] });
+    applyTranslations({ rootDir: dir, targetLocale: "fr", translations: [{ key: "save", value: "Enregistrer" }, { key: "terms", value: "Lisez les <b>conditions</b>" }] });
+    submitQeVerdicts({ rootDir: dir, verdicts: [{ locale: "fr", key: "terms", verdict: "flag", reason: "Wrong register", suggestedFix: "Lis les <b>conditions</b>" }] });
+    askQuestion(dir, { keys: ["save"], question: "Which form?", locale: "fr" });
+    answerQuestion(dir, { id: "Q1", answer: "Formal vous" });
+
+    const res = runTmsExport({ rootDir: dir, format: "xliff12", outDir: "out", onlyFlagged: true });
+    expect(res.unitsByLocale).toEqual({ de: 0, fr: 1 });
+    const source = parseXliff12(fs.readFileSync(path.join(dir, "out/source.xlf"), "utf8"));
+    expect(source.units.map((u) => u.key).sort()).toEqual(["greeting", "save", "terms"]);
+    const srcXml = fs.readFileSync(path.join(dir, "out/source.xlf"), "utf8");
+    expect(srcXml).not.toContain("Flagged in review");
+    expect(srcXml).not.toContain("Formal vous"); // locale-specific answer stays out of the shared source file
+    expect(srcXml).toContain('<trans-unit id="save" resname="save" maxwidth="10" size-unit="char">');
+    expect(srcXml).not.toMatch(/<trans-unit id="(greeting|terms)"[^>]*maxwidth/); // estimated limits never become maxwidth
+    const fr = fs.readFileSync(path.join(dir, "out/fr.xlf"), "utf8");
+    expect(fr).toContain("Flagged in review: Wrong register");
   });
 });
