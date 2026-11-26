@@ -2,6 +2,15 @@ import fs from "node:fs";
 import path from "node:path";
 import { canonicalizeLocaleTag, isRealPathWithinRoot } from "../core/security.js";
 
+function resolveRoot(rootDir: string): string {
+  const resolved = path.resolve(rootDir);
+  try {
+    return fs.realpathSync(resolved);
+  } catch {
+    return resolved;
+  }
+}
+
 export function walkFiles(
   rootDir: string,
   sourcePaths: string[],
@@ -9,7 +18,7 @@ export function walkFiles(
   extensions: Set<string>
 ): string[] {
   const ignoreSet = new Set(ignore);
-  const absRoot = path.resolve(rootDir);
+  const absRoot = resolveRoot(rootDir);
   const results: string[] = [];
   const visitedDirs = new Set<string>();
 
@@ -121,7 +130,7 @@ export function detectUnscannedFileTypes(
 } {
   const candidateExts = new Set([...UNSCANNED_TEMPLATE_EXTS, ".md", ".markdown"]);
   const found = walkFiles(rootDir, sourcePaths, ignore, candidateExts);
-  const absRoot = path.resolve(rootDir);
+  const absRoot = resolveRoot(rootDir);
   const unscannedFileTypes: Record<string, number> = {};
   const unscannedTemplateTypes: Record<string, number> = {};
 

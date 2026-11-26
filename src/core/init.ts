@@ -174,7 +174,7 @@ fi
   };
 
   return {
-    configPath: path.relative(store.rootDir, store.filePath("config.json")),
+    configPath: path.relative(store.rootDir, store.filePath("config.json")).replace(/\\/g, "/"),
     created: !existed,
     config: next,
     agentFilesUpdated,

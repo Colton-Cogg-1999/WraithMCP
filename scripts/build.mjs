@@ -7,8 +7,8 @@ const distDir = path.resolve("dist");
 fs.rmSync(distDir, { recursive: true, force: true });
 fs.mkdirSync(distDir, { recursive: true });
 
-// 1. Emit TypeScript declaration files (.d.ts)
-execFileSync(path.resolve("node_modules/.bin/tsc"), ["--emitDeclarationOnly"], {
+// 1. Emit TypeScript declaration files (.d.ts) cross-platform (no .bin/.cmd shim needed on Windows)
+execFileSync(process.execPath, [path.resolve("node_modules/typescript/bin/tsc"), "--emitDeclarationOnly"], {
   stdio: "inherit",
 });
 

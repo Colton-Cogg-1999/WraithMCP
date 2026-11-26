@@ -68,7 +68,12 @@ export class WraithStore {
   readonly dir: string;
 
   constructor(rootDir: string) {
-    this.rootDir = path.resolve(rootDir);
+    const resolved = path.resolve(rootDir);
+    try {
+      this.rootDir = fs.realpathSync(resolved);
+    } catch {
+      this.rootDir = resolved;
+    }
     this.dir = path.join(this.rootDir, WRAITH_DIR);
   }
 

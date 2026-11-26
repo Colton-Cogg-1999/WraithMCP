@@ -96,15 +96,20 @@ describe("P0 Document Batch Safety & Pre-Commit Hook", () => {
     expect(hookText).not.toContain("wraith-mcp");
 
     // Create a clean wrapper executable pointing to local dist/bin.js (built in repo)
-    const wrapper = path.join(dir, "wraith-wrapper.sh");
-    fs.writeFileSync(wrapper, `#!/usr/bin/env sh\nexec "${process.execPath}" "${path.resolve("dist/bin.js")}" "$@"\n`, { mode: 0o755 });
-    fs.chmodSync(wrapper, 0o755);
+    const isWin = process.platform === "win32";
+    const wrapper = path.join(dir, isWin ? "wraith-wrapper.cmd" : "wraith-wrapper.sh");
+    if (isWin) {
+      fs.writeFileSync(wrapper, `@echo off\r\n"${process.execPath}" "${path.resolve("dist/bin.js")}" %*\r\n`);
+    } else {
+      fs.writeFileSync(wrapper, `#!/usr/bin/env sh\nexec "${process.execPath}" "${path.resolve("dist/bin.js")}" "$@"\n`, { mode: 0o755 });
+      fs.chmodSync(wrapper, 0o755);
+    }
 
     execFileSync("git", ["add", "package.json", "messages", "src", ".wraith"], { cwd: dir, stdio: "pipe" });
     execFileSync("git", ["commit", "-m", "test clean commit"], {
       cwd: dir,
       stdio: "pipe",
-      env: { ...process.env, WRAITH_BIN: wrapper },
+      env: { ...process.env, WRAITH_BIN: wrapper.replace(/\\/g, "/") },
     });
   });
 });

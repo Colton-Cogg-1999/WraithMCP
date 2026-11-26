@@ -5,9 +5,20 @@ import { describe, expect, it } from "vitest";
 import { applyTranslations, prepareBatch, runCheck, scanProject } from "../../src/index.js";
 import { init, project, read } from "../helpers.js";
 
-function msgfmtCheck(file: string): string {
+const hasMsgfmt = (() => {
   try {
-    execFileSync("msgfmt", ["--check", "-o", "/dev/null", file], { stdio: "pipe" });
+    execFileSync("msgfmt", ["--version"], { stdio: "pipe" });
+    return true;
+  } catch {
+    return false;
+  }
+})();
+
+function msgfmtCheck(file: string): string {
+  if (!hasMsgfmt) return "";
+  try {
+    const nullOut = process.platform === "win32" ? "NUL" : "/dev/null";
+    execFileSync("msgfmt", ["--check", "-o", nullOut, file], { stdio: "pipe" });
     return "";
   } catch (e: any) {
     return String(e.stderr ?? e.message);

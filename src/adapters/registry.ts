@@ -76,7 +76,13 @@ export function detectProjectAdapter(
   frameworkOverride?: string,
   localesPathOverride?: string
 ): { adapter: ScannerAdapter | null; detection: FrameworkDetection } {
-  const absRoot = path.resolve(rootDir);
+  const resolvedRoot = path.resolve(rootDir);
+  let absRoot = resolvedRoot;
+  try {
+    absRoot = fs.realpathSync(resolvedRoot);
+  } catch {
+    absRoot = resolvedRoot;
+  }
 
   if (frameworkOverride && frameworkOverride !== "auto" && frameworkOverride !== "unknown") {
     const forced = adapters.find((a) =>

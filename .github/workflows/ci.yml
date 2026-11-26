@@ -32,6 +32,10 @@ jobs:
           node-version: ${{ matrix.node }}
           cache: npm
 
+      - name: Install gettext (msgfmt) on Ubuntu
+        if: matrix.os == 'ubuntu-latest'
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq gettext
+
       - run: npm ci
 
       - name: Typecheck
