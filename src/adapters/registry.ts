@@ -5,7 +5,9 @@ import { LocaleEntry } from "../formats/types.js";
 import { AndroidAdapter } from "./android.js";
 import { AstroAdapter } from "./astro.js";
 import { DjangoAdapter } from "./django.js";
+import { ElectronAdapter } from "./electron.js";
 import { FlutterAdapter } from "./flutter.js";
+import { IosAdapter } from "./ios.js";
 import { RailsAdapter } from "./rails.js";
 import { ReactNextAdapter } from "./react.js";
 import { SvelteKitAdapter } from "./svelte.js";
@@ -18,8 +20,10 @@ const adapters: ScannerAdapter[] = [
   new VueNuxtAdapter(),
   new SvelteKitAdapter(),
   new AstroAdapter(),
+  new ElectronAdapter(),
   new FlutterAdapter(),
   new AndroidAdapter(),
+  new IosAdapter(),
   new RailsAdapter(),
   new DjangoAdapter(),
 ];

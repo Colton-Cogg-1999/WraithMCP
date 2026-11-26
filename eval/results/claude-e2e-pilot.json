@@ -1,0 +1,960 @@
+{
+  "generatedAt": "2026-11-26T20:34:52.929Z",
+  "benchmark": "claude-e2e-pilot-de-ar",
+  "model": "sonnet",
+  "locales": [
+    "de",
+    "ar"
+  ],
+  "totalSourceKeys": 63,
+  "baselineRawJson": {
+    "wallS": 52.8,
+    "telemetry": {
+      "model": "sonnet",
+      "numTurns": 3,
+      "durationMs": 52841,
+      "totalCostUsd": 0.13253120000000002,
+      "inputTokens": 6,
+      "cacheReadInputTokens": 67412,
+      "cacheCreationInputTokens": 9692,
+      "outputTokens": 8701,
+      "isError": false,
+      "subtype": "success",
+      "resultText": "I wrote `messages/de.json` and `messages/ar.json`. A script check found that both have the same 63 keys as the English file, in the same order. It also found matching placeholders, number and date formats, `=0` cases and inline tags, and balanced braces. I didn't run them through a real ICU parser or check them in your UI, and a native speaker hasn't reviewed them.\n\n**How I handled the translations**\n- **Repeated English words:** I used the key names to pick each meaning. For example, `pricing.freeTag` means no cost (*Kostenlos* / مجاني), while `storage.freeTag` means available space (*Frei* / متاح). I did the same for \"Save\", \"Charge\", \"Sign\", \"Post\", \"Back\", \"Archive\" and \"Open\".\n- **Plurals:** Arabic has all six plural forms, plus `=0` where the English has it. The \"one\" and \"two\" forms usually spell out the number in words instead of using `#`.\n- **Rankings:** German and Arabic don't need English's \"st/nd/rd/th\" variants, so each uses only `other`. German shows \"5. Platz\".\n- **Names and terms:** Northstar, Northstar Commerce, Northstar Pay, PulseGrid and LedgerVault stay in English. German uses formal *Sie*, with *Workspace*, *Rechnung* (Invoice) and *Platz* (Seat). Arabic uses مساحة العمل, فاتورة and مقعد. If these are official product terms, or you sell \"Seats\" as licences, check them against your glossary.\n\n**Please confirm these guesses**, since the key names don't settle the meaning:\n\n| Key | What I assumed | If it means something else |\n|---|---|---|\n| `catalog.orderLabel` | Sort order (*Reihenfolge*) | A purchase order would be *Bestellung* |\n| `branch.closeBadge` | The branch is nearby (*In der Nähe*) | \"Closed\" or \"closing\" needs different wording |\n| `billing.chargeHeading` | An amount billed (*Belastung* / الرسوم) | A fee would be *Gebühr* in German |\n| `extras.coverLabel` | Cover image | It could mean insurance cover or the verb \"to cover\" |\n| `extras.leadLabel` | A sales lead (Arabic means \"potential customer\") | It could mean a team lead or lead text |\n| `extras.dropLabel` | The drag-and-drop action | It could mean a product release or a decrease |\n\nThe three `extras` labels have almost no context, so they're the least reliable.\n\n**Layout and grammar**\n- **Short labels:** I used *Optionen* instead of the more usual *Einstellungen* for \"Settings\", and *Erstatten* for \"Issue refund\", to save space. I didn't have any length limits, so use *Einstellungen* if it fits.\n- **Trial message:** `{days}` has no plural rule in the English. German will read wrong when it's 1 (*in 1 Tagen*). I worded the Arabic as \"days remaining: {days}\" so it works with any number. To fix the German properly, add a plural rule to the English message and both translations.\n- **Fixed formats:** `promoThreshold` assumes `{discount}` is a plain number and `{minTotal}` is already formatted for the user's language. Amounts stay in USD, as in the English."
+    },
+    "checkOutcome": "FAIL",
+    "checkErrorCount": 1,
+    "checkWarningCount": 39,
+    "countsByCode": {
+      "dnt_violation": 1,
+      "char_limit_inferred": 1,
+      "glossary_inconsistency": 24,
+      "layout_risk": 7,
+      "length_expansion_risk": 5,
+      "rtl_layout_risk": 1,
+      "untranslated": 1
+    },
+    "renderedLayoutOutcome": "FAIL",
+    "renderedLayoutFindingsTotal": 20,
+    "renderedLayoutFindingsTargetLocales": 5,
+    "renderedByType": {
+      "horizontal_overflow": 4,
+      "clipped_text": 12,
+      "dir_lang_mismatch": 4
+    },
+    "translations": {
+      "de": {
+        "hours.openBadge": "Geöffnet",
+        "invoice.openAction": "Öffnen",
+        "community.postHeading": "Beitrag",
+        "composer.postAction": "Posten",
+        "checkout.orderLabel": "Bestellung",
+        "catalog.orderLabel": "Reihenfolge",
+        "modal.closeButton": "Schließen",
+        "branch.closeBadge": "In der Nähe",
+        "pricing.freeTag": "Kostenlos",
+        "storage.freeTag": "Frei",
+        "profile.saveButton": "Speichern",
+        "promo.saveLabel": "Sparen",
+        "wizard.backButton": "Zurück",
+        "warranty.backPromise": "Wir stehen zwei Jahre lang hinter jedem Einkauf.",
+        "billing.chargeHeading": "Belastung",
+        "device.chargeHeading": "Aufladen",
+        "contract.signAction": "Unterschreiben",
+        "storefront.signNotice": "Beachten Sie das Schild an der Abholtheke.",
+        "inbox.archiveAction": "Archivieren",
+        "docs.archiveHeading": "Archiv",
+        "brand.welcome": "Willkommen bei Northstar Commerce",
+        "brand.payCta": "Schneller bezahlen mit Northstar Pay",
+        "brand.analyticsDesc": "PulseGrid erfasst die Checkout-Conversion live und ohne Cookies.",
+        "brand.auditExport": "Exportieren Sie signierte Steuerunterlagen nach LedgerVault.",
+        "brand.footerNote": "Bereitgestellt von Northstar und PulseGrid.",
+        "brand.vaultSync": "LedgerVault hat Ihren neuesten Beleg synchronisiert.",
+        "glossary.workspaceCreate": "Erstellen Sie einen neuen Workspace für Ihr Einzelhandelsteam.",
+        "glossary.workspaceSwitch": "Workspace wechseln",
+        "glossary.invoiceDownload": "PDF-Rechnung herunterladen",
+        "glossary.invoicePaid": "Diese Rechnung wurde pünktlich bezahlt.",
+        "glossary.seatAssign": "Weisen Sie einem neuen Teammitglied einen Platz zu.",
+        "glossary.seatLimit": "Ihr Workspace enthält einen kostenlosen Platz.",
+        "icu.cartItems": "{count, plural, one {# Artikel im Warenkorb} other {# Artikel im Warenkorb}}",
+        "icu.unreadAlerts": "{count, plural, =0 {Keine ungelesenen Benachrichtigungen} one {# ungelesene Benachrichtigung} other {# ungelesene Benachrichtigungen}}",
+        "icu.seatsRemaining": "{count, plural, one {Noch # Team-Platz verfügbar} other {Noch # Team-Plätze verfügbar}}",
+        "icu.rankOrdinal": "{rank, selectordinal, other {#.}} Platz im regionalen Vertrieb",
+        "icu.memberRole": "{role, select, owner {Workspace-Inhaber} admin {Administrator} billing {Abrechnungsverantwortlicher} other {Teammitglied}}",
+        "icu.orderPipeline": "{status, select, pending {{count, plural, one {# ausstehende Bestellung} other {# ausstehende Bestellungen}}} shipped {{count, plural, one {# versendete Bestellung} other {# versendete Bestellungen}}} other {Keine aktiven Bestellungen}}",
+        "icu.totalDue": "Fälliger Gesamtbetrag: {amount, number, ::currency/USD}",
+        "icu.renewalDate": "Das Abonnement verlängert sich am {date, date, medium}.",
+        "icu.promoThreshold": "{discount} % Rabatt auf Bestellungen über {minTotal}",
+        "icu.ticketAssign": "{actor} hat Ticket {ticket} an {assignee} zugewiesen.",
+        "rich.termsAccept": "Wenn Sie fortfahren, stimmen Sie den <link>Nutzungsbedingungen</link> zu.",
+        "rich.deleteWarn": "Diese Aktion ist <b>endgültig</b> und kann nicht rückgängig gemacht werden.",
+        "rich.shippingFast": "Bestellungen, die vor <strong>15:00 Uhr</strong> eingehen, werden am selben Tag versendet.",
+        "rich.helpLink": "Brauchen Sie Hilfe bei der Abrechnung? Besuchen Sie das <link>Northstar-Hilfezentrum</link>.",
+        "rich.backupNotice": "Automatische Snapshots werden alle <codeTag>24h</codeTag> in <b>LedgerVault</b> gespeichert.",
+        "rich.trialEnd": "Ihre Testphase endet in <strong>{days} Tagen</strong>. <link>Jetzt upgraden</link>, damit PulseGrid aktiv bleibt.",
+        "tight.tabOverview": "Übersicht",
+        "tight.tabSettings": "Optionen",
+        "tight.tabBilling": "Abrechnung",
+        "tight.btnRefund": "Erstatten",
+        "tight.btnFilters": "Filter löschen",
+        "tight.badgeVerified": "Geprüft",
+        "general.emptyInbox": "Sie sind auf dem neuesten Stand. Neue Kundennachrichten und Auszahlungsmitteilungen werden hier angezeigt.",
+        "general.networkError": "Das Zahlungsgateway ist nicht erreichbar. Bitte prüfen Sie Ihre Verbindung und versuchen Sie es erneut.",
+        "general.hoursSubtitle": "Mo–Fr 9:00–18:00 Uhr Ortszeit. Die Öffnungszeiten an Feiertagen können je nach Filiale abweichen.",
+        "general.batteryTip": "Lassen Sie das Kartenlesegerät über Nacht in der Ladestation, damit der Akku in gutem Zustand bleibt.",
+        "general.profileSaved": "Ihre Kontodaten wurden auf allen aktiven Geräten aktualisiert.",
+        "general.exportHint": "Exporte enthalten einzeln aufgeführte Steuern, Rückerstattungen und Abrechnungszeitstempel in UTC.",
+        "extras.coverLabel": "Titelbild",
+        "extras.leadLabel": "Lead",
+        "extras.dropLabel": "Ablegen"
+      },
+      "ar": {
+        "hours.openBadge": "مفتوح",
+        "invoice.openAction": "فتح",
+        "community.postHeading": "منشور",
+        "composer.postAction": "نشر",
+        "checkout.orderLabel": "الطلب",
+        "catalog.orderLabel": "الترتيب",
+        "modal.closeButton": "إغلاق",
+        "branch.closeBadge": "قريب",
+        "pricing.freeTag": "مجاني",
+        "storage.freeTag": "متاح",
+        "profile.saveButton": "حفظ",
+        "promo.saveLabel": "وفّر",
+        "wizard.backButton": "رجوع",
+        "warranty.backPromise": "نضمن كل عملية شراء لمدة عامين.",
+        "billing.chargeHeading": "الرسوم",
+        "device.chargeHeading": "الشحن",
+        "contract.signAction": "توقيع",
+        "storefront.signNotice": "راجع اللافتة عند منضدة الاستلام.",
+        "inbox.archiveAction": "أرشفة",
+        "docs.archiveHeading": "الأرشيف",
+        "brand.welcome": "مرحبًا بك في Northstar Commerce",
+        "brand.payCta": "ادفع بسرعة أكبر باستخدام Northstar Pay",
+        "brand.analyticsDesc": "يتتبّع PulseGrid معدل التحويل عند الدفع مباشرةً دون ملفات تعريف الارتباط.",
+        "brand.auditExport": "صدّر السجلات الضريبية الموقّعة إلى LedgerVault.",
+        "brand.footerNote": "مدعوم من Northstar وPulseGrid.",
+        "brand.vaultSync": "زامَنَ LedgerVault أحدث إيصال لك.",
+        "glossary.workspaceCreate": "أنشئ مساحة عمل جديدة لفريق البيع بالتجزئة لديك.",
+        "glossary.workspaceSwitch": "تبديل مساحة العمل",
+        "glossary.invoiceDownload": "تنزيل الفاتورة بصيغة PDF",
+        "glossary.invoicePaid": "دُفعت هذه الفاتورة في موعدها.",
+        "glossary.seatAssign": "خصّص مقعدًا لزميل جديد في الفريق.",
+        "glossary.seatLimit": "تتضمن مساحة العمل الخاصة بك مقعدًا مجانيًا واحدًا.",
+        "icu.cartItems": "{count, plural, zero {لا توجد عناصر في السلة} one {عنصر واحد في السلة} two {عنصران في السلة} few {# عناصر في السلة} many {# عنصرًا في السلة} other {# عنصر في السلة}}",
+        "icu.unreadAlerts": "{count, plural, =0 {لا توجد تنبيهات غير مقروءة} zero {# تنبيه غير مقروء} one {تنبيه واحد غير مقروء} two {تنبيهان غير مقروءين} few {# تنبيهات غير مقروءة} many {# تنبيهًا غير مقروء} other {# تنبيه غير مقروء}}",
+        "icu.seatsRemaining": "{count, plural, zero {لم يتبقَّ أي مقعد للفريق} one {تبقّى مقعد واحد للفريق} two {تبقّى مقعدان للفريق} few {تبقّت # مقاعد للفريق} many {تبقّى # مقعدًا للفريق} other {تبقّى # مقعد للفريق}}",
+        "icu.rankOrdinal": "المرتبة {rank, selectordinal, other {#}} في المبيعات الإقليمية",
+        "icu.memberRole": "{role, select, owner {مالك مساحة العمل} admin {مسؤول} billing {مدير الفوترة} other {عضو في الفريق}}",
+        "icu.orderPipeline": "{status, select, pending {{count, plural, zero {لا توجد طلبات معلّقة} one {طلب معلّق واحد} two {طلبان معلّقان} few {# طلبات معلّقة} many {# طلبًا معلّقًا} other {# طلب معلّق}}} shipped {{count, plural, zero {لا توجد طلبات مشحونة} one {طلب مشحون واحد} two {طلبان مشحونان} few {# طلبات مشحونة} many {# طلبًا مشحونًا} other {# طلب مشحون}}} other {لا توجد طلبات نشطة}}",
+        "icu.totalDue": "إجمالي المبلغ المستحق: {amount, number, ::currency/USD}",
+        "icu.renewalDate": "يتجدد الاشتراك في {date, date, medium}.",
+        "icu.promoThreshold": "خصم {discount}% على الطلبات التي تتجاوز {minTotal}",
+        "icu.ticketAssign": "أسند {actor} التذكرة {ticket} إلى {assignee}.",
+        "rich.termsAccept": "بالمتابعة، فإنك توافق على <link>شروط الخدمة</link>.",
+        "rich.deleteWarn": "هذا الإجراء <b>نهائي</b> ولا يمكن التراجع عنه.",
+        "rich.shippingFast": "تُشحن الطلبات المقدَّمة قبل <strong>3:00 م</strong> في اليوم نفسه.",
+        "rich.helpLink": "هل تحتاج إلى مساعدة في الفوترة؟ تفضّل بزيارة <link>مركز مساعدة Northstar</link>.",
+        "rich.backupNotice": "تُخزَّن اللقطات التلقائية في <b>LedgerVault</b> كل <codeTag>24h</codeTag>.",
+        "rich.trialEnd": "الأيام المتبقية على انتهاء فترتك التجريبية: <strong>{days}</strong>. <link>قم بالترقية الآن</link> لإبقاء PulseGrid نشطًا.",
+        "tight.tabOverview": "نظرة عامة",
+        "tight.tabSettings": "الإعدادات",
+        "tight.tabBilling": "الفوترة",
+        "tight.btnRefund": "رد المبلغ",
+        "tight.btnFilters": "مسح الفلاتر",
+        "tight.badgeVerified": "موثّق",
+        "general.emptyInbox": "اطّلعت على كل جديد. ستظهر هنا رسائل العملاء الجديدة وإشعارات المدفوعات المحوّلة إليك.",
+        "general.networkError": "تعذّر علينا الوصول إلى بوابة الدفع. يُرجى التحقق من اتصالك والمحاولة مرة أخرى.",
+        "general.hoursSubtitle": "من الاثنين إلى الجمعة، 9:00 ص – 6:00 م بالتوقيت المحلي. قد تختلف ساعات العمل في العطلات حسب الفرع.",
+        "general.batteryTip": "اترك قارئ البطاقات على قاعدته طوال الليل للحفاظ على سلامة البطارية بالكامل.",
+        "general.profileSaved": "تم تحديث تفاصيل حسابك على جميع الأجهزة النشطة.",
+        "general.exportHint": "تتضمن ملفات التصدير تفاصيل الضرائب والمبالغ المستردة والطوابع الزمنية للتسوية بالتوقيت العالمي المنسق (UTC).",
+        "extras.coverLabel": "الغلاف",
+        "extras.leadLabel": "عميل محتمل",
+        "extras.dropLabel": "إفلات"
+      }
+    }
+  },
+  "wraithClaude": {
+    "preflightBudgetsRecorded": 7,
+    "codemodsApplied": {
+      "filesModified": [
+        "src/app/layout.tsx",
+        "src/components/HeaderNav.tsx",
+        "src/components/InvoiceActions.tsx",
+        "src/components/SortToolbar.tsx",
+        "src/components/WarrantyCard.tsx"
+      ],
+      "totalChanges": 10
+    },
+    "round1": {
+      "translatorWallS": 89.7,
+      "translatorTelemetry": {
+        "model": "sonnet",
+        "numTurns": 18,
+        "durationMs": 89653,
+        "totalCostUsd": 0.5021817000000001,
+        "inputTokens": 16,
+        "cacheReadInputTokens": 357877,
+        "cacheCreationInputTokens": 80903,
+        "outputTokens": 14275,
+        "isError": false,
+        "subtype": "success",
+        "resultText": "I translated all 63 keys into German and Arabic, and `check` now returns **PASS**: 0 errors and no `char_limit_inferred` warnings. I stopped after Step 3, so the translations haven't had the quality review yet. That's for the separate QE subagent.\n\n**How the run went**\n- I read the components under `src/components/`, and all 63 keys got a context note, sent with the German batch.\n- All German translations were accepted on the first try.\n- Arabic had one rejection, on `brand.footerNote`. Attaching \"and\" (و) directly to \"PulseGrid\" made the check treat the brand name as altered. Adding a space fixed it.\n- I ran `check` without a language filter, which covers both `de` and `ar`. It doesn't prove the wording is accurate or sounds natural, and I didn't run any visual layout test.\n\n**36 warnings remain**\n\n| Warnings | Count | What they mean |\n|---|---|---|\n| Inconsistent term translations | 16 | These look intentional. Words like Open, Save, Charge and Order mean different things in different components. |\n| Tight layout in the code | 7 | The components limit width or prevent line wrapping, so check these on screen. |\n| Much longer than the English | 4 | These are Arabic plural messages, where the length includes all the plural forms, not just the one displayed. |\n| Open question | 6 | Q1 below, counted for three keys in two languages. |\n| Same as the English | 3 | German keeps \"Cover\", \"Lead\" and \"Drop\" until Q1 is answered. |\n\n**Open question**\n- **Q1** (`extras.coverLabel`, `extras.leadLabel`, `extras.dropLabel`): the code shows only that these are a tag, a column label and a badge next to a catalog item. What does each one mean?\n  - My guesses are cover image, sales lead and new product release. Arabic spells out these meanings, while German uses the English words.\n  - You can reply with \"Q1: …\".\n\n**Assumptions recorded**\n- **Tone:** German uses the formal \"Sie\". Arabic uses Modern Standard Arabic, addresses the user in the generic masculine and uses Western digits.\n- **German Settings tab:** it says \"Optionen\" because \"Einstellungen\" is over the 10-character limit.\n- **Other short German labels:** \"Issue refund\" is \"Erstatten\" and \"Verified\" is \"Geprüft\".\n- **Trial message:** `{days}` has no plural forms in the English source, so the German and Arabic wording won't be grammatical for every number. German times use the 24-hour format, such as \"15:00 Uhr\".\n- **Arabic wording:** besides the footer spacing, \"Create a new Workspace\" says \"*the* new workspace\" so the required glossary term stays intact. A native reviewer should check whether that sounds natural.\n\n**Source code issue:** `PromoBadge.tsx` puts a fixed \"20%\" right after the translated \"Save\". Translators therefore can't change the word order or how the percentage is formatted. I didn't change any source code."
+      },
+      "qeSubagentWallS": 61.7,
+      "qeSubagentTelemetry": {
+        "model": "sonnet",
+        "numTurns": 8,
+        "durationMs": 61667,
+        "totalCostUsd": 0.3348212,
+        "inputTokens": 16,
+        "cacheReadInputTokens": 285752,
+        "cacheCreationInputTokens": 51266,
+        "outputTokens": 10115,
+        "isError": false,
+        "subtype": "success",
+        "resultText": "## QE review: PASS for `de` and `ar`\n\nAll 126 strings (63 per locale) are marked `ok`. The final status check shows 0 flagged, 0 unreviewed and 0 human-verified. All verdicts were accepted with the fingerprints from `prepare`. I didn't edit any catalogs.\n\nI read all 23 files in `src/components/` and checked the strings against the project decisions, term base entries and same-source translations in the review tasks. The `prepare` response was cut off, so I read the last Arabic tasks from `.wraith/qe-tasks.json`.\n\n- **Same English word, different meaning:** words such as \"Charge\", \"Order\", \"Post\", \"Archive\", \"Open\", \"Close\", \"Save\" and \"Free\" are translated differently where needed. Each translation fits how its component uses the word.\n- **Open question Q1 is still unanswered:** this covers \"Cover\", \"Lead\" and \"Drop\" in `CatalogExtras.tsx`. German keeps all three in English, while Arabic translates them using the current guesses (cover image or book cover, sales lead, new release). Their `ok` means I found no other errors, not that the intended meaning is confirmed. Once someone answers Q1, check these six strings again.\n- **Choices covered by project decisions:** these include \"Optionen\" for the \"Settings\" tab (A2), the German short forms (A3), the fixed noun form after `{days}` (A4) and the definite \"مساحة العمل الجديدة\" for \"a new Workspace\" (A5). I didn't flag them.\n\nThis was a review of the text and code only. I didn't check the rendered layout or whether text fits the narrow buttons and tabs."
+      },
+      "qeActionableFlagsFixed": 0,
+      "fixPassTelemetry": null,
+      "reReviewTelemetry": null,
+      "checkOutcome": "PASS",
+      "checkErrorCount": 0,
+      "countsByCode": {
+        "glossary_inconsistency": 16,
+        "layout_risk": 7,
+        "length_expansion_risk": 4,
+        "open_question": 6,
+        "untranslated": 3
+      },
+      "contextNotesWritten": 63,
+      "questionsAsked": [
+        {
+          "id": "Q1",
+          "keys": [
+            "extras.coverLabel",
+            "extras.dropLabel",
+            "extras.leadLabel"
+          ],
+          "question": "Three short labels appear next to a catalog item: 'Cover' (a tag), 'Lead' (a column label) and 'Drop' (a badge). What does each mean? For example: Cover = cover image, book cover or insurance coverage; Lead = sales lead, person in charge or lead time; Drop = new product release, price drop or a remove/discard action. Current guesses are cover image, sales lead and new product release.",
+          "status": "open",
+          "askedAt": "2026-11-26T20:31:02.009Z"
+        }
+      ],
+      "seededAsked": [
+        "extras.coverLabel",
+        "extras.leadLabel",
+        "extras.dropLabel"
+      ],
+      "unseededAsked": [],
+      "qeSummary": {
+        "total": 126,
+        "ok": 126,
+        "flagged": 0,
+        "unreviewed": 0,
+        "humanVerified": 0
+      },
+      "qeFlagged": [],
+      "reportMarkdown": "## Wraith Localization Report\n\n**Status:** ✓ PASS · **Source:** `en` (63 keys) · `de` 63/63 · `ar` 63/63\n_This run: 126 string(s) written · 1 caught and fixed · 0 need attention · 1 open question(s)_\n\n### Translated\n\n| Locale | Translated | Written this run | Reviewed ok | Flagged | Not reviewed |\n|---|---:|---:|---:|---:|---:|\n| `de` | 63/63 | 63 | 63 | 0 | 0 |\n| `ar` | 63/63 | 63 | 63 | 0 | 0 |\n\n### Caught and fixed (1)\n- `ar` `brand.footerNote`: blocked when written (dnt_violation: Do-not-translate term \"PulseGrid\" is missing or altered in ar translation.), then fixed.\n\n### Still ambiguous\n- **Q1**: Three short labels appear next to a catalog item: 'Cover' (a tag), 'Lead' (a column label) and 'Drop' (a badge). What does each mean? For example: Cover = cover image, book cover or insurance coverage; Lead = sales lead, person in charge or lead time; Drop = new product release, price drop or a remove/discard action. Current guesses are cover image, sales lead and new product release.\n  - Current guess: `extras.coverLabel` (de: \"Cover\", ar: \"الغلاف\"); `extras.dropLabel` (de: \"Drop\", ar: \"إصدار جديد\"); `extras.leadLabel` (de: \"Lead\", ar: \"عميل محتمل\")\n\n### Assumptions Made\n- **A1** tone: German uses formal 'Sie'; Arabic uses Modern Standard Arabic with generic masculine address and Western digits. _(Business SaaS product; no project preference recorded.)_\n- **A2** terminology (`de`): The 'Settings' tab is translated as 'Optionen' in German. _('Einstellungen' (13 characters) exceeds the declared 10-character limit; an unclear truncated abbreviation was avoided.)_\n- **A3** terminology (`de`): Narrow German UI uses short forms: 'Erstatten' (Issue refund) and 'Geprüft' (Verified). _(Fits the tight button and badge width budgets.)_\n- **A4** formatting: {days} in the trial message is a plain argument, so it uses a fixed noun form (de 'Tagen', ar 'يوم') that is not grammatical for every value; German shows times as 15:00 Uhr. _(The English source has no ICU plural for days; adding one would need a source change.)_\n- **A5** formatting (`ar`): In Arabic, the conjunction 'و' is separated by a space before the brand name PulseGrid, and 'Create a new Workspace' uses the definite glossary form 'مساحة العمل الجديدة'. _(Keeps the do-not-translate brand and the glossary term intact.)_\n\n### Same English, different meaning (reviewed in context)\n\n| Locale | Source | Key | Translation | Context Note |\n|---|---|---|---|---|\n| `de` | Charge | `billing.chargeHeading` | Belastung | Heading on a monthly credit card statement, where 'Charge' is a debit or fee billed to the account. |\n| `de` | Charge | `device.chargeHeading` | Akkustand | Heading before a percentage showing the card reader's battery charge level. |\n| `de` | Order | `checkout.orderLabel` | Bestellung | Heading of the shopping cart summary, where 'Order' is a purchase order. |\n| `de` | Order | `catalog.orderLabel` | Reihenfolge | Label for the sort dropdown, where 'Order' means sort sequence such as ascending or descending. |\n| `de` | Post | `community.postHeading` | Beitrag | Forum article card heading, where 'Post' is a noun meaning a forum entry. |\n| `de` | Post | `composer.postAction` | Posten | Submit button on a reply form that publishes the reply (verb). |\n| `de` | Open | `hours.openBadge` | Geöffnet | Status badge showing the retail store is currently open for business. |\n| `de` | Open | `invoice.openAction` | Öffnen | Button on an invoice row that opens the document (verb). |\n| `de` | Archive | `inbox.archiveAction` | Archivieren | Inbox toolbar button that archives the selected items (verb). |\n| `de` | Archive | `docs.archiveHeading` | Archiv | Documentation sidebar heading for the collection of historical release notes (noun). |\n| `de` | Close | `modal.closeButton` | Schließen | Button that dismisses a dialog window. |\n| `de` | Close | `branch.closeBadge` | In der Nähe | Distance badge saying a retail branch 0.2 km away is nearby (not the verb 'to close'). |\n| `de` | Free | `pricing.freeTag` | Kostenlos | Price label on a subscription tier that costs nothing. |\n| `de` | Free | `storage.freeTag` | frei | Word following a number of gigabytes, meaning unused storage space (not free of charge). |\n| `de` | Save | `profile.saveButton` | Speichern | Submit button that saves profile settings changes. |\n| `de` | Save | `promo.saveLabel` | Sparen Sie | Discount banner lead-in meaning 'save money', immediately followed by a hardcoded '20%'. |\n| `ar` | Charge | `billing.chargeHeading` | الرسوم | Heading on a monthly credit card statement, where 'Charge' is a debit or fee billed to the account. |\n| `ar` | Charge | `device.chargeHeading` | مستوى الشحن | Heading before a percentage showing the card reader's battery charge level. |\n| `ar` | Order | `checkout.orderLabel` | الطلب | Heading of the shopping cart summary, where 'Order' is a purchase order. |\n| `ar` | Order | `catalog.orderLabel` | الترتيب | Label for the sort dropdown, where 'Order' means sort sequence such as ascending or descending. |\n| `ar` | Post | `community.postHeading` | منشور | Forum article card heading, where 'Post' is a noun meaning a forum entry. |\n| `ar` | Post | `composer.postAction` | نشر | Submit button on a reply form that publishes the reply (verb). |\n| `ar` | Open | `hours.openBadge` | مفتوح | Status badge showing the retail store is currently open for business. |\n| `ar` | Open | `invoice.openAction` | فتح | Button on an invoice row that opens the document (verb). |\n| `ar` | Archive | `inbox.archiveAction` | أرشفة | Inbox toolbar button that archives the selected items (verb). |\n| `ar` | Archive | `docs.archiveHeading` | الأرشيف | Documentation sidebar heading for the collection of historical release notes (noun). |\n| `ar` | Close | `modal.closeButton` | إغلاق | Button that dismisses a dialog window. |\n| `ar` | Close | `branch.closeBadge` | قريب | Distance badge saying a retail branch 0.2 km away is nearby (not the verb 'to close'). |\n| `ar` | Free | `pricing.freeTag` | مجاني | Price label on a subscription tier that costs nothing. |\n| `ar` | Free | `storage.freeTag` | متاحة | Word following a number of gigabytes, meaning unused storage space (not free of charge). |\n| `ar` | Save | `profile.saveButton` | حفظ | Submit button that saves profile settings changes. |\n| `ar` | Save | `promo.saveLabel` | وفّر | Discount banner lead-in meaning 'save money', immediately followed by a hardcoded '20%'. |\n\n### Strings Worth a Native Speaker's Look (7)\n\n| Locale | Key | Source | Translation | Why |\n|---|---|---|---|---|\n| `de` | `extras.coverLabel` | Cover | Cover | extras.coverLabel: translation matches source \"Cover\" verbatim. |\n| `de` | `extras.dropLabel` | Drop | Drop | extras.dropLabel: translation matches source \"Drop\" verbatim. |\n| `de` | `extras.leadLabel` | Lead | Lead | extras.leadLabel: translation matches source \"Lead\" verbatim. |\n| `ar` | `icu.cartItems` | {count, plural, one {# item in cart} other {# items in cart}} | {count, plural, zero {لا توجد عناصر في السلة} one {عنصر واحد في السلة} two {عنصران في السلة} few {# عناصر في السلة} many {# عنصرًا في السلة} other {# عنصر في السلة}} | icu.cartItems: translated length (165) is 2.7x source (61); check UI truncation. |\n| `ar` | `icu.orderPipeline` | {status, select, pending {{count, plural, one {# pending order} other {# pending orders}}} shipped {{count, plural, one {# shipped order} other {# shipped orders}}} other {No active orders}} | {status, select, pending {{count, plural, zero {لا توجد طلبات معلّقة} one {طلب واحد معلّق} two {طلبان معلّقان} few {# طلبات معلّقة} many {# طلبًا معلّقًا} other {# طلب معلّق}}} shipped {{count, plural, zero {لا توجد طلبات مشحونة} one {طلب واحد مشحون} two {طلبان مشحونان} few {# طلبات مشحونة} many {# طلبًا مشحونًا} other {# طلب مشحون}}} other {لا توجد طلبات نشطة}} | icu.orderPipeline: translated length (364) is 1.9x source (190); check UI truncation. |\n| `ar` | `icu.seatsRemaining` | {count, plural, one {# team Seat remaining} other {# team Seats remaining}} | {count, plural, zero {لم يتبقَّ أي مقعد للفريق} one {تبقّى مقعد واحد للفريق} two {تبقّى مقعدان للفريق} few {المتبقي للفريق: # مقاعد} many {المتبقي للفريق: # مقعدًا} other {المتبقي للفريق: # مقعد}} | icu.seatsRemaining: translated length (196) is 2.6x source (75); check UI truncation. |\n| `ar` | `icu.unreadAlerts` | {count, plural, =0 {No unread alerts} one {# unread alert} other {# unread alerts}} | {count, plural, =0 {لا توجد تنبيهات غير مقروءة} zero {لا توجد تنبيهات غير مقروءة} one {تنبيه واحد غير مقروء} two {تنبيهان غير مقروءين} few {# تنبيهات غير مقروءة} many {# تنبيهًا غير مقروء} other {# تنبيه غير مقروء}} | icu.unreadAlerts: translated length (215) is 2.6x source (83); check UI truncation. |\n\n### Follow up\nReply with an ID: `Q1: it's a social-media post` answers a question, `A2: use informal du` overrides an assumption. In a terminal: `wraith answer Q1 \"…\"`. The agent then revisits only the affected strings and re-reviews them.\n"
+    },
+    "answerResetVerification": {
+      "checkCountsByCodeAfterAnswer": {
+        "answer_pending": 6,
+        "glossary_inconsistency": 16,
+        "layout_risk": 7,
+        "length_expansion_risk": 4,
+        "untranslated": 3
+      },
+      "qeSummaryAfterAnswer": {
+        "total": 126,
+        "ok": 120,
+        "flagged": 0,
+        "unreviewed": 6,
+        "humanVerified": 0
+      },
+      "reportUnreviewedAgreedWithCli": true
+    },
+    "round2": {
+      "followUpWallS": 23.3,
+      "followUpTelemetry": {
+        "model": "sonnet",
+        "numTurns": 11,
+        "durationMs": 21506,
+        "totalCostUsd": 0.17361459999999998,
+        "inputTokens": 16,
+        "cacheReadInputTokens": 211826,
+        "cacheCreationInputTokens": 30980,
+        "outputTokens": 2848,
+        "isError": false,
+        "subtype": "success",
+        "resultText": "I updated all three labels in German and Arabic to match your answer, then marked Q1 resolved. `check` returns **PASS** for `de` and `ar`, with 0 errors and no `answer_pending` or `open_question` warnings. I stopped before `qe_audit`, so these strings still need the separate fresh-context review.\n\nNone of the six old translations matched your answer, so I replaced them all. German still had the English words, and the Arabic ones followed other meanings.\n\n| Key | Meaning from your answer | `de` (before → after) | `ar` (before → after) |\n|---|---|---|---|\n| `extras.coverLabel` | Protective phone case | Cover → **Hülle** | الغلاف → **غطاء حماية** |\n| `extras.leadLabel` | Lead time until dispatch | Lead → **Zeit bis Versand** | عميل محتمل → **مدة التجهيز للشحن** |\n| `extras.dropLabel` | Recently discounted item | Drop → **Reduziert** | إصدار جديد → **سعر مخفّض** |\n\nI also rewrote each key's `contextNote` to record the clarified meaning. `apply` accepted all six translations with no errors or warnings.\n\n**For the reviewer:**\n- **Lead label wording:** I avoided \"Lieferzeit\" in German because it means time until delivery, not until dispatch.\n- **Lead label length:** `check` warns that `extras.leadLabel` is much longer than the English in both languages (16 characters in German, 17 in Arabic, against 4). It's a column label, so check that it isn't cut off on screen. I didn't run a visual check.\n- **Other warnings:** Each locale also has 8 `glossary_inconsistency` warnings, where one English word such as \"Open\" or \"Save\" is translated differently in different places. Arabic has 4 more length warnings on `icu.*` strings. None of these involve the three labels, and I left them unchanged."
+      },
+      "qeSubagentWallS": 15.6,
+      "qeSubagentTelemetry": {
+        "model": "sonnet",
+        "numTurns": 6,
+        "durationMs": 13407,
+        "totalCostUsd": 0.10086269999999999,
+        "inputTokens": 12,
+        "cacheReadInputTokens": 119207,
+        "cacheCreationInputTokens": 18407,
+        "outputTokens": 1529,
+        "isError": false,
+        "subtype": "success",
+        "resultText": "The review of German (`de`) and Arabic (`ar`) passed: all 126 strings are `ok`, with none flagged, unreviewed or human-verified.\n\nThis round covered the six strings that still needed review. I marked all of them `ok`, and all six submissions were accepted. The other 120 already had current verdicts, so I didn't re-review them.\n\nI read `src/components/CatalogExtras.tsx` and checked each translation against its context note and the Q1 answer:\n\n| Key (how it's shown) | Meaning from Q1 | German | Arabic |\n|---|---|---|---|\n| `extras.coverLabel` (tag) | Protective phone case | Hülle | غطاء حماية |\n| `extras.leadLabel` (column label) | Time until the item ships, not delivery time | Zeit bis Versand | مدة التجهيز للشحن |\n| `extras.dropLabel` (badge) | Price has dropped | Reduziert | سعر مخفّض |\n\nThis was a review of the text and the code only. I didn't run layout or visual checks, so it doesn't show whether the longer labels, such as \"Zeit bis Versand\", fit on screen. I also didn't edit any translation files."
+      },
+      "checkOutcome": "PASS",
+      "checkErrorCount": 0,
+      "countsByCode": {
+        "glossary_inconsistency": 16,
+        "layout_risk": 7,
+        "length_expansion_risk": 6
+      },
+      "qeOutcome": "PASS",
+      "qeSummary": {
+        "total": 126,
+        "ok": 126,
+        "flagged": 0,
+        "unreviewed": 0,
+        "humanVerified": 0
+      },
+      "renderedLayoutOutcome": "PASS",
+      "renderedLayoutFindingsTotal": 0,
+      "renderedByType": {},
+      "reportMarkdown": "## Wraith Localization Report\n\n**Status:** ✓ PASS · **Source:** `en` (63 keys) · `de` 63/63 · `ar` 63/63\n_This run: 126 string(s) written · 1 caught and fixed · 0 need attention · 0 open question(s)_\n\n### Translated\n\n| Locale | Translated | Written this run | Reviewed ok | Flagged | Not reviewed |\n|---|---:|---:|---:|---:|---:|\n| `de` | 63/63 | 63 | 63 | 0 | 0 |\n| `ar` | 63/63 | 63 | 63 | 0 | 0 |\n\n### Caught and fixed (1)\n- `ar` `brand.footerNote`: blocked when written (dnt_violation: Do-not-translate term \"PulseGrid\" is missing or altered in ar translation.), then fixed.\n\n### Assumptions Made\n- **A1** tone: German uses formal 'Sie'; Arabic uses Modern Standard Arabic with generic masculine address and Western digits. _(Business SaaS product; no project preference recorded.)_\n- **A2** terminology (`de`): The 'Settings' tab is translated as 'Optionen' in German. _('Einstellungen' (13 characters) exceeds the declared 10-character limit; an unclear truncated abbreviation was avoided.)_\n- **A3** terminology (`de`): Narrow German UI uses short forms: 'Erstatten' (Issue refund) and 'Geprüft' (Verified). _(Fits the tight button and badge width budgets.)_\n- **A4** formatting: {days} in the trial message is a plain argument, so it uses a fixed noun form (de 'Tagen', ar 'يوم') that is not grammatical for every value; German shows times as 15:00 Uhr. _(The English source has no ICU plural for days; adding one would need a source change.)_\n- **A5** formatting (`ar`): In Arabic, the conjunction 'و' is separated by a space before the brand name PulseGrid, and 'Create a new Workspace' uses the definite glossary form 'مساحة العمل الجديدة'. _(Keeps the do-not-translate brand and the glossary term intact.)_\n\n### Same English, different meaning (reviewed in context)\n\n| Locale | Source | Key | Translation | Context Note |\n|---|---|---|---|---|\n| `de` | Charge | `billing.chargeHeading` | Belastung | Heading on a monthly credit card statement, where 'Charge' is a debit or fee billed to the account. |\n| `de` | Charge | `device.chargeHeading` | Akkustand | Heading before a percentage showing the card reader's battery charge level. |\n| `de` | Order | `checkout.orderLabel` | Bestellung | Heading of the shopping cart summary, where 'Order' is a purchase order. |\n| `de` | Order | `catalog.orderLabel` | Reihenfolge | Label for the sort dropdown, where 'Order' means sort sequence such as ascending or descending. |\n| `de` | Post | `community.postHeading` | Beitrag | Forum article card heading, where 'Post' is a noun meaning a forum entry. |\n| `de` | Post | `composer.postAction` | Posten | Submit button on a reply form that publishes the reply (verb). |\n| `de` | Open | `hours.openBadge` | Geöffnet | Status badge showing the retail store is currently open for business. |\n| `de` | Open | `invoice.openAction` | Öffnen | Button on an invoice row that opens the document (verb). |\n| `de` | Archive | `inbox.archiveAction` | Archivieren | Inbox toolbar button that archives the selected items (verb). |\n| `de` | Archive | `docs.archiveHeading` | Archiv | Documentation sidebar heading for the collection of historical release notes (noun). |\n| `de` | Close | `modal.closeButton` | Schließen | Button that dismisses a dialog window. |\n| `de` | Close | `branch.closeBadge` | In der Nähe | Distance badge saying a retail branch 0.2 km away is nearby (not the verb 'to close'). |\n| `de` | Free | `pricing.freeTag` | Kostenlos | Price label on a subscription tier that costs nothing. |\n| `de` | Free | `storage.freeTag` | frei | Word following a number of gigabytes, meaning unused storage space (not free of charge). |\n| `de` | Save | `profile.saveButton` | Speichern | Submit button that saves profile settings changes. |\n| `de` | Save | `promo.saveLabel` | Sparen Sie | Discount banner lead-in meaning 'save money', immediately followed by a hardcoded '20%'. |\n| `ar` | Charge | `billing.chargeHeading` | الرسوم | Heading on a monthly credit card statement, where 'Charge' is a debit or fee billed to the account. |\n| `ar` | Charge | `device.chargeHeading` | مستوى الشحن | Heading before a percentage showing the card reader's battery charge level. |\n| `ar` | Order | `checkout.orderLabel` | الطلب | Heading of the shopping cart summary, where 'Order' is a purchase order. |\n| `ar` | Order | `catalog.orderLabel` | الترتيب | Label for the sort dropdown, where 'Order' means sort sequence such as ascending or descending. |\n| `ar` | Post | `community.postHeading` | منشور | Forum article card heading, where 'Post' is a noun meaning a forum entry. |\n| `ar` | Post | `composer.postAction` | نشر | Submit button on a reply form that publishes the reply (verb). |\n| `ar` | Open | `hours.openBadge` | مفتوح | Status badge showing the retail store is currently open for business. |\n| `ar` | Open | `invoice.openAction` | فتح | Button on an invoice row that opens the document (verb). |\n| `ar` | Archive | `inbox.archiveAction` | أرشفة | Inbox toolbar button that archives the selected items (verb). |\n| `ar` | Archive | `docs.archiveHeading` | الأرشيف | Documentation sidebar heading for the collection of historical release notes (noun). |\n| `ar` | Close | `modal.closeButton` | إغلاق | Button that dismisses a dialog window. |\n| `ar` | Close | `branch.closeBadge` | قريب | Distance badge saying a retail branch 0.2 km away is nearby (not the verb 'to close'). |\n| `ar` | Free | `pricing.freeTag` | مجاني | Price label on a subscription tier that costs nothing. |\n| `ar` | Free | `storage.freeTag` | متاحة | Word following a number of gigabytes, meaning unused storage space (not free of charge). |\n| `ar` | Save | `profile.saveButton` | حفظ | Submit button that saves profile settings changes. |\n| `ar` | Save | `promo.saveLabel` | وفّر | Discount banner lead-in meaning 'save money', immediately followed by a hardcoded '20%'. |\n\n### Strings Worth a Native Speaker's Look (6)\n\n| Locale | Key | Source | Translation | Why |\n|---|---|---|---|---|\n| `de` | `extras.leadLabel` | Lead | Zeit bis Versand | extras.leadLabel: translated length (16) is 4.0x source (4); check UI truncation. |\n| `ar` | `extras.leadLabel` | Lead | مدة التجهيز للشحن | extras.leadLabel: translated length (17) is 4.3x source (4); check UI truncation. |\n| `ar` | `icu.cartItems` | {count, plural, one {# item in cart} other {# items in cart}} | {count, plural, zero {لا توجد عناصر في السلة} one {عنصر واحد في السلة} two {عنصران في السلة} few {# عناصر في السلة} many {# عنصرًا في السلة} other {# عنصر في السلة}} | icu.cartItems: translated length (165) is 2.7x source (61); check UI truncation. |\n| `ar` | `icu.orderPipeline` | {status, select, pending {{count, plural, one {# pending order} other {# pending orders}}} shipped {{count, plural, one {# shipped order} other {# shipped orders}}} other {No active orders}} | {status, select, pending {{count, plural, zero {لا توجد طلبات معلّقة} one {طلب واحد معلّق} two {طلبان معلّقان} few {# طلبات معلّقة} many {# طلبًا معلّقًا} other {# طلب معلّق}}} shipped {{count, plural, zero {لا توجد طلبات مشحونة} one {طلب واحد مشحون} two {طلبان مشحونان} few {# طلبات مشحونة} many {# طلبًا مشحونًا} other {# طلب مشحون}}} other {لا توجد طلبات نشطة}} | icu.orderPipeline: translated length (364) is 1.9x source (190); check UI truncation. |\n| `ar` | `icu.seatsRemaining` | {count, plural, one {# team Seat remaining} other {# team Seats remaining}} | {count, plural, zero {لم يتبقَّ أي مقعد للفريق} one {تبقّى مقعد واحد للفريق} two {تبقّى مقعدان للفريق} few {المتبقي للفريق: # مقاعد} many {المتبقي للفريق: # مقعدًا} other {المتبقي للفريق: # مقعد}} | icu.seatsRemaining: translated length (196) is 2.6x source (75); check UI truncation. |\n| `ar` | `icu.unreadAlerts` | {count, plural, =0 {No unread alerts} one {# unread alert} other {# unread alerts}} | {count, plural, =0 {لا توجد تنبيهات غير مقروءة} zero {لا توجد تنبيهات غير مقروءة} one {تنبيه واحد غير مقروء} two {تنبيهان غير مقروءين} few {# تنبيهات غير مقروءة} many {# تنبيهًا غير مقروء} other {# تنبيه غير مقروء}} | icu.unreadAlerts: translated length (215) is 2.6x source (83); check UI truncation. |\n\n### Follow up\nReply with an ID: `Q1: it's a social-media post` answers a question, `A2: use informal du` overrides an assumption. In a terminal: `wraith answer Q1 \"…\"`. The agent then revisits only the affected strings and re-reviews them.\n",
+      "assumptions": [
+        {
+          "id": "48b12eee",
+          "category": "tone",
+          "summary": "German uses formal 'Sie'; Arabic uses Modern Standard Arabic with generic masculine address and Western digits.",
+          "rationale": "Business SaaS product; no project preference recorded.",
+          "createdAt": "2026-11-26T20:31:02.817Z"
+        },
+        {
+          "id": "28c5b527",
+          "category": "terminology",
+          "locale": "de",
+          "summary": "The 'Settings' tab is translated as 'Optionen' in German.",
+          "rationale": "'Einstellungen' (13 characters) exceeds the declared 10-character limit; an unclear truncated abbreviation was avoided.",
+          "createdAt": "2026-11-26T20:31:03.769Z"
+        },
+        {
+          "id": "967d48fc",
+          "category": "terminology",
+          "locale": "de",
+          "summary": "Narrow German UI uses short forms: 'Erstatten' (Issue refund) and 'Geprüft' (Verified).",
+          "rationale": "Fits the tight button and badge width budgets.",
+          "createdAt": "2026-11-26T20:31:04.568Z"
+        },
+        {
+          "id": "b34f44d6",
+          "category": "formatting",
+          "summary": "{days} in the trial message is a plain argument, so it uses a fixed noun form (de 'Tagen', ar 'يوم') that is not grammatical for every value; German shows times as 15:00 Uhr.",
+          "rationale": "The English source has no ICU plural for days; adding one would need a source change.",
+          "createdAt": "2026-11-26T20:31:05.648Z"
+        },
+        {
+          "id": "50f103bf",
+          "category": "formatting",
+          "locale": "ar",
+          "summary": "In Arabic, the conjunction 'و' is separated by a space before the brand name PulseGrid, and 'Create a new Workspace' uses the definite glossary form 'مساحة العمل الجديدة'.",
+          "rationale": "Keeps the do-not-translate brand and the glossary term intact.",
+          "createdAt": "2026-11-26T20:31:06.691Z"
+        }
+      ],
+      "contextNotesSample": {
+        "billing.chargeHeading": {
+          "note": "Heading on a monthly credit card statement, where 'Charge' is a debit or fee billed to the account.",
+          "sourceHash": "ff9f88ce353a2228",
+          "updatedAt": "2026-11-26T20:30:42.014Z"
+        },
+        "branch.closeBadge": {
+          "note": "Distance badge saying a retail branch 0.2 km away is nearby (not the verb 'to close').",
+          "sourceHash": "7d9eb7acb13e2462",
+          "updatedAt": "2026-11-26T20:30:42.014Z"
+        },
+        "brand.analyticsDesc": {
+          "note": "Description in the analytics panel saying the PulseGrid product measures checkout conversion in real time without cookies.",
+          "sourceHash": "b18cac2581cd07c1",
+          "updatedAt": "2026-11-26T20:30:42.014Z"
+        },
+        "brand.auditExport": {
+          "note": "Button on the billing statement that exports signed tax records to the LedgerVault compliance module.",
+          "sourceHash": "cdad227210e30fad",
+          "updatedAt": "2026-11-26T20:30:42.014Z"
+        },
+        "brand.footerNote": {
+          "note": "Small footer credit under the e-signature section naming the technology providers.",
+          "sourceHash": "a45101ca46c0b4fc",
+          "updatedAt": "2026-11-26T20:30:42.014Z"
+        },
+        "brand.payCta": {
+          "note": "Checkout button promoting faster payment with the Northstar Pay product.",
+          "sourceHash": "3e268f36299d3bc1",
+          "updatedAt": "2026-11-26T20:30:42.014Z"
+        },
+        "brand.vaultSync": {
+          "note": "Small status line under invoice actions confirming LedgerVault synced the user's latest receipt.",
+          "sourceHash": "7d7052be0e3555fa",
+          "updatedAt": "2026-11-26T20:30:42.014Z"
+        },
+        "brand.welcome": {
+          "note": "Main page heading in the app header welcoming the user to Northstar Commerce.",
+          "sourceHash": "9157a4572df9a720",
+          "updatedAt": "2026-11-26T20:30:42.014Z"
+        },
+        "catalog.orderLabel": {
+          "note": "Label for the sort dropdown, where 'Order' means sort sequence such as ascending or descending.",
+          "sourceHash": "6be090825c997103",
+          "updatedAt": "2026-11-26T20:30:42.014Z"
+        },
+        "checkout.orderLabel": {
+          "note": "Heading of the shopping cart summary, where 'Order' is a purchase order.",
+          "sourceHash": "6be090825c997103",
+          "updatedAt": "2026-11-26T20:30:42.014Z"
+        },
+        "community.postHeading": {
+          "note": "Forum article card heading, where 'Post' is a noun meaning a forum entry.",
+          "sourceHash": "a5554622c655c7a7",
+          "updatedAt": "2026-11-26T20:30:42.014Z"
+        },
+        "composer.postAction": {
+          "note": "Submit button on a reply form that publishes the reply (verb).",
+          "sourceHash": "a5554622c655c7a7",
+          "updatedAt": "2026-11-26T20:30:42.014Z"
+        }
+      },
+      "translations": {
+        "de": {
+          "hours.openBadge": "Geöffnet",
+          "invoice.openAction": "Öffnen",
+          "community.postHeading": "Beitrag",
+          "composer.postAction": "Posten",
+          "checkout.orderLabel": "Bestellung",
+          "catalog.orderLabel": "Reihenfolge",
+          "modal.closeButton": "Schließen",
+          "branch.closeBadge": "In der Nähe",
+          "pricing.freeTag": "Kostenlos",
+          "storage.freeTag": "frei",
+          "profile.saveButton": "Speichern",
+          "promo.saveLabel": "Sparen Sie",
+          "wizard.backButton": "Zurück",
+          "warranty.backPromise": "Wir geben auf jeden Einkauf zwei Jahre Garantie.",
+          "billing.chargeHeading": "Belastung",
+          "device.chargeHeading": "Akkustand",
+          "contract.signAction": "Signieren",
+          "storefront.signNotice": "Beachten Sie das Hinweisschild an der Abholtheke.",
+          "inbox.archiveAction": "Archivieren",
+          "docs.archiveHeading": "Archiv",
+          "brand.welcome": "Willkommen bei Northstar Commerce",
+          "brand.payCta": "Schneller bezahlen mit Northstar Pay",
+          "brand.analyticsDesc": "PulseGrid erfasst die Checkout-Conversion live und ohne Cookies.",
+          "brand.auditExport": "Signierte Steuerbelege nach LedgerVault exportieren",
+          "brand.footerNote": "Bereitgestellt von Northstar und PulseGrid.",
+          "brand.vaultSync": "LedgerVault hat Ihren neuesten Beleg synchronisiert.",
+          "glossary.workspaceCreate": "Erstellen Sie einen neuen Arbeitsbereich für Ihr Einzelhandelsteam.",
+          "glossary.workspaceSwitch": "Arbeitsbereich wechseln",
+          "glossary.invoiceDownload": "PDF-Rechnung herunterladen",
+          "glossary.invoicePaid": "Diese Rechnung wurde pünktlich bezahlt.",
+          "glossary.seatAssign": "Weisen Sie einem neuen Teammitglied eine Lizenz zu.",
+          "glossary.seatLimit": "Ihr Arbeitsbereich enthält eine kostenlose Lizenz.",
+          "icu.cartItems": "{count, plural, one {# Artikel im Warenkorb} other {# Artikel im Warenkorb}}",
+          "icu.unreadAlerts": "{count, plural, =0 {Keine ungelesenen Benachrichtigungen} one {# ungelesene Benachrichtigung} other {# ungelesene Benachrichtigungen}}",
+          "icu.seatsRemaining": "{count, plural, one {Noch # Team-Lizenz verfügbar} other {Noch # Team-Lizenzen verfügbar}}",
+          "icu.rankOrdinal": "Platz {rank, selectordinal, other {#}} im regionalen Umsatzranking",
+          "icu.memberRole": "{role, select, owner {Inhaber des Arbeitsbereichs} admin {Administrator} billing {Abrechnungsverwaltung} other {Teammitglied}}",
+          "icu.orderPipeline": "{status, select, pending {{count, plural, one {# ausstehende Bestellung} other {# ausstehende Bestellungen}}} shipped {{count, plural, one {# versendete Bestellung} other {# versendete Bestellungen}}} other {Keine aktiven Bestellungen}}",
+          "icu.totalDue": "Fälliger Gesamtbetrag: {amount, number, ::currency/USD}",
+          "icu.renewalDate": "Das Abonnement verlängert sich am {date, date, medium}.",
+          "icu.promoThreshold": "{discount} % Rabatt auf Bestellungen über {minTotal}",
+          "icu.ticketAssign": "{actor} hat Ticket {ticket} an {assignee} zugewiesen.",
+          "rich.termsAccept": "Wenn Sie fortfahren, stimmen Sie den <link>Nutzungsbedingungen</link> zu.",
+          "rich.deleteWarn": "Diese Aktion ist <b>endgültig</b> und kann nicht rückgängig gemacht werden.",
+          "rich.shippingFast": "Bestellungen, die vor <strong>15:00 Uhr</strong> eingehen, werden noch am selben Tag versendet.",
+          "rich.helpLink": "Benötigen Sie Hilfe zur Abrechnung? Besuchen Sie das <link>Northstar-Hilfecenter</link>.",
+          "rich.backupNotice": "Automatische Snapshots werden alle <codeTag>24h</codeTag> in <b>LedgerVault</b> gespeichert.",
+          "rich.trialEnd": "Ihr Testzeitraum endet in <strong>{days} Tagen</strong>. <link>Führen Sie jetzt ein Upgrade durch</link>, damit PulseGrid aktiv bleibt.",
+          "tight.tabOverview": "Übersicht",
+          "tight.tabSettings": "Optionen",
+          "tight.tabBilling": "Abrechnung",
+          "tight.btnRefund": "Erstatten",
+          "tight.btnFilters": "Filter löschen",
+          "tight.badgeVerified": "Geprüft",
+          "general.emptyInbox": "Sie sind auf dem neuesten Stand. Neue Kundennachrichten und Auszahlungsbenachrichtigungen werden hier angezeigt.",
+          "general.networkError": "Wir konnten das Zahlungs-Gateway nicht erreichen. Bitte überprüfen Sie Ihre Verbindung und versuchen Sie es erneut.",
+          "general.hoursSubtitle": "Mo.–Fr. 9:00–18:00 Uhr Ortszeit. Die Öffnungszeiten an Feiertagen können je nach Filiale abweichen.",
+          "general.batteryTip": "Stellen Sie das Kartenlesegerät über Nacht auf seine Ladestation, um die volle Akkuleistung zu erhalten.",
+          "general.profileSaved": "Ihre Kontodaten wurden auf allen aktiven Geräten aktualisiert.",
+          "general.exportHint": "Exporte enthalten aufgeschlüsselte Steuern, Rückerstattungen und Abrechnungszeitstempel in UTC.",
+          "extras.coverLabel": "Hülle",
+          "extras.leadLabel": "Zeit bis Versand",
+          "extras.dropLabel": "Reduziert"
+        },
+        "ar": {
+          "hours.openBadge": "مفتوح",
+          "invoice.openAction": "فتح",
+          "community.postHeading": "منشور",
+          "composer.postAction": "نشر",
+          "checkout.orderLabel": "الطلب",
+          "catalog.orderLabel": "الترتيب",
+          "modal.closeButton": "إغلاق",
+          "branch.closeBadge": "قريب",
+          "pricing.freeTag": "مجاني",
+          "storage.freeTag": "متاحة",
+          "profile.saveButton": "حفظ",
+          "promo.saveLabel": "وفّر",
+          "wizard.backButton": "رجوع",
+          "warranty.backPromise": "نقدّم ضمانًا لمدة عامين على كل عملية شراء.",
+          "billing.chargeHeading": "الرسوم",
+          "device.chargeHeading": "مستوى الشحن",
+          "contract.signAction": "توقيع",
+          "storefront.signNotice": "اطّلع على اللافتة عند منضدة الاستلام.",
+          "inbox.archiveAction": "أرشفة",
+          "docs.archiveHeading": "الأرشيف",
+          "brand.welcome": "مرحبًا بك في Northstar Commerce",
+          "brand.payCta": "ادفع أسرع باستخدام Northstar Pay",
+          "brand.analyticsDesc": "يتتبّع PulseGrid معدّل التحويل في صفحة الدفع مباشرةً دون ملفات تعريف الارتباط.",
+          "brand.auditExport": "تصدير السجلات الضريبية الموقّعة إلى LedgerVault",
+          "brand.footerNote": "مدعوم من Northstar و PulseGrid.",
+          "brand.vaultSync": "زامن LedgerVault أحدث إيصال لك.",
+          "glossary.workspaceCreate": "أنشئ مساحة العمل الجديدة لفريق البيع بالتجزئة لديك.",
+          "glossary.workspaceSwitch": "تبديل مساحة العمل",
+          "glossary.invoiceDownload": "تنزيل فاتورة PDF",
+          "glossary.invoicePaid": "تم دفع هذه الفاتورة في موعدها.",
+          "glossary.seatAssign": "خصّص مقعدًا لزميل جديد في الفريق.",
+          "glossary.seatLimit": "تتضمن مساحة العمل الخاصة بك مقعدًا مجانيًا واحدًا.",
+          "icu.cartItems": "{count, plural, zero {لا توجد عناصر في السلة} one {عنصر واحد في السلة} two {عنصران في السلة} few {# عناصر في السلة} many {# عنصرًا في السلة} other {# عنصر في السلة}}",
+          "icu.unreadAlerts": "{count, plural, =0 {لا توجد تنبيهات غير مقروءة} zero {لا توجد تنبيهات غير مقروءة} one {تنبيه واحد غير مقروء} two {تنبيهان غير مقروءين} few {# تنبيهات غير مقروءة} many {# تنبيهًا غير مقروء} other {# تنبيه غير مقروء}}",
+          "icu.seatsRemaining": "{count, plural, zero {لم يتبقَّ أي مقعد للفريق} one {تبقّى مقعد واحد للفريق} two {تبقّى مقعدان للفريق} few {المتبقي للفريق: # مقاعد} many {المتبقي للفريق: # مقعدًا} other {المتبقي للفريق: # مقعد}}",
+          "icu.rankOrdinal": "المرتبة {rank, selectordinal, other {#}} في المبيعات الإقليمية",
+          "icu.memberRole": "{role, select, owner {مالك مساحة العمل} admin {مسؤول} billing {مدير الفوترة} other {عضو في الفريق}}",
+          "icu.orderPipeline": "{status, select, pending {{count, plural, zero {لا توجد طلبات معلّقة} one {طلب واحد معلّق} two {طلبان معلّقان} few {# طلبات معلّقة} many {# طلبًا معلّقًا} other {# طلب معلّق}}} shipped {{count, plural, zero {لا توجد طلبات مشحونة} one {طلب واحد مشحون} two {طلبان مشحونان} few {# طلبات مشحونة} many {# طلبًا مشحونًا} other {# طلب مشحون}}} other {لا توجد طلبات نشطة}}",
+          "icu.totalDue": "إجمالي المبلغ المستحق: {amount, number, ::currency/USD}",
+          "icu.renewalDate": "يتجدد الاشتراك في {date, date, medium}.",
+          "icu.promoThreshold": "خصم {discount}% على الطلبات التي تتجاوز {minTotal}",
+          "icu.ticketAssign": "أسند {actor} التذكرة {ticket} إلى {assignee}.",
+          "rich.termsAccept": "بالمتابعة، فإنك توافق على <link>شروط الخدمة</link>.",
+          "rich.deleteWarn": "هذا الإجراء <b>دائم</b> ولا يمكن التراجع عنه.",
+          "rich.shippingFast": "تُشحن الطلبات المقدَّمة قبل الساعة <strong>3:00 م</strong> في اليوم نفسه.",
+          "rich.helpLink": "هل تحتاج إلى مساعدة في الفوترة؟ تفضّل بزيارة <link>مركز مساعدة Northstar</link>.",
+          "rich.backupNotice": "تُخزَّن اللقطات التلقائية في <b>LedgerVault</b> كل <codeTag>24h</codeTag>.",
+          "rich.trialEnd": "تنتهي فترتك التجريبية خلال <strong>{days} يوم</strong>؛ <link>قم بالترقية الآن</link> ليظل PulseGrid نشطًا.",
+          "tight.tabOverview": "نظرة عامة",
+          "tight.tabSettings": "الإعدادات",
+          "tight.tabBilling": "الفوترة",
+          "tight.btnRefund": "ردّ المبلغ",
+          "tight.btnFilters": "مسح التصفية",
+          "tight.badgeVerified": "موثَّق",
+          "general.emptyInbox": "لقد اطّلعت على كل شيء. ستظهر هنا رسائل العملاء الجديدة وإشعارات الدفعات المحوّلة إليك.",
+          "general.networkError": "تعذّر علينا الاتصال ببوابة الدفع. يُرجى التحقق من اتصالك والمحاولة مرة أخرى.",
+          "general.hoursSubtitle": "من الاثنين إلى الجمعة، 9:00 ص – 6:00 م بالتوقيت المحلي. قد تختلف ساعات العمل في العطلات حسب الفرع.",
+          "general.batteryTip": "ضع قارئ البطاقات على قاعدة الشحن طوال الليل للحفاظ على سلامة البطارية الكاملة.",
+          "general.profileSaved": "تم تحديث بيانات حسابك على جميع الأجهزة النشطة.",
+          "general.exportHint": "تتضمن عمليات التصدير الضرائب المفصّلة وعمليات استرداد الأموال والطوابع الزمنية للتسوية بالتوقيت العالمي المنسق (UTC).",
+          "extras.coverLabel": "غطاء حماية",
+          "extras.leadLabel": "مدة التجهيز للشحن",
+          "extras.dropLabel": "سعر مخفّض"
+        }
+      }
+    }
+  },
+  "comparisons": {
+    "tightUiLabels": [
+      {
+        "key": "tight.tabOverview",
+        "en": "Overview",
+        "declaredMax": null,
+        "rawDe": "Übersicht",
+        "rawDeLen": 9,
+        "wraithDe": "Übersicht",
+        "wraithDeLen": 9,
+        "rawAr": "نظرة عامة",
+        "wraithAr": "نظرة عامة"
+      },
+      {
+        "key": "tight.tabSettings",
+        "en": "Settings",
+        "declaredMax": 10,
+        "rawDe": "Optionen",
+        "rawDeLen": 8,
+        "wraithDe": "Optionen",
+        "wraithDeLen": 8,
+        "rawAr": "الإعدادات",
+        "wraithAr": "الإعدادات"
+      },
+      {
+        "key": "tight.tabBilling",
+        "en": "Billing",
+        "declaredMax": null,
+        "rawDe": "Abrechnung",
+        "rawDeLen": 10,
+        "wraithDe": "Abrechnung",
+        "wraithDeLen": 10,
+        "rawAr": "الفوترة",
+        "wraithAr": "الفوترة"
+      },
+      {
+        "key": "tight.btnRefund",
+        "en": "Issue refund",
+        "declaredMax": 14,
+        "rawDe": "Erstatten",
+        "rawDeLen": 9,
+        "wraithDe": "Erstatten",
+        "wraithDeLen": 9,
+        "rawAr": "رد المبلغ",
+        "wraithAr": "ردّ المبلغ"
+      },
+      {
+        "key": "tight.btnFilters",
+        "en": "Clear filters",
+        "declaredMax": null,
+        "rawDe": "Filter löschen",
+        "rawDeLen": 14,
+        "wraithDe": "Filter löschen",
+        "wraithDeLen": 14,
+        "rawAr": "مسح الفلاتر",
+        "wraithAr": "مسح التصفية"
+      },
+      {
+        "key": "tight.badgeVerified",
+        "en": "Verified",
+        "declaredMax": null,
+        "rawDe": "Geprüft",
+        "rawDeLen": 7,
+        "wraithDe": "Geprüft",
+        "wraithDeLen": 7,
+        "rawAr": "موثّق",
+        "wraithAr": "موثَّق"
+      }
+    ],
+    "homonymDisambiguation": [
+      {
+        "pair": "Open (store open vs open PDF)",
+        "keys": [
+          "hours.openBadge",
+          "invoice.openAction"
+        ],
+        "rawDe": [
+          "Geöffnet",
+          "Öffnen"
+        ],
+        "wraithDe": [
+          "Geöffnet",
+          "Öffnen"
+        ],
+        "rawAr": [
+          "مفتوح",
+          "فتح"
+        ],
+        "wraithAr": [
+          "مفتوح",
+          "فتح"
+        ]
+      },
+      {
+        "pair": "Post (forum noun vs publish verb)",
+        "keys": [
+          "community.postHeading",
+          "composer.postAction"
+        ],
+        "rawDe": [
+          "Beitrag",
+          "Posten"
+        ],
+        "wraithDe": [
+          "Beitrag",
+          "Posten"
+        ],
+        "rawAr": [
+          "منشور",
+          "نشر"
+        ],
+        "wraithAr": [
+          "منشور",
+          "نشر"
+        ]
+      },
+      {
+        "pair": "Order (purchase order vs sort sequence)",
+        "keys": [
+          "checkout.orderLabel",
+          "catalog.orderLabel"
+        ],
+        "rawDe": [
+          "Bestellung",
+          "Reihenfolge"
+        ],
+        "wraithDe": [
+          "Bestellung",
+          "Reihenfolge"
+        ],
+        "rawAr": [
+          "الطلب",
+          "الترتيب"
+        ],
+        "wraithAr": [
+          "الطلب",
+          "الترتيب"
+        ]
+      },
+      {
+        "pair": "Close (dismiss modal vs nearby)",
+        "keys": [
+          "modal.closeButton",
+          "branch.closeBadge"
+        ],
+        "rawDe": [
+          "Schließen",
+          "In der Nähe"
+        ],
+        "wraithDe": [
+          "Schließen",
+          "In der Nähe"
+        ],
+        "rawAr": [
+          "إغلاق",
+          "قريب"
+        ],
+        "wraithAr": [
+          "إغلاق",
+          "قريب"
+        ]
+      },
+      {
+        "pair": "Free ($0 gratis vs free disk space)",
+        "keys": [
+          "pricing.freeTag",
+          "storage.freeTag"
+        ],
+        "rawDe": [
+          "Kostenlos",
+          "Frei"
+        ],
+        "wraithDe": [
+          "Kostenlos",
+          "frei"
+        ],
+        "rawAr": [
+          "مجاني",
+          "متاح"
+        ],
+        "wraithAr": [
+          "مجاني",
+          "متاحة"
+        ]
+      },
+      {
+        "pair": "Save (save settings vs save money)",
+        "keys": [
+          "profile.saveButton",
+          "promo.saveLabel"
+        ],
+        "rawDe": [
+          "Speichern",
+          "Sparen"
+        ],
+        "wraithDe": [
+          "Speichern",
+          "Sparen Sie"
+        ],
+        "rawAr": [
+          "حفظ",
+          "وفّر"
+        ],
+        "wraithAr": [
+          "حفظ",
+          "وفّر"
+        ]
+      },
+      {
+        "pair": "Charge (billing fee vs battery charge)",
+        "keys": [
+          "billing.chargeHeading",
+          "device.chargeHeading"
+        ],
+        "rawDe": [
+          "Belastung",
+          "Aufladen"
+        ],
+        "wraithDe": [
+          "Belastung",
+          "Akkustand"
+        ],
+        "rawAr": [
+          "الرسوم",
+          "الشحن"
+        ],
+        "wraithAr": [
+          "الرسوم",
+          "مستوى الشحن"
+        ]
+      },
+      {
+        "pair": "Sign (sign contract vs counter sign)",
+        "keys": [
+          "contract.signAction",
+          "storefront.signNotice"
+        ],
+        "rawDe": [
+          "Unterschreiben",
+          "Beachten Sie das Schild an der Abholtheke."
+        ],
+        "wraithDe": [
+          "Signieren",
+          "Beachten Sie das Hinweisschild an der Abholtheke."
+        ],
+        "rawAr": [
+          "توقيع",
+          "راجع اللافتة عند منضدة الاستلام."
+        ],
+        "wraithAr": [
+          "توقيع",
+          "اطّلع على اللافتة عند منضدة الاستلام."
+        ]
+      },
+      {
+        "pair": "Archive (archive verb vs archive noun)",
+        "keys": [
+          "inbox.archiveAction",
+          "docs.archiveHeading"
+        ],
+        "rawDe": [
+          "Archivieren",
+          "Archiv"
+        ],
+        "wraithDe": [
+          "Archivieren",
+          "Archiv"
+        ],
+        "rawAr": [
+          "أرشفة",
+          "الأرشيف"
+        ],
+        "wraithAr": [
+          "أرشفة",
+          "الأرشيف"
+        ]
+      }
+    ],
+    "seededExtrasAfterHumanAnswer": [
+      {
+        "key": "extras.coverLabel",
+        "en": "Cover",
+        "rawDe": "Titelbild",
+        "wraithDeFinal": "Hülle",
+        "rawAr": "الغلاف",
+        "wraithArFinal": "غطاء حماية",
+        "finalContextNote": "Tag next to a catalog item meaning a protective phone case (a physical accessory), not a cover image or insurance coverage."
+      },
+      {
+        "key": "extras.leadLabel",
+        "en": "Lead",
+        "rawDe": "Lead",
+        "wraithDeFinal": "Zeit bis Versand",
+        "rawAr": "عميل محتمل",
+        "wraithArFinal": "مدة التجهيز للشحن",
+        "finalContextNote": "Column label next to a catalog item meaning the shipping lead time until the item is dispatched (not delivery time or a sales lead)."
+      },
+      {
+        "key": "extras.dropLabel",
+        "en": "Drop",
+        "rawDe": "Ablegen",
+        "wraithDeFinal": "Reduziert",
+        "rawAr": "إفلات",
+        "wraithArFinal": "سعر مخفّض",
+        "finalContextNote": "Badge next to a catalog item meaning its price has dropped (a recently discounted item), not a new release or a remove action."
+      }
+    ]
+  },
+  "screenshots": {
+    "beforeRaw": [
+      {
+        "tag": "before-raw",
+        "locale": "de",
+        "viewport": "375w",
+        "kind": "full",
+        "path": "/home/colton/Projects/Wraith MCP/eval/results/gallery-claude-pilot/before-raw-de-375w.png"
+      },
+      {
+        "tag": "before-raw",
+        "locale": "de",
+        "viewport": "1280w",
+        "kind": "full",
+        "path": "/home/colton/Projects/Wraith MCP/eval/results/gallery-claude-pilot/before-raw-de-1280w.png"
+      },
+      {
+        "tag": "before-raw",
+        "locale": "de",
+        "viewport": "1280w",
+        "kind": "header-crop",
+        "path": "/home/colton/Projects/Wraith MCP/eval/results/gallery-claude-pilot/before-raw-de-header-crop.png"
+      },
+      {
+        "tag": "before-raw",
+        "locale": "ar",
+        "viewport": "375w",
+        "kind": "full",
+        "path": "/home/colton/Projects/Wraith MCP/eval/results/gallery-claude-pilot/before-raw-ar-375w.png"
+      },
+      {
+        "tag": "before-raw",
+        "locale": "ar",
+        "viewport": "1280w",
+        "kind": "full",
+        "path": "/home/colton/Projects/Wraith MCP/eval/results/gallery-claude-pilot/before-raw-ar-1280w.png"
+      },
+      {
+        "tag": "before-raw",
+        "locale": "ar",
+        "viewport": "1280w",
+        "kind": "header-crop",
+        "path": "/home/colton/Projects/Wraith MCP/eval/results/gallery-claude-pilot/before-raw-ar-header-crop.png"
+      }
+    ],
+    "afterWraith": [
+      {
+        "tag": "after-wraith",
+        "locale": "de",
+        "viewport": "375w",
+        "kind": "full",
+        "path": "/home/colton/Projects/Wraith MCP/eval/results/gallery-claude-pilot/after-wraith-de-375w.png"
+      },
+      {
+        "tag": "after-wraith",
+        "locale": "de",
+        "viewport": "1280w",
+        "kind": "full",
+        "path": "/home/colton/Projects/Wraith MCP/eval/results/gallery-claude-pilot/after-wraith-de-1280w.png"
+      },
+      {
+        "tag": "after-wraith",
+        "locale": "de",
+        "viewport": "1280w",
+        "kind": "header-crop",
+        "path": "/home/colton/Projects/Wraith MCP/eval/results/gallery-claude-pilot/after-wraith-de-header-crop.png"
+      },
+      {
+        "tag": "after-wraith",
+        "locale": "ar",
+        "viewport": "375w",
+        "kind": "full",
+        "path": "/home/colton/Projects/Wraith MCP/eval/results/gallery-claude-pilot/after-wraith-ar-375w.png"
+      },
+      {
+        "tag": "after-wraith",
+        "locale": "ar",
+        "viewport": "1280w",
+        "kind": "full",
+        "path": "/home/colton/Projects/Wraith MCP/eval/results/gallery-claude-pilot/after-wraith-ar-1280w.png"
+      },
+      {
+        "tag": "after-wraith",
+        "locale": "ar",
+        "viewport": "1280w",
+        "kind": "header-crop",
+        "path": "/home/colton/Projects/Wraith MCP/eval/results/gallery-claude-pilot/after-wraith-ar-header-crop.png"
+      }
+    ]
+  }
+}

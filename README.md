@@ -21,7 +21,8 @@ An independent, judge-validated evaluation (two judges, blinded and position-swa
 - **Release replay (N → N+1):** stale-source detection precision = recall = **1.0**
 - **Rendered layout (nextjs-commerce, 7 locales, 375/1280 px):** **26 → 8 → 0** defects (baseline → `layout --fix` codemods → one prescribed agent edit)
 - **Stage 4 (TM context ablation, 482 items):** dataset and metrics pipeline validated in a dry run; full run pending ([Section 13](eval/REPORT.md))
-- **Proof of concept, not publishable evidence (de, 50 strings):** an Opus reviewer working in code context flagged **25/25** planted meaning errors, including 5/5 on strings that appear only once, which deterministic checks missed entirely (0/25). It flagged **0/25** clean strings ([details](docs/QE_REVIEW.md#proof-of-concept-2026-11-25-not-publishable-evidence))
+- **Proof of concept, not publishable evidence (de, 50 strings):** a fresh-context **Claude Sonnet** reviewer working in code context flagged **25/25** planted meaning errors (`20/20` recurring, `5/5` one-off) that deterministic checks missed entirely (`0/25`), with **0/25** false flags in 39.6s (matching the prior Opus run and confirming the binary in-context design itself vs. the earlier 17/20 three-critic Sonnet design; [details](docs/QE_REVIEW.md#proof-of-concept-2026-11-25-not-publishable-evidence))
+- **End-to-end 2-locale trial (de + ar, 63 keys / 126 strings, Claude Sonnet + fresh QE subagent):** Raw JSON baseline failed `check` (`dnt_violation`), missed glossary terms, mistranslated `Charge` as `"Aufladen"`, and produced **20 rendered layout defects** (`"Abrechn..."` clipping, broken LTR Arabic). Wraith + Claude + fresh QE subagent shipped **0 `check` errors**, **0 rendered layout defects**, **63/63 Context Notes**, **1/1 exact Open Question** on the 3 seeded ambiguities, **1 live `apply` DNT catch**, and **126/126 `ok` QE PASS** after answering `Q1`.
 
 The agent alone translates about as well as with Wraith. What Wraith adds is that the output ships: no broken placeholders, plurals or glossary terms, no stale strings, and no clipped or mirrored-wrong UI.
 
@@ -112,6 +113,11 @@ This creates `.wraith/config.json`, seeds staleness baselines for any existing t
 | **React / Next.js** | `next-intl`, `react-i18next` | Splice-based lossless JSON (preserves key order, escapes, BOM) | ICU (cardinal + `selectordinal` + rich tags), `{{x}}`, `$t()`, i18next `_one`/`_few`/`_many` suffix plurals | `@babel/parser` AST |
 | **Vue / Nuxt** | `vue-i18n`, `@nuxtjs/i18n` | Splice-based lossless JSON | `{x}`, `@:linked`, pipe plurals `a \| b`, raw `@` check | `@vue/compiler-sfc` + Babel |
 | **SvelteKit** | Paraglide (v1 & v2 variants), `svelte-i18n` | Splice-based lossless JSON (ignores `$schema`) | ICU-like `{x}`, Paraglide 2 match variants | `svelte/compiler` + Babel |
+| **Astro** | `i18next`, `astro-i18next`, Paraglide | Splice-based lossless JSON | ICU, `{{x}}`, `{x}` | `.astro` frontmatter + template scanner + Babel |
+| **Electron** | `i18next`, `react-i18next` | Splice-based lossless JSON | ICU, `{{x}}`, `{x}` | Main + renderer JS/TS Babel scanner |
+| **Flutter** | `flutter_localizations` | Lossless `.arb` (preserves `@@locale` & `@key` metadata, surfaces `@key.description`) | ICU, `{x}` | Dart scanner (`AppLocalizations` / `S.of` / `l10n` + `Text()`) |
+| **Android** | Android Resources | Lossless `res/values*/strings.xml` (respects `translatable="false"`, `<plurals>`, `values-es-rMX`) | `%1$s`, `%d`, `{x}` | Kotlin / Java (`R.string.*`) & XML layout (`@string/*`) scanner |
+| **iOS / macOS** | Apple String Catalogs | Lossless multi-locale `.xcstrings` (preserves other locales, `shouldTranslate: false`, comments, plurals) | `%@`, `%lld`, `{x}` | Swift scanner (`String(localized:)`, `NSLocalizedString`, `Text()`) |
 | **Rails** | Built-in I18n | Lossless YAML (`yaml` CST, `lineWidth: 0`, nested `config/locales/**`) | `%{x}`, `%<name>fmt`, plural subkeys (refuses scalar overwrite) | ERB & Ruby scanner (incl. lazy `t(".key")` & helpers) |
 | **Django** | Gettext | Lossless PO (comments/refs preserved, clears `#, fuzzy`, respects `Plural-Forms`) | `%(x)s`, `{x}`, positional `%s`, `msgid`-based source (works with standard `makemessages` layout) | Django template & Python scanner (`blocktrans` → `%(var)s`) |
 
@@ -125,6 +131,10 @@ This creates `.wraith/config.json`, seeds staleness baselines for any existing t
   - Handles body, tables, headers/footers, footnotes/endnotes, comments, text boxes (deduplicating `mc:Fallback`), inline content controls (`w:sdt`), smart tags (`w:smartTag`/`w:customXml`), hyperlinks (including `HYPERLINK` complex fields), and tracked insertions (`w:ins`).
   - Protects tracked deletions (`w:del`), dynamic fields (`PAGE`, `DATE`), and drawings; strips XML-invalid control characters; enforces ZIP decompression limits.
   - Incremental batch translation persists content-hashed segment records in `.wraith/documents.json` so insertions/deletions/reordering never shift translations onto the wrong paragraph, source edits surface as `stale_source`, and manual reviewer edits in the target document survive subsequent batches; unchanged round-trips are byte-identical.
+- **PPTX (`.pptx`):** Byte-preserving OOXML splice engine across `ppt/slides/slide*.xml` and `ppt/notesSlides/notesSlide*.xml` in numeric slide order, preserving `<a:rPr>` run formatting via `<g id="n">...</g>`.
+- **XLSX (`.xlsx`):** Byte-preserving OOXML splice engine across `xl/sharedStrings.xml` and worksheet inline strings (`<is>`), preserving formulas (`<f>`), numeric/date cells, rich-text runs, and `xml:space="preserve"`.
+- **Subtitles (`.vtt`, `.srt`):** Byte-preserving WebVTT and SubRip engine preserving headers (`WEBVTT`, `NOTE`, `STYLE`, `REGION`), cue IDs, timestamps, cue settings, inline tags, and CRLF/LF endings; rejects blank-line/timestamp injection and surfaces reading-speed constraints (`durationSec`, `maxChars` at 20 CPS, `maxLines: 2`, `maxCharsPerLine: 42`).
+- **Nuanced document formatting verification (`wraith doc-verify`):** Renders source and translated DOCX/PPTX/XLSX via headless LibreOffice (`soffice --headless --convert-to pdf`) and validates XLSX formula integrity. Natural page reflow in prose DOCX (patient letters, studies, contracts) is reported as informational rather than failing, unless an explicit `--max-pages` budget is set for fixed-page layouts; PPTX slide-count mismatches and XML render failures always fail.
 - **Markdown / MDX (`.md`, `.mdx`):** Paragraph-level segmentation (preserves soft-wrapped prose & CRLF), skips fenced/indented code blocks, link-reference URLs, and multi-line MDX `import`/`export` blocks, and protects inline code, URLs, and MDX `{expressions}` via `<x/>`/`<g>` tags.
 
 ---
@@ -151,6 +161,7 @@ Global option: `-C, --cwd <dir>` (project root). Gates exit `0` PASS · `1` FAIL
 | `wraith export` | TMS bundle: XLIFF 2.0, TMX 1.4b, TBX-Basic, screenshots | `--format xliff2` `--out` `--locales` `--only-flagged` `--include-tm` `--include-glossary` `--bundle-screenshots` |
 | `wraith import <file-or-dir>` | glossary/TM/locale assets, or reviewed `.xliff`/`.xlf` (auto-detected, validated, stored as human-reviewed TM) | `--format auto\|csv\|tbx\|tmx\|locales\|xliff` |
 | `wraith report` | end-of-run report: translated, needs attention, caught and fixed, open questions (Q1…), assumptions (A1…) | `--since <iso>` `--json` |
+| `wraith doc-verify <src> <tgt>` | LibreOffice PDF formatting-integrity & XLSX formula verifier (nuanced DOCX reflow vs fixed-page/PPTX budgets) | `--max-pages <n>` `--json` |
 | `wraith mcp` | start the MCP server (stdio) | |
 
 Exit codes for `visual-qa`: `1` regression, `2` no Playwright/server/baseline. `qe` exits `1` if any string is flagged and `2` if any is unreviewed. `extract --fail-on-unextracted` exits `1` while hardcoded strings or concatenations remain.

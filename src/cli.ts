@@ -15,6 +15,7 @@ import { answerQuestion, listQuestions, overrideAssumption } from "./core/contex
 import { resolveConfinedPath } from "./core/security.js";
 import { isXliffPath, runTmsExport, runTmsImport } from "./core/tms.js";
 import { runVisualQa } from "./core/visual-qa.js";
+import { verifyDocumentFormatting } from "./documents/verify.js";
 import { generateReport } from "./core/report.js";
 import { ingestReviewResults, packageReviewJob } from "./core/review.js";
 import { scanProject } from "./core/scan.js";
@@ -640,6 +641,35 @@ export function createCli(): Command {
         return;
       }
       console.log(rep.markdown);
+    });
+
+  program
+    .command("doc-verify <source> <target>")
+    .description("Verify translated OOXML document formatting integrity (DOCX/PPTX/XLSX) via LibreOffice PDF render & formula checks")
+    .option("--max-pages <n>", "Optional fixed page budget (only for fixed-page layouts; natural DOCX reflow is informational by default)")
+    .option("--json", "Output JSON", false)
+    .action((source, target, opts) => {
+      const rootDir = program.opts().cwd;
+      const maxPages = opts.maxPages !== undefined ? Number.parseInt(opts.maxPages, 10) : undefined;
+      const res = verifyDocumentFormatting({
+        sourceFile: path.resolve(rootDir, source),
+        targetFile: path.resolve(rootDir, target),
+        ...(Number.isFinite(maxPages) ? { maxPages } : {}),
+      });
+      if (opts.json) {
+        console.log(JSON.stringify(res, null, 2));
+      } else {
+        const pagesNote =
+          res.sourcePages !== null && res.targetPages !== null
+            ? ` · pages: ${res.sourcePages} -> ${res.targetPages}`
+            : "";
+        console.log(`doc-verify (${res.format}): ${res.outcome}${pagesNote}`);
+        for (const f of res.findings) {
+          console.log(`  [${f.severity}] ${f.code}: ${f.message}`);
+        }
+      }
+      if (res.outcome === "FAIL") process.exitCode = 1;
+      else if (res.outcome === "INCONCLUSIVE") process.exitCode = 2;
     });
 
   program
