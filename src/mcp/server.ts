@@ -630,19 +630,21 @@ export function createWraithMcpServer(options: McpServerOptions = {}): McpServer
     {
       title: "Quality Review (ok/flag verdicts in context)",
       description:
-        "Binary quality review done by YOU, in a fresh context (use a subagent if you can; do not review your own translations in the context that produced them). mode=prepare returns review tasks, one per file: open each file, read how every key is used, and judge each translation ok or flag. mode=submit with verdicts[] stores them, pinned to the current source+target (an edit resets the string to unreviewed, so only changed strings are re-reviewed). mode=status (default) returns ok/flagged/unreviewed counts and the flagged list. Strings with check errors are not sent for review. Wraith calls no model and never edits catalogs here: fix flagged strings with apply_translations.",
+        "Binary quality review done by YOU, in a fresh context (use a subagent if you can; do not review your own translations in the context that produced them). mode=prepare returns review tasks, one per file: open each file, read how every key is used, and judge each translation ok or flag. Each string includes a fingerprint of source+target; echo fingerprint (or target) when submitting so verdicts stay pinned to the exact text reviewed. mode=submit with verdicts[] stores them (rejecting edits since prepare or attempts to overwrite human-verified strings). mode=status (default) returns ok/flagged/unreviewed counts and the flagged list. Strings with check errors are not sent for review. Wraith calls no model and never edits catalogs here: fix flagged strings with apply.",
       inputSchema: {
         rootDir: z.string().optional(),
         locales: z.array(z.string()).optional(),
         keys: z.array(z.string()).optional(),
         mode: z.enum(["status", "prepare", "submit"]).optional().default("status"),
-        includeReviewed: z.boolean().optional().describe("prepare: also include strings that already have a current verdict"),
+        includeReviewed: z.boolean().optional().describe("prepare: also include agent-reviewed strings (human-verified strings remain excluded)"),
         verdicts: z
           .array(
             z.object({
               locale: z.string(),
               key: z.string(),
               verdict: z.enum(["ok", "flag"]),
+              fingerprint: z.string().optional().describe("Fingerprint from mode=prepare (provide fingerprint or target)"),
+              target: z.string().optional().describe("Reviewed target text (provide fingerprint or target)"),
               reason: z.string().optional(),
               suggestedFix: z.string().optional(),
             })

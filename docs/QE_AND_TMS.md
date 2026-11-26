@@ -14,14 +14,15 @@ MCP: `qe_audit` with `mode: "prepare" | "submit" | "status"` (default `status`).
 
 **Loop:**
 
-1. **Prepare.** One task per locale × file, covering every translated string without a current verdict. Strings with `check` errors are listed in `blockedByCheck` and left out until they're fixed. Each string carries:
-   - `sameSourceElsewhere`: how the project translates the same source text in other files.
+1. **Prepare.** One task per locale × file, covering every translated string without a current verdict (`human-verified` strings are excluded even with `--all`). Strings with `check` errors are listed in `blockedByCheck` and left out until they're fixed. Each string carries:
+   - `fingerprint`: short content hash of `source + target` at prepare time.
+   - `sameSourceElsewhere`: how the project translates the same source text elsewhere.
    - `termBase`: Term Base hits.
    - `comment`: the developer comment, if any.
 
    The result also includes `projectDecisions` (recorded assumptions such as register or brand handling) and one set of reviewer `instructions`.
 2. **Review in a fresh context.** In Claude Code that means a subagent; elsewhere, a separate step after translating. The reviewer opens each file and reads how every key is used, then marks a string `flag` only if a user of that UI would find it wrong, misleading or broken. Every flag needs a reason, plus `suggestedFix` when the fix is clear. An unclear source gets a reason starting "Unclear meaning:".
-3. **Submit.** Each verdict is stored in `.wraith/qe-verdicts.json`, pinned to the exact source and target it judged. Editing either one makes the string `unreviewed` again, so the next run reviews only what changed.
+3. **Submit.** Each verdict must echo the string's `fingerprint` (or `target`) and is stored in `.wraith/qe-verdicts.json`. If the catalog changed between `prepare` and `submit`, the verdict is rejected (`text_changed`) so an `ok` or `flag` never lands on unreviewed text; agent submits also cannot overwrite `human-verified` records (`human_verified`). Editing source or target later makes the string `unreviewed` again, so the next run reviews only what changed. Corrupt `qe-verdicts.json` files fail loudly rather than being overwritten.
 4. **Fix and hand off.** Fix flagged strings with `apply` and re-review them once. Strings that still need a human go out through `export --only-flagged`, and TMS import records them as `human-verified`.
 
 Status per string: `unreviewed` | `ok` | `flagged` | `human-verified`.

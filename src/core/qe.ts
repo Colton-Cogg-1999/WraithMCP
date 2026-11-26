@@ -2,8 +2,8 @@ import fs from "node:fs";
 import { z } from "zod";
 import { runCheck } from "./check.js";
 import { prepareBatch, PreparedItem } from "./prepare.js";
-import { atomicWriteFileSync } from "./security.js";
-import { WraithStore } from "./store.js";
+import { atomicWriteFileSync, withWorkspaceLock } from "./security.js";
+import { sha256Short, WraithStore } from "./store.js";
 import { latestAnswerAt, listQuestions, projectDecisions } from "./context.js";
 import { appendRunEvents } from "./run-log.js";
 
@@ -25,15 +25,24 @@ export type QeStatus = "unreviewed" | "ok" | "flagged" | "human-verified";
 
 export const QE_VERDICTS_FILE = "qe-verdicts.json";
 
+export function qeFingerprint(source: string, target: string): string {
+  return sha256Short(`${source}\0${target}`);
+}
+
 export const QeVerdictInputSchema = z
   .object({
     locale: z.string(),
     key: z.string(),
     verdict: z.enum(["ok", "flag"]),
+    target: z.string().optional(),
+    fingerprint: z.string().optional(),
     reason: z.string().optional(),
     suggestedFix: z.string().optional(),
   })
-  .refine((v) => v.verdict === "ok" || (v.reason ?? "").trim().length > 0, { message: "a flag needs a reason" });
+  .refine((v) => v.verdict === "ok" || (v.reason ?? "").trim().length > 0, { message: "a flag needs a reason" })
+  .refine((v) => v.target !== undefined || Boolean((v.fingerprint ?? "").trim()), {
+    message: "target or fingerprint is required so verdicts stay pinned to the exact text reviewed",
+  });
 export type QeVerdictInput = z.infer<typeof QeVerdictInputSchema>;
 
 const QeRecordSchema = z.object({
@@ -61,12 +70,14 @@ Otherwise mark it "ok". Style preferences and acceptable alternatives are "ok".
 Every flag needs a one-line reason; add suggestedFix (the full corrected target, every placeholder, ICU branch and tag preserved) when the fix is clear. If the source's meaning itself is unclear even after reading the code, flag it with a reason starting "Unclear meaning:", unless the string already lists openQuestions: that ambiguity is already waiting on a human, so judge such a string only for other errors.`;
 
 export const QE_RESPONSE_FORMAT =
-  'Return one verdict per string: {"locale","key","verdict":"ok"|"flag","reason"?,"suggestedFix"?}. Submit with `wraith qe --submit <file>` or qe_audit mode=submit.';
+  'Return one verdict per string, echoing its fingerprint (or target): {"locale","key","fingerprint","verdict":"ok"|"flag","reason"?,"suggestedFix"?}. Submit with `wraith qe --submit <file>` or qe_audit mode=submit.';
 
 export interface QeReviewString {
   key: string;
   source: string;
   target: string;
+  /** Content hash of source + target at prepare time; echo on submit so edits in between cannot be misattributed. */
+  fingerprint: string;
   line?: number;
   comment?: string;
   /** Plain-language meaning recorded for the source string. */
@@ -111,12 +122,24 @@ export interface QeOptions {
 export function readQeVerdicts(rootDir: string): QeVerdictsFile {
   const p = new WraithStore(rootDir).filePath(QE_VERDICTS_FILE);
   if (!fs.existsSync(p)) return { version: 2, records: [] };
+  let rawJson: unknown;
   try {
-    const parsed = QeVerdictsFileSchema.safeParse(JSON.parse(fs.readFileSync(p, "utf8")));
-    return parsed.success ? parsed.data : { version: 2, records: [] };
-  } catch {
-    return { version: 2, records: [] };
+    rawJson = JSON.parse(fs.readFileSync(p, "utf8"));
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : String(err);
+    throw new Error(
+      `Corrupt QE verdicts file "${p}" (invalid JSON: ${msg}). Refusing to treat it as empty or overwrite stored verdicts; restore from git or fix the JSON syntax.`
+    );
   }
+  const parsed = QeVerdictsFileSchema.safeParse(rawJson);
+  if (!parsed.success) {
+    const first = parsed.error.issues[0];
+    const where = first?.path?.length ? ` at ${first.path.join(".")}` : "";
+    throw new Error(
+      `Invalid QE verdicts file "${p}"${where}: ${first?.message ?? "schema validation failed"}. Refusing to overwrite stored verdicts; restore from git or fix the file.`
+    );
+  }
+  return parsed.data;
 }
 
 function writeQeVerdicts(rootDir: string, file: QeVerdictsFile): void {
@@ -127,10 +150,12 @@ function writeQeVerdicts(rootDir: string, file: QeVerdictsFile): void {
 }
 
 function upsertRecords(rootDir: string, records: QeRecord[]): void {
-  const file = readQeVerdicts(rootDir);
-  const byId = new Map(file.records.map((r) => [`${r.locale}\0${r.key}`, r]));
-  for (const r of records) byId.set(`${r.locale}\0${r.key}`, r);
-  writeQeVerdicts(rootDir, { version: 2, records: [...byId.values()] });
+  withWorkspaceLock(rootDir, () => {
+    const file = readQeVerdicts(rootDir);
+    const byId = new Map(file.records.map((r) => [`${r.locale}\0${r.key}`, r]));
+    for (const r of records) byId.set(`${r.locale}\0${r.key}`, r);
+    writeQeVerdicts(rootDir, { version: 2, records: [...byId.values()] });
+  });
 }
 
 /**
@@ -212,7 +237,7 @@ export function prepareQeReview(options: QeOptions & { includeReviewed?: boolean
         continue;
       }
       const status = qeStatusOf(index.get(`${locale}\0${item.key}`), item.source, item.currentTarget, latestAnswerAt(questions, item.key, locale));
-      if (status !== "unreviewed" && !options.includeReviewed) {
+      if (status === "human-verified" || (status !== "unreviewed" && !options.includeReviewed)) {
         alreadyReviewed++;
         continue;
       }
@@ -221,7 +246,12 @@ export function prepareQeReview(options: QeOptions & { includeReviewed?: boolean
       const elsewhere = (bySource.get(item.source) ?? [])
         .filter((o) => o.key !== item.key)
         .map((o) => ({ key: o.key, target: o.currentTarget!, file: o.usageSites[0]?.file }));
-      const str: QeReviewString = { key: item.key, source: item.source, target: item.currentTarget! };
+      const str: QeReviewString = {
+        key: item.key,
+        source: item.source,
+        target: item.currentTarget!,
+        fingerprint: qeFingerprint(item.source, item.currentTarget!),
+      };
       if (site?.line) str.line = site.line;
       if (item.comment) str.comment = item.comment;
       if (item.contextNote && item.contextNoteStatus === "current") str.contextNote = item.contextNote;
@@ -266,7 +296,7 @@ export function prepareQeReview(options: QeOptions & { includeReviewed?: boolean
 
 export interface QeSubmitResult {
   accepted: number;
-  rejected: Array<{ locale?: string; key?: string; reason: string }>;
+  rejected: Array<{ locale?: string; key?: string; code?: string; reason: string }>;
   summary: QeSummary;
 }
 
@@ -274,20 +304,22 @@ export function parseQeVerdicts(raw: unknown): { verdicts: QeVerdictInput[]; rej
   const arr = Array.isArray(raw) ? raw : (raw as { verdicts?: unknown })?.verdicts;
   const verdicts: QeVerdictInput[] = [];
   const rejected: QeSubmitResult["rejected"] = [];
-  if (!Array.isArray(arr)) return { verdicts, rejected: [{ reason: 'expected an array or {"verdicts": [...]}' }] };
+  if (!Array.isArray(arr)) return { verdicts, rejected: [{ code: "invalid_verdict", reason: 'expected an array or {"verdicts": [...]}' }] };
   for (const item of arr) {
     const parsed = QeVerdictInputSchema.safeParse(item);
     if (parsed.success) verdicts.push(parsed.data);
     else {
       const o = (item ?? {}) as { locale?: string; key?: string };
-      rejected.push({ locale: o.locale, key: o.key, reason: parsed.error.issues[0]?.message ?? "invalid verdict" });
+      rejected.push({ locale: o.locale, key: o.key, code: "invalid_verdict", reason: parsed.error.issues[0]?.message ?? "invalid verdict" });
     }
   }
   return { verdicts, rejected };
 }
 
-/** Store verdicts, each pinned to the source + target as they are right now. */
+/** Store verdicts, each verified against the exact source + target that was reviewed. */
 export function submitQeVerdicts(options: { rootDir: string; verdicts: unknown }): QeSubmitResult {
+  // Validate existing verdict store upfront so corrupt files fail immediately even if 0 records are accepted
+  const existingIndex = qeIndex(options.rootDir);
   const { verdicts, rejected } = parseQeVerdicts(options.verdicts);
   const now = new Date().toISOString();
   const current = new Map<string, PreparedItem>();
@@ -298,9 +330,33 @@ export function submitQeVerdicts(options: { rootDir: string; verdicts: unknown }
   }
   const records: QeRecord[] = [];
   for (const v of verdicts) {
-    const item = current.get(`${v.locale}\0${v.key}`);
+    const id = `${v.locale}\0${v.key}`;
+    const item = current.get(id);
     if (!item) {
-      rejected.push({ locale: v.locale, key: v.key, reason: "no translated string with this key/locale" });
+      rejected.push({ locale: v.locale, key: v.key, code: "unknown_key", reason: "no translated string with this key/locale" });
+      continue;
+    }
+    const existing = existingIndex.get(id);
+    if (existing && existing.verdict === "human-verified" && existing.source === item.source && existing.target === item.currentTarget) {
+      rejected.push({
+        locale: v.locale,
+        key: v.key,
+        code: "human_verified",
+        reason: "string is human-verified for this exact source and target; agent verdicts cannot overwrite human sign-off",
+      });
+      continue;
+    }
+    const expectedFp = qeFingerprint(item.source, item.currentTarget!);
+    if (
+      (v.target !== undefined && v.target !== item.currentTarget) ||
+      (v.fingerprint !== undefined && v.fingerprint !== expectedFp)
+    ) {
+      rejected.push({
+        locale: v.locale,
+        key: v.key,
+        code: "text_changed",
+        reason: "source or target text changed since review tasks were prepared; re-prepare and review the current text",
+      });
       continue;
     }
     records.push({

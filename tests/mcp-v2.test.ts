@@ -99,8 +99,8 @@ describe("MCP v2 stdio schema coverage", () => {
     expect(status.summary.unreviewed).toBe(2);
     const prep: any = JSON.parse(text(await client.callTool({ name: "qe_audit", arguments: { locales: ["de"], mode: "prepare" } })));
     expect(prep.toReview).toBe(2);
-    const keys = prep.tasks.flatMap((t: any) => t.strings.map((s: any) => s.key));
-    const verdicts = keys.map((key: string) => ({ locale: "de", key, verdict: "ok" }));
+    const strings = prep.tasks.flatMap((t: any) => t.strings);
+    const verdicts = strings.map((s: any) => ({ locale: "de", key: s.key, fingerprint: s.fingerprint, verdict: "ok" }));
     const sub: any = JSON.parse(text(await client.callTool({ name: "qe_audit", arguments: { mode: "submit", verdicts } })));
     expect(sub.accepted).toBe(2);
     expect(sub.summary.ok).toBe(2);

@@ -143,7 +143,7 @@ describe("Open Questions", () => {
     expect(() => resolveQuestion(dir, "Q1")).toThrow(/only answered/);
 
     // A flag given before the answer must not stick once the answer arrives (same text, new context)
-    submitQeVerdicts({ rootDir: dir, verdicts: [{ locale: "de", key: "intro", verdict: "flag", reason: "Unclear meaning: Post verb or noun?" }] });
+    submitQeVerdicts({ rootDir: dir, verdicts: [{ locale: "de", key: "intro", target: "Veröffentliche dein erstes Update", verdict: "flag", reason: "Unclear meaning: Post verb or noun?" }] });
     expect(summarizeQe({ rootDir: dir, locales: ["de"] }).summary.flagged).toBe(1);
     await new Promise((r) => setTimeout(r, 5));
     answerQuestion(dir, { id: "q1", answer: "Verb: it asks the user to publish their first update.", via: "cli" });

@@ -143,7 +143,7 @@ describe("XLIFF 1.2 (Crowdin dialect)", () => {
     fs.writeFileSync(path.join(dir, "messages/fr.json"), "{}");
     applyTranslations({ rootDir: dir, targetLocale: "de", translations: [{ key: "save", value: "Speichern" }, { key: "greeting", value: "Hallo {name}" }] });
     applyTranslations({ rootDir: dir, targetLocale: "fr", translations: [{ key: "save", value: "Enregistrer" }, { key: "terms", value: "Lisez les <b>conditions</b>" }] });
-    submitQeVerdicts({ rootDir: dir, verdicts: [{ locale: "fr", key: "terms", verdict: "flag", reason: "Wrong register", suggestedFix: "Lis les <b>conditions</b>" }] });
+    submitQeVerdicts({ rootDir: dir, verdicts: [{ locale: "fr", key: "terms", target: "Lisez les <b>conditions</b>", verdict: "flag", reason: "Wrong register", suggestedFix: "Lis les <b>conditions</b>" }] });
     askQuestion(dir, { keys: ["save"], question: "Which form?", locale: "fr" });
     answerQuestion(dir, { id: "Q1", answer: "Formal vous" });
 

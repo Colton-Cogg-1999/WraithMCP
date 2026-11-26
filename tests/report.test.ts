@@ -77,9 +77,9 @@ describe("report", () => {
     submitQeVerdicts({
       rootDir: dir,
       verdicts: [
-        { locale: "de", key: "hoursOpen", verdict: "ok" },
-        { locale: "de", key: "invoiceOpen", verdict: "ok" },
-        { locale: "de", key: "greeting", verdict: "ok" },
+        { locale: "de", key: "hoursOpen", target: "Geöffnet", verdict: "ok" },
+        { locale: "de", key: "invoiceOpen", target: "Öffnen", verdict: "ok" },
+        { locale: "de", key: "greeting", target: "Hallo {name}", verdict: "ok" },
       ],
     });
     rep = generateReport(dir);
@@ -119,7 +119,7 @@ describe("report", () => {
         { key: "invoiceOpen", value: "Öffnen" },
       ],
     });
-    submitQeVerdicts({ rootDir: dir, verdicts: [{ locale: "de", key: "hoursOpen", verdict: "flag", reason: "Verb on a status badge; the store is open", suggestedFix: "Geöffnet" }] });
+    submitQeVerdicts({ rootDir: dir, verdicts: [{ locale: "de", key: "hoursOpen", target: "Öffnen", verdict: "flag", reason: "Verb on a status badge; the store is open", suggestedFix: "Geöffnet" }] });
     let rep = generateReport(dir);
     expect(rep.flagged).toEqual([expect.objectContaining({ key: "hoursOpen", by: "qe", suggestedFix: "Geöffnet" })]);
     expect(rep.markdown).toContain("### Needs attention (1)");

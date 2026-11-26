@@ -143,15 +143,16 @@ describe("QE — binary review in code context", () => {
     expect(fs.existsSync(path.join(dir, ".wraith/qe-tasks.json"))).toBe(true);
     expect(summarizeQe({ rootDir: dir, locales: ["de"] }).outcome).toBe("INCONCLUSIVE");
 
+    const fpByKey = new Map(prep.tasks.flatMap((t) => t.strings.map((s) => [s.key, s.fingerprint])));
     const sub = submitQeVerdicts({
       rootDir: dir,
       verdicts: [
-        { locale: "de", key: "btnSave", verdict: "ok" },
-        { locale: "de", key: "items", verdict: "ok" },
-        { locale: "de", key: "rich", verdict: "ok" },
-        { locale: "de", key: "toolbarSave", verdict: "flag", reason: "'Sparen' means saving money; this button saves the document", suggestedFix: "Speichern" },
-        { locale: "de", key: "items", verdict: "flag" }, // flag without reason → rejected
-        { locale: "de", key: "nope", verdict: "ok" }, // unknown key → rejected
+        { locale: "de", key: "btnSave", fingerprint: fpByKey.get("btnSave"), verdict: "ok" },
+        { locale: "de", key: "items", fingerprint: fpByKey.get("items"), verdict: "ok" },
+        { locale: "de", key: "rich", fingerprint: fpByKey.get("rich"), verdict: "ok" },
+        { locale: "de", key: "toolbarSave", fingerprint: fpByKey.get("toolbarSave"), verdict: "flag", reason: "'Sparen' means saving money; this button saves the document", suggestedFix: "Speichern" },
+        { locale: "de", key: "items", fingerprint: fpByKey.get("items"), verdict: "flag" }, // flag without reason → rejected
+        { locale: "de", key: "nope", target: "x", verdict: "ok" }, // unknown key → rejected
       ],
     });
     expect(sub.accepted).toBe(4);
@@ -202,10 +203,10 @@ describe("TMS round-trip — XLIFF 2.0 / TMX 1.4b / TBX-Basic", () => {
     submitQeVerdicts({
       rootDir: dir,
       verdicts: [
-        { locale: "de", key: "btnSave", verdict: "ok" },
-        { locale: "de", key: "greeting", verdict: "ok" },
-        { locale: "de", key: "items", verdict: "ok" },
-        { locale: "de", key: "rich", verdict: "flag", reason: "Dropped 'now'" },
+        { locale: "de", key: "btnSave", target: "Speichern", verdict: "ok" },
+        { locale: "de", key: "greeting", target: "Hallo {name}, willkommen zurück", verdict: "ok" },
+        { locale: "de", key: "items", target: "{count, plural, one {# Artikel} other {# Artikel}}", verdict: "ok" },
+        { locale: "de", key: "rich", target: "Lies die <b>Bedingungen</b> jetzt", verdict: "flag", reason: "Dropped 'now'" },
       ],
     });
 

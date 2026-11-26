@@ -390,8 +390,8 @@ export function createCli(): Command {
     .description("Quality review: your coding agent gives each translated string an ok/flag verdict in a fresh context, reading the code where it is used. Wraith calls no model.")
     .option("--locales <csv>", "Comma-separated target locales (default: config targetLocales)")
     .option("--prepare", "Write review tasks for strings without a current verdict to .wraith/qe-tasks.json", false)
-    .option("--all", "With --prepare: include strings that already have a current verdict", false)
-    .option("--submit <file>", "Store verdicts from a JSON file ([{locale,key,verdict,reason?,suggestedFix?}])")
+    .option("--all", "With --prepare: include agent-reviewed strings (human-verified strings stay excluded)", false)
+    .option("--submit <file>", "Store verdicts from a JSON file ([{locale,key,fingerprint|target,verdict,reason?,suggestedFix?}])")
     .option("--json", "Output JSON", false)
     .action(async (opts) => {
       const rootDir = program.opts().cwd;
