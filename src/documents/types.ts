@@ -4,6 +4,15 @@ export interface DocumentInlineTagMeta {
   type: string;
 }
 
+export type DocumentFormat = "markdown" | "mdx" | "docx" | "vtt" | "srt" | "pptx" | "xlsx";
+
+export interface DocumentSegmentConstraints {
+  maxChars?: number;
+  maxLines?: number;
+  maxCharsPerLine?: number;
+  durationSec?: number;
+}
+
 export interface DocumentSegment {
   id: string;
   part: string;
@@ -11,11 +20,12 @@ export interface DocumentSegment {
   text: string;
   plainText: string;
   tags: DocumentInlineTagMeta[];
+  constraints?: DocumentSegmentConstraints;
 }
 
 export interface ExtractedDocument {
   file: string;
-  format: "markdown" | "mdx" | "docx";
+  format: DocumentFormat;
   /** Whole document plain/tagged view so the coding agent always has document-level context */
   fullDocumentContext: string;
   segments: DocumentSegment[];
@@ -43,7 +53,7 @@ export interface DocumentApplyResult {
 }
 
 export interface DocumentAdapter {
-  readonly format: "markdown" | "mdx" | "docx";
+  readonly format: DocumentFormat;
   readonly extensions: readonly string[];
 
   extract(filePath: string): ExtractedDocument;

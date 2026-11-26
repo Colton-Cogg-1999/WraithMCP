@@ -15,6 +15,9 @@ import {
 import { WraithStore, sha256Short } from "../core/store.js";
 import { DocxDocumentAdapter } from "./docx.js";
 import { MarkdownDocumentAdapter } from "./markdown.js";
+import { PptxDocumentAdapter } from "./pptx.js";
+import { SubtitleDocumentAdapter } from "./subtitles.js";
+import { XlsxDocumentAdapter } from "./xlsx.js";
 import {
   DocumentAdapter,
   DocumentApplyResult,
@@ -25,6 +28,10 @@ import {
 
 const docAdapters: DocumentAdapter[] = [
   new DocxDocumentAdapter(),
+  new PptxDocumentAdapter(),
+  new XlsxDocumentAdapter(),
+  new SubtitleDocumentAdapter("vtt"),
+  new SubtitleDocumentAdapter("srt"),
   new MarkdownDocumentAdapter("markdown"),
   new MarkdownDocumentAdapter("mdx"),
 ];
@@ -734,6 +741,7 @@ export function prepareDocument(
           }
         : {}),
       tags: ev.segment.tags,
+      ...(ev.segment.constraints ? { constraints: ev.segment.constraints } : {}),
       glossaryHits: matchGlossaryTerms(ev.segment.plainText, glossary.entries, options.targetLocale),
       fuzzyMatches: findFuzzyMatches(ev.segment.text, memory, {
         sourceLocale: config.sourceLocale,

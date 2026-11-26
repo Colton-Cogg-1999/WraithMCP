@@ -564,9 +564,10 @@ export function runCheck(options: CheckOptions): CheckSummary {
           });
         }
 
-        // Length expansion risk (especially important for short UI strings)
-        const srcLen = srcEntry.value.length;
-        const tgtLen = tgtEntry.value.length;
+        // Length expansion risk (measured on visible rendered characters so multi-branch ICU plurals
+        // in Arabic/Polish don't trigger false warnings)
+        const srcLen = visibleCharCount(srcEntry.value);
+        const tgtLen = visibleCharCount(tgtEntry.value);
         const maxSafeRatio = srcLen <= 15 ? 2.4 : Math.max(1.8, conv.expectedExpansionRatio * 1.45);
         if (srcLen >= 4 && tgtLen / srcLen > maxSafeRatio && tgtLen - srcLen >= 10) {
           issues.push({
