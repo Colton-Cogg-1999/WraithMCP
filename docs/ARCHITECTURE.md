@@ -146,7 +146,7 @@ src/
 ├── formats/          # lossless JSON / YAML / PO
 ├── adapters/         # React/Next, Vue/Nuxt, SvelteKit, Rails, Django scanners
 └── documents/        # Markdown/MDX, byte-preserving DOCX
-skills/               # agent skills (i18n-prep, localize-pr, layout-remediation, qe-review, tms-roundtrip)
+skills/               # agent skills (i18n-prep, localize-pr, layout-remediation, qe-review, tms-roundtrip, crowdin-sync)
 .github/workflows/    # wraith.yml (CI gate + /localize), release.yml
 eval/                 # independent benchmark harness + REPORT.md
 ```

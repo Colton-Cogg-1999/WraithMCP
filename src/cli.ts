@@ -466,7 +466,7 @@ export function createCli(): Command {
   program
     .command("export")
     .description("Export segments for human post-editing in a TMS: XLIFF 2.0 with metadata/notes, optional TMX 1.4b, TBX-Basic, and failure screenshots")
-    .option("--format <fmt>", "Export format (xliff2)", "xliff2")
+    .option("--format <fmt>", "Export format: xliff2 | xliff12 (use xliff12 for Crowdin)", "xliff2")
     .option("-o, --out <dir>", "Output directory", ".wraith/exports/tms")
     .option("--locales <csv>", "Comma-separated target locales")
     .option("--only-flagged", "Only export strings flagged in QE review", false)
@@ -476,14 +476,14 @@ export function createCli(): Command {
     .option("--json", "Output JSON", false)
     .action((opts) => {
       const rootDir = program.opts().cwd;
-      if (opts.format !== "xliff2") {
-        console.error(`Error: unsupported format "${opts.format}" (supported: xliff2)`);
+      if (opts.format !== "xliff2" && opts.format !== "xliff12") {
+        console.error(`Error: unsupported format "${opts.format}" (supported: xliff2, xliff12)`);
         process.exitCode = 1;
         return;
       }
       const res = runTmsExport({
         rootDir,
-        format: "xliff2",
+        format: opts.format,
         outDir: opts.out,
         locales: parseCsvList(opts.locales),
         onlyFlagged: Boolean(opts.onlyFlagged),

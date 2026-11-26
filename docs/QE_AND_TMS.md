@@ -46,11 +46,20 @@ Status per string: `unreviewed` | `ok` | `flagged` | `human-verified`.
 ## TMS export (`wraith export` / MCP `tms_export`)
 
 ```bash
-wraith export [--format xliff2] [--out .wraith/exports/tms] [--locales de,ja] \
+wraith export [--format xliff2|xliff12] [--out .wraith/exports/tms] [--locales de,ja] \
   [--only-flagged] [--include-tm] [--include-glossary] [--bundle-screenshots] [--json]
 ```
 
 `tms_export` is `readOnlyHint: true`; it writes only to the explicit export directory.
+
+Every unit carries the translator context Wraith has:
+- the **Context Note** (`Meaning:`)
+- where the string is used (`Where: src/Cart.tsx:27 (CartBadge <span>)`)
+- its **Character Limit** (`Length: max 18 characters (required | estimated …)`)
+- answered **Open Questions** (`Clarified:`)
+- the QE flag reason, the closest TM match, and any layout constraint
+
+**`--format xliff12`** writes the dialect Crowdin documents: `source.xlf` (source strings only) plus `<locale>.xlf` (with targets). Each fact is a separate `<note>`, which Crowdin shows as string context. Character Limits become `maxwidth="N" size-unit="char"`. Placeholders and tags become `<ph id="n">{name}</ph>`. Target `state` is `translated`, `needs-review-translation` (flagged in QE) or `final` (human-verified). Import accepts both 1.2 and 2.0, skips source-only files, and matches a TMS language code to your locale (`de-DE` → `de`, or by file name). See the **crowdin-sync** skill for the full Crowdin push/pull loop.
 
 | File | Format |
 |---|---|

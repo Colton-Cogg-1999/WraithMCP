@@ -8,7 +8,8 @@ Skills are Markdown playbooks (`skills/<name>/SKILL.md`, YAML frontmatter `name`
 | [`localize-pr`](../skills/localize-pr/SKILL.md) | translate changed keys in a PR; CI `/localize` | `status` → `prepare` → translate → `apply` → `check` → `qe_audit` review (fresh context) → `report` |
 | [`layout-remediation`](../skills/layout-remediation/SKILL.md) | `layout` / `visual_qa` FAIL | reproduce → `layout_fix` → prescribed edits → width budgets via `prepare`/`apply` → verify |
 | [`qe-review`](../skills/qe-review/SKILL.md) | review translations in context; `wraith qe` exits 1/2; release sign-off | `check` → `qe_audit` prepare → fresh-context review of each file → submit → fix flagged once → hand off |
-| [`tms-roundtrip`](../skills/tms-roundtrip/SKILL.md) | human linguist review via TMS | `check` → `qe_audit` review → `tms_export` → TMS → `tms_import` → `check` |
+| [`crowdin-sync`](../skills/crowdin-sync/SKILL.md) | review in Crowdin | `check` → `tms_export` xliff12 → `crowdin upload sources/translations` → (review) → `crowdin download translations --export-only-approved` → `tms_import` → `check` |
+| [`tms-roundtrip`](../skills/tms-roundtrip/SKILL.md) | human linguist review via any other TMS | `check` → `qe_audit` review → `tms_export` → TMS → `tms_import` → `check` |
 
 ## Connect the MCP server
 
@@ -69,6 +70,7 @@ Wraith needs no API keys: review (`qe_audit`) is done by your agent.
 > visual-qa failed on /checkout at 375px for de — run layout-remediation.
 > Review the ja translations in context and fix what's flagged (qe-review).
 > Send the flagged German strings to our TMS; later import reviewed/de.xliff (tms-roundtrip).
+> Push our German strings to Crowdin for review, and pull back what's approved (crowdin-sync).
 ```
 
 ## Rules shared by all skills

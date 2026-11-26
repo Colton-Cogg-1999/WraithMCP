@@ -11,13 +11,15 @@ import { findTmMatches, readTm, TmEntry, upsertTmEntries } from "./tm.js";
 import { runVisualQa } from "./visual-qa.js";
 
 /* ------------------------------------------------------------------------------------------------
- * Lossless TMS externalization: XLIFF 2.0 (+ mda metadata & notes), TMX 1.4b, TBX-Basic.
+ * Lossless TMS externalization: XLIFF 2.0 (+ mda metadata & notes) or XLIFF 1.2 (notes + maxwidth,
+ * the dialect Crowdin documents), TMX 1.4b, TBX-Basic.
  * Fully deterministic — 0 LLM tokens.
  * ---------------------------------------------------------------------------------------------- */
 
 export interface TmsExportOptions {
   rootDir: string;
-  format?: "xliff2";
+  /** xliff2 (default; mda metadata) or xliff12 (what Crowdin documents: <note> context, maxwidth limits). */
+  format?: "xliff2" | "xliff12";
   outDir?: string;
   locales?: string[];
   onlyFlagged?: boolean;
@@ -27,7 +29,7 @@ export interface TmsExportOptions {
 }
 
 export interface TmsExportResult {
-  format: "xliff2";
+  format: "xliff2" | "xliff12";
   outDir: string;
   files: string[];
   unitsByLocale: Record<string, number>;
@@ -120,6 +122,102 @@ export function fromXliffInline(xml: string): string {
   return unescapeXml(stripped).replace(/\u0000PH([A-Za-z0-9+/=]*)\u0000/g, (_m, b64: string) =>
     Buffer.from(b64, "base64").toString("utf8")
   );
+}
+
+/** XLIFF 1.2 inline: placeholders and tags become <ph id="n">original</ph> so a TMS keeps them intact. */
+export function toXliff12Inline(text: string): string {
+  if (ICU_COMPLEX_RE.test(text)) return escapeXml(text);
+  let out = "";
+  let last = 0;
+  let n = 0;
+  for (const m of text.matchAll(INLINE_TOKEN_RE)) {
+    const idx = m.index ?? 0;
+    out += escapeXml(text.slice(last, idx));
+    out += `<ph id="${++n}">${escapeXml(m[0])}</ph>`;
+    last = idx + m[0].length;
+  }
+  return out + escapeXml(text.slice(last));
+}
+
+export function fromXliff12Inline(xml: string): string {
+  const withPh = xml.replace(/<(ph|bpt|ept|it)\b[^>]*>([\s\S]*?)<\/\1>/g, (_m, _t: string, inner: string) =>
+    `\u0000PH${Buffer.from(unescapeXml(inner), "utf8").toString("base64")}\u0000`
+  );
+  const stripped = withPh.replace(/<\/?(?:mrk|g|x|bx|ex)\b[^>]*>/g, "");
+  return unescapeXml(stripped).replace(/\u0000PH([A-Za-z0-9+/=]*)\u0000/g, (_m, b64: string) => Buffer.from(b64, "base64").toString("utf8"));
+}
+
+type ExportUnit = {
+  key: string;
+  source: string;
+  target?: string;
+  state: "initial" | "translated" | "reviewed";
+  flagged?: boolean;
+  maxChars?: number;
+  meta: Record<string, string | number | undefined>;
+  notes: Array<{ category: string; text: string }>;
+};
+
+const NOTE_LABEL: Record<string, string> = {
+  context: "Meaning",
+  location: "Where",
+  limit: "Length",
+  answer: "Clarified",
+  qe: "Review",
+  tm: "Translation memory",
+  layout: "Layout",
+  screenshot: "Screenshot",
+};
+
+/** XLIFF 1.2 with one <note> per fact (Crowdin shows notes as string context) and maxwidth in characters. */
+export function buildXliff12(input: { srcLang: string; trgLang?: string; original: string; units: ExportUnit[] }): string {
+  const L: string[] = [];
+  L.push(`<?xml version="1.0" encoding="UTF-8"?>`);
+  L.push(`<xliff xmlns="urn:oasis:names:tc:xliff:document:1.2" version="1.2">`);
+  L.push(
+    `  <file original="${escapeXml(input.original)}" source-language="${escapeXml(input.srcLang)}"${input.trgLang ? ` target-language="${escapeXml(input.trgLang)}"` : ""} datatype="plaintext">`
+  );
+  L.push(`    <body>`);
+  for (const u of input.units) {
+    const limit = u.maxChars ? ` maxwidth="${u.maxChars}" size-unit="char"` : "";
+    L.push(`      <trans-unit id="${escapeXml(u.key)}" resname="${escapeXml(u.key)}"${limit}>`);
+    L.push(`        <source xml:space="preserve">${toXliff12Inline(u.source)}</source>`);
+    if (input.trgLang && u.target !== undefined) {
+      const state = u.state === "reviewed" ? "final" : u.flagged ? "needs-review-translation" : "translated";
+      L.push(`        <target xml:space="preserve" state="${state}">${toXliff12Inline(u.target)}</target>`);
+    }
+    for (const n of u.notes) L.push(`        <note>${escapeXml(`${NOTE_LABEL[n.category] ?? n.category}: ${n.text}`)}</note>`);
+    L.push(`      </trans-unit>`);
+  }
+  L.push(`    </body>`);
+  L.push(`  </file>`);
+  L.push(`</xliff>`);
+  return L.join("\n") + "\n";
+}
+
+export function parseXliff12(xml: string): { srcLang?: string; trgLang?: string; units: ParsedXliffUnit[] } {
+  const file = /<file\b([^>]*)>/i.exec(xml);
+  const attr = (name: string) => (file ? new RegExp(`\\b${name}="([^"]*)"`).exec(file[1])?.[1] : undefined);
+  const units: ParsedXliffUnit[] = [];
+  for (const m of xml.matchAll(/<trans-unit\b([^>]*)>([\s\S]*?)<\/trans-unit>/g)) {
+    const id = /\bresname="([^"]*)"/.exec(m[1])?.[1] ?? /\bid="([^"]*)"/.exec(m[1])?.[1];
+    if (id === undefined) continue;
+    const s = /<source\b[^>]*>([\s\S]*?)<\/source>/.exec(m[2]);
+    const t = /<target\b([^>]*)>([\s\S]*?)<\/target>/.exec(m[2]);
+    const approved = /\bapproved="yes"/.test(m[1]);
+    const st = t ? /\bstate="([^"]*)"/.exec(t[1])?.[1] : undefined;
+    units.push({
+      key: unescapeXml(id),
+      source: s ? fromXliff12Inline(s[1]) : "",
+      target: t ? fromXliff12Inline(t[2]) : undefined,
+      state: approved || st === "final" ? "reviewed" : st ?? (t ? "translated" : "initial"),
+    });
+  }
+  return { srcLang: attr("source-language"), trgLang: attr("target-language"), units };
+}
+
+export function parseXliffAny(xml: string): { srcLang?: string; trgLang?: string; units: ParsedXliffUnit[] } {
+  return /<trans-unit\b/.test(xml) ? parseXliff12(xml) : parseXliff2(xml);
 }
 
 /* ------------------------------- data collection --------------------------------------------- */
@@ -293,9 +391,11 @@ export function runTmsExport(options: TmsExportOptions): TmsExportResult {
   let skippedPluralObjectKeys = 0;
   const bundled: Array<{ key: string; locale: string; path: string; type?: string }> = [];
   const rel = (abs: string) => path.relative(store.rootDir, abs).replace(/\\/g, "/");
+  const format = options.format ?? "xliff2";
+  let sourceUnits: ExportUnit[] | undefined;
 
   for (const locale of locales) {
-    const units: Parameters<typeof buildXliff2>[0]["units"] = [];
+    const units: ExportUnit[] = [];
     for (const item of collectItems(store.rootDir, locale)) {
       if (item.sourcePlurals) {
         skippedPluralObjectKeys++;
@@ -313,6 +413,20 @@ export function runTmsExport(options: TmsExportOptions): TmsExportResult {
           excludeSelf: item.currentTarget ? { source: item.source, target: item.currentTarget } : undefined,
         })[0];
       const notes: Array<{ category: string; text: string }> = [];
+      if (item.contextNote && item.contextNoteStatus === "current") notes.push({ category: "context", text: item.contextNote });
+      if (site) {
+        const where = [site.component, site.element ? `<${site.element}>` : undefined].filter(Boolean).join(" ");
+        notes.push({ category: "location", text: `${site.file}:${site.line}${where ? ` (${where})` : ""}` });
+      }
+      if (item.charLimit) {
+        notes.push({
+          category: "limit",
+          text: `max ${item.charLimit.maxChars} characters (${item.charLimit.kind === "declared" ? "required" : item.charLimit.basis === "rendered" ? "estimated from the rendered UI" : "estimated for this kind of element"})`,
+        });
+      }
+      for (const q of item.questions ?? []) {
+        if (q.answer) notes.push({ category: "answer", text: `${q.question} → ${q.answer}` });
+      }
       if (qeStatus === "flagged" && verdict?.reason) {
         notes.push({ category: "qe", text: `Flagged in review: ${verdict.reason}${verdict.suggestedFix ? ` — suggested: ${verdict.suggestedFix}` : ""}` });
       }
@@ -333,27 +447,42 @@ export function runTmsExport(options: TmsExportOptions): TmsExportResult {
         source: item.source,
         target: item.currentTarget,
         state: xliffState(qeStatus, item.currentTarget),
+        flagged: qeStatus === "flagged",
+        maxChars: item.charLimit?.maxChars,
         meta: {
           file: site?.file,
           line: site?.line,
           component: site?.component,
           element: site?.element,
           qe_status: item.currentTarget ? qeStatus : undefined,
-          max_chars: budget?.budgetChars ?? item.layout?.budgetChars,
+          max_chars: item.charLimit?.maxChars ?? budget?.budgetChars ?? item.layout?.budgetChars,
           max_width_px: budget?.maxWidthPx ?? item.layout?.maxWidthPx,
           tm_similarity: tm ? Number(tm.similarity.toFixed(3)) : undefined,
         },
         notes,
       });
     }
-    const xml = buildXliff2({ srcLang: config.sourceLocale, trgLang: locale, fileId: `wraith-${locale}`, units });
-    const fileAbs = path.join(outAbs, `${locale}.xliff`);
-    atomicWriteFileSync(fileAbs, xml);
-    files.push(rel(fileAbs));
+    if (format === "xliff12") {
+      // One source file for the TMS plus one bilingual file per locale (existing translations to review)
+      if (!sourceUnits) {
+        sourceUnits = units;
+        const srcAbs = path.join(outAbs, "source.xlf");
+        atomicWriteFileSync(srcAbs, buildXliff12({ srcLang: config.sourceLocale, original: "source.xlf", units }));
+        files.push(rel(srcAbs));
+      }
+      const fileAbs = path.join(outAbs, `${locale}.xlf`);
+      atomicWriteFileSync(fileAbs, buildXliff12({ srcLang: config.sourceLocale, trgLang: locale, original: "source.xlf", units }));
+      files.push(rel(fileAbs));
+    } else {
+      const xml = buildXliff2({ srcLang: config.sourceLocale, trgLang: locale, fileId: `wraith-${locale}`, units });
+      const fileAbs = path.join(outAbs, `${locale}.xliff`);
+      atomicWriteFileSync(fileAbs, xml);
+      files.push(rel(fileAbs));
+    }
     unitsByLocale[locale] = units.length;
   }
 
-  const result: TmsExportResult = { format: "xliff2", outDir: rel(outAbs) || ".", files, unitsByLocale, skippedPluralObjectKeys };
+  const result: TmsExportResult = { format, outDir: rel(outAbs) || ".", files, unitsByLocale, skippedPluralObjectKeys };
 
   if (options.includeTm) {
     const localeBases = new Set(locales.map((l) => l.toLowerCase().split("-")[0]));
@@ -434,6 +563,24 @@ export function parseXliff2(xml: string): { srcLang?: string; trgLang?: string; 
   return { srcLang: attr("srcLang"), trgLang: attr("trgLang"), units };
 }
 
+/**
+ * Map a TMS's language code onto a configured target locale: exact match, then the file name
+ * (e.g. Crowdin writes target-language="de-DE" into de.xlf), then a unique base-language match.
+ */
+export function resolveImportLocale(trgLang: string | undefined, fileStem: string, targets: string[]): string | undefined {
+  const norm = (l: string) => l.toLowerCase().replace(/_/g, "-");
+  const exact = (l?: string) => (l ? targets.find((t) => norm(t) === norm(l)) : undefined);
+  const hit = exact(trgLang) ?? exact(fileStem);
+  if (hit) return hit;
+  for (const cand of [trgLang, fileStem]) {
+    if (!cand) continue;
+    const base = norm(cand).split("-")[0];
+    const matches = targets.filter((t) => norm(t).split("-")[0] === base);
+    if (matches.length === 1) return matches[0];
+  }
+  return targets.length === 0 ? trgLang : undefined;
+}
+
 export function isXliffPath(p: string): boolean {
   return /\.(xliff|xlf)$/i.test(p);
 }
@@ -471,10 +618,11 @@ export async function runTmsImport(options: TmsImportOptions): Promise<TmsImport
   const verified: Array<{ key: string; locale: string; source: string; target: string }> = [];
 
   for (const file of files) {
-    const parsed = parseXliff2(fs.readFileSync(file, "utf8"));
-    const locale = parsed.trgLang;
+    const parsed = parseXliffAny(fs.readFileSync(file, "utf8"));
+    if (!parsed.units.some((u) => u.target !== undefined && u.target !== "")) continue; // source-only file (e.g. source.xlf)
+    const locale = resolveImportLocale(parsed.trgLang, path.basename(file).replace(/\.(xliff|xlf)$/i, ""), config.targetLocales);
     if (!locale) {
-      result.rejected.push({ key: "*", locale: "?", code: "missing_trgLang", message: `${path.basename(file)} has no trgLang` });
+      result.rejected.push({ key: "*", locale: "?", code: "unknown_target_locale", message: `${path.basename(file)}: target language "${parsed.trgLang ?? "(none)"}" matches no configured target locale` });
       continue;
     }
     if (!result.locales.includes(locale)) result.locales.push(locale);

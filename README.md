@@ -214,7 +214,7 @@ To follow up, reply with an ID: `Q1: it's a social-media post` answers a questio
 | `qe_audit` | mutating, non-destructive | writes `qe-tasks.json` / `qe-verdicts.json`; never edits catalogs |
 | `tms_import` | destructive | validated catalog writes + human-reviewed TM |
 
-Prompt: `/localize`. Agent playbooks: [`skills/`](skills/) — `i18n-prep`, `localize-pr`, `layout-remediation`, `qe-review`, `tms-roundtrip` ([docs/SKILLS.md](docs/SKILLS.md)).
+Prompt: `/localize`. Agent playbooks: [`skills/`](skills/) — `i18n-prep`, `localize-pr`, `layout-remediation`, `qe-review`, `tms-roundtrip`, `crowdin-sync` ([docs/SKILLS.md](docs/SKILLS.md)).
 
 ## CI Quickstart
 

@@ -673,6 +673,7 @@ export function createWraithMcpServer(options: McpServerOptions = {}): McpServer
       inputSchema: {
         rootDir: z.string().optional(),
         outDir: z.string().optional().describe("Workspace-relative output dir (default .wraith/exports/tms)."),
+        format: z.enum(["xliff2", "xliff12"]).optional().default("xliff2").describe("xliff12 for Crowdin: source.xlf + <locale>.xlf with <note> context and maxwidth limits."),
         locales: z.array(z.string()).optional(),
         onlyFlagged: z.boolean().optional().default(false),
         includeTm: z.boolean().optional().default(false),
@@ -682,10 +683,10 @@ export function createWraithMcpServer(options: McpServerOptions = {}): McpServer
       outputSchema: GenericObjectOutputSchema,
       annotations: { ...READ_ONLY_ANNOTATIONS, idempotentHint: true },
     },
-    async ({ rootDir, outDir, locales, onlyFlagged, includeTm, includeGlossary, bundleScreenshots }) => {
+    async ({ rootDir, outDir, format, locales, onlyFlagged, includeTm, includeGlossary, bundleScreenshots }) => {
       const res = runTmsExport({
         rootDir: safeRoot(rootDir),
-        format: "xliff2",
+        format,
         outDir,
         locales,
         onlyFlagged,
