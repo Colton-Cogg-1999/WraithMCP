@@ -1,3 +1,4 @@
+import { parse as parseIcu, TYPE, type MessageFormatElement } from "@formatjs/icu-messageformat-parser";
 import fs from "node:fs";
 import { z } from "zod";
 import { detectProjectAdapter, loadSourceCatalog } from "../adapters/registry.js";
@@ -99,9 +100,88 @@ export interface CharLimit {
   basis: "config" | "rendered" | "heuristic";
 }
 
+export function isBindingCharLimit(limit: CharLimit): boolean {
+  return limit.kind === "declared" || limit.basis === "rendered";
+}
+
 /** Character count as users see it (code points, not UTF-16 units). */
 export function charCount(s: string): number {
   return [...s].length;
+}
+
+const PLACEHOLDER_NOMINAL_CHARS = 4;
+
+/**
+ * Visible character length of a catalog message as rendered to users:
+ * - ICU plural / select / selectordinal: maximum visible length across all branches (`#` = 2 chars).
+ * - Inline HTML/XML/JSX tags (`<b>text</b>`, `<x id="1"/>`): tags stripped, inner text kept.
+ * - Simple placeholders (`{name}`, `{{name}}`, `%{name}`, `%(name)s`, `%s`/`%d`): nominal 4 chars each
+ *   instead of raw syntax/variable-name length, so `{longVariableName}` or ICU syntax never causes
+ *   unfixable Character Limit errors.
+ * - Plain strings without placeholders, ICU, or tags: exact code-point length (`charCount`).
+ */
+export function visibleCharCount(message: string): number {
+  if (!message) return 0;
+  // Strip XML/HTML tags while preserving inner text
+  const stripTags = (s: string) => s.replace(/<\/?[a-zA-Z][a-zA-Z0-9:-]*(?:\s+[^<>]*?)?\/?>/g, "");
+  const countNonIcuTokens = (s: string): number => {
+    const clean = stripTags(s)
+      .replace(/\{\{\s*[a-zA-Z0-9_.-]+(?:\s*,[^}]*)?\s*\}\}/g, "\uFFFC".repeat(PLACEHOLDER_NOMINAL_CHARS))
+      .replace(/%\{[a-zA-Z0-9_.-]+\}/g, "\uFFFC".repeat(PLACEHOLDER_NOMINAL_CHARS))
+      .replace(/%\([a-zA-Z0-9_.-]+\)[#0\- +]*(?:\d+|\*)?(?:\.(?:\d+|\*))?[hlL]?[diouxXeEfFgGcrsa%]/g, "\uFFFC".repeat(PLACEHOLDER_NOMINAL_CHARS))
+      .replace(/(?<!%)%(?:[#0\-+]*(?:\d+)?(?:\.\d+)?[diouxXeEfFgGcrsa])/g, "\uFFFC".repeat(PLACEHOLDER_NOMINAL_CHARS));
+    return [...clean].length;
+  };
+
+  if (message.includes("{")) {
+    try {
+      const ast = parseIcu(message, { ignoreTag: true });
+      const measureElements = (els: MessageFormatElement[], inPlural: boolean): number => {
+        let total = 0;
+        for (const el of els) {
+          switch (el.type) {
+            case TYPE.literal:
+              total += countNonIcuTokens(el.value);
+              break;
+            case TYPE.pound:
+              total += inPlural ? 2 : 1;
+              break;
+            case TYPE.argument:
+            case TYPE.number:
+            case TYPE.date:
+            case TYPE.time:
+              total += PLACEHOLDER_NOMINAL_CHARS;
+              break;
+            case TYPE.select: {
+              let maxBranch = 0;
+              for (const opt of Object.values(el.options)) {
+                maxBranch = Math.max(maxBranch, measureElements(opt.value, inPlural));
+              }
+              total += maxBranch;
+              break;
+            }
+            case TYPE.plural: {
+              let maxBranch = 0;
+              for (const opt of Object.values(el.options)) {
+                maxBranch = Math.max(maxBranch, measureElements(opt.value, true));
+              }
+              total += maxBranch;
+              break;
+            }
+            case TYPE.tag:
+              total += measureElements(el.children, inPlural);
+              break;
+          }
+        }
+        return total;
+      };
+      return measureElements(ast, false);
+    } catch {
+      // Fall back to non-ICU token counting when string uses non-ICU braces or malformed syntax
+    }
+  }
+
+  return countNonIcuTokens(message);
 }
 
 function globToRegExp(pattern: string): RegExp {
@@ -123,10 +203,43 @@ export function declaredLimit(config: WraithConfig, key: string): number | undef
   return best?.max;
 }
 
-const CONSTRAINED_ELEMENT_RE = /^(button|th|option|summary)$|button|btn|tab|nav|menuitem|badge|chip|pill|tag\b/i;
+const CONSTRAINED_WORDS = new Set([
+  "button",
+  "btn",
+  "th",
+  "option",
+  "summary",
+  "tab",
+  "tabs",
+  "nav",
+  "navbar",
+  "menuitem",
+  "badge",
+  "chip",
+  "pill",
+  "tag",
+  "tooltip",
+  "breadcrumb",
+]);
 
 export function isConstrainedElement(element: string | undefined): boolean {
-  return Boolean(element && CONSTRAINED_ELEMENT_RE.test(element));
+  if (!element) return false;
+  const trimmed = element.trim();
+  if (!trimmed) return false;
+  const lower = trimmed.toLowerCase();
+  if (CONSTRAINED_WORDS.has(lower)) return true;
+  // Split PascalCase / camelCase / kebab-case / snake_case / dot.case into word tokens
+  // so "TabsTrigger", "IconButton", "nav-link", "MenuItem" match, while "table", "TableCell",
+  // "DataTable", "NavigationContainer", "StableView" do NOT.
+  const words = trimmed
+    .replace(/([a-z0-9])([A-Z])/g, "$1 $2")
+    .replace(/([A-Z]+)([A-Z][a-z])/g, "$1 $2")
+    .split(/[\s._:/-]+/)
+    .map((w) => w.toLowerCase())
+    .filter(Boolean);
+  if (words.some((w) => CONSTRAINED_WORDS.has(w))) return true;
+  // Also catch lowercase compound HTML/custom tags like "menuitem" or "navitem" without matching "table" or "navigation"
+  return /^(?:menu|nav|tab)(?:item|link|bar|btn|button)$/.test(lower);
 }
 
 /**
@@ -136,7 +249,7 @@ export function isConstrainedElement(element: string | undefined): boolean {
  */
 export function heuristicLimit(source: string): number | undefined {
   if (/\{\s*[\w.]+\s*,\s*(?:plural|select|selectordinal)\s*,/.test(source)) return undefined;
-  const len = charCount(source);
+  const len = visibleCharCount(source);
   if (len === 0 || len > 50) return undefined;
   if (len <= 10) return Math.max(len * 3, len + 6);
   if (len <= 20) return len * 2;
@@ -144,7 +257,7 @@ export function heuristicLimit(source: string): number | undefined {
   return Math.ceil(len * 1.6);
 }
 
-/** Declared limit (config) > rendered measurement (layout.json) > heuristic for constrained elements. */
+/** Declared limit (config) > rendered measurement (layout.json) > heuristic for constrained elements across usage sites. */
 export function resolveCharLimit(input: {
   config: WraithConfig;
   layout: LayoutFile;
@@ -152,12 +265,14 @@ export function resolveCharLimit(input: {
   locale: string;
   source: string;
   element?: string;
+  elements?: Array<string | undefined>;
 }): CharLimit | undefined {
   const declared = declaredLimit(input.config, input.key);
   if (declared !== undefined) return { maxChars: declared, kind: "declared", basis: "config" };
   const rendered = input.layout.budgets[input.key]?.[input.locale];
   if (rendered) return { maxChars: rendered.budgetChars, kind: "inferred", basis: "rendered" };
-  if (isConstrainedElement(input.element)) {
+  const candidateElements = input.elements ?? (input.element ? [input.element] : []);
+  if (candidateElements.some((el) => isConstrainedElement(el))) {
     const h = heuristicLimit(input.source);
     if (h !== undefined) return { maxChars: h, kind: "inferred", basis: "heuristic" };
   }

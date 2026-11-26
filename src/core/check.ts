@@ -4,7 +4,7 @@ import path from "node:path";
 import { detectProjectAdapter, loadLocaleCatalog, loadSourceCatalog } from "../adapters/registry.js";
 import { detectUnscannedFileTypes } from "../adapters/utils.js";
 import { checkGlossaryCompliance } from "./glossary.js";
-import { charCount, listAssumptions, listQuestions, questionsFor, resolveCharLimit } from "./context.js";
+import { isBindingCharLimit, isConstrainedElement, listAssumptions, listQuestions, questionsFor, resolveCharLimit, visibleCharCount } from "./context.js";
 import { getLocaleConventions, getPluralCategories } from "./locales.js";
 import { findMissingAdvisoryPluralCategories, PluralValidationContext, validateTranslationString } from "./placeholders.js";
 import { evaluateDocumentForCheck, scanDocumentsInProject } from "../documents/registry.js";
@@ -579,28 +579,37 @@ export function runCheck(options: CheckOptions): CheckSummary {
           });
         }
 
-        // Character Limits: Declared (config) fail check; Inferred (rendered measurement or a length
-        // budget for constrained elements) are advisory: the agent shortens, or asks if it cannot.
-        const site0 = liveUsage.keys[key]?.sites?.[0];
-        const limit = resolveCharLimit({ config, layout: layoutState, key, locale, source: srcEntry.value, element: site0?.element });
-        const tgtChars = charCount(tgtEntry.value);
+        // Character Limits: Declared (config) and Rendered (measured UI width) fail check;
+        // Heuristic element budgets (constrained labels) warn so the agent shortens or files a question.
+        const sites = liveUsage.keys[key]?.sites ?? [];
+        const constrainedSite = sites.find((s) => isConstrainedElement(s.element)) ?? sites[0];
+        const limit = resolveCharLimit({
+          config,
+          layout: layoutState,
+          key,
+          locale,
+          source: srcEntry.value,
+          elements: sites.map((s) => s.element),
+        });
+        const tgtChars = visibleCharCount(tgtEntry.value);
         if (limit && tgtChars > limit.maxChars) {
           const budget = layoutState.budgets[key]?.[locale];
+          const binding = isBindingCharLimit(limit);
           const code = limit.kind === "declared" ? "char_limit_exceeded" : limit.basis === "rendered" ? "layout_budget_exceeded" : "char_limit_inferred";
           const why =
             limit.basis === "config"
               ? "declared Character Limit (.wraith/config.json charLimits)"
               : limit.basis === "rendered"
                 ? `width measured in the rendered UI (${budget?.maxWidthPx}px on <${budget?.element ?? "element"}>)`
-                : `inferred length budget for a <${site0?.element ?? "element"}> label`;
+                : `inferred length budget for a <${constrainedSite?.element ?? "element"}> label`;
           issues.push({
             code,
-            severity: limit.kind === "declared" ? "error" : "warning",
+            severity: binding ? "error" : "warning",
             locale,
             key,
-            file: budget?.file ?? site0?.file,
-            line: budget?.line ?? site0?.line,
-            message: `[${locale}] ${key}: ${tgtChars} chars exceeds the ${limit.maxChars}-char ${why}. Shorten it (an approved glossary abbreviation may help, keeping the full label in title/aria-label)${limit.kind === "inferred" ? "; if it cannot be shortened without losing meaning, record an Open Question" : ""}.`,
+            file: budget?.file ?? constrainedSite?.file,
+            line: budget?.line ?? constrainedSite?.line,
+            message: `[${locale}] ${key}: ${tgtChars} visible chars exceeds the ${limit.maxChars}-char ${why}. Shorten it (an approved glossary abbreviation may help, keeping the full label in title/aria-label)${!binding ? "; if it cannot be shortened without losing meaning, record an Open Question" : ""}.`,
             details: { targetLength: tgtChars, maxChars: limit.maxChars, kind: limit.kind, basis: limit.basis, ...(budget ? { maxWidthPx: budget.maxWidthPx, constraint: budget.constraint } : {}) },
           });
         }

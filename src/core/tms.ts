@@ -4,7 +4,7 @@ import { applyTranslations } from "./apply.js";
 import { runCheck } from "./check.js";
 import { prepareBatch, PreparedItem } from "./prepare.js";
 import { markHumanVerified, qeIndex, QeStatus, qeStatusOf } from "./qe.js";
-import { latestAnswerAt, listQuestions, Question } from "./context.js";
+import { isBindingCharLimit, latestAnswerAt, listQuestions, Question } from "./context.js";
 import { atomicWriteFileSync, resolveConfinedPath } from "./security.js";
 import { WraithStore } from "./store.js";
 import { findTmMatches, readTm, TmEntry, upsertTmEntries } from "./tm.js";
@@ -268,6 +268,10 @@ function declaredMaxChars(item: PreparedItem): number | undefined {
   return item.charLimit?.kind === "declared" ? item.charLimit.maxChars : undefined;
 }
 
+function bindingMaxChars(item: PreparedItem): number | undefined {
+  return item.charLimit && isBindingCharLimit(item.charLimit) ? item.charLimit.maxChars : undefined;
+}
+
 function locationNote(item: PreparedItem): { category: string; text: string } | undefined {
   const site = item.usageSites[0];
   if (!site) return undefined;
@@ -478,8 +482,8 @@ export function runTmsExport(options: TmsExportOptions): TmsExportResult {
         target: item.currentTarget,
         state: xliffState(qeStatus, item.currentTarget),
         flagged: qeStatus === "flagged",
-        // A TMS enforces maxwidth as a hard limit, so only declared limits go there; estimates stay in the note
-        maxChars: declaredMaxChars(item),
+        // A TMS enforces maxwidth as a hard limit: declared and measured-UI limits go there; heuristic estimates stay in the note
+        maxChars: bindingMaxChars(item),
         meta: {
           file: site?.file,
           line: site?.line,

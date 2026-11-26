@@ -294,17 +294,33 @@ export function Panel() {
 
       const chkBefore = runCheck({ rootDir: dir, locale: "de" });
       expect(chkBefore.countsByCode["layout_budget_exceeded"]).toBe(1);
+      const budgetIssue = chkBefore.issues.items.find((i) => i.code === "layout_budget_exceeded");
+      expect(budgetIssue).toMatchObject({ key: "tabBilling", severity: "error" });
       expect(chkBefore.outcome).toBe("FAIL");
 
-      // Shorten translation to fit recorded budget -> check clears layout_budget_exceeded!
+      // Even when glossary matches ("Abrechnung" = 10 chars, set stricter 8-char rendered budget), layout_budget_exceeded alone fails check!
       applyTranslations({
         rootDir: dir,
         targetLocale: "de",
-        strictGlossary: false,
         translations: [{ key: "tabBilling", value: "Abrechnung" }],
       });
       const chkAfter = runCheck({ rootDir: dir, locale: "de" });
       expect(chkAfter.countsByCode["layout_budget_exceeded"] ?? 0).toBe(0);
+      expect(chkAfter.outcome).toBe("PASS");
+
+      store.setLayoutBudget("tabBilling", "de", {
+        maxWidthPx: 56,
+        budgetChars: 6,
+        element: "button",
+        constraint: "width: 56px; overflow: hidden",
+        file: "src/Panel.tsx",
+        line: 9,
+        updatedAt: "2026-01-01T00:00:00.000Z",
+      });
+      const chkStrict = runCheck({ rootDir: dir, locale: "de" });
+      expect(chkStrict.errorCount).toBe(1);
+      expect(chkStrict.countsByCode).toMatchObject({ layout_budget_exceeded: 1 });
+      expect(chkStrict.outcome).toBe("FAIL");
     } finally {
       fs.rmSync(dir, { recursive: true, force: true });
     }

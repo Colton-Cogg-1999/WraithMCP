@@ -3,12 +3,12 @@ import { findFuzzyMatches, FuzzyMatch } from "./fuzzy.js";
 import { GlossaryHit, matchGlossaryTerms } from "./glossary.js";
 import { getLocaleConventions, LocaleConventions } from "./locales.js";
 import { reconcileMemoryWithLiveLocales } from "./memory-ops.js";
-import { projectDecisions, charCount, CharLimit, ContextNoteStatus, contextNoteFor, listQuestions, questionsFor, readContextNotes, resolveCharLimit } from "./context.js";
+import { projectDecisions, CharLimit, ContextNoteStatus, contextNoteFor, isBindingCharLimit, listQuestions, questionsFor, readContextNotes, resolveCharLimit, visibleCharCount } from "./context.js";
 import { extractPlaceholders } from "./placeholders.js";
 import { computeContextFingerprint, WraithStore, sha256Short } from "./store.js";
 import { UsageFile, UsageSite } from "./types.js";
 
-export type PrepareReason = "missing" | "stale_source" | "question_answered" | "context_changed" | "layout_budget_exceeded" | "char_limit_exceeded" | "requested" | "flagged";
+export type PrepareReason = "missing" | "stale_source" | "question_answered" | "context_changed" | "layout_budget_exceeded" | "char_limit_exceeded" | "char_limit_inferred" | "requested" | "flagged";
 
 export interface PreparedLayoutInfo {
   element?: string;
@@ -52,7 +52,7 @@ export interface PreparedItem {
 }
 
 export const CONTEXT_GUIDANCE =
-  "Read the code at usageSites before translating. When contextNoteStatus is missing or stale, pass contextNote to apply: one plain-language sentence a translator could use, saying what the string means and where it appears (e.g. \"Button that saves the open document, not about saving money\"). Respect charLimit: a declared limit is binding; an inferred one is a budget, so shorten to fit and only if that loses meaning file an Open Question. Treat every Answer in questions as binding. If the meaning is still unclear after reading the code, translate your best guess and file an Open Question (memory add_question) instead of stopping; after an Answer, revisit the string and resolve the question.";
+  "Read the code at usageSites before translating. When contextNoteStatus is missing or stale, pass contextNote to apply: one plain-language sentence a translator could use, saying what the string means and where it appears (e.g. \"Button that saves the open document, not about saving money\"). Respect charLimit: declared (config) and rendered (measured UI width) limits are binding errors in check; a heuristic element budget is advisory, so shorten to fit and only if that loses meaning file an Open Question. Treat every Answer in questions as binding. If the meaning is still unclear after reading the code, translate your best guess and file an Open Question (memory add_question) instead of stopping; after an Answer, revisit the string and resolve the question.";
 
 export interface PrepareOptions {
   rootDir: string;
@@ -183,9 +183,17 @@ export function prepareBatch(options: PrepareOptions): PrepareResult {
     const baselineHash = records.sourceBaselines?.[key];
 
     const keyQuestions = questionsFor(allQuestions, key, options.targetLocale);
-    const firstSite = liveUsage.keys[key]?.sites?.[0];
-    const charLimit = resolveCharLimit({ config, layout: layoutState, key, locale: options.targetLocale, source: srcEntry.value, element: firstSite?.element });
-    const overLimit = Boolean(charLimit && tgtEntry && charCount(tgtEntry.value) > charLimit.maxChars);
+    const keySites = liveUsage.keys[key]?.sites ?? [];
+    const charLimit = resolveCharLimit({
+      config,
+      layout: layoutState,
+      key,
+      locale: options.targetLocale,
+      source: srcEntry.value,
+      elements: keySites.map((s) => s.element),
+    });
+    const overLimit = Boolean(charLimit && tgtEntry && visibleCharCount(tgtEntry.value) > charLimit.maxChars);
+    const overBindingLimit = Boolean(overLimit && charLimit && isBindingCharLimit(charLimit));
 
     let reason: PrepareReason | null = null;
     if (!tgtEntry || tgtEntry.value.trim() === "" || tgtEntry.fuzzy) {
@@ -198,10 +206,12 @@ export function prepareBatch(options: PrepareOptions): PrepareResult {
       reason = "question_answered";
     } else if (rec && currentFp && rec.contextFingerprint && rec.contextFingerprint !== currentFp) {
       reason = "context_changed";
-    } else if (overLimit) {
+    } else if (overBindingLimit) {
       reason = charLimit!.basis === "rendered" ? "layout_budget_exceeded" : "char_limit_exceeded";
     } else if (rec?.reviewStatus === "flagged") {
       reason = "flagged";
+    } else if (overLimit && (requestedKeys || options.includeTranslated)) {
+      reason = "char_limit_inferred";
     } else if (requestedKeys || options.includeTranslated) {
       reason = "requested";
     }
@@ -296,7 +306,7 @@ export function prepareBatch(options: PrepareOptions): PrepareResult {
     });
   }
 
-  // Prioritize: missing -> stale_source -> layout_budget_exceeded -> context_changed -> flagged -> requested
+  // Prioritize: missing -> stale_source -> question_answered -> layout_budget_exceeded/char_limit_exceeded -> context_changed -> flagged -> char_limit_inferred -> requested
   const priority: Record<PrepareReason, number> = {
     missing: 0,
     stale_source: 1,
@@ -305,7 +315,8 @@ export function prepareBatch(options: PrepareOptions): PrepareResult {
     char_limit_exceeded: 3,
     context_changed: 4,
     flagged: 5,
-    requested: 6,
+    char_limit_inferred: 6,
+    requested: 7,
   };
   allCandidates.sort(
     (a, b) => priority[a.reason] - priority[b.reason] || a.key.localeCompare(b.key)

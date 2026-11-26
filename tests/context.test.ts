@@ -10,10 +10,12 @@ import {
   askQuestion,
   declaredLimit,
   heuristicLimit,
+  isConstrainedElement,
   listQuestions,
   readContextNotes,
   resolveQuestion,
   setContextNoteForKey,
+  visibleCharCount,
 } from "../src/core/context.js";
 import { initProject } from "../src/core/init.js";
 import { prepareBatch } from "../src/core/prepare.js";
@@ -82,7 +84,7 @@ describe("Character Limits", () => {
     expect(heuristicLimit("{count, plural, one {# item} other {# items}}")).toBeUndefined();
   });
 
-  it("fails check on a declared limit but only warns on an inferred one", () => {
+  it("fails check on declared and rendered UI limits, warns on heuristic ones without re-queueing forever", () => {
     const dir = project(
       { btnSave: "Speichern und schließen", intro: "Veröffentliche dein erstes Update", "checkout.total": "Gesamtbetrag", "checkout.couponHint": "Gutschein?" },
       { "checkout.*": 10 }
@@ -95,14 +97,109 @@ describe("Character Limits", () => {
     expect(inferred[0].severity).toBe("warning");
     expect(inferred[0].message).toContain("Open Question");
 
+    // Default prepare only resurfaces binding limits (checkout.total), NOT heuristic warnings (btnSave)
+    const defaultPrep = prepareBatch({ rootDir: dir, targetLocale: "de" });
+    expect(defaultPrep.items.map((i) => i.key)).toEqual(["checkout.total"]);
+    expect(defaultPrep.items[0].reason).toBe("char_limit_exceeded");
+
+    // With includeTranslated, heuristic overflow shows distinct reason char_limit_inferred
     const item = prepareBatch({ rootDir: dir, targetLocale: "de", includeTranslated: true }).items.find((i) => i.key === "btnSave")!;
-    expect(item.reason).toBe("char_limit_exceeded");
+    expect(item.reason).toBe("char_limit_inferred");
     expect(item.charLimit).toEqual({ maxChars: 12, kind: "inferred", basis: "heuristic" });
 
-    // A rendered measurement outranks the heuristic and is still advisory
-    new WraithStore(dir).setLayoutBudget("btnSave", "de", { maxWidthPx: 200, budgetChars: 30, element: "button", updatedAt: "2026-01-01T00:00:00Z" });
+    // A rendered measurement outranks the heuristic and IS binding (error in check + resurfaced in default prepare)
+    new WraithStore(dir).setLayoutBudget("btnSave", "de", { maxWidthPx: 96, budgetChars: 14, element: "button", updatedAt: "2026-01-01T00:00:00Z" });
     expect(codes(dir, "char_limit_inferred")).toHaveLength(0);
+    const renderedExceeded = codes(dir, "layout_budget_exceeded");
+    expect(renderedExceeded).toHaveLength(1);
+    expect(renderedExceeded[0].severity).toBe("error");
+    expect(renderedExceeded[0].message).not.toContain("record an Open Question");
+    expect(prepareBatch({ rootDir: dir, targetLocale: "de" }).items.find((i) => i.key === "btnSave")?.reason).toBe("layout_budget_exceeded");
+
+    // Widening the rendered budget clears the error
+    new WraithStore(dir).setLayoutBudget("btnSave", "de", { maxWidthPx: 200, budgetChars: 30, element: "button", updatedAt: "2026-01-01T00:00:00Z" });
     expect(codes(dir, "layout_budget_exceeded")).toHaveLength(0);
+  });
+
+  it("counts visible rendered characters across ICU branches, placeholders, and inline tags", () => {
+    expect(visibleCharCount("Save")).toBe(4);
+    // {longVariableName} counts as 4 nominal chars, not 18
+    expect(visibleCharCount("Hi {longVariableName}!")).toBe(8); // "Hi " (3) + 4 + "!" (1)
+    // Inline HTML tags stripped, inner text preserved
+    expect(visibleCharCount("Read <b>the terms</b>")).toBe(14);
+    // ICU plural takes max branch (# = 2 chars), ignoring raw ICU keywords/braces
+    expect(visibleCharCount("{count, plural, one {# item} other {# items}}")).toBe(8); // "12 items" = 8, not 45!
+
+    const dir = project({}, { "checkout.*": 12 });
+    fs.writeFileSync(
+      path.join(dir, "messages/en.json"),
+      JSON.stringify(
+        {
+          btnSave: "Save",
+          intro: "Welcome",
+          checkout: {
+            total: "{count, plural, one {# item} other {# items}}",
+            couponHint: "Hello {customerDisplayName}",
+          },
+        },
+        null,
+        2
+      )
+    );
+    applyTranslations({
+      rootDir: dir,
+      targetLocale: "de",
+      translations: [
+        { key: "btnSave", value: "Speichern" },
+        { key: "intro", value: "Willkommen" },
+        { key: "checkout.total", value: "{count, plural, one {# Artikel} other {# Artikel}}" },
+        { key: "checkout.couponHint", value: "Hallo {customerDisplayName}" },
+      ],
+    });
+    // Raw checkout.total is 50 chars, visible max branch is "12 Artikel" (10 chars <= 12)
+    // Raw checkout.couponHint is 27 chars, visible is "Hallo " (6) + 4 = 10 chars <= 12
+    expect(codes(dir, "char_limit_exceeded")).toHaveLength(0);
+    const chk = runCheck({ rootDir: dir, locale: "de" });
+    expect(chk.errorCount).toBe(0);
+    expect(chk.outcome).toBe("PASS");
+
+    // Exceeding the 12-char limit on visible characters DOES fail check
+    applyTranslations({
+      rootDir: dir,
+      targetLocale: "de",
+      translations: [{ key: "checkout.total", value: "{count, plural, one {# Bestellartikel} other {# Bestellartikel}}" }],
+    });
+    expect(codes(dir, "char_limit_exceeded").map((i) => i.key)).toEqual(["checkout.total"]);
+  });
+
+  it("matches constrained UI elements by word boundaries and checks all usage sites", () => {
+    for (const pos of ["button", "IconButton", "SubmitBtn", "tab", "Tab", "TabsTrigger", "nav-link", "NavItem", "MenuItem", "Badge", "StatusChip", "Tag", "Tooltip"]) {
+      expect(isConstrainedElement(pos)).toBe(true);
+    }
+    for (const neg of ["div", "p", "span", "table", "Table", "TableRow", "TableCell", "DataTable", "NavigationContainer", "StableLayout"]) {
+      expect(isConstrainedElement(neg)).toBe(false);
+    }
+
+    // Multi-site key: first site is <p> (unconstrained), second site is <button> (constrained) -> gets heuristic limit
+    const dir = project({ btnSave: "Speichern", intro: "Veröffentliche jetzt sofort dein allererstes Update hier", "checkout.total": "Summe", "checkout.couponHint": "Code?" });
+    fs.writeFileSync(
+      path.join(dir, "src/Panel.tsx"),
+      `import { useTranslations } from "next-intl";
+export function Panel() {
+  const t = useTranslations();
+  return <div><TableCell>{t("checkout.total")}</TableCell><p>{t("intro")}</p><button>{t("intro")}</button><button>{t("btnSave")}</button><span>{t("checkout.couponHint")}</span></div>;
+}
+declare const TableCell: any;
+`
+    );
+    // checkout.total in <TableCell> must NOT get a heuristic limit even if stretched
+    const de = JSON.parse(fs.readFileSync(path.join(dir, "messages/de.json"), "utf8"));
+    de.checkout.total = "Gesamtbetrag inklusive Mehrwertsteuer";
+    fs.writeFileSync(path.join(dir, "messages/de.json"), JSON.stringify(de, null, 2));
+
+    const inf = codes(dir, "char_limit_inferred").map((i) => i.key);
+    expect(inf).toContain("intro"); // seen on second site (<button>)
+    expect(inf).not.toContain("checkout.total"); // <TableCell> is not a <Tab>
   });
 });
 
