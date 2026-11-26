@@ -6,7 +6,7 @@ Workflow: [`.github/workflows/wraith.yml`](../.github/workflows/wraith.yml)
 |---|---|---|---|
 | `deterministic-l10n-gate` | `pull_request` | **0** | `extract --fail-on-unextracted`, `check`, `visual-qa` vs baseline; sticky PR comment; artifacts on failure |
 | `update-baseline` | `push` to `main` | 0 | recapture `.wraith/visual-baseline.json`, upload as artifact |
-| `agentic-localize` | `/localize` PR comment (OWNER/MEMBER/COLLABORATOR) or `workflow_dispatch` | agent + optional QE | translate changed source keys, `check`, `qe`, commit if `PASS`, export + comment escalations |
+| `agentic-localize` | `/localize` PR comment (OWNER/MEMBER/COLLABORATOR) or `workflow_dispatch` | agent | translate changed source keys, `check`, ok/flag review in a fresh subagent context, commit if `PASS`, export + comment flagged strings |
 
 ## Setup
 
@@ -40,11 +40,10 @@ jobs:
 | Secret | Used by | Required |
 |---|---|---|
 | `GITHUB_TOKEN` | PR comments, push of verified translations | automatic |
-| `ANTHROPIC_API_KEY` | `agentic-localize` with `agent: claude`; also QE Tier 2 | for `/localize` (claude) |
+| `ANTHROPIC_API_KEY` | `agentic-localize` with `agent: claude` | for `/localize` (claude) |
 | `OPENAI_API_KEY` | `agentic-localize` with `agent: codex` | for `/localize` (codex) |
-| `GEMINI_API_KEY` | QE Tier 2 fallback when no Anthropic key | optional |
 
-The deterministic gate uses no secrets. Without any QE key, `wraith qe` still runs Tier 1 and marks the rest `unscored`.
+The deterministic gate uses no secrets. Wraith itself never calls a model; the only model is the `/localize` agent.
 
 ## Permissions
 
@@ -75,10 +74,10 @@ Review the diff like code: a baseline that absorbs a regression disables the gat
 1. A maintainer comments `/localize` on a PR (or runs the workflow manually with `agent`, `pr_number`, `base_ref`).
 2. The job checks out the PR head (`fetch-depth: 0`) and diffs source-locale files against `origin/<base>`; changed JSON keys are listed as `file<TAB>key` (YAML/PO files as `file<TAB>*`).
 3. The agent runs with the body of [`skills/localize-pr/SKILL.md`](../skills/localize-pr/SKILL.md) as its prompt and Wraith as its MCP server:
-   - Claude: `claude -p … --mcp-config mcp.json --allowedTools mcp__wraith,Read,Glob,Grep,Edit,Write --permission-mode acceptEdits`
+   - Claude: `claude -p … --mcp-config mcp.json --allowedTools mcp__wraith,Read,Glob,Grep,Edit,Write,Agent --permission-mode acceptEdits` (`Agent` lets it review in a fresh subagent context)
    - Codex: `codex exec --full-auto …` with `[mcp_servers.wraith]` in `~/.codex/config.toml`
    Agent CLI flags change between releases; pin versions if you depend on them.
-4. `wraith check` then `wraith qe --json`. Translations are committed and pushed only if `check` passes. Commits pushed with `GITHUB_TOKEN` do not retrigger workflows; re-run the gate or push a commit to re-check.
-5. If `qe-report.json` contains `needs_review` segments, the job runs `wraith export --only-flagged --include-tm --include-glossary --bundle-screenshots --out .wraith/artifacts/tms-review`, uploads it as `wraith-tms-review-<PR>`, and comments a table of escalated keys with risk scores. Linguists return the XLIFF; import it with `wraith import <dir>` (see [QE_AND_TMS.md](QE_AND_TMS.md)).
+4. The agent reviews its translations with the **qe-review** skill in a fresh subagent context. Then `wraith check` and `wraith qe --json` (review status). Translations are committed and pushed only if `check` passes. Commits pushed with `GITHUB_TOKEN` do not retrigger workflows; re-run the gate or push a commit to re-check.
+5. If any strings are flagged, the job runs `wraith export --only-flagged --include-tm --include-glossary --bundle-screenshots --out .wraith/artifacts/tms-review`, uploads it as `wraith-tms-review-<PR>`, and comments a table of flagged keys with their reasons. Linguists return the XLIFF; import it with `wraith import <dir>` (see [QE_AND_TMS.md](QE_AND_TMS.md)).
 
 `issue_comment` workflows always run the workflow file from the default branch, so changes to `wraith.yml` take effect for `/localize` only after merge.

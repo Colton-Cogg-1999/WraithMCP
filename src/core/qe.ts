@@ -1,405 +1,151 @@
 import fs from "node:fs";
 import { z } from "zod";
-import { applyTranslations } from "./apply.js";
 import { runCheck } from "./check.js";
 import { prepareBatch, PreparedItem } from "./prepare.js";
 import { atomicWriteFileSync } from "./security.js";
 import { WraithStore } from "./store.js";
-import { findTmMatches, TmMatch } from "./tm.js";
-import { CheckIssue } from "./types.js";
 
 /* ------------------------------------------------------------------------------------------------
- * Tiered Quality Estimation (QE)
+ * Quality review (QE)
  *
- * Tier 1  deterministic gate (0 tokens): check.ts validations + width-budget utilization.
- * Tier 2  three parallel micro-critics (strict JSON) over a fast low-cost model — the ONLY place
- *         Wraith calls a model, and only when explicitly invoked via `qe` / `qe_audit` with an
- *         API key present. Without a key Tier 2 is skipped and nothing is marked verified.
- * Tier 3  composite risk score, optional single auto-repair pass, escalation.
+ * One binary verdict per translated string — `ok` or `flag` — made by the host coding agent in a
+ * FRESH context, reading the code where each string is used. Wraith never calls a model: it only
+ * says what to review (file + keys), supplies cross-project facts the agent cannot see from one
+ * file (same-source translations elsewhere, Term Base, project decisions), and stores verdicts.
+ *
+ * A verdict is pinned to the exact source + target it judged; editing either resets the string to
+ * `unreviewed`, so each run only reviews what changed. Strings failing deterministic `check`
+ * errors are never sent for review (fix them first).
  * ---------------------------------------------------------------------------------------------- */
 
-export type CriticName = "terminology" | "ui_context" | "semantic";
-export type CriticSeverity = "none" | "minor" | "major" | "critical";
-export type QeStatus = "verified" | "needs_review" | "unscored" | "human-verified";
+export type QeVerdict = "ok" | "flag";
+export type QeStatus = "unreviewed" | "ok" | "flagged" | "human-verified";
 
-export const CriticFindingSchema = z.object({
+export const QE_VERDICTS_FILE = "qe-verdicts.json";
+
+export const QeVerdictInputSchema = z
+  .object({
+    locale: z.string(),
+    key: z.string(),
+    verdict: z.enum(["ok", "flag"]),
+    reason: z.string().optional(),
+    suggestedFix: z.string().optional(),
+  })
+  .refine((v) => v.verdict === "ok" || (v.reason ?? "").trim().length > 0, { message: "a flag needs a reason" });
+export type QeVerdictInput = z.infer<typeof QeVerdictInputSchema>;
+
+const QeRecordSchema = z.object({
+  locale: z.string(),
   key: z.string(),
-  severity: z.enum(["none", "minor", "major", "critical"]),
-  score: z.number().min(0).max(1),
-  issue: z.string().default(""),
+  source: z.string(),
+  target: z.string(),
+  verdict: z.enum(["ok", "flag", "human-verified"]),
+  reason: z.string().optional(),
   suggestedFix: z.string().optional(),
+  reviewedAt: z.string(),
 });
-export type CriticFindingRaw = z.infer<typeof CriticFindingSchema>;
-export interface CriticFinding extends CriticFindingRaw {
-  critic: CriticName;
-}
+export type QeRecord = z.infer<typeof QeRecordSchema>;
 
-export const SEVERITY_WEIGHTS: Record<CriticSeverity, number> = {
-  critical: 1.0,
-  major: 0.75,
-  minor: 0.35,
-  none: 0,
-};
+const QeVerdictsFileSchema = z.object({
+  version: z.literal(2).default(2),
+  records: z.array(QeRecordSchema).default([]),
+});
+type QeVerdictsFile = z.infer<typeof QeVerdictsFileSchema>;
 
-export const CONSTRAINED_ELEMENTS = ["Button", "Badge", "NavItem", "Tab", "TableHeader"];
+export const QE_REVIEW_INSTRUCTIONS = `You are reviewing translations as they will appear in the product. Work in a fresh context (a subagent if your host supports one), not the context that produced the translations.
+For each task: open the file and read how each key is actually used: the element, the surrounding UI, the neighbouring strings, what the code does when the user acts on it.
+Mark a string "flag" only if a user of this UI in the target locale would find it wrong, misleading or broken, for example: the wrong sense of the word for this UI (save money vs. save a file), meaning added, dropped, negated or inverted, a grammatical form that does not fit the element, a term that differs from how the project translates the same thing elsewhere with no contextual reason, or a conflict with a project decision or Term Base entry.
+Otherwise mark it "ok". Style preferences and acceptable alternatives are "ok".
+Every flag needs a one-line reason; add suggestedFix (the full corrected target, every placeholder, ICU branch and tag preserved) when the fix is clear. If the source's meaning itself is unclear even after reading the code, flag it with a reason starting "Unclear meaning:".`;
 
-export interface CriticRequest {
-  critic: CriticName;
-  locale: string;
-  file: string;
-  items: Array<Record<string, unknown>>;
-}
+export const QE_RESPONSE_FORMAT =
+  'Return one verdict per string: {"locale","key","verdict":"ok"|"flag","reason"?,"suggestedFix"?}. Submit with `wraith qe --submit <file>` or qe_audit mode=submit.';
 
-export interface RepairRequest {
+export interface QeReviewString {
   key: string;
   source: string;
   target: string;
-  locale: string;
-  issues: Array<{ critic: CriticName; severity: CriticSeverity; issue: string; suggestedFix?: string }>;
-  maxChars?: number;
-}
-
-/** Pluggable model client (Anthropic / Gemini over HTTPS, or a mock in tests). */
-export interface QeModelClient {
-  model: string;
-  runCritic(req: CriticRequest): Promise<CriticFindingRaw[]>;
-  repair?(req: RepairRequest): Promise<string | undefined>;
-}
-
-export interface QeSegmentResult {
-  key: string;
-  locale: string;
-  file?: string;
   line?: number;
-  component?: string;
-  source: string;
-  target: string;
-  tier1: { passed: boolean; issues: Array<{ code: string; severity: string; message: string }> };
-  budgetUtilization: number;
-  maxChars?: number;
-  maxWidthPx?: number;
-  tmSimilarity: number;
-  topFuzzyTM?: TmMatch;
-  novelty: number;
-  swarm: CriticFinding[];
-  sSwarm: number;
-  riskScore: number;
-  status: QeStatus;
-  tier: "tier1_escalate" | "tier2" | "tier2_unavailable";
-  repaired?: boolean;
-  repairNote?: string;
+  comment?: string;
+  termBase?: Array<{ term: string; approved: string | null; doNotTranslate: boolean }>;
+  /** How the same source text is translated elsewhere in the project (other keys, same locale). */
+  sameSourceElsewhere?: Array<{ key: string; target: string; file?: string }>;
 }
 
-export interface QeReportFile {
-  version: 1;
-  generatedAt: string;
-  model: string | null;
-  tier2: "ran" | "unavailable";
-  autoRepair: boolean;
-  segments: QeSegmentResult[];
-  summary: QeSummary;
+export interface QeReviewTask {
+  locale: string;
+  /** Open this file to see how the strings are used. "(no usage site)" when the scanner found none. */
+  file: string;
+  strings: QeReviewString[];
 }
 
-export interface QeSummary {
-  total: number;
-  verified: number;
-  needsReview: number;
-  unscored: number;
-  humanVerified: number;
-  tier1Escalations: number;
-  repairedVerified: number;
-  maxRisk: number;
-  meanRisk: number;
-  llmCalls: number;
+export interface QePrepareResult {
+  instructions: string;
+  responseFormat: string;
+  /** Project-level decisions (register, brand handling, …) the reviewer must respect. */
+  projectDecisions: Array<{ locale?: string; category: string; summary: string }>;
+  tasks: QeReviewTask[];
+  toReview: number;
+  alreadyReviewed: number;
+  /** Strings with deterministic check errors: not sent for review until fixed. */
+  blockedByCheck: Array<{ locale: string; key: string; issue: string }>;
+  tasksPath?: string;
 }
 
 export interface QeOptions {
   rootDir: string;
   locales?: string[];
   keys?: string[];
-  autoRepair?: boolean;
-  failAbove?: number;
-  /** Explicit client; `null` disables Tier 2. Defaults to resolveQeClient(process.env). */
-  client?: QeModelClient | null;
-  batchSize?: number;
-  /** Persist to .wraith/qe-report.json (default true) */
-  write?: boolean;
 }
 
-export interface QeResult {
-  outcome: "PASS" | "FAIL" | "INCONCLUSIVE";
-  passed: boolean;
-  reportPath: string;
-  model: string | null;
-  tier2: "ran" | "unavailable";
-  summary: QeSummary;
-  flagged: Array<Pick<QeSegmentResult, "key" | "locale" | "riskScore" | "status" | "tier"> & { topIssue?: string }>;
-  nextSteps: string[];
-}
+/* ------------------------------- verdict store ---------------------------------------------- */
 
-/* ------------------------------- pure scoring functions ------------------------------------- */
-
-export function clamp01(n: number): number {
-  if (!Number.isFinite(n)) return 0;
-  return Math.max(0, Math.min(1, n));
-}
-
-/** S_swarm = max over critics of severityWeight × confidence score. */
-export function computeSwarmScore(findings: Array<Pick<CriticFindingRaw, "severity" | "score">>): number {
-  let max = 0;
-  for (const f of findings) {
-    max = Math.max(max, SEVERITY_WEIGHTS[f.severity] * clamp01(f.score));
-  }
-  return max;
-}
-
-/**
- * Risk = round(min(100, 100 × (0.35·S_swarm + 0.25·(1 − TM_sim) + 0.20·U_budget + 0.20·C_novelty)))
- */
-export function computeRiskScore(input: { sSwarm: number; tmSimilarity: number; budgetUtilization: number; novelty: number }): number {
-  const raw =
-    0.35 * clamp01(input.sSwarm) +
-    0.25 * (1 - clamp01(input.tmSimilarity)) +
-    0.2 * clamp01(input.budgetUtilization) +
-    0.2 * clamp01(input.novelty);
-  return Math.round(Math.min(100, 100 * raw));
-}
-
-export function routeRisk(risk: number, autoRepair: boolean): "verified" | "repair" | "needs_review" {
-  if (risk < 25) return "verified";
-  if (autoRepair && risk <= 60) return "repair";
-  return "needs_review";
-}
-
-const WIDE_CHAR_RE = /[\u1100-\u115F\u2E80-\uA4CF\uAC00-\uD7A3\uF900-\uFAFF\uFE30-\uFE4F\uFF00-\uFF60\uFFE0-\uFFE6]/u;
-
-/** Deterministic text width estimate (px) used when no rendered width exists. */
-export function estimateTextWidthPx(text: string, fontSizePx = 14): number {
-  let units = 0;
-  for (const ch of text.replace(/\{[^{}]*\}/g, "XXXX")) {
-    units += WIDE_CHAR_RE.test(ch) ? 1.0 : 0.56;
-  }
-  return Math.round(units * fontSizePx);
-}
-
-/**
- * U_budget = min(1, width / maxBudgetWidth). Returns raw ratio too so callers can escalate when
- * the raw ratio exceeds 1.0 (over budget).
- */
-export function computeBudgetUtilization(
-  target: string,
-  budget?: { maxWidthPx?: number; budgetChars?: number }
-): { utilization: number; raw: number } {
-  if (!budget) return { utilization: 0, raw: 0 };
-  let raw = 0;
-  if (budget.maxWidthPx && budget.maxWidthPx > 0) {
-    raw = estimateTextWidthPx(target) / budget.maxWidthPx;
-  }
-  if (budget.budgetChars && budget.budgetChars > 0) {
-    raw = Math.max(raw, [...target].length / budget.budgetChars);
-  }
-  return { utilization: Math.min(1, raw), raw };
-}
-
-/**
- * C_novelty ∈ [0,1]: lack of AST context (0.4) + ICU plural/select complexity not covered by a
- * close TM neighbor (0.3) + inline tags/markup not covered by a close TM neighbor (0.3).
- */
-export function computeNovelty(input: { source: string; hasUsageContext: boolean; tmSimilarity: number }): number {
-  let n = input.hasUsageContext ? 0 : 0.4;
-  const covered = input.tmSimilarity >= 0.75;
-  if (!covered && /\{\s*[\w.]+\s*,\s*(?:plural|select|selectordinal)\s*,/.test(input.source)) n += 0.3;
-  if (!covered && /<\/?[A-Za-z][\w-]*(?:\s[^<>]*)?\/?>|<\/?\d+\/?>/.test(input.source)) n += 0.3;
-  return clamp01(n);
-}
-
-/* ------------------------------- model clients ---------------------------------------------- */
-
-const CRITIC_INSTRUCTIONS: Record<CriticName, string> = {
-  terminology:
-    "You are the Terminology & TM Drift Auditor for software UI localization. For each item, flag unapproved substitutions of glossary terms (glossaryMatches gives approved target terms), phrasing inconsistent with the top fuzzy translation-memory neighbor (topFuzzyTM, only when similarity >= 0.75), and register/tone shifts (e.g. formal vs informal address). Do not comment on anything else.",
-  ui_context:
-    "You are the UI-Context & Conciseness Critic. For each item, flag translations that are too verbose for constrained elements (Button, Badge, NavItem, Tab, TableHeader) given maxChars/budgetRatio, and wrong grammatical form for the UI element (e.g. infinitive vs imperative mismatch for action buttons, sentence case vs title case conventions of the locale). Do not comment on anything else.",
-  semantic:
-    "You are the Semantic & Omission Verifier. For each item, check STRICTLY for dropped negations, inverted conditionals, altered numbers or units, omitted content, or hallucinated claims not present in the source. Ignore style, terminology and length.",
-};
-
-function criticPrompt(req: CriticRequest): string {
-  return `${CRITIC_INSTRUCTIONS[req.critic]}
-
-Target locale: ${req.locale}. Source file: ${req.file}.
-Return exactly one finding per item key. Use severity "none" with score 0 when there is no problem. score is your confidence (0..1) that the problem is real. suggestedFix is a full corrected target string (preserve every placeholder, ICU branch and tag exactly) and only when severity is not "none".
-
-Items (JSON):
-${JSON.stringify(req.items)}`;
-}
-
-const FINDINGS_JSON_SCHEMA = {
-  type: "object",
-  properties: {
-    findings: {
-      type: "array",
-      items: {
-        type: "object",
-        properties: {
-          key: { type: "string" },
-          severity: { type: "string", enum: ["none", "minor", "major", "critical"] },
-          score: { type: "number" },
-          issue: { type: "string" },
-          suggestedFix: { type: "string" },
-        },
-        required: ["key", "severity", "score", "issue"],
-      },
-    },
-  },
-  required: ["findings"],
-} as const;
-
-function repairPrompt(req: RepairRequest): string {
-  return `Repair this ${req.locale} UI translation. Fix ONLY the listed issues; preserve every placeholder ({var}), ICU plural/select branch and inline tag exactly.${req.maxChars ? ` It must fit in ${req.maxChars} characters.` : ""}
-Source: ${JSON.stringify(req.source)}
-Current translation: ${JSON.stringify(req.target)}
-Issues: ${JSON.stringify(req.issues)}
-Respond with JSON {"target": "<repaired translation>"}.`;
-}
-
-function parseFindings(raw: unknown): CriticFindingRaw[] {
-  const arr = Array.isArray(raw) ? raw : (raw as { findings?: unknown })?.findings;
-  if (!Array.isArray(arr)) return [];
-  const out: CriticFindingRaw[] = [];
-  for (const item of arr) {
-    const parsed = CriticFindingSchema.safeParse(item);
-    if (parsed.success) out.push(parsed.data);
-  }
-  return out;
-}
-
-function extractJson(text: string): unknown {
-  const trimmed = text.trim().replace(/^```(?:json)?\s*/i, "").replace(/```\s*$/, "");
+export function readQeVerdicts(rootDir: string): QeVerdictsFile {
+  const p = new WraithStore(rootDir).filePath(QE_VERDICTS_FILE);
+  if (!fs.existsSync(p)) return { version: 2, records: [] };
   try {
-    return JSON.parse(trimmed);
+    const parsed = QeVerdictsFileSchema.safeParse(JSON.parse(fs.readFileSync(p, "utf8")));
+    return parsed.success ? parsed.data : { version: 2, records: [] };
   } catch {
-    const m = /[[{][\s\S]*[\]}]/.exec(trimmed);
-    if (m) {
-      try {
-        return JSON.parse(m[0]);
-      } catch {
-        return undefined;
-      }
-    }
-    return undefined;
+    return { version: 2, records: [] };
   }
 }
 
-function anthropicClient(apiKey: string, model: string): QeModelClient {
-  const call = async (prompt: string, tool: { name: string; schema: object }) => {
-    const res = await fetch("https://api.anthropic.com/v1/messages", {
-      method: "POST",
-      headers: {
-        "content-type": "application/json",
-        "x-api-key": apiKey,
-        "anthropic-version": "2023-06-01",
-      },
-      body: JSON.stringify({
-        model,
-        max_tokens: 4096,
-        temperature: 0,
-        tools: [{ name: tool.name, description: "Structured output", input_schema: tool.schema }],
-        tool_choice: { type: "tool", name: tool.name },
-        messages: [{ role: "user", content: prompt }],
-      }),
-    });
-    if (!res.ok) throw new Error(`Anthropic API ${res.status}: ${(await res.text()).slice(0, 200)}`);
-    const body = (await res.json()) as { content?: Array<{ type: string; input?: unknown; text?: string }> };
-    const toolUse = body.content?.find((c) => c.type === "tool_use");
-    if (toolUse?.input) return toolUse.input;
-    const text = body.content?.find((c) => c.type === "text")?.text ?? "";
-    return extractJson(text);
-  };
-  return {
-    model,
-    async runCritic(req) {
-      return parseFindings(await call(criticPrompt(req), { name: "report_findings", schema: FINDINGS_JSON_SCHEMA }));
-    },
-    async repair(req) {
-      const out = (await call(repairPrompt(req), {
-        name: "repaired_translation",
-        schema: { type: "object", properties: { target: { type: "string" } }, required: ["target"] },
-      })) as { target?: unknown };
-      return typeof out?.target === "string" ? out.target : undefined;
-    },
-  };
+function writeQeVerdicts(rootDir: string, file: QeVerdictsFile): void {
+  const store = new WraithStore(rootDir);
+  store.ensureDir();
+  const records = [...file.records].sort((a, b) => a.locale.localeCompare(b.locale) || a.key.localeCompare(b.key));
+  atomicWriteFileSync(store.filePath(QE_VERDICTS_FILE), JSON.stringify({ version: 2, records }, null, 2) + "\n");
 }
 
-function geminiClient(apiKey: string, model: string): QeModelClient {
-  const call = async (prompt: string, schema: object) => {
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`;
-    const res = await fetch(url, {
-      method: "POST",
-      headers: { "content-type": "application/json", "x-goog-api-key": apiKey },
-      body: JSON.stringify({
-        contents: [{ role: "user", parts: [{ text: prompt }] }],
-        generationConfig: { temperature: 0, responseMimeType: "application/json", responseSchema: schema },
-      }),
-    });
-    if (!res.ok) throw new Error(`Gemini API ${res.status}: ${(await res.text()).slice(0, 200)}`);
-    const body = (await res.json()) as { candidates?: Array<{ content?: { parts?: Array<{ text?: string }> } }> };
-    const text = body.candidates?.[0]?.content?.parts?.map((p) => p.text ?? "").join("") ?? "";
-    return extractJson(text);
-  };
-  return {
-    model,
-    async runCritic(req) {
-      return parseFindings(await call(criticPrompt(req), FINDINGS_JSON_SCHEMA));
-    },
-    async repair(req) {
-      const out = (await call(repairPrompt(req), {
-        type: "object",
-        properties: { target: { type: "string" } },
-        required: ["target"],
-      })) as { target?: unknown };
-      return typeof out?.target === "string" ? out.target : undefined;
-    },
-  };
+function upsertRecords(rootDir: string, records: QeRecord[]): void {
+  const file = readQeVerdicts(rootDir);
+  const byId = new Map(file.records.map((r) => [`${r.locale}\0${r.key}`, r]));
+  for (const r of records) byId.set(`${r.locale}\0${r.key}`, r);
+  writeQeVerdicts(rootDir, { version: 2, records: [...byId.values()] });
 }
 
-/**
- * Resolve the Tier 2 client from environment. `WRAITH_QE_MODEL` overrides the model; provider is
- * inferred from the model name (claude-* → Anthropic, gemini-* → Gemini) or from available keys.
- */
-export function resolveQeClient(env: NodeJS.ProcessEnv = process.env): QeModelClient | null {
-  const anthropicKey = env.ANTHROPIC_API_KEY;
-  const geminiKey = env.GEMINI_API_KEY ?? env.GOOGLE_API_KEY;
-  const requested = env.WRAITH_QE_MODEL?.trim();
-  if (requested) {
-    if (/^gemini/i.test(requested) && geminiKey) return geminiClient(geminiKey, requested);
-    if (/^claude/i.test(requested) && anthropicKey) return anthropicClient(anthropicKey, requested);
-    return null;
-  }
-  if (anthropicKey) return anthropicClient(anthropicKey, "claude-haiku-4-5-20251001");
-  if (geminiKey) return geminiClient(geminiKey, "gemini-2.5-flash");
-  return null;
+/** Status of one string: a stored verdict only counts if it judged this exact source + target. */
+export function qeStatusOf(record: QeRecord | undefined, source: string, target: string | undefined): QeStatus {
+  if (!record || target === undefined || record.source !== source || record.target !== target) return "unreviewed";
+  if (record.verdict === "human-verified") return "human-verified";
+  return record.verdict === "ok" ? "ok" : "flagged";
 }
 
-/* ------------------------------- pipeline ---------------------------------------------------- */
-
-interface SegmentDraft {
-  item: PreparedItem;
-  locale: string;
-  target: string;
-  file: string;
-  tier1Issues: CheckIssue[];
-  hardFail: boolean;
-  budget: { utilization: number; raw: number };
-  maxChars?: number;
-  maxWidthPx?: number;
-  tm?: TmMatch;
-  tmSimilarity: number;
-  novelty: number;
-  elementType?: string;
+export function qeIndex(rootDir: string): Map<string, QeRecord> {
+  return new Map(readQeVerdicts(rootDir).records.map((r) => [`${r.locale}\0${r.key}`, r]));
 }
 
-function collectPreparedItems(rootDir: string, locale: string, keys?: string[]): PreparedItem[] {
+/** Human post-edits from a TMS are final: record them as human-verified for their exact text. */
+export function markHumanVerified(rootDir: string, entries: Array<{ locale: string; key: string; source: string; target: string }>): number {
+  const now = new Date().toISOString();
+  upsertRecords(rootDir, entries.map((e) => ({ ...e, verdict: "human-verified" as const, reviewedAt: now })));
+  return entries.length;
+}
+
+/* ------------------------------- collection ------------------------------------------------- */
+
+function collectTranslated(rootDir: string, locale: string, keys?: string[]): PreparedItem[] {
   const items: PreparedItem[] = [];
   let offset = 0;
   for (let guard = 0; guard < 1000; guard++) {
@@ -408,348 +154,200 @@ function collectPreparedItems(rootDir: string, locale: string, keys?: string[]):
     if (!res.hasMore || res.items.length === 0) break;
     offset += res.items.length;
   }
-  return items;
+  return items.filter((i) => i.currentTarget !== undefined && i.currentTarget !== "");
 }
 
-function tier1IssuesByKey(rootDir: string, locale: string): Map<string, CheckIssue[]> {
-  const all: CheckIssue[] = [];
+function checkErrorsByKey(rootDir: string, locale: string): Map<string, string> {
+  const out = new Map<string, string>();
   for (let offset = 0, guard = 0; guard < 10_000; guard++) {
     const res = runCheck({ rootDir, locale, skipScan: true, offset, limit: 100 });
-    all.push(...res.issues.items);
+    for (const iss of res.issues.items) {
+      if (!iss.key || iss.severity !== "error") continue;
+      if (iss.locale && iss.locale !== locale) continue;
+      if (!out.has(iss.key)) out.set(iss.key, `${iss.code}: ${iss.message}`);
+    }
     if (!res.issues.hasMore || res.issues.items.length === 0) break;
     offset += res.issues.items.length;
-  }
-  const map = new Map<string, CheckIssue[]>();
-  for (const iss of all) {
-    if (!iss.key) continue;
-    if (iss.locale && iss.locale !== locale) continue;
-    const list = map.get(iss.key) ?? [];
-    list.push(iss);
-    map.set(iss.key, list);
-  }
-  return map;
-}
-
-function elementTypeFor(item: PreparedItem): string | undefined {
-  const site = item.usageSites[0];
-  const raw = item.layout?.element ?? site?.element;
-  if (!raw) return undefined;
-  const low = raw.toLowerCase();
-  if (low === "button" || /button|btn/.test(low)) return "Button";
-  if (/badge|chip|pill|tag/.test(low)) return "Badge";
-  if (/nav|menuitem/.test(low)) return "NavItem";
-  if (/tab/.test(low)) return "Tab";
-  if (low === "th" || /tableheader|columnheader/.test(low)) return "TableHeader";
-  return raw;
-}
-
-function buildDraft(rootDir: string, item: PreparedItem, locale: string, issues: CheckIssue[], budgets: Record<string, Record<string, { maxWidthPx: number; budgetChars: number }>>): SegmentDraft | null {
-  const target = item.currentTarget;
-  if (target === undefined || target === "") return null;
-  const hardFail = issues.some((i) => i.severity === "error");
-  const budgetEntry = budgets[item.key]?.[locale] ?? (item.layout?.maxWidthPx || item.layout?.budgetChars ? { maxWidthPx: item.layout?.maxWidthPx ?? 0, budgetChars: item.layout?.budgetChars ?? 0 } : undefined);
-  const budget = computeBudgetUtilization(target, budgetEntry);
-  const tm = findTmMatches(rootDir, item.source, locale, {
-    minSimilarity: 0.5,
-    limit: 1,
-    excludeKey: item.key,
-    excludeSelf: { source: item.source, target },
-  })[0];
-  const tmSimilarity = tm?.similarity ?? 0;
-  const novelty = computeNovelty({ source: item.source, hasUsageContext: item.usageSites.length > 0, tmSimilarity });
-  return {
-    item,
-    locale,
-    target,
-    file: item.usageSites[0]?.file ?? "(no usage site)",
-    tier1Issues: issues,
-    hardFail: hardFail || budget.raw > 1.0,
-    budget,
-    maxChars: budgetEntry?.budgetChars || undefined,
-    maxWidthPx: budgetEntry?.maxWidthPx || undefined,
-    tm,
-    tmSimilarity,
-    novelty,
-    elementType: elementTypeFor(item),
-  };
-}
-
-function criticItems(critic: CriticName, drafts: SegmentDraft[]): Array<Record<string, unknown>> {
-  return drafts.map((d) => {
-    const base = { key: d.item.key, source: d.item.source, target: d.target, locale: d.locale };
-    if (critic === "terminology") {
-      return {
-        ...base,
-        glossaryMatches: d.item.glossaryHits.map((g) => ({ term: g.term, approved: g.doNotTranslate ? g.term : g.preferredTranslation ?? null, doNotTranslate: g.doNotTranslate })),
-        topFuzzyTM: d.tm && d.tm.similarity >= 0.75 ? { source: d.tm.source, target: d.tm.target, similarity: d.tm.similarity, provenance: d.tm.provenance } : null,
-      };
-    }
-    if (critic === "ui_context") {
-      return {
-        ...base,
-        astElementType: d.elementType ?? null,
-        constrained: d.elementType ? CONSTRAINED_ELEMENTS.includes(d.elementType) : false,
-        maxChars: d.maxChars ?? null,
-        budgetRatio: Number(d.budget.raw.toFixed(3)),
-      };
-    }
-    return base;
-  });
-}
-
-async function runSwarm(
-  client: QeModelClient,
-  drafts: SegmentDraft[],
-  batchSize: number,
-  counter: { calls: number }
-): Promise<Map<string, CriticFinding[]>> {
-  const out = new Map<string, CriticFinding[]>();
-  const byFileLocale = new Map<string, SegmentDraft[]>();
-  for (const d of drafts) {
-    const k = `${d.locale}\0${d.file}`;
-    const list = byFileLocale.get(k) ?? [];
-    list.push(d);
-    byFileLocale.set(k, list);
-  }
-  const critics: CriticName[] = ["terminology", "ui_context", "semantic"];
-  for (const group of byFileLocale.values()) {
-    for (let i = 0; i < group.length; i += batchSize) {
-      const batch = group.slice(i, i + batchSize);
-      const validKeys = new Set(batch.map((b) => b.item.key));
-      const results = await Promise.all(
-        critics.map(async (critic) => {
-          counter.calls++;
-          try {
-            const findings = await client.runCritic({
-              critic,
-              locale: batch[0].locale,
-              file: batch[0].file,
-              items: criticItems(critic, batch),
-            });
-            return findings.filter((f) => validKeys.has(f.key)).map((f) => ({ ...f, critic }));
-          } catch (err) {
-            // A failed critic call must never make a segment look clean: record as unscored marker
-            return batch.map((b) => ({
-              critic,
-              key: b.item.key,
-              severity: "none" as const,
-              score: 0,
-              issue: `__critic_error__: ${err instanceof Error ? err.message.slice(0, 160) : String(err)}`,
-            }));
-          }
-        })
-      );
-      for (const list of results) {
-        for (const f of list) {
-          const id = `${batch[0].locale}\0${f.key}`;
-          const arr = out.get(id) ?? [];
-          arr.push(f);
-          out.set(id, arr);
-        }
-      }
-    }
   }
   return out;
 }
 
-function toSegmentResult(d: SegmentDraft, swarm: CriticFinding[] | undefined, tier2Available: boolean, autoRepair: boolean): QeSegmentResult {
-  const site = d.item.usageSites[0];
-  const base = {
-    key: d.item.key,
-    locale: d.locale,
-    file: site?.file,
-    line: site?.line,
-    component: site?.component,
-    source: d.item.source,
-    target: d.target,
-    tier1: {
-      passed: !d.hardFail,
-      issues: d.tier1Issues.map((i) => ({ code: i.code, severity: i.severity, message: i.message })),
-    },
-    budgetUtilization: Number(d.budget.utilization.toFixed(3)),
-    maxChars: d.maxChars,
-    maxWidthPx: d.maxWidthPx,
-    tmSimilarity: Number(d.tmSimilarity.toFixed(3)),
-    topFuzzyTM: d.tm,
-    novelty: Number(d.novelty.toFixed(3)),
-  };
-  if (d.hardFail) {
-    if (d.budget.raw > 1.0 && !d.tier1Issues.some((i) => i.code === "layout_budget_exceeded")) {
-      base.tier1.issues.push({
-        code: "layout_budget_exceeded",
-        severity: "error",
-        message: `Estimated width utilization ${(d.budget.raw * 100).toFixed(0)}% of recorded budget`,
-      });
-    }
-    return { ...base, swarm: [], sSwarm: 0, riskScore: 100, status: "needs_review", tier: "tier1_escalate" };
-  }
-  const findings = swarm ?? [];
-  const criticErrored = findings.some((f) => f.issue.startsWith("__critic_error__"));
-  const sSwarm = computeSwarmScore(findings);
-  const riskScore = computeRiskScore({ sSwarm, tmSimilarity: d.tmSimilarity, budgetUtilization: d.budget.utilization, novelty: d.novelty });
-  if (!tier2Available || criticErrored) {
-    return { ...base, swarm: findings, sSwarm, riskScore, status: "unscored", tier: "tier2_unavailable" };
-  }
-  const route = routeRisk(riskScore, autoRepair);
-  return {
-    ...base,
-    swarm: findings.filter((f) => f.severity !== "none" || f.issue),
-    sSwarm,
-    riskScore,
-    status: route === "verified" ? "verified" : "needs_review",
-    tier: "tier2",
-  };
-}
+/* ------------------------------- prepare ---------------------------------------------------- */
 
-function summarize(segments: QeSegmentResult[], llmCalls: number): QeSummary {
-  const risks = segments.map((s) => s.riskScore);
-  return {
-    total: segments.length,
-    verified: segments.filter((s) => s.status === "verified").length,
-    needsReview: segments.filter((s) => s.status === "needs_review").length,
-    unscored: segments.filter((s) => s.status === "unscored").length,
-    humanVerified: segments.filter((s) => s.status === "human-verified").length,
-    tier1Escalations: segments.filter((s) => s.tier === "tier1_escalate").length,
-    repairedVerified: segments.filter((s) => s.repaired && s.status === "verified").length,
-    maxRisk: risks.length ? Math.max(...risks) : 0,
-    meanRisk: risks.length ? Math.round(risks.reduce((a, b) => a + b, 0) / risks.length) : 0,
-    llmCalls,
-  };
-}
-
-export function readQeReport(rootDir: string): QeReportFile | null {
-  const p = new WraithStore(rootDir).filePath("qe-report.json");
-  if (!fs.existsSync(p)) return null;
-  try {
-    return JSON.parse(fs.readFileSync(p, "utf8")) as QeReportFile;
-  } catch {
-    return null;
-  }
-}
-
-export function writeQeReport(rootDir: string, report: QeReportFile): string {
-  const store = new WraithStore(rootDir);
-  store.ensureDir();
-  const p = store.filePath("qe-report.json");
-  atomicWriteFileSync(p, JSON.stringify(report, null, 2) + "\n");
-  return p;
-}
-
-/** Recompute summary after external status changes (e.g. TMS import → human-verified). */
-export function refreshQeSummary(report: QeReportFile): QeReportFile {
-  return { ...report, summary: summarize(report.segments, report.summary?.llmCalls ?? 0) };
-}
-
-export async function runQe(options: QeOptions): Promise<QeResult> {
+/** Build review tasks (one per locale × file) for every translated string without a current verdict. */
+export function prepareQeReview(options: QeOptions & { includeReviewed?: boolean; write?: boolean }): QePrepareResult {
   const store = new WraithStore(options.rootDir);
   const config = store.readConfig();
-  const layout = store.readLayout();
   const locales = options.locales && options.locales.length > 0 ? options.locales : config.targetLocales;
-  const client = options.client === undefined ? resolveQeClient() : options.client;
-  const autoRepair = Boolean(options.autoRepair);
-  const batchSize = Math.max(1, Math.min(options.batchSize ?? 25, 25));
-  const counter = { calls: 0 };
+  const index = qeIndex(options.rootDir);
+  const tasks = new Map<string, QeReviewTask>();
+  const blockedByCheck: QePrepareResult["blockedByCheck"] = [];
+  let alreadyReviewed = 0;
 
-  const draftsFor = (locale: string, keys?: string[]) => {
-    const issues = tier1IssuesByKey(options.rootDir, locale);
-    const drafts: SegmentDraft[] = [];
-    for (const item of collectPreparedItems(options.rootDir, locale, keys)) {
-      const d = buildDraft(options.rootDir, item, locale, issues.get(item.key) ?? [], store.readLayout().budgets);
-      if (d) drafts.push(d);
-    }
-    return drafts;
-  };
-
-  const segments: QeSegmentResult[] = [];
   for (const locale of locales) {
-    const drafts = draftsFor(locale, options.keys);
-    const passing = drafts.filter((d) => !d.hardFail);
-    const swarm = client && passing.length > 0 ? await runSwarm(client, passing, batchSize, counter) : new Map<string, CriticFinding[]>();
-    for (const d of drafts) {
-      let seg = toSegmentResult(d, swarm.get(`${locale}\0${d.item.key}`), Boolean(client), autoRepair);
-      // Tier 3: one targeted repair pass for 25 <= risk <= 60
-      if (autoRepair && client?.repair && seg.tier === "tier2" && seg.riskScore >= 25 && seg.riskScore <= 60) {
-        const issues = seg.swarm
-          .filter((f) => f.severity !== "none")
-          .map((f) => ({ critic: f.critic, severity: f.severity, issue: f.issue, suggestedFix: f.suggestedFix }));
-        let repairedTarget: string | undefined;
-        counter.calls++;
-        try {
-          repairedTarget = await client.repair({ key: d.item.key, source: d.item.source, target: d.target, locale, issues, maxChars: d.maxChars });
-        } catch {
-          repairedTarget = undefined;
-        }
-        if (repairedTarget && repairedTarget !== d.target) {
-          const applied = applyTranslations({
-            rootDir: options.rootDir,
-            targetLocale: locale,
-            translations: [{ key: d.item.key, value: repairedTarget, notes: "qe auto-repair" }],
-            origin: "agent",
-          });
-          if (applied.ok) {
-            const reDraft = draftsFor(locale, [d.item.key])[0];
-            if (reDraft) {
-              const reSwarm = !reDraft.hardFail ? await runSwarm(client, [reDraft], batchSize, counter) : new Map();
-              const re = toSegmentResult(reDraft, reSwarm.get(`${locale}\0${d.item.key}`), true, false);
-              seg = { ...re, repaired: true, repairNote: `auto-repaired from ${JSON.stringify(d.target)}`, status: re.status === "verified" ? "verified" : "needs_review" };
-            }
-          } else {
-            seg = { ...seg, repaired: false, repairNote: `repair rejected by apply: ${applied.errors.map((e) => e.code).join(", ")}`, status: "needs_review" };
-          }
-        } else {
-          seg = { ...seg, repaired: false, repairNote: "no repair produced", status: "needs_review" };
-        }
+    const all = collectTranslated(options.rootDir, locale);
+    const scope = options.keys ? all.filter((i) => options.keys!.includes(i.key)) : all;
+    const errors = checkErrorsByKey(options.rootDir, locale);
+    const bySource = new Map<string, PreparedItem[]>();
+    for (const i of all) bySource.set(i.source, [...(bySource.get(i.source) ?? []), i]);
+
+    for (const item of scope) {
+      const err = errors.get(item.key);
+      if (err) {
+        blockedByCheck.push({ locale, key: item.key, issue: err });
+        continue;
       }
-      segments.push(seg);
+      const status = qeStatusOf(index.get(`${locale}\0${item.key}`), item.source, item.currentTarget);
+      if (status !== "unreviewed" && !options.includeReviewed) {
+        alreadyReviewed++;
+        continue;
+      }
+      const site = item.usageSites[0];
+      const file = site?.file ?? "(no usage site)";
+      const elsewhere = (bySource.get(item.source) ?? [])
+        .filter((o) => o.key !== item.key)
+        .map((o) => ({ key: o.key, target: o.currentTarget!, file: o.usageSites[0]?.file }));
+      const str: QeReviewString = { key: item.key, source: item.source, target: item.currentTarget! };
+      if (site?.line) str.line = site.line;
+      if (item.comment) str.comment = item.comment;
+      if (item.glossaryHits.length > 0) {
+        str.termBase = item.glossaryHits.map((g) => ({
+          term: g.term,
+          approved: g.doNotTranslate ? g.term : g.preferredTranslation ?? null,
+          doNotTranslate: g.doNotTranslate,
+        }));
+      }
+      if (elsewhere.length > 0) str.sameSourceElsewhere = elsewhere;
+      const id = `${locale}\0${file}`;
+      const task = tasks.get(id) ?? { locale, file, strings: [] };
+      task.strings.push(str);
+      tasks.set(id, task);
     }
   }
-  void layout;
 
-  const summary = summarize(segments, counter.calls);
-  const report: QeReportFile = {
-    version: 1,
-    generatedAt: new Date().toISOString(),
-    model: client?.model ?? null,
-    tier2: client ? "ran" : "unavailable",
-    autoRepair,
-    segments,
-    summary,
+  const projectDecisions = store
+    .readAssumptions()
+    .assumptions.filter((a) => !a.locale || locales.includes(a.locale))
+    .map((a) => ({ locale: a.locale, category: a.category, summary: a.summary }));
+
+  const taskList = [...tasks.values()];
+  const result: QePrepareResult = {
+    instructions: QE_REVIEW_INSTRUCTIONS,
+    responseFormat: QE_RESPONSE_FORMAT,
+    projectDecisions,
+    tasks: taskList,
+    toReview: taskList.reduce((n, t) => n + t.strings.length, 0),
+    alreadyReviewed,
+    blockedByCheck,
   };
-  const reportPath = options.write === false ? store.filePath("qe-report.json") : writeQeReport(options.rootDir, report);
+  if (options.write !== false) {
+    store.ensureDir();
+    atomicWriteFileSync(store.filePath("qe-tasks.json"), JSON.stringify(result, null, 2) + "\n");
+    result.tasksPath = ".wraith/qe-tasks.json";
+  }
+  return result;
+}
 
-  const failAbove = options.failAbove;
-  const overThreshold = failAbove !== undefined ? segments.some((s) => s.riskScore > failAbove) : false;
-  const outcome: QeResult["outcome"] =
-    summary.needsReview > 0 || overThreshold ? "FAIL" : summary.unscored > 0 ? "INCONCLUSIVE" : "PASS";
+/* ------------------------------- submit ----------------------------------------------------- */
 
+export interface QeSubmitResult {
+  accepted: number;
+  rejected: Array<{ locale?: string; key?: string; reason: string }>;
+  summary: QeSummary;
+}
+
+export function parseQeVerdicts(raw: unknown): { verdicts: QeVerdictInput[]; rejected: QeSubmitResult["rejected"] } {
+  const arr = Array.isArray(raw) ? raw : (raw as { verdicts?: unknown })?.verdicts;
+  const verdicts: QeVerdictInput[] = [];
+  const rejected: QeSubmitResult["rejected"] = [];
+  if (!Array.isArray(arr)) return { verdicts, rejected: [{ reason: 'expected an array or {"verdicts": [...]}' }] };
+  for (const item of arr) {
+    const parsed = QeVerdictInputSchema.safeParse(item);
+    if (parsed.success) verdicts.push(parsed.data);
+    else {
+      const o = (item ?? {}) as { locale?: string; key?: string };
+      rejected.push({ locale: o.locale, key: o.key, reason: parsed.error.issues[0]?.message ?? "invalid verdict" });
+    }
+  }
+  return { verdicts, rejected };
+}
+
+/** Store verdicts, each pinned to the source + target as they are right now. */
+export function submitQeVerdicts(options: { rootDir: string; verdicts: unknown }): QeSubmitResult {
+  const { verdicts, rejected } = parseQeVerdicts(options.verdicts);
+  const now = new Date().toISOString();
+  const current = new Map<string, PreparedItem>();
+  for (const locale of new Set(verdicts.map((v) => v.locale))) {
+    for (const i of collectTranslated(options.rootDir, locale, verdicts.filter((v) => v.locale === locale).map((v) => v.key))) {
+      current.set(`${locale}\0${i.key}`, i);
+    }
+  }
+  const records: QeRecord[] = [];
+  for (const v of verdicts) {
+    const item = current.get(`${v.locale}\0${v.key}`);
+    if (!item) {
+      rejected.push({ locale: v.locale, key: v.key, reason: "no translated string with this key/locale" });
+      continue;
+    }
+    records.push({
+      locale: v.locale,
+      key: v.key,
+      source: item.source,
+      target: item.currentTarget!,
+      verdict: v.verdict,
+      ...(v.reason ? { reason: v.reason } : {}),
+      ...(v.suggestedFix ? { suggestedFix: v.suggestedFix } : {}),
+      reviewedAt: now,
+    });
+  }
+  if (records.length > 0) upsertRecords(options.rootDir, records);
+  return { accepted: records.length, rejected, summary: summarizeQe({ rootDir: options.rootDir, locales: [...new Set(verdicts.map((v) => v.locale))] }).summary };
+}
+
+/* ------------------------------- status ----------------------------------------------------- */
+
+export interface QeSummary {
+  total: number;
+  ok: number;
+  flagged: number;
+  unreviewed: number;
+  humanVerified: number;
+}
+
+export interface QeStatusResult {
+  outcome: "PASS" | "FAIL" | "INCONCLUSIVE";
+  summary: QeSummary;
+  flagged: Array<{ locale: string; key: string; source: string; target: string; reason?: string; suggestedFix?: string }>;
+  nextSteps: string[];
+}
+
+export function summarizeQe(options: QeOptions): QeStatusResult {
+  const store = new WraithStore(options.rootDir);
+  const locales = options.locales && options.locales.length > 0 ? options.locales : store.readConfig().targetLocales;
+  const index = qeIndex(options.rootDir);
+  const summary: QeSummary = { total: 0, ok: 0, flagged: 0, unreviewed: 0, humanVerified: 0 };
+  const flagged: QeStatusResult["flagged"] = [];
+  for (const locale of locales) {
+    for (const item of collectTranslated(options.rootDir, locale, options.keys)) {
+      const rec = index.get(`${locale}\0${item.key}`);
+      const status = qeStatusOf(rec, item.source, item.currentTarget);
+      summary.total++;
+      if (status === "ok") summary.ok++;
+      else if (status === "human-verified") summary.humanVerified++;
+      else if (status === "unreviewed") summary.unreviewed++;
+      else {
+        summary.flagged++;
+        flagged.push({ locale, key: item.key, source: item.source, target: item.currentTarget!, reason: rec?.reason, suggestedFix: rec?.suggestedFix });
+      }
+    }
+  }
   const nextSteps: string[] = [];
-  if (!client) {
-    nextSteps.push("Tier 2 skipped: set ANTHROPIC_API_KEY or GEMINI_API_KEY (optionally WRAITH_QE_MODEL) to score segments that passed Tier 1.");
-  }
-  if (summary.tier1Escalations > 0) nextSteps.push("Fix Tier 1 failures (run `wraith check`) — they were escalated without LLM calls.");
-  if (summary.needsReview > 0) {
-    nextSteps.push("Export flagged segments for human review: `wraith export --only-flagged --include-tm --include-glossary --bundle-screenshots`.");
-  }
-
+  if (summary.flagged > 0) nextSteps.push("Fix flagged strings with `apply` (or record an Open Question when the meaning is unclear); edited strings return to unreviewed.");
+  if (summary.unreviewed > 0) nextSteps.push("Review the rest in a fresh context: `wraith qe --prepare` (qe_audit mode=prepare), then submit verdicts.");
   return {
-    outcome,
-    passed: outcome === "PASS",
-    reportPath: store.filePath("qe-report.json") === reportPath ? ".wraith/qe-report.json" : reportPath,
-    model: report.model,
-    tier2: report.tier2,
+    outcome: summary.flagged > 0 ? "FAIL" : summary.unreviewed > 0 ? "INCONCLUSIVE" : "PASS",
     summary,
-    flagged: segments
-      .filter((s) => s.status !== "verified" && s.status !== "human-verified")
-      .sort((a, b) => b.riskScore - a.riskScore)
-      .slice(0, 25)
-      .map((s) => ({
-        key: s.key,
-        locale: s.locale,
-        riskScore: s.riskScore,
-        status: s.status,
-        tier: s.tier,
-        topIssue: s.tier1.issues[0]?.message ?? s.swarm.find((f) => f.severity !== "none")?.issue,
-      })),
+    flagged,
     nextSteps,
   };
 }

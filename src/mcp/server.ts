@@ -17,7 +17,7 @@ import {
 import { prepareBatch } from "../core/prepare.js";
 import { generatePseudoLocale } from "../core/pseudo-locale.js";
 import { PseudoMode } from "../core/pseudo.js";
-import { runQe } from "../core/qe.js";
+import { prepareQeReview, submitQeVerdicts, summarizeQe } from "../core/qe.js";
 import { runTmsExport, runTmsImport } from "../core/tms.js";
 import { runVisualQa } from "../core/visual-qa.js";
 import { generateReport } from "../core/report.js";
@@ -34,7 +34,7 @@ import {
 import { applyDocumentTranslations, prepareDocument } from "../documents/registry.js";
 import { mcpTextResult } from "./formatting.js";
 
-export const MCP_SERVER_INSTRUCTIONS = `Wraith gives you memory, rules, and deterministic proof for localization. You perform all code changes and translations in full codebase context; Wraith never calls an LLM (the single opt-in exception is \`qe_audit\` Tier 2 critics, which run only when a model API key is configured).
+export const MCP_SERVER_INSTRUCTIONS = `Wraith gives you memory, rules, and deterministic proof for localization. You perform all code changes and translations in full codebase context; Wraith never calls an LLM.
 
 Definition of done:
 1. Run \`scan\` to detect framework, i18n library, hardcoded strings, concatenations, and hardcoded formatting (\`toFixed\`, locale-less \`toLocaleString\`, currency concatenation, manual dates, \`toUpperCase\`, locale-less \`localeCompare\`).
@@ -45,7 +45,7 @@ Definition of done:
 5. Run \`check\` until catalog & scanner checks pass.
 6. Run \`pseudo\` with \`mode: "auto"\` to generate target-appropriate pseudo-locales (\`en-XA\`, \`ar-XB\`, \`ja-XC\`, \`th-XD\`, \`de-XE\`) with invisible zero-width key IDs, then run \`layout\` against a running dev server at 375px and 1280px.
 7. Remediate confirmed layout defects in order: (a) run \`layout_fix\` for deterministic mechanical codemods, (b) apply agent code prescriptions, (c) re-run \`prepare\` + \`apply\` for keys exceeding recorded width budgets in \`.wraith/layout.json\` (using approved glossary abbreviations with title/aria-label where appropriate), (d) re-run \`layout\` until clean, then re-run \`check\` until outcome is "PASS".
-8. Optionally run \`visual_qa\` (DOM geometry regression vs .wraith/visual-baseline.json, 0 tokens) and \`qe_audit\` (tiered QE; only Tier 2 uses a model). Export \`needs_review\` segments with \`tms_export\` and bring human edits back with \`tms_import\`.
+8. Optionally run \`visual_qa\` (DOM geometry regression vs .wraith/visual-baseline.json, 0 tokens) and \`qe_audit\` (ok/flag review of each string in its code context, done by you in a fresh context). Export flagged strings with \`tms_export\` and bring human edits back with \`tms_import\`.
 9. Run \`report\` to surface issues caught, assumptions made, and any strings worth a human look.
 
 Keep defaults zero-question: infer brand names and terminology, record assumptions via \`memory\`, and report them at the end unless config.review is "confirm".`;
@@ -572,22 +572,39 @@ export function createWraithMcpServer(options: McpServerOptions = {}): McpServer
   server.registerTool(
     "qe_audit",
     {
-      title: "Tiered Quality Estimation & Error Swarm",
+      title: "Quality Review (ok/flag verdicts in context)",
       description:
-        "Score translated segments: Tier 1 deterministic gate (check + width budgets, 0 tokens; failures escalate at risk 100), Tier 2 three parallel critics (terminology/TM drift, UI context/conciseness, semantic/omission) on a fast model when ANTHROPIC_API_KEY or GEMINI_API_KEY is set, Tier 3 composite risk with routing (<25 verified, 25-60 one auto-repair pass when autoRepair=true, else needs_review). Writes .wraith/qe-report.json; only modifies locale catalogs when autoRepair=true (through validated apply). Without a model key, segments are 'unscored' (never verified).",
+        "Binary quality review done by YOU, in a fresh context (use a subagent if you can; do not review your own translations in the context that produced them). mode=prepare returns review tasks, one per file: open each file, read how every key is used, and judge each translation ok or flag. mode=submit with verdicts[] stores them, pinned to the current source+target (an edit resets the string to unreviewed, so only changed strings are re-reviewed). mode=status (default) returns ok/flagged/unreviewed counts and the flagged list. Strings with check errors are not sent for review. Wraith calls no model and never edits catalogs here: fix flagged strings with apply_translations.",
       inputSchema: {
         rootDir: z.string().optional(),
         locales: z.array(z.string()).optional(),
         keys: z.array(z.string()).optional(),
-        autoRepair: z.boolean().optional().default(false),
-        failAbove: z.number().min(0).max(100).optional(),
+        mode: z.enum(["status", "prepare", "submit"]).optional().default("status"),
+        includeReviewed: z.boolean().optional().describe("prepare: also include strings that already have a current verdict"),
+        verdicts: z
+          .array(
+            z.object({
+              locale: z.string(),
+              key: z.string(),
+              verdict: z.enum(["ok", "flag"]),
+              reason: z.string().optional(),
+              suggestedFix: z.string().optional(),
+            })
+          )
+          .optional(),
       },
       outputSchema: GenericObjectOutputSchema,
-      annotations: DESTRUCTIVE_MUTATING_ANNOTATIONS,
+      annotations: MUTATING_ANNOTATIONS,
     },
-    async ({ rootDir, locales, keys, autoRepair, failAbove }) => {
-      const res = await runQe({ rootDir: safeRoot(rootDir), locales, keys, autoRepair, failAbove });
-      return mcpTextResult(res);
+    async ({ rootDir, locales, keys, mode, includeReviewed, verdicts }) => {
+      const root = safeRoot(rootDir);
+      if (mode === "prepare") {
+        const prep = prepareQeReview({ rootDir: root, locales, keys, includeReviewed });
+        return mcpTextResult({ ...prep, tasks: prep.tasks.slice(0, 40), tasksTruncated: prep.tasks.length > 40 });
+      }
+      if (mode === "submit") return mcpTextResult(submitQeVerdicts({ rootDir: root, verdicts: verdicts ?? [] }));
+      const res = summarizeQe({ rootDir: root, locales, keys });
+      return mcpTextResult({ ...res, flagged: res.flagged.slice(0, 25), flaggedTruncated: res.flagged.length > 25 });
     }
   );
 
@@ -596,7 +613,7 @@ export function createWraithMcpServer(options: McpServerOptions = {}): McpServer
     {
       title: "Export for TMS Post-Editing (XLIFF 2.0 / TMX / TBX)",
       description:
-        "Export segments as XLIFF 2.0 (<unit> per key with mda metadata: file, line, component, qe_risk_score, max_chars, max_width_px, tm_similarity; <notes> with QE flags and top fuzzy TM; placeholders as <ph disp/>), optionally TMX 1.4b (tm.tmx), TBX-Basic (glossary.tbx), and visual-qa failure crops. Writes only inside the explicit output directory. 0 LLM tokens.",
+        "Export segments as XLIFF 2.0 (<unit> per key with mda metadata: file, line, component, qe_status, max_chars, max_width_px, tm_similarity; <notes> with review flags and top fuzzy TM; placeholders as <ph disp/>), optionally TMX 1.4b (tm.tmx), TBX-Basic (glossary.tbx), and visual-qa failure crops. Writes only inside the explicit output directory. 0 LLM tokens.",
       inputSchema: {
         rootDir: z.string().optional(),
         outDir: z.string().optional().describe("Workspace-relative output dir (default .wraith/exports/tms)."),
@@ -629,7 +646,7 @@ export function createWraithMcpServer(options: McpServerOptions = {}): McpServer
     {
       title: "Import Reviewed XLIFF 2.0 from a TMS",
       description:
-        "Import human post-edited XLIFF 2.0 (file or directory): validates every target through the apply pipeline (placeholders, ICU, tags, glossary), writes locale catalogs preserving key order, upserts .wraith/tm.json with provenance human-reviewed + verifiedAt, marks qe-report segments human-verified, then runs check (and visual_qa when layout.baseUrl is configured). Returns a compact diff.",
+        "Import human post-edited XLIFF 2.0 (file or directory): validates every target through the apply pipeline (placeholders, ICU, tags, glossary), writes locale catalogs preserving key order, upserts .wraith/tm.json with provenance human-reviewed + verifiedAt, records those strings as human-verified in QE, then runs check (and visual_qa when layout.baseUrl is configured). Returns a compact diff.",
       inputSchema: {
         rootDir: z.string().optional(),
         input: z.string().describe("Workspace-relative .xliff/.xlf file or directory."),

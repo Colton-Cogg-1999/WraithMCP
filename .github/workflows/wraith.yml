@@ -56,8 +56,6 @@ on:
         required: false
       OPENAI_API_KEY:
         required: false
-      GEMINI_API_KEY:
-        required: false
 
 permissions:
   contents: read
@@ -279,7 +277,7 @@ jobs:
           retention-days: 30
 
   # ---------------------------------------------------------------------------
-  # 3. Agentic localization on demand. Uses model tokens (agent + optional QE Tier 2).
+  # 3. Agentic localization on demand. Uses model tokens (the agent translates, then reviews in a fresh subagent context).
   # ---------------------------------------------------------------------------
   agentic-localize:
     if: >-
@@ -302,7 +300,6 @@ jobs:
       ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
       OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
       CODEX_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-      GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
     steps:
       - name: Resolve PR
         id: pr
@@ -399,7 +396,7 @@ jobs:
           npm install -g @anthropic-ai/claude-code
           claude -p "$(cat "$RUNNER_TEMP/prompt.md")" \
             --mcp-config "$RUNNER_TEMP/mcp.json" \
-            --allowedTools "mcp__wraith,Read,Glob,Grep,Edit,Write" \
+            --allowedTools "mcp__wraith,Read,Glob,Grep,Edit,Write,Agent" \
             --permission-mode acceptEdits
 
       - name: Run agent (Codex)
@@ -440,24 +437,24 @@ jobs:
           git commit -m "chore(l10n): localize changed keys via Wraith [wraith check PASS]"
           git push origin "HEAD:${HEAD_REF}"
 
-      - name: Count escalations
+      - name: Count flagged strings
         id: esc
         if: steps.keys.outputs.count != '0'
         run: |
           n=0
-          if [ -f .wraith/qe-report.json ]; then
-            n=$(jq '[.segments[] | select(.status == "needs_review")] | length' .wraith/qe-report.json)
+          if [ -s .wraith/artifacts/qe.json ]; then
+            n=$(jq '.summary.flagged // 0' .wraith/artifacts/qe.json)
           fi
-          echo "needs_review=$n" >> "$GITHUB_OUTPUT"
+          echo "flagged=$n" >> "$GITHUB_OUTPUT"
 
       - name: Export flagged keys for TMS review
-        if: steps.esc.outputs.needs_review != '' && steps.esc.outputs.needs_review != '0'
+        if: steps.esc.outputs.flagged != '' && steps.esc.outputs.flagged != '0'
         run: >-
           npx wraith export --only-flagged --include-tm --include-glossary --bundle-screenshots
           --out .wraith/artifacts/tms-review
 
       - name: Upload TMS review bundle
-        if: steps.esc.outputs.needs_review != '' && steps.esc.outputs.needs_review != '0'
+        if: steps.esc.outputs.flagged != '' && steps.esc.outputs.flagged != '0'
         uses: actions/upload-artifact@v4
         with:
           name: wraith-tms-review-${{ steps.pr.outputs.number || github.run_id }}
@@ -471,7 +468,7 @@ jobs:
           KEY_COUNT: ${{ steps.keys.outputs.count }}
           CHECK_OUTCOME: ${{ steps.check.outcome }}
           CHECK_CODE: ${{ steps.check.outputs.code }}
-          NEEDS_REVIEW: ${{ steps.esc.outputs.needs_review }}
+          FLAGGED: ${{ steps.esc.outputs.flagged }}
         with:
           script: |
             const fs = require('fs');
@@ -482,21 +479,19 @@ jobs:
               body += 'No source-locale key changes found against the base branch. Nothing to localize.\n';
             } else {
               const check = e.CHECK_OUTCOME === 'success' ? '✅ PASS' : e.CHECK_CODE === '2' ? '⚠️ INCONCLUSIVE' : '❌ FAIL';
-              body += `| Changed source keys | \`wraith check\` | Committed | needs_review |\n|---|---|---|---|\n`;
-              body += `| ${e.KEY_COUNT || '?'} | ${check} | ${e.CHECK_OUTCOME === 'success' ? 'yes' : 'no'} | ${e.NEEDS_REVIEW || 0} |\n`;
-              let report = null;
-              try { report = JSON.parse(fs.readFileSync('.wraith/qe-report.json', 'utf8')); } catch {}
-              if (report) {
-                body += `\nQE model: \`${report.model || 'n/a'}\` · Tier 2: \`${report.tier2}\`\n`;
-                const flagged = (report.segments || []).filter((s) => s.status === 'needs_review')
-                  .sort((a, b) => b.riskScore - a.riskScore);
+              body += `| Changed source keys | \`wraith check\` | Committed | Flagged in review |\n|---|---|---|---|\n`;
+              body += `| ${e.KEY_COUNT || '?'} | ${check} | ${e.CHECK_OUTCOME === 'success' ? 'yes' : 'no'} | ${e.FLAGGED || 0} |\n`;
+              let qe = null;
+              try { qe = JSON.parse(fs.readFileSync('.wraith/artifacts/qe.json', 'utf8')); } catch {}
+              if (qe) {
+                const q = qe.summary || {};
+                body += `\nReview: ${q.ok || 0} ok · ${q.flagged || 0} flagged · ${q.humanVerified || 0} human-verified · ${q.unreviewed || 0} unreviewed\n`;
+                const flagged = qe.flagged || [];
                 if (flagged.length) {
-                  body += '\n### Escalated to human review\n\n| Locale | Key | Risk | Top issue |\n|---|---|---|---|\n';
-                  for (const s of flagged.slice(0, 50)) {
-                    const issue = s.tier1 && !s.tier1.passed
-                      ? (s.tier1.issues[0] || 'tier1 failure')
-                      : ((s.swarm || []).slice().sort((a, b) => b.score - a.score)[0]?.issue || '');
-                    body += `| \`${s.locale}\` | \`${s.key}\` | ${s.riskScore} | ${String(typeof issue === 'string' ? issue : JSON.stringify(issue)).replace(/\|/g, '\\|').slice(0, 140)} |\n`;
+                  body += '\n### Flagged in review\n\n| Locale | Key | Translation | Why |\n|---|---|---|---|\n';
+                  const cell = (x) => String(x || '').replace(/\|/g, '\\|').slice(0, 140);
+                  for (const f of flagged.slice(0, 50)) {
+                    body += `| \`${f.locale}\` | \`${f.key}\` | ${cell(f.target)} | ${cell(f.reason)}${f.suggestedFix ? ` → ${cell(f.suggestedFix)}` : ''} |\n`;
                   }
                   if (flagged.length > 50) body += `\n…and ${flagged.length - 50} more.\n`;
                   body += `\nXLIFF 2.0 / TMX / TBX review bundle: \`wraith-tms-review\` artifact on [this run](${runUrl}). Re-import with \`wraith import <dir>\`.\n`;

@@ -1,6 +1,6 @@
 ---
 name: localize-pr
-description: Translate only the source-locale keys changed in a pull request into every configured target locale, verify them deterministically, score them with QE, and leave anything risky for human review. Use for the `/localize` PR comment in CI (agentic-localize job) or when asked to "localize this PR / branch / diff".
+description: Translate only the source-locale keys changed in a pull request into every configured target locale, verify them deterministically, review them in context (ok/flag), and leave anything a human must decide for the TMS loop. Use for the `/localize` PR comment in CI (agentic-localize job) or when asked to "localize this PR / branch / diff".
 ---
 
 # localize-pr
@@ -22,16 +22,13 @@ MCP tool names below are the Wraith server's tools (in Claude Code: `mcp__wraith
    3. `apply` with `targetLocale` and the translations. If `apply` rejects an item, fix that item and re-apply. Never bypass `apply`.
    4. Record non-obvious decisions (tone, brand, ambiguous sense) with `memory` (assumptions).
 3. `check` (CLI `wraith check`). Fix every `error`; re-run until `PASS`. Warnings on unchanged keys are out of scope.
-4. `qe_audit` (CLI `wraith qe --json`). Optionally with `autoRepair: true` (CLI `--auto-repair`) for a single repair pass on 25–60 risk segments.
-   - `verified` → done.
-   - `unscored` → no QE model keys; report as unscored, not verified.
-   - `needs_review` → do not keep re-translating. Leave it for the human loop (**tms-roundtrip** skill / CI export).
+4. Review with the **qe-review** skill, in a fresh context (a subagent if available): `qe_audit` `mode: "prepare"` with the changed keys → open each file and judge each string `ok`/`flag` → `mode: "submit"`. Fix flagged strings once with `apply` and re-review them; anything still flagged is left for the human loop (**tms-roundtrip** skill / CI export).
 5. If a dev server is available: `visual_qa` for the touched routes and target locales; fix layout regressions via **layout-remediation**.
-6. `report` (CLI `wraith report`) → print the Markdown summary as your final message, including escalated keys with risk scores.
+6. `report` (CLI `wraith report`) → print the Markdown summary as your final message, including flagged keys and their reasons.
 
 ## Stop conditions
 
-- Done: `check` returns `PASS` and every changed key/locale has been applied and QE-scored (any status).
+- Done: `check` returns `PASS` and every changed key/locale has been applied and reviewed (ok or flagged).
 - Stop after 3 consecutive `check` iterations that fail on the same issue; report it with file/key.
 - Stop if `check` returns `INCONCLUSIVE`; report the reason, never claim `PASS`.
 
@@ -39,7 +36,7 @@ MCP tool names below are the Wraith server's tools (in Claude Code: `mcp__wraith
 
 - Never edit locale files directly or touch keys outside the changed set (except fixing `check` errors you introduced).
 - Never edit source code, configs, CI files, or `.wraith/visual-baseline.json` in this skill.
-- Never mark anything verified yourself, edit `.wraith/qe-report.json`, or set `provenance: "human-reviewed"`.
+- Never edit `.wraith/qe-verdicts.json`, set `human-verified`, or set `provenance: "human-reviewed"`.
 - Never commit or push; CI (or the user) does that after `check` passes.
 - Never drop, rename, or translate placeholders, ICU keywords, or DNT terms.
-- Never loop on `needs_review` segments to force a lower score.
+- Never loop on flagged strings: one fix-and-re-review round, then hand them to a human.

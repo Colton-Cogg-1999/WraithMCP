@@ -1,67 +1,47 @@
 # Quality Estimation & TMS Round-Trip
 
-## QE (`wraith qe` / MCP `qe_audit`)
+## QE review (`wraith qe` / MCP `qe_audit`)
+
+QE is a review, not a score. Each translated string gets one verdict, `ok` or `flag`, from your coding agent, which reads the code where the string is used. Wraith calls no model. It decides what needs reviewing, supplies facts the agent can't see from one file, and stores the verdicts.
 
 ```bash
-wraith qe [--locales de,ja] [--auto-repair] [--fail-above 60] [--json]
+wraith qe --prepare [--locales de,ja] [--all] [--json]   # write review tasks → .wraith/qe-tasks.json
+wraith qe --submit verdicts.json                          # store verdicts
+wraith qe [--locales de,ja] [--json]                      # status: PASS / FAIL (flagged) / INCONCLUSIVE (unreviewed)
 ```
 
-Writes `.wraith/qe-report.json`. Exit `1` if any segment's risk > `--fail-above` or any segment is `needs_review`.
+MCP: `qe_audit` with `mode: "prepare" | "submit" | "status"` (default `status`). It never edits catalogs; flagged strings are fixed with `apply`.
 
-**Model selection (Tier 2 only):** `WRAITH_QE_MODEL`, else `claude-haiku-4-5-20251001` if `ANTHROPIC_API_KEY` is set, else `gemini-2.5-flash` if `GEMINI_API_KEY`/`GOOGLE_API_KEY` is set. With no key, Tier 2 is skipped (`tier2: "unavailable"`) and segments passing Tier 1 are `unscored` — fail-closed, never `verified`.
+**Loop:**
 
-MCP `qe_audit` is annotated `destructiveHint: true` because `autoRepair` can write catalogs; with `autoRepair: false` it only writes `qe-report.json`.
+1. **Prepare.** One task per locale × file, covering every translated string without a current verdict. Strings with `check` errors are listed in `blockedByCheck` and left out until they're fixed. Each string carries:
+   - `sameSourceElsewhere`: how the project translates the same source text in other files.
+   - `termBase`: Term Base hits.
+   - `comment`: the developer comment, if any.
 
-### Tiers
+   The result also includes `projectDecisions` (recorded assumptions such as register or brand handling) and one set of reviewer `instructions`.
+2. **Review in a fresh context.** In Claude Code that means a subagent; elsewhere, a separate step after translating. The reviewer opens each file and reads how every key is used, then marks a string `flag` only if a user of that UI would find it wrong, misleading or broken. Every flag needs a reason, plus `suggestedFix` when the fix is clear. An unclear source gets a reason starting "Unclear meaning:".
+3. **Submit.** Each verdict is stored in `.wraith/qe-verdicts.json`, pinned to the exact source and target it judged. Editing either one makes the string `unreviewed` again, so the next run reviews only what changed.
+4. **Fix and hand off.** Fix flagged strings with `apply` and re-review them once. Strings that still need a human go out through `export --only-flagged`, and TMS import records them as `human-verified`.
 
-1. **Tier 1 — deterministic (0 tokens).** The same validations as `check` (placeholders, ICU, plurals, inline tags, glossary/DNT) plus width budget utilization `U = min(1, width / maxBudgetWidth)` from `layout.json`. Hard failure or over budget → risk 100, `needs_review`, no LLM call.
-2. **Tier 2 — three critics (opt-in tokens).** Batched per source file, ≤ 25 segments per call, strict JSON output:
-   - `terminology` — Terminology & TM drift (glossary, prior human-reviewed TM).
-   - `ui_context` — UI context & conciseness (element role, budget, register).
-   - `semantic` — Semantic accuracy & omission (meaning shifts, negation, numbers, dropped content).
-3. **Tier 3 — risk score.**
+Status per string: `unreviewed` | `ok` | `flagged` | `human-verified`.
 
-```
-Risk = round(min(100, 100 × (0.35·S_swarm + 0.25·(1 − TM_sim) + 0.20·U_budget + 0.20·C_novelty)))
-```
-
-Severity weights for `S_swarm`: critical 1.0 · major 0.75 · minor 0.35 · none 0.
-
-| Risk | Without `--auto-repair` | With `--auto-repair` |
-|---|---|---|
-| < 25 | `verified` | `verified` |
-| 25–60 | `needs_review` | one repair pass via the validated apply path, re-score: < 25 `verified`, else `needs_review` |
-| > 60 | `needs_review` | `needs_review` |
-
-### `qe-report.json`
+### `qe-verdicts.json`
 
 ```json
 {
-  "version": 1,
-  "generatedAt": "2026-11-25T17:00:00.000Z",
-  "model": "claude-haiku-4-5-20251001",
-  "tier2": "ran",
-  "segments": [
+  "version": 2,
+  "records": [
     {
-      "key": "checkout.cta", "locale": "de", "source": "Place order", "target": "Bestellung aufgeben",
-      "tier1": { "passed": true, "issues": [] },
-      "budgetUtilization": 0.82, "tmSimilarity": 0.64, "novelty": 0.3,
-      "swarm": [
-        { "critic": "ui_context", "key": "checkout.cta", "severity": "minor", "score": 0.35,
-          "issue": "Long for a 120px button", "suggestedFix": "Bestellen" }
-      ],
-      "riskScore": 28, "status": "needs_review"
+      "locale": "de", "key": "toolbar.save", "source": "Save", "target": "Sparen",
+      "verdict": "flag", "reason": "'Sparen' means saving money; this button saves the document",
+      "suggestedFix": "Speichern", "reviewedAt": "2026-11-25T19:00:00.000Z"
     }
-  ],
-  "summary": {}
+  ]
 }
 ```
 
-`status` ∈ `verified` | `needs_review` | `unscored` | `human-verified`; `repaired: true` marks auto-repaired segments.
-
-QE ranks risk; it is not a quality certificate. Use it to decide where humans look.
-
----
+`verdict` is `ok`, `flag` or `human-verified`. The last is written only by TMS import.
 
 ## TMS export (`wraith export` / MCP `tms_export`)
 
@@ -79,7 +59,7 @@ wraith export [--format xliff2] [--out .wraith/exports/tms] [--locales de,ja] \
 | `glossary.tbx` | TBX-Basic (`--include-glossary`) |
 | `screenshots/` + `manifest.json` | visual-qa / layout screenshots (`--bundle-screenshots`) |
 
-`--only-flagged` limits units to `needs_review` segments.
+`--only-flagged` limits units to strings flagged in QE review.
 
 ### XLIFF 2.0 unit
 
@@ -95,14 +75,14 @@ wraith export [--format xliff2] [--out .wraith/exports/tms] [--locales de,ja] \
           <mda:meta type="file">src/components/Cart.tsx</mda:meta>
           <mda:meta type="line">27</mda:meta>
           <mda:meta type="component">CartBadge</mda:meta>
-          <mda:meta type="qe_risk_score">64</mda:meta>
+          <mda:meta type="qe_status">flagged</mda:meta>
           <mda:meta type="max_chars">18</mda:meta>
           <mda:meta type="max_width_px">120</mda:meta>
           <mda:meta type="tm_similarity">0.71</mda:meta>
         </mda:metaGroup>
       </mda:metadata>
       <notes>
-        <note category="qe">[semantic/major] "items" rendered as "Artikel" in singular for count=1</note>
+        <note category="qe">Flagged in review: "Artikel" reads as products, but this badge counts list items</note>
         <note category="tm">Fuzzy 71%: "{count} items in basket" → "{count} Artikel im Warenkorb" (human-reviewed)</note>
       </notes>
       <segment state="translated">
@@ -166,11 +146,29 @@ wraith import reviewed/ --format xliff
 1. Validates the target through the same placeholder / ICU / plural / glossary pipeline as `apply`; failing units are rejected and listed.
 2. Writes catalogs losslessly, preserving key order.
 3. Upserts `.wraith/tm.json` with `provenance: "human-reviewed"` and `verifiedAt`.
-4. Sets the segment's `qe-report.json` status to `human-verified`.
+4. Records the string as `human-verified` in `qe-verdicts.json`.
 5. Runs `check` (and `visual-qa` when `layout.baseUrl` is configured) and prints a diff summary.
 
 `tms_import` is `destructiveHint: true`. CSV / TBX / TMX / locale-file asset import is unchanged (`--format auto|csv|tbx|tmx|locales`).
 
 ## Benchmark status
 
-The TM ablation (Stage 4: how `human-reviewed` TM and QE routing change outcomes) is **dry-run validated; full run pending**. Run it with `node eval/run.mjs run --scopes tm-ablation`; results will be published in `eval/REPORT.md` Section 13. No Stage 4 numbers are claimed here.
+The TM ablation (Stage 4: how `human-reviewed` TM changes outcomes) is **dry-run validated; full run pending**. Run it with `node eval/run.mjs run --scopes tm-ablation`; results will be published in `eval/REPORT.md` Section 13. No Stage 4 numbers are claimed here.
+
+### Proof of concept (2026-11-25): not publishable evidence
+
+This was one locale (de), one blind agent run per arm, with a test set written by the evaluator. Scripts are in `eval/poc/` and results in `eval/results/poc-qe-*.json` and `eval/results/poc-tm.json`.
+
+**QE review.** One German locale. 40 recurring strings (20 clean, 20 with planted meaning errors) plus 10 strings that appear only once (5 clean, 5 with planted errors), so for those nothing elsewhere in the project gives the error away. The error types were wrong word sense, negation, inversion, omission, addition, register and UI form. Every planted error kept its placeholders, ICU and tags intact, so deterministic `check` caught **0** of them. The reviewer was a blind subagent in a fresh context, with only the task file and the component files.
+
+| Run | Errors flagged (all) | Recurring | One-off | Clean strings flagged |
+|---|---:|---:|---:|---:|
+| Earlier three-critic design + risk score, Sonnet, before no-TM fix | 20/20 | 20/20 | — | **20/20** |
+| Earlier three-critic design + risk score, Sonnet, after no-TM fix | 17/20 | 17/20 | — | 0/20 |
+| **Binary review in code context, Opus** | **25/25** | **20/20** | **5/5** | **0/25** |
+
+The three misses in the earlier design (dropped "E-Mail", a noun used for a button verb, du/Sie register) were all found by the critics but rated `minor`, so the risk score let them through. The binary review flagged all three.
+
+The last row changed both the design and the model, so the comparison doesn't show which helped more. The planted errors are also blunt ones written by the evaluator. Read this as "the loop works end to end," not as an accuracy figure. Results: `eval/results/poc-qe-opus.json` and `eval/results/poc-qe-three-critic-sonnet.json`.
+
+**TM context (Stage 4 arms Anotm vs Afull, synthetic-app, 60 items):** both arms reached TCR 1.0, so within one batch the model is already consistent. Afull matched the project's established phrasing more closely: chrF2 97.5 vs 90.3. On items whose gold translation was in the TM the scores were 100 vs 85.4, which is expected copying. On unseeded items they were 96.0 vs 93.3. TM's real value is consistency across runs and sessions, which a single-batch test cannot show.

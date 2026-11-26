@@ -5,10 +5,10 @@ Skills are Markdown playbooks (`skills/<name>/SKILL.md`, YAML frontmatter `name`
 | Skill | Use when | Core sequence |
 |---|---|---|
 | [`i18n-prep`](../skills/i18n-prep/SKILL.md) | repo not yet internationalized; hardcoded strings/formatting/RTL hazards | `extract` → `layout_fix` → `check` (hardcoded_formatting, directional_asset, rtl_layout_risk) → patch → `pseudo` en-XA/ar-XB → `layout` + `visual_qa` |
-| [`localize-pr`](../skills/localize-pr/SKILL.md) | translate changed keys in a PR; CI `/localize` | `status` → `prepare` → translate → `apply` → `check` → `qe_audit` → `report` |
+| [`localize-pr`](../skills/localize-pr/SKILL.md) | translate changed keys in a PR; CI `/localize` | `status` → `prepare` → translate → `apply` → `check` → `qe_audit` review (fresh context) → `report` |
 | [`layout-remediation`](../skills/layout-remediation/SKILL.md) | `layout` / `visual_qa` FAIL | reproduce → `layout_fix` → prescribed edits → width budgets via `prepare`/`apply` → verify |
-| [`qe-triage`](../skills/qe-triage/SKILL.md) | score/triage translations; `wraith qe` exits 1 | `check` → `qe_audit` → ≤1 repair pass → route `needs_review` |
-| [`tms-roundtrip`](../skills/tms-roundtrip/SKILL.md) | human linguist review via TMS | `check` → `qe_audit` → `tms_export` → TMS → `tms_import` → `check` |
+| [`qe-review`](../skills/qe-review/SKILL.md) | review translations in context; `wraith qe` exits 1/2; release sign-off | `check` → `qe_audit` prepare → fresh-context review of each file → submit → fix flagged once → hand off |
+| [`tms-roundtrip`](../skills/tms-roundtrip/SKILL.md) | human linguist review via TMS | `check` → `qe_audit` review → `tms_export` → TMS → `tms_import` → `check` |
 
 ## Connect the MCP server
 
@@ -53,7 +53,7 @@ command = "npx"
 args = ["wraith", "mcp"]
 ```
 
-QE Tier 2 reads `ANTHROPIC_API_KEY` / `GEMINI_API_KEY` / `GOOGLE_API_KEY` / `WRAITH_QE_MODEL` from the server's environment; add an `env` block to the MCP config only if you want `qe_audit` to run Tier 2 from the agent.
+Wraith needs no API keys: review (`qe_audit`) is done by your agent.
 
 ## Use a skill
 
@@ -67,12 +67,12 @@ QE Tier 2 reads `ANTHROPIC_API_KEY` / `GEMINI_API_KEY` / `GOOGLE_API_KEY` / `WRA
 > Use i18n-prep on this repo; targets are de, ar, ja.
 > Localize the keys changed on this branch (localize-pr).
 > visual-qa failed on /checkout at 375px for de — run layout-remediation.
-> Triage QE for ja and fix what you safely can (qe-triage).
+> Review the ja translations in context and fix what's flagged (qe-review).
 > Send the flagged German strings to our TMS; later import reviewed/de.xliff (tms-roundtrip).
 ```
 
 ## Rules shared by all skills
 
-- Writes to target catalogs go through `apply`, `qe_audit` auto-repair, or `tms_import` — all validated. Never hand-edit locale files.
-- `INCONCLUSIVE` is never reported as `PASS`; `unscored` is never reported as `verified`.
-- Agents never set `human-reviewed` provenance, edit `qe-report.json`, or recapture the visual baseline to silence a regression.
+- Writes to target catalogs go through `apply` or `tms_import` — all validated. Never hand-edit locale files.
+- `INCONCLUSIVE` is never reported as `PASS`; `unreviewed` is never reported as `ok`.
+- Agents never set `human-reviewed` provenance, edit `qe-verdicts.json`, or recapture the visual baseline to silence a regression.

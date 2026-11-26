@@ -3,7 +3,7 @@ import path from "node:path";
 import { applyTranslations } from "./apply.js";
 import { runCheck } from "./check.js";
 import { prepareBatch, PreparedItem } from "./prepare.js";
-import { readQeReport, refreshQeSummary, QeSegmentResult, writeQeReport } from "./qe.js";
+import { markHumanVerified, qeIndex, QeStatus, qeStatusOf } from "./qe.js";
 import { atomicWriteFileSync, resolveConfinedPath } from "./security.js";
 import { WraithStore } from "./store.js";
 import { findTmMatches, readTm, TmEntry, upsertTmEntries } from "./tm.js";
@@ -155,8 +155,8 @@ function readVisualManifest(rootDir: string): ScreenshotRef[] {
   }
 }
 
-function xliffState(seg: QeSegmentResult | undefined, target: string | undefined): "initial" | "translated" | "reviewed" {
-  if (seg?.status === "human-verified") return "reviewed";
+function xliffState(status: QeStatus, target: string | undefined): "initial" | "translated" | "reviewed" {
+  if (status === "human-verified") return "reviewed";
   if (target) return "translated";
   return "initial";
 }
@@ -279,13 +279,11 @@ export function runTmsExport(options: TmsExportOptions): TmsExportResult {
   const store = new WraithStore(options.rootDir);
   const config = store.readConfig();
   const layout = store.readLayout();
-  const qe = readQeReport(options.rootDir);
+  const verdicts = qeIndex(options.rootDir);
   const outRel = options.outDir ?? ".wraith/exports/tms";
   const outAbs = resolveConfinedPath(store.rootDir, outRel, { label: "TMS export directory" });
   fs.mkdirSync(outAbs, { recursive: true });
   const locales = options.locales && options.locales.length > 0 ? options.locales : config.targetLocales;
-  const qeIndex = new Map<string, QeSegmentResult>();
-  for (const s of qe?.segments ?? []) qeIndex.set(`${s.locale}\0${s.key}`, s);
   const shots = options.bundleScreenshots ? readVisualManifest(store.rootDir) : [];
 
   const files: string[] = [];
@@ -301,23 +299,20 @@ export function runTmsExport(options: TmsExportOptions): TmsExportResult {
         skippedPluralObjectKeys++;
         continue;
       }
-      const seg = qeIndex.get(`${locale}\0${item.key}`);
-      if (options.onlyFlagged && seg?.status !== "needs_review") continue;
+      const verdict = verdicts.get(`${locale}\0${item.key}`);
+      const qeStatus = qeStatusOf(verdict, item.source, item.currentTarget);
+      if (options.onlyFlagged && qeStatus !== "flagged") continue;
       const site = item.usageSites[0];
       const budget = layout.budgets[item.key]?.[locale];
-      const tm =
-        seg?.topFuzzyTM ??
-        findTmMatches(store.rootDir, item.source, locale, {
+      const tm = findTmMatches(store.rootDir, item.source, locale, {
           minSimilarity: 0.7,
           limit: 1,
           excludeKey: item.key,
           excludeSelf: item.currentTarget ? { source: item.source, target: item.currentTarget } : undefined,
         })[0];
       const notes: Array<{ category: string; text: string }> = [];
-      for (const iss of seg?.tier1.issues ?? []) notes.push({ category: "qe", text: `[tier1/${iss.severity}] ${iss.code}: ${iss.message}` });
-      for (const f of seg?.swarm ?? []) {
-        if (f.severity === "none") continue;
-        notes.push({ category: "qe", text: `[${f.critic}/${f.severity}] ${f.issue}${f.suggestedFix ? ` — suggested: ${f.suggestedFix}` : ""}` });
+      if (qeStatus === "flagged" && verdict?.reason) {
+        notes.push({ category: "qe", text: `Flagged in review: ${verdict.reason}${verdict.suggestedFix ? ` — suggested: ${verdict.suggestedFix}` : ""}` });
       }
       if (tm) notes.push({ category: "tm", text: `TM ${Math.round(tm.similarity * 100)}% (${tm.provenance}): ${tm.source} → ${tm.target}` });
       if (item.layout?.constraint) notes.push({ category: "layout", text: `Layout constraint: ${item.layout.constraint}` });
@@ -335,14 +330,13 @@ export function runTmsExport(options: TmsExportOptions): TmsExportResult {
         key: item.key,
         source: item.source,
         target: item.currentTarget,
-        state: xliffState(seg, item.currentTarget),
+        state: xliffState(qeStatus, item.currentTarget),
         meta: {
           file: site?.file,
           line: site?.line,
           component: site?.component,
           element: site?.element,
-          qe_risk_score: seg?.riskScore,
-          qe_status: seg?.status,
+          qe_status: item.currentTarget ? qeStatus : undefined,
           max_chars: budget?.budgetChars ?? item.layout?.budgetChars,
           max_width_px: budget?.maxWidthPx ?? item.layout?.maxWidthPx,
           tm_similarity: tm ? Number(tm.similarity.toFixed(3)) : undefined,
@@ -550,19 +544,10 @@ export async function runTmsImport(options: TmsImportOptions): Promise<TmsImport
       }))
     );
 
-    const qe = readQeReport(store.rootDir);
-    if (qe) {
-      const ids = new Set(verified.map((v) => `${v.locale}\0${v.key}`));
-      for (const seg of qe.segments) {
-        if (ids.has(`${seg.locale}\0${seg.key}`)) {
-          const v = verified.find((x) => x.locale === seg.locale && x.key === seg.key)!;
-          seg.status = "human-verified";
-          seg.target = v.target;
-          result.qeHumanVerified++;
-        }
-      }
-      writeQeReport(store.rootDir, refreshQeSummary(qe));
-    }
+    result.qeHumanVerified += markHumanVerified(
+      store.rootDir,
+      verified.map((v) => ({ locale: v.locale, key: v.key, source: v.source, target: v.target }))
+    );
   }
 
   if (options.runVerification !== false) {

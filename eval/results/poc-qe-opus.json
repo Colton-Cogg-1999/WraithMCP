@@ -1,0 +1,386 @@
+{
+  "generatedAt": "2026-11-26T00:33:36.585Z",
+  "tag": "opus",
+  "kind": "proof-of-concept",
+  "caveat": "50 strings, 1 locale, 1 blind review run, planted errors authored by the evaluator; not publishable evidence.",
+  "metrics": {
+    "n": 50,
+    "submitted": 50,
+    "rejected": 0,
+    "missing": 0,
+    "recall": {
+      "n": 25,
+      "hit": 25,
+      "pct": 100
+    },
+    "recallRecurring": {
+      "n": 20,
+      "hit": 20,
+      "pct": 100
+    },
+    "recallOneOff": {
+      "n": 5,
+      "hit": 5,
+      "pct": 100
+    },
+    "falseFlags": {
+      "n": 25,
+      "hit": 0,
+      "pct": 0
+    },
+    "missed": [],
+    "wronglyFlagged": []
+  },
+  "rows": [
+    {
+      "key": "ApiKeysPanel.active",
+      "corrupted": false,
+      "oneOff": false,
+      "verdict": "ok"
+    },
+    {
+      "key": "ApiKeysPanel.delete",
+      "corrupted": false,
+      "oneOff": false,
+      "verdict": "ok"
+    },
+    {
+      "key": "ApiKeysPanel.deletedToast",
+      "corrupted": false,
+      "oneOff": false,
+      "verdict": "ok"
+    },
+    {
+      "key": "BillingForm.required",
+      "corrupted": false,
+      "oneOff": false,
+      "verdict": "ok"
+    },
+    {
+      "key": "BillingForm.submit",
+      "corrupted": false,
+      "oneOff": false,
+      "verdict": "ok"
+    },
+    {
+      "key": "DocumentCard.archived",
+      "corrupted": false,
+      "oneOff": false,
+      "verdict": "ok"
+    },
+    {
+      "key": "FileUploader.failed",
+      "corrupted": false,
+      "oneOff": false,
+      "verdict": "ok"
+    },
+    {
+      "key": "FileUploader.submit",
+      "corrupted": false,
+      "oneOff": false,
+      "verdict": "ok"
+    },
+    {
+      "key": "InvoiceTable.edit",
+      "corrupted": false,
+      "oneOff": false,
+      "verdict": "ok"
+    },
+    {
+      "key": "InvoiceTable.lastUpdated",
+      "corrupted": false,
+      "oneOff": false,
+      "verdict": "ok"
+    },
+    {
+      "key": "NotificationPanel.items",
+      "corrupted": false,
+      "oneOff": false,
+      "verdict": "ok"
+    },
+    {
+      "key": "OrderHistory.pending",
+      "corrupted": false,
+      "oneOff": false,
+      "verdict": "ok"
+    },
+    {
+      "key": "ProjectSettings.cancel",
+      "corrupted": false,
+      "oneOff": false,
+      "verdict": "ok"
+    },
+    {
+      "key": "ProjectSettings.confirmDelete",
+      "corrupted": false,
+      "oneOff": false,
+      "verdict": "ok"
+    },
+    {
+      "key": "ProjectSettings.save",
+      "corrupted": false,
+      "oneOff": false,
+      "verdict": "ok"
+    },
+    {
+      "key": "SignupForm.required",
+      "corrupted": false,
+      "oneOff": false,
+      "verdict": "ok"
+    },
+    {
+      "key": "TaskBoard.filesSelected",
+      "corrupted": false,
+      "oneOff": false,
+      "verdict": "ok"
+    },
+    {
+      "key": "TaskBoard.save",
+      "corrupted": false,
+      "oneOff": false,
+      "verdict": "ok"
+    },
+    {
+      "key": "UserProfileForm.minChars",
+      "corrupted": false,
+      "oneOff": false,
+      "verdict": "ok"
+    },
+    {
+      "key": "UserProfileForm.email",
+      "corrupted": false,
+      "oneOff": false,
+      "verdict": "ok"
+    },
+    {
+      "key": "BillingForm.save",
+      "corrupted": true,
+      "oneOff": false,
+      "class": "wrong-sense",
+      "verdict": "flag",
+      "reason": "Wrong sense: 'Sparen' is save money; button saves data."
+    },
+    {
+      "key": "SignupForm.submit",
+      "corrupted": true,
+      "oneOff": false,
+      "class": "wrong-sense",
+      "verdict": "flag",
+      "reason": "Wrong sense: 'Unterwerfen' means submit/subjugate oneself, not submit a form."
+    },
+    {
+      "key": "ApiKeysPanel.close",
+      "corrupted": true,
+      "oneOff": false,
+      "class": "wrong-sense",
+      "verdict": "flag",
+      "reason": "'Nah' means 'near', not the close action on a button."
+    },
+    {
+      "key": "FileUploader.cancel",
+      "corrupted": true,
+      "oneOff": false,
+      "class": "wrong-sense",
+      "verdict": "flag",
+      "reason": "Wrong sense: 'Kündigen' is cancel a contract/subscription; button aborts the action."
+    },
+    {
+      "key": "OrderHistory.active",
+      "corrupted": true,
+      "oneOff": false,
+      "class": "wrong-sense",
+      "verdict": "flag",
+      "reason": "'Aktion' means action/promotion, not the status 'Active'."
+    },
+    {
+      "key": "ApiKeysPanel.confirmDelete",
+      "corrupted": true,
+      "oneOff": false,
+      "class": "negation",
+      "verdict": "flag",
+      "reason": "Negation added: asks whether user really wants NOT to delete."
+    },
+    {
+      "key": "UserProfileForm.required",
+      "corrupted": true,
+      "oneOff": false,
+      "class": "inversion",
+      "verdict": "flag",
+      "reason": "Inverted: 'optional' instead of 'required'."
+    },
+    {
+      "key": "SignupForm.minChars",
+      "corrupted": true,
+      "oneOff": false,
+      "class": "inversion",
+      "verdict": "flag",
+      "reason": "Inverted: 'höchstens' (at most) instead of 'at least'."
+    },
+    {
+      "key": "BillingForm.failed",
+      "corrupted": true,
+      "oneOff": false,
+      "class": "inversion",
+      "verdict": "flag",
+      "reason": "Inverted meaning: 'Erfolgreich' means 'Successful'."
+    },
+    {
+      "key": "InvoiceTable.pending",
+      "corrupted": true,
+      "oneOff": false,
+      "class": "inversion",
+      "verdict": "flag",
+      "reason": "Wrong meaning: 'Abgelehnt' means declined, not pending."
+    },
+    {
+      "key": "DocumentCard.deletedToast",
+      "corrupted": true,
+      "oneOff": false,
+      "class": "wrong-meaning",
+      "verdict": "flag",
+      "reason": "Wrong meaning: 'erstellt' means created, not deleted."
+    },
+    {
+      "key": "DocumentCard.lastUpdated",
+      "corrupted": true,
+      "oneOff": false,
+      "class": "wrong-meaning",
+      "verdict": "flag",
+      "reason": "Wrong meaning: 'first created' instead of 'last updated'."
+    },
+    {
+      "key": "FileUploader.filesSelected",
+      "corrupted": true,
+      "oneOff": false,
+      "class": "wrong-meaning",
+      "verdict": "flag",
+      "reason": "Wrong meaning: 'gelöscht' (deleted) instead of 'selected'."
+    },
+    {
+      "key": "TeamMembersList.items",
+      "corrupted": true,
+      "oneOff": false,
+      "class": "wrong-meaning",
+      "verdict": "flag",
+      "reason": "Plural branch wrong: 'Fehler' means errors, not items."
+    },
+    {
+      "key": "BillingForm.email",
+      "corrupted": true,
+      "oneOff": false,
+      "class": "omission",
+      "verdict": "flag",
+      "reason": "Drops 'E-Mail'; 'Adresse' is ambiguous (could be postal address on a billing form)."
+    },
+    {
+      "key": "SignupForm.email",
+      "corrupted": true,
+      "oneOff": false,
+      "class": "addition",
+      "verdict": "flag",
+      "reason": "Added meaning: promises a 10% discount not in the source."
+    },
+    {
+      "key": "TeamMembersList.confirmDelete",
+      "corrupted": true,
+      "oneOff": false,
+      "class": "register",
+      "verdict": "flag",
+      "reason": "Informal 'du' conflicts with formal 'Sie' used for the same string elsewhere."
+    },
+    {
+      "key": "DocumentCard.edit",
+      "corrupted": true,
+      "oneOff": false,
+      "class": "ui-form",
+      "verdict": "flag",
+      "reason": "Wrong form for a button: 'editing in progress' instead of the imperative action."
+    },
+    {
+      "key": "ProjectSettings.archived",
+      "corrupted": true,
+      "oneOff": false,
+      "class": "inversion",
+      "verdict": "flag",
+      "reason": "Wrong meaning: 'Aktiv' (active) instead of 'Archived'."
+    },
+    {
+      "key": "TaskBoard.close",
+      "corrupted": true,
+      "oneOff": false,
+      "class": "ui-form",
+      "verdict": "flag",
+      "reason": "Noun 'Schließung' (closure) instead of the imperative button verb."
+    },
+    {
+      "key": "CheckoutPanel.placeOrder",
+      "corrupted": false,
+      "oneOff": true,
+      "verdict": "ok"
+    },
+    {
+      "key": "CheckoutPanel.emptyCart",
+      "corrupted": false,
+      "oneOff": true,
+      "verdict": "ok"
+    },
+    {
+      "key": "CheckoutPanel.applyCoupon",
+      "corrupted": false,
+      "oneOff": true,
+      "verdict": "ok"
+    },
+    {
+      "key": "CheckoutPanel.backToShop",
+      "corrupted": false,
+      "oneOff": true,
+      "verdict": "ok"
+    },
+    {
+      "key": "CheckoutPanel.orderTotal",
+      "corrupted": false,
+      "oneOff": true,
+      "verdict": "ok"
+    },
+    {
+      "key": "CheckoutPanel.freeShipping",
+      "corrupted": true,
+      "oneOff": true,
+      "class": "inversion",
+      "verdict": "flag",
+      "reason": "Inverted: 'unter' means under, source says over."
+    },
+    {
+      "key": "CheckoutPanel.removeItem",
+      "corrupted": true,
+      "oneOff": true,
+      "class": "inversion",
+      "verdict": "flag",
+      "reason": "Inverted: 'hinzufügen' means add; button removes from cart."
+    },
+    {
+      "key": "CheckoutPanel.estimatedDelivery",
+      "corrupted": true,
+      "oneOff": true,
+      "class": "wrong-meaning",
+      "verdict": "flag",
+      "reason": "'Tatsächliche' means 'actual', not 'estimated'."
+    },
+    {
+      "key": "CheckoutPanel.paymentDeclined",
+      "corrupted": true,
+      "oneOff": true,
+      "class": "omission",
+      "verdict": "flag",
+      "reason": "Dropped 'Try another card.'"
+    },
+    {
+      "key": "CheckoutPanel.signOut",
+      "corrupted": true,
+      "oneOff": true,
+      "class": "inversion",
+      "verdict": "flag",
+      "reason": "Inverted: 'Anmelden' means sign in; button signs out."
+    }
+  ]
+}

@@ -7,17 +7,7 @@ import { ensureBootstrapped } from "../src/core/bootstrap.js";
 import { runCheck } from "../src/core/check.js";
 import { importGlossaryTbx, importMemoryTmx } from "../src/core/importers.js";
 import { initProject } from "../src/core/init.js";
-import {
-  computeBudgetUtilization,
-  computeNovelty,
-  computeRiskScore,
-  computeSwarmScore,
-  CriticRequest,
-  QeModelClient,
-  readQeReport,
-  routeRisk,
-  runQe,
-} from "../src/core/qe.js";
+import { prepareQeReview, qeIndex, submitQeVerdicts, summarizeQe } from "../src/core/qe.js";
 import { scanDirectionalAssetsInText } from "../src/core/static-layout.js";
 import { WraithStore } from "../src/core/store.js";
 import { findTmMatches, readTm, upsertTmEntries } from "../src/core/tm.js";
@@ -78,25 +68,6 @@ function qeProject(): string {
   });
 }
 
-function mockClient(findingsByCritic: Partial<Record<CriticRequest["critic"], Record<string, { severity: "none" | "minor" | "major" | "critical"; score: number; issue?: string; suggestedFix?: string }>>>, repairTo?: Record<string, string>): QeModelClient & { calls: CriticRequest[] } {
-  const calls: CriticRequest[] = [];
-  return {
-    model: "mock-model",
-    calls,
-    async runCritic(req) {
-      calls.push(req);
-      return req.items.map((it) => {
-        const key = String(it.key);
-        const f = findingsByCritic[req.critic]?.[key];
-        return f ? { key, severity: f.severity, score: f.score, issue: f.issue ?? "", suggestedFix: f.suggestedFix } : { key, severity: "none" as const, score: 0, issue: "" };
-      });
-    },
-    async repair(req) {
-      return repairTo?.[req.key];
-    },
-  };
-}
-
 describe("directional_asset static rule", () => {
   it("flags unmirrored directional icons/assets and accepts rtl mirroring or logical swaps", () => {
     const src = `import { ChevronRight, ArrowLeft } from "lucide-react";
@@ -149,112 +120,54 @@ export function Nav({ isRtl }) {
   });
 });
 
-describe("QE — pure scoring math", () => {
-  it("computes S_swarm, composite risk, budget utilization, novelty, and routing thresholds", () => {
-    expect(computeSwarmScore([])).toBe(0);
-    expect(computeSwarmScore([{ severity: "minor", score: 1 }, { severity: "major", score: 0.8 }])).toBeCloseTo(0.6, 5);
-    expect(computeSwarmScore([{ severity: "critical", score: 1 }])).toBe(1);
-    // 100 × (0.35·0 + 0.25·(1−1) + 0.2·0 + 0.2·0) = 0
-    expect(computeRiskScore({ sSwarm: 0, tmSimilarity: 1, budgetUtilization: 0, novelty: 0 })).toBe(0);
-    // 100 × (0.35·0.75 + 0.25·0.5 + 0.2·0.5 + 0.2·0.4) = 26.25+12.5+10+8 = 56.75 → 57
-    expect(computeRiskScore({ sSwarm: 0.75, tmSimilarity: 0.5, budgetUtilization: 0.5, novelty: 0.4 })).toBe(57);
-    expect(computeRiskScore({ sSwarm: 1, tmSimilarity: 0, budgetUtilization: 1, novelty: 1 })).toBe(100);
-    expect(routeRisk(24, false)).toBe("verified");
-    expect(routeRisk(25, false)).toBe("needs_review");
-    expect(routeRisk(25, true)).toBe("repair");
-    expect(routeRisk(60, true)).toBe("repair");
-    expect(routeRisk(61, true)).toBe("needs_review");
-    expect(computeBudgetUtilization("Speichern", undefined)).toEqual({ utilization: 0, raw: 0 });
-    const over = computeBudgetUtilization("Einstellungen speichern", { budgetChars: 10, maxWidthPx: 60 });
-    expect(over.utilization).toBe(1);
-    expect(over.raw).toBeGreaterThan(1);
-    expect(computeNovelty({ source: "Save", hasUsageContext: true, tmSimilarity: 0 })).toBe(0);
-    expect(computeNovelty({ source: "{n, plural, one {#} other {#}} <b>x</b>", hasUsageContext: false, tmSimilarity: 0 })).toBe(1);
-    expect(computeNovelty({ source: "{n, plural, one {#} other {#}}", hasUsageContext: true, tmSimilarity: 0.9 })).toBe(0);
-  });
-});
-
-describe("QE — tiered pipeline with mocked swarm", () => {
-  it("Tier 1 escalates hard failures with risk 100 and no LLM calls for that segment; Tier 2 batches by file; Tier 3 routes", async () => {
+describe("QE — binary review in code context", () => {
+  it("prepares one task per file with same-source facts, skips check errors, and pins verdicts to the exact text", () => {
     const dir = qeProject();
-    // Break a placeholder in de -> Tier 1 hard failure
-    const deFile = path.join(dir, "messages/de.json");
-    const de = JSON.parse(fs.readFileSync(deFile, "utf8"));
-    de.greeting = "Hallo, willkommen zurück";
-    fs.writeFileSync(deFile, JSON.stringify(de, null, 2));
-    // Seed a close TM neighbor for btnSave so TM_sim is high
-    upsertTmEntries(dir, [
-      { source: "Save", target: "Speichern", sourceLocale: "en", targetLocale: "de", provenance: "human-reviewed", key: "other.save", updatedAt: "2026-01-01T00:00:00Z" },
-    ]);
-    const client = mockClient({
-      semantic: { rich: { severity: "critical", score: 1, issue: "Dropped meaning" } },
-      terminology: { items: { severity: "minor", score: 0.5, issue: "Prefer 'Eintrag'" } },
+    // A second component reuses "Save" with a different translation → reviewer must see it
+    fs.writeFileSync(path.join(dir, "src/Toolbar.tsx"), `import { useTranslations } from "next-intl";\nexport function Toolbar() {\n  const t = useTranslations();\n  return <button>{t("toolbarSave")}</button>;\n}\n`);
+    const en = JSON.parse(fs.readFileSync(path.join(dir, "messages/en.json"), "utf8"));
+    const de = JSON.parse(fs.readFileSync(path.join(dir, "messages/de.json"), "utf8"));
+    en.toolbarSave = "Save";
+    de.toolbarSave = "Sparen";
+    de.greeting = "Hallo, willkommen zurück"; // placeholder dropped → check error → not sent for review
+    fs.writeFileSync(path.join(dir, "messages/en.json"), JSON.stringify(en, null, 2));
+    fs.writeFileSync(path.join(dir, "messages/de.json"), JSON.stringify(de, null, 2));
+
+    const prep = prepareQeReview({ rootDir: dir, locales: ["de"] });
+    expect(prep.instructions).toContain("fresh context");
+    expect(prep.blockedByCheck.map((b) => b.key)).toEqual(["greeting"]);
+    expect(prep.tasks.map((t) => t.file).sort()).toEqual(["src/Panel.tsx", "src/Toolbar.tsx"]);
+    expect(prep.toReview).toBe(4);
+    const toolbar = prep.tasks.find((t) => t.file === "src/Toolbar.tsx")!.strings[0];
+    expect(toolbar.sameSourceElsewhere).toEqual([{ key: "btnSave", target: "Speichern", file: "src/Panel.tsx" }]);
+    expect(fs.existsSync(path.join(dir, ".wraith/qe-tasks.json"))).toBe(true);
+    expect(summarizeQe({ rootDir: dir, locales: ["de"] }).outcome).toBe("INCONCLUSIVE");
+
+    const sub = submitQeVerdicts({
+      rootDir: dir,
+      verdicts: [
+        { locale: "de", key: "btnSave", verdict: "ok" },
+        { locale: "de", key: "items", verdict: "ok" },
+        { locale: "de", key: "rich", verdict: "ok" },
+        { locale: "de", key: "toolbarSave", verdict: "flag", reason: "'Sparen' means saving money; this button saves the document", suggestedFix: "Speichern" },
+        { locale: "de", key: "items", verdict: "flag" }, // flag without reason → rejected
+        { locale: "de", key: "nope", verdict: "ok" }, // unknown key → rejected
+      ],
     });
-    const res = await runQe({ rootDir: dir, locales: ["de"], client });
-    const report = readQeReport(dir)!;
-    expect(report.tier2).toBe("ran");
-    const byKey = Object.fromEntries(report.segments.map((s) => [s.key, s]));
-    expect(byKey.greeting.riskScore).toBe(100);
-    expect(byKey.greeting.tier).toBe("tier1_escalate");
-    expect(byKey.greeting.status).toBe("needs_review");
-    // greeting must not have been sent to any critic
-    for (const c of client.calls) expect(c.items.some((i) => i.key === "greeting")).toBe(false);
-    // 3 critics × 1 batch (all segments share src/Panel.tsx)
-    expect(client.calls.length).toBe(3);
-    expect(new Set(client.calls.map((c) => c.critic))).toEqual(new Set(["terminology", "ui_context", "semantic"]));
-    expect(client.calls.every((c) => c.items.length <= 25)).toBe(true);
-    const ui = client.calls.find((c) => c.critic === "ui_context")!;
-    expect(ui.items.find((i) => i.key === "btnSave")?.astElementType).toBe("Button");
-    // btnSave: clean swarm + TM 1.0 + context → verified
-    expect(byKey.btnSave.status).toBe("verified");
-    expect(byKey.btnSave.riskScore).toBeLessThan(25);
-    expect(byKey.btnSave.tmSimilarity).toBe(1);
-    // rich: critical semantic issue → needs_review
-    expect(byKey.rich.status).toBe("needs_review");
-    expect(byKey.rich.riskScore).toBeGreaterThan(25);
-    expect(res.outcome).toBe("FAIL");
-    expect(res.summary.tier1Escalations).toBe(1);
-  });
+    expect(sub.accepted).toBe(4);
+    expect(sub.rejected.map((r) => r.key).sort()).toEqual(["items", "nope"]);
+    const status = summarizeQe({ rootDir: dir, locales: ["de"] });
+    expect(status.outcome).toBe("FAIL");
+    expect(status.summary).toMatchObject({ ok: 3, flagged: 1, unreviewed: 1 });
+    expect(status.flagged[0]).toMatchObject({ key: "toolbarSave", suggestedFix: "Speichern" });
 
-  it("auto-repair runs exactly one targeted pass through validated apply and re-scores", async () => {
-    const dir = qeProject();
-    let phase = 0;
-    const calls: CriticRequest[] = [];
-    const client: QeModelClient = {
-      model: "mock",
-      async runCritic(req) {
-        calls.push(req);
-        return req.items.map((it) => {
-          const key = String(it.key);
-          if (phase === 0 && key === "btnSave" && req.critic === "ui_context") {
-            return { key, severity: "major" as const, score: 0.8, issue: "Infinitive form; use imperative", suggestedFix: "Sichern" };
-          }
-          return { key, severity: "none" as const, score: 0, issue: "" };
-        });
-      },
-      async repair(req) {
-        phase = 1;
-        expect(req.issues[0].issue).toContain("imperative");
-        return "Sichern";
-      },
-    };
-    const res = await runQe({ rootDir: dir, locales: ["de"], client, autoRepair: true, keys: ["btnSave"] });
-    const seg = readQeReport(dir)!.segments.find((s) => s.key === "btnSave")!;
-    expect(seg.repaired).toBe(true);
-    expect(seg.target).toBe("Sichern");
-    expect(JSON.parse(fs.readFileSync(path.join(dir, "messages/de.json"), "utf8")).btnSave).toBe("Sichern");
-    expect(["verified", "needs_review"]).toContain(seg.status);
-    expect(res.summary.llmCalls).toBe(3 + 1 + 3);
-  });
-
-  it("without a model key Tier 2 is skipped and nothing is marked verified (fail-closed)", async () => {
-    const dir = qeProject();
-    const res = await runQe({ rootDir: dir, locales: ["de"], client: null });
-    expect(res.tier2).toBe("unavailable");
-    expect(res.summary.verified).toBe(0);
-    expect(res.summary.unscored).toBe(4);
-    expect(res.outcome).toBe("INCONCLUSIVE");
-    expect(res.summary.llmCalls).toBe(0);
+    // Second run reviews only what changed: fixing the flagged string resets just that one
+    de.toolbarSave = "Speichern";
+    fs.writeFileSync(path.join(dir, "messages/de.json"), JSON.stringify(de, null, 2));
+    const again = prepareQeReview({ rootDir: dir, locales: ["de"], write: false });
+    expect(again.tasks.flatMap((t) => t.strings.map((x) => x.key))).toEqual(["toolbarSave"]);
+    expect(again.alreadyReviewed).toBe(3);
+    expect(qeIndex(dir).get("de\0toolbarSave")?.verdict).toBe("flag"); // stale record kept, but no longer current
   });
 });
 
@@ -285,9 +198,16 @@ describe("TMS round-trip — XLIFF 2.0 / TMX 1.4b / TBX-Basic", () => {
       { source: "{count, plural, one {# item} other {# items}}", target: "{count, plural, one {# Element} other {# Elemente}}", sourceLocale: "en", targetLocale: "de", key: "seed.items", provenance: "human-reviewed", updatedAt: "2026-01-01T00:00:00Z" },
       { source: "Read the <b>terms</b> now", target: "Lies die <b>Bedingungen</b> jetzt", sourceLocale: "en", targetLocale: "de", key: "seed.rich", provenance: "human-reviewed", updatedAt: "2026-01-01T00:00:00Z" },
     ]);
-    // QE report with one flagged segment
-    const client = mockClient({ semantic: { rich: { severity: "critical", score: 1, issue: "Dropped 'now'" } } });
-    await runQe({ rootDir: dir, locales: ["de"], client });
+    // One string flagged in review, the rest ok
+    submitQeVerdicts({
+      rootDir: dir,
+      verdicts: [
+        { locale: "de", key: "btnSave", verdict: "ok" },
+        { locale: "de", key: "greeting", verdict: "ok" },
+        { locale: "de", key: "items", verdict: "ok" },
+        { locale: "de", key: "rich", verdict: "flag", reason: "Dropped 'now'" },
+      ],
+    });
 
     const all = runTmsExport({ rootDir: dir, outDir: "out/all", includeTm: true, includeGlossary: true, bundleScreenshots: true });
     expect(all.unitsByLocale.de).toBe(4);
@@ -298,8 +218,9 @@ describe("TMS round-trip — XLIFF 2.0 / TMX 1.4b / TBX-Basic", () => {
     expect(xml).toContain('<mda:meta type="file">src/Panel.tsx</mda:meta>');
     expect(xml).toContain('<mda:meta type="max_chars">12</mda:meta>');
     expect(xml).toContain('<mda:meta type="max_width_px">80</mda:meta>');
-    expect(xml).toMatch(/<mda:meta type="qe_risk_score">\d+<\/mda:meta>/);
-    expect(xml).toContain("[semantic/critical] Dropped &apos;now&apos;");
+    expect(xml).toContain('<mda:meta type="qe_status">flagged</mda:meta>');
+    expect(xml).not.toContain("qe_risk_score");
+    expect(xml).toContain("Flagged in review: Dropped &apos;now&apos;");
     expect(xml).toContain('<segment state="translated">');
     expect(xml).toContain('<ph id="ph1" disp="{name}"/>');
     expect(xml).toContain("<mda:meta type=\"component\">Panel</mda:meta>");
@@ -350,9 +271,9 @@ describe("TMS round-trip — XLIFF 2.0 / TMX 1.4b / TBX-Basic", () => {
     const tm = readTm(dir).entries.find((e) => e.key === "rich")!;
     expect(tm.provenance).toBe("human-reviewed");
     expect(tm.verifiedAt).toBeTruthy();
-    const qe = readQeReport(dir)!;
-    expect(qe.segments.find((s) => s.key === "rich")!.status).toBe("human-verified");
+    const qe = summarizeQe({ rootDir: dir, locales: ["de"] });
     expect(qe.summary.humanVerified).toBeGreaterThanOrEqual(1);
+    expect(qeIndex(dir).get("de\0rich")?.verdict).toBe("human-verified");
   });
 
   it("human-reviewed TM entries outrank llm-generated ones in fuzzy retrieval and are never overwritten by them", () => {

@@ -1,6 +1,6 @@
 ---
 name: tms-roundtrip
-description: Hand flagged or full translations to human linguists through a TMS (Phrase, Lokalise, Crowdin, Smartling, memoQ, Trados) as XLIFF 2.0 + TMX 1.4b + TBX-Basic with screenshots, then import the reviewed XLIFF back through Wraith's validation pipeline so human edits become verified, high-priority translation memory. Use after qe-triage leaves `needs_review` segments, before a release with human sign-off, or when a reviewed `.xliff` comes back.
+description: Hand flagged or full translations to human linguists through a TMS (Phrase, Lokalise, Crowdin, Smartling, memoQ, Trados) as XLIFF 2.0 + TMX 1.4b + TBX-Basic with screenshots, then import the reviewed XLIFF back through Wraith's validation pipeline so human edits become verified, high-priority translation memory. Use after qe-review leaves flagged strings, before a release with human sign-off, or when a reviewed `.xliff` comes back.
 ---
 
 # tms-roundtrip
@@ -12,19 +12,19 @@ MCP tool names below are the Wraith server's tools (in Claude Code: `mcp__wraith
 ## Export
 
 1. `check` (CLI `wraith check`) — must not be `FAIL` on structural errors; fix those first (human reviewers should not be fixing placeholders).
-2. Optional: `qe_audit` (CLI `wraith qe`) so units carry `qe_risk_score` and critic notes.
+2. Optional: review first with **qe-review** so units carry `qe_status` and flag reasons, and `--only-flagged` has something to select.
 3. `tms_export` (CLI):
    ```bash
    wraith export --format xliff2 --only-flagged --include-tm --include-glossary --bundle-screenshots \
      --out .wraith/exports/tms [--locales de,ja]
    ```
-   Output: `<locale>.xliff` (XLIFF 2.0, `mda:` metadata, `<notes>` with critic flags and top fuzzy TM), `tm.tmx`, `glossary.tbx`, `screenshots/` + `manifest.json`.
+   Output: `<locale>.xliff` (XLIFF 2.0, `mda:` metadata, `<notes>` with review flags and top fuzzy TM), `tm.tmx`, `glossary.tbx`, `screenshots/` + `manifest.json`.
 4. Tell the user which files to upload and that `<segment state>` and `<ph>` elements must be preserved by the TMS.
 
 ## Import
 
 1. `tms_import` with `input: "<file-or-dir>"` (keep `runVerification: true`) (CLI `wraith import <file-or-dir>`; `--format xliff` forces detection).
-2. Wraith validates each target (placeholders, ICU, plurals, glossary/DNT), writes catalogs preserving key order, upserts `.wraith/tm.json` entries as `provenance: "human-reviewed"` with `verifiedAt`, marks QE segments `human-verified`, then runs `check` (and `visual-qa` if `layout.baseUrl` is configured) and prints a diff summary.
+2. Wraith validates each target (placeholders, ICU, plurals, glossary/DNT), writes catalogs preserving key order, upserts `.wraith/tm.json` entries as `provenance: "human-reviewed"` with `verifiedAt`, records those strings as `human-verified` in QE, then runs `check` (and `visual-qa` if `layout.baseUrl` is configured) and prints a diff summary.
 3. For any rejected unit: report key, locale, and validation error back to the user for the linguist. Do not "fix" the human's text silently.
 4. Final: `check` (CLI `wraith check`) `PASS`; `report` for the summary.
 

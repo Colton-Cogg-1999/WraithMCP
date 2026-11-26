@@ -7,7 +7,7 @@
 Wraith is a **deterministic-first, repo-native** CLI and MCP server built as a single TypeScript codebase compiled into one executable.
 
 - **Deterministic core, no translation calls:** Scanning, extraction gating, placeholder/ICU/plural validation, fuzzy TM, lossless writes, layout and visual QA, TMS export/import, and reporting are repeatable and offline. All translation and code refactoring are performed by the user's coding agent.
-- **One opt-in model call:** `wraith qe` Tier 2 (three LLM critics) runs only when `ANTHROPIC_API_KEY` or `GEMINI_API_KEY`/`GOOGLE_API_KEY` is present. Without keys it is skipped and segments are `unscored` (fail-closed, never `verified`). Nothing else in Wraith calls a model.
+- **No model calls:** Wraith never calls a model and needs no API keys. Quality review (`qe`) is done by the coding agent in a fresh context; Wraith only prepares the tasks and stores ok/flag verdicts.
 - **Repo-native state:** All state lives in plain, diffable, canonically formatted files in `.wraith/`, committed alongside code.
 - **Conductor about "done", toolbox about "how":** Tools are small, orthogonal primitives. Completion is enforced by MCP server instructions, `AGENTS.md`/`CLAUDE.md` rules, the `/localize` prompt, the skills in `skills/`, and `wraith check` / `extract` / `visual-qa` in pre-commit and CI.
 - **Fail closed:** Every gate returns `PASS` / `FAIL` / `INCONCLUSIVE`; missing Playwright, server, baseline, or coverage is `INCONCLUSIVE` (exit 2), never `PASS`.
@@ -35,20 +35,20 @@ flowchart LR
         LY["layout<br/>rendered overflow, clipping, dir/lang"]
         VQ["visual-qa<br/>geometry diff vs baseline"]
     end
-    subgraph QE["qe"]
-        T1["Tier 1 deterministic"]
-        T2["Tier 2 three critics (opt-in tokens)"]
-        T3["Tier 3 risk score"]
+    subgraph QE["qe review (agent tokens, fresh context)"]
+        QP["qe --prepare<br/>file-scoped tasks, same-source facts"]
+        QR["agent reads each file<br/>ok / flag + reason"]
+        QS["qe --submit<br/>verdicts pinned to text"]
     end
     subgraph Human["human loop (deterministic I/O)"]
         XO["export<br/>XLIFF 2.0, TMX, TBX, screenshots"]
         TMS["TMS / linguist"]
         XI["import<br/>validated, human-reviewed TM"]
     end
-    EX --> LF --> CK1 --> PR --> AG --> AP --> CK2 --> PS --> LY --> VQ --> T1 --> T2 --> T3
-    T3 -->|"risk < 25"| Done["verified"]
-    T3 -->|"25-60 + --auto-repair"| AP
-    T3 -->|"> 60 / needs_review"| XO --> TMS --> XI --> CK2
+    EX --> LF --> CK1 --> PR --> AG --> AP --> CK2 --> PS --> LY --> VQ --> QP --> QR --> QS
+    QS -->|"ok"| Done["done"]
+    QS -->|"flag: agent fixes once"| AP
+    QS -->|"still flagged"| XO --> TMS --> XI --> CK2
 ```
 
 ## Token vs deterministic boundary
@@ -65,12 +65,11 @@ flowchart LR
 | Pseudo-locales | `pseudo` | 0 | pseudo catalogs |
 | Rendered layout | `layout` | 0 | `layout.json` budgets, screenshots |
 | Visual regression | `visual-qa` / `visual_qa` | 0 (no VLM) | `visual-baseline.json` (capture only), failure artifacts |
-| QE Tier 1 / Tier 3 | `qe` / `qe_audit` | 0 | `qe-report.json` |
-| QE Tier 2 critics | `qe` / `qe_audit` | **QE model (opt-in)** | `qe-report.json` |
-| QE auto-repair | `qe --auto-repair` | **QE model (opt-in)** | catalogs via `apply` path |
+| QE task prep / status | `qe` / `qe_audit` | 0 | `qe-tasks.json` |
+| QE review | coding agent (fresh context) | **agent** | `qe-verdicts.json` (via submit) |
 | Cross-model review | `review` | agent of your choice | `reviews.json` (ingest) |
 | TMS export | `export` / `tms_export` | 0 | export dir only |
-| TMS import | `import` / `tms_import` | 0 | catalogs, `tm.json`, `qe-report.json` |
+| TMS import | `import` / `tms_import` | 0 | catalogs, `tm.json`, `qe-verdicts.json` |
 | Report | `report` | 0 | none |
 
 ## System diagram
@@ -90,7 +89,7 @@ flowchart TD
             Apply["Validated Writer (apply)"]
             Fuzzy["Lexical Fuzzy Matcher + TM"]
             Layout["Pseudo / Layout / Visual QA (Playwright)"]
-            QEng["QE (Tier 1-3)"]
+            QEng["QE review tasks + verdict store"]
             TMSio["XLIFF 2.0 / TMX / TBX export + import"]
             Report["Report Builder"]
         end
@@ -100,7 +99,6 @@ flowchart TD
             Docs["Document Layer (Markdown/MDX, DOCX)"]
         end
     end
-    QEModel["QE model API (opt-in, Tier 2 only)"]
 
     Agent <-->|"MCP stdio JSON-RPC"| MCP
     Human -->|"CLI args / --json"| CLI
@@ -108,7 +106,6 @@ flowchart TD
     MCP --> Core
     Core --> Store
     Core --> Adapters
-    QEng -.->|"only if API key set"| QEModel
 ```
 
 ---
@@ -127,7 +124,7 @@ flowchart TD
 | `layout.json` | per key/locale width budgets (`maxWidthPx`, `budgetChars`), last layout run | `layout` |
 | `tm.json` | `{version:1, entries:[{source,target,sourceLocale,targetLocale,key?,provenance,verifiedAt?,updatedAt}]}`; `provenance` ∈ `human-reviewed` \| `llm-generated` \| `imported`; human-reviewed outranks llm-generated in fuzzy retrieval | `apply`, `import` (XLIFF) |
 | `visual-baseline.json` | `{version:1,capturedAt,baseUrl,snapshots:{"<route>\|<WxH>\|<locale>": ElementGeometrySnapshot[]}}` | `visual-qa --capture-baseline` |
-| `qe-report.json` | `{version:1,generatedAt,model,tier2,segments[],summary}` (see [QE_AND_TMS.md](QE_AND_TMS.md)) | `qe`, `import` (XLIFF) |
+| `qe-verdicts.json` | `{version:2,records[{locale,key,source,target,verdict,reason?,suggestedFix?,reviewedAt}]}` (see [QE_AND_TMS.md](QE_AND_TMS.md)) | `qe --submit`, `import` (XLIFF) |
 | `artifacts/visual-qa/<locale>/<key>-<WxH>.png` + `manifest.json` | failure-only screenshots | `visual-qa` |
 | `exports/tms/` | default XLIFF/TMX/TBX export bundle | `export` |
 
@@ -146,7 +143,7 @@ src/
 ├── formats/          # lossless JSON / YAML / PO
 ├── adapters/         # React/Next, Vue/Nuxt, SvelteKit, Rails, Django scanners
 └── documents/        # Markdown/MDX, byte-preserving DOCX
-skills/               # agent skills (i18n-prep, localize-pr, layout-remediation, qe-triage, tms-roundtrip)
+skills/               # agent skills (i18n-prep, localize-pr, layout-remediation, qe-review, tms-roundtrip)
 .github/workflows/    # wraith.yml (CI gate + /localize), release.yml
 eval/                 # independent benchmark harness + REPORT.md
 ```
@@ -164,6 +161,6 @@ Whole-document context, segment-level memory. Inline markup is protected as `<x/
 
 ## Core flows
 
-- **First run:** `scan` → agent extracts (gated by `extract`) → `prepare` → agent translates → `apply` (validates placeholders/ICU/plurals/tags) → `check` until `PASS` → `pseudo` + `layout` + `visual-qa` → `qe` → `report`.
+- **First run:** `scan` → agent extracts (gated by `extract`) → `prepare` → agent translates → `apply` (validates placeholders/ICU/plurals/tags) → `check` until `PASS` → `pseudo` + `layout` + `visual-qa` → `qe` review (fresh context) → `report`.
 - **Context change:** `sourceHash` changed → `stale_source`; same hash, new fingerprint → `context_changed`; key gone → `orphaned`. Glossary updates list every affected key/locale.
-- **Human loop:** `qe` `needs_review` → `export --only-flagged` → TMS → `import` → `human-reviewed` TM + `human-verified` QE status → `check`.
+- **Human loop:** `qe` flagged → `export --only-flagged` → TMS → `import` → `human-reviewed` TM + `human-verified` verdict → `check`.

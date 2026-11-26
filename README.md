@@ -1,6 +1,6 @@
 # Wraith
 
-**Your coding agent already writes the code. Wraith turns it into a localization engineer.** The agent does the translating. Wraith gives it memory, rules and deterministic checks: placeholders, ICU plurals, glossary, staleness, and rendered layout down to the pixel. Except for one opt-in quality-estimation step, no model is called.
+**Your coding agent already writes the code. Wraith turns it into a localization engineer.** The agent does the translating. Wraith gives it memory, rules and deterministic checks: placeholders, ICU plurals, glossary, staleness, and rendered layout down to the pixel. Wraith itself never calls a model.
 
 > CLI: `wraith` · MCP server: `wraith mcp` · project state lives in `.wraith/`
 
@@ -21,6 +21,7 @@ An independent, judge-validated evaluation (two judges, blinded and position-swa
 - **Release replay (N → N+1):** stale-source detection precision = recall = **1.0**
 - **Rendered layout (nextjs-commerce, 7 locales, 375/1280 px):** **26 → 8 → 0** defects (baseline → `layout --fix` codemods → one prescribed agent edit)
 - **Stage 4 (TM context ablation, 482 items):** dataset and metrics pipeline validated in a dry run; full run pending ([Section 13](eval/REPORT.md))
+- **Proof of concept, not publishable evidence (de, 50 strings):** an Opus reviewer working in code context flagged **25/25** planted meaning errors, including 5/5 on strings that appear only once, which deterministic checks missed entirely (0/25). It flagged **0/25** clean strings ([details](docs/QE_AND_TMS.md#proof-of-concept-2026-11-25-not-publishable-evidence))
 
 The agent alone translates about as well as with Wraith. What Wraith adds is that the output ships: no broken placeholders, plurals or glossary terms, no stale strings, and no clipped or mirrored-wrong UI.
 
@@ -58,14 +59,14 @@ The agent alone translates about as well as with Wraith. What Wraith adds is tha
 
 ## Why Wraith?
 
-- **Model-free translation:** Wraith never translates and never calls an MT API. Your coding agent (Claude Code, Codex, Gemini CLI, etc.) is the only translation engine. The single opt-in model call is `wraith qe` Tier 2 (three LLM critics), which runs only if `ANTHROPIC_API_KEY` or `GEMINI_API_KEY`/`GOOGLE_API_KEY` is set; without keys it is skipped and segments are `unscored`, never `verified`.
+- **Model-free translation:** Wraith never translates and never calls an MT API. Your coding agent (Claude Code, Codex, Gemini CLI, etc.) is the only translation engine and the only reviewer. Wraith makes no model calls and needs no API keys.
 - **Deterministic core:** Scanning, placeholder/ICU/plural verification, fuzzy matching, lossless file writes, and reporting are 100% deterministic and work offline.
 - **Explicit verification outcomes (`PASS` / `FAIL` / `INCONCLUSIVE`):** `wraith check` fails closed — unsupported projects, monorepos with unconfigured apps, or zero scanned coverage return `INCONCLUSIVE` (exit code `2`) rather than a false `PASS`. Deterministic verification checks structure, placeholders, plurals, glossary rules, and static scanner heuristics; it does **not** establish linguistic accuracy or native fluency.
 - **State lives in git:** All memory is plain, diffable JSON/JSONL inside `.wraith/`, committed alongside your code. `status`, `check`, `prepare`, and `report` are strictly read-only.
 - **Workspace security boundary:** All reads, writes, locale identifiers, reviewer imports, document outputs, and MCP `rootDir` parameters are confined to the authorized project workspace with symlink and archive-size protections.
 - **Advisory memory, never blind auto-fill:** Even 100% lexical matches are surfaced as strong contextual suggestions with prior usage context so your agent verifies meaning before reusing them.
 - **Visual & layout QA:** Pseudo-locales (`wraith pseudo`), rendered layout checks (`wraith layout`), and a baseline geometry diff (`wraith visual-qa`, 0 LLM tokens, no VLM) catch truncation, overflow, wrap regressions, occlusion, tofu, contrast, and RTL breakage.
-- **CI and human loop:** A deterministic PR gate (`extract` + `check` + `visual-qa`), an on-demand `/localize` agent job, QE risk routing, and XLIFF 2.0 / TMX / TBX round-trips with any TMS.
+- **CI and human loop:** A deterministic PR gate (`extract` + `check` + `visual-qa`), an on-demand `/localize` agent job, ok/flag review of every string in its code context, and XLIFF 2.0 / TMX / TBX round-trips with any TMS.
 
 ---
 
@@ -142,7 +143,7 @@ Global option: `-C, --cwd <dir>` (project root). Gates exit `0` PASS · `1` FAIL
 | `wraith pseudo` | pseudo-locales with zero-width key IDs | `--mode auto\|expand\|rtl\|cjk\|tall\|long-word\|format` `--no-key-ids` `--format-overlay` |
 | `wraith layout` | rendered layout checks + codemods | `--url` `--routes` `-l` `--locale-pattern query\|prefix\|cookie` `--fix` `--dry-run` |
 | `wraith visual-qa` | geometry regression diff vs baseline | `--capture-baseline` `--base <path>` `--routes` `--locales` `--url` `--locale-pattern` `--json` |
-| `wraith qe` | tiered quality estimation → `.wraith/qe-report.json` | `--locales` `--auto-repair` `--fail-above <n>` `--json` |
+| `wraith qe` | ok/flag review by your agent in code context → `.wraith/qe-verdicts.json` | `--prepare` `--all` `--submit <file>` `--locales` `--json` |
 | `wraith review` | package / ingest cross-model MQM review | `--locale` `--output` `--ingest` |
 | `wraith escalate` | CSV/XLSX/HTML human review export / import | `--locale` `--output-dir` `--import` |
 | `wraith export` | TMS bundle: XLIFF 2.0, TMX 1.4b, TBX-Basic, screenshots | `--format xliff2` `--out` `--locales` `--only-flagged` `--include-tm` `--include-glossary` `--bundle-screenshots` |
@@ -150,7 +151,7 @@ Global option: `-C, --cwd <dir>` (project root). Gates exit `0` PASS · `1` FAIL
 | `wraith report` | end-of-run Markdown/JSON report | `--json` |
 | `wraith mcp` | start the MCP server (stdio) | |
 
-Exit codes for `visual-qa`: `1` regression, `2` no Playwright/server/baseline. `qe` exits `1` if any segment risk > `--fail-above` or any `needs_review`. `extract --fail-on-unextracted` exits `1` while hardcoded strings or concatenations remain.
+Exit codes for `visual-qa`: `1` regression, `2` no Playwright/server/baseline. `qe` exits `1` if any string is flagged and `2` if any is unreviewed. `extract --fail-on-unextracted` exits `1` while hardcoded strings or concatenations remain.
 
 ## Layout & Formatting QA (v1)
 
@@ -173,8 +174,8 @@ Wraith stays model-free while verifying rendered UI layout and locale formatting
 ### Visual QA, QE & TMS
 
 - **`visual-qa`:** per-element geometry (`lineCount`, size, overflow, clipping, occlusion, font load, contrast) diffed against `.wraith/visual-baseline.json`; rules `line_wrap_regression`, `container_blowout`, `text_truncation`, `element_occlusion`, `missing_glyph_tofu`, `contrast_regression`. Failure-only screenshots in `.wraith/artifacts/visual-qa/`. See [docs/VISUAL_QA.md](docs/VISUAL_QA.md).
-- **`qe`:** Tier 1 deterministic (check validations + width budget) → Tier 2 three critics (terminology/TM drift, UI context, semantic/omission; opt-in tokens) → Tier 3 risk `0–100`. `<25` verified, `25–60` one optional `--auto-repair` pass, otherwise `needs_review`.
-- **`export` / `import`:** XLIFF 2.0 units carry `mda:` metadata (file, line, component, risk, `max_chars`, `max_width_px`, TM similarity) and critic notes; reviewed XLIFF is re-validated and stored in `.wraith/tm.json` as `human-reviewed`, which outranks `llm-generated` TM. See [docs/QE_AND_TMS.md](docs/QE_AND_TMS.md).
+- **`qe`:** your coding agent reviews each translated string in a fresh context, reading the file where it is used, and gives an `ok` or `flag` verdict with a reason. Verdicts are pinned to the exact text, so only changed strings are re-reviewed.
+- **`export` / `import`:** XLIFF 2.0 units carry `mda:` metadata (file, line, component, `qe_status`, `max_chars`, `max_width_px`, TM similarity) and review notes; reviewed XLIFF is re-validated and stored in `.wraith/tm.json` as `human-reviewed`, which outranks `llm-generated` TM. See [docs/QE_AND_TMS.md](docs/QE_AND_TMS.md).
 - **`directional_asset` check (warning):** directional icons (`ArrowLeft/Right`, `ChevronLeft/Right`, `CaretLeft/Right`, back/next arrows, directional svg/img names) without `rtl:rotate-180`, `rtl:-scale-x-100`, dir-aware mirroring, or a logical swap — only when `ar`, `he`, `fa`, or `ur` is a target.
 
 ## MCP Tools
@@ -189,10 +190,10 @@ Wraith stays model-free while verifying rendered UI layout and locale formatting
 | `tms_export` | read-only | writes only to the explicit export dir |
 | `memory`, `review` | mutating, non-destructive | |
 | `apply`, `pseudo`, `layout_fix`, `escalate`, `import` | destructive | |
-| `qe_audit` | destructive | `autoRepair` may write catalogs; otherwise only writes `qe-report.json` |
+| `qe_audit` | mutating, non-destructive | writes `qe-tasks.json` / `qe-verdicts.json`; never edits catalogs |
 | `tms_import` | destructive | validated catalog writes + human-reviewed TM |
 
-Prompt: `/localize`. Agent playbooks: [`skills/`](skills/) — `i18n-prep`, `localize-pr`, `layout-remediation`, `qe-triage`, `tms-roundtrip` ([docs/SKILLS.md](docs/SKILLS.md)).
+Prompt: `/localize`. Agent playbooks: [`skills/`](skills/) — `i18n-prep`, `localize-pr`, `layout-remediation`, `qe-review`, `tms-roundtrip` ([docs/SKILLS.md](docs/SKILLS.md)).
 
 ## CI Quickstart
 
@@ -200,7 +201,7 @@ Prompt: `/localize`. Agent playbooks: [`skills/`](skills/) — `i18n-prep`, `loc
 
 - **`deterministic-l10n-gate`** (pull_request, 0 LLM tokens): `wraith extract --fail-on-unextracted`, `wraith check`, `wraith visual-qa --base .wraith/visual-baseline.json`; sticky PR summary; artifacts on failure.
 - **`update-baseline`** (push to main): recaptures the baseline as an artifact; commit it via a reviewed PR.
-- **`agentic-localize`** (`/localize` comment by OWNER/MEMBER/COLLABORATOR, or manual): Claude Code or Codex translates changed source keys via the `localize-pr` skill, then `check` + `qe`; commits only on `PASS`; `needs_review` keys are exported as XLIFF and commented with risk scores.
+- **`agentic-localize`** (`/localize` comment by OWNER/MEMBER/COLLABORATOR, or manual): Claude Code or Codex translates changed source keys via the `localize-pr` skill, then `check` and an ok/flag review in a fresh subagent context; commits only on `PASS`; flagged keys are exported as XLIFF and commented with their reasons.
 
 Set `preview_build` / `preview_start` / `preview_url` (defaults `npm run build`, `npm run start`, `http://localhost:3000`) and secrets `ANTHROPIC_API_KEY` or `OPENAI_API_KEY` for `/localize`. Details: [docs/GITHUB_CI.md](docs/GITHUB_CI.md).
 
@@ -217,7 +218,7 @@ From [eval/REPORT.md](eval/REPORT.md) (Stage 3, 4 synthetic stacks × 5 language
 
 Layout & Formatting v1 (`nextjs-commerce`, 7 locales, 375/1280px): **26 → 8 → 0** rendered defects (baseline → `layout --fix` → one prescribed agent edit).
 
-Stage 4 (TM ablation: human-reviewed TM + QE routing) is **dry-run validated; full run pending** — `node eval/run.mjs run --scopes tm-ablation`, results to `eval/REPORT.md` Section 13.
+Stage 4 (TM ablation: human-reviewed TM) is **dry-run validated; full run pending** — `node eval/run.mjs run --scopes tm-ablation`, results to `eval/REPORT.md` Section 13.
 
 ---
 

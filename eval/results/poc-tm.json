@@ -1,0 +1,70 @@
+{
+  "generatedAt": "2026-11-25T23:49:57.382Z",
+  "kind": "proof-of-concept",
+  "caveat": "60 items, de only, 1 run per arm; Afull TM contains gold for seeded groups.",
+  "n": 60,
+  "arms": {
+    "Anotm": {
+      "missing": 0,
+      "all": {
+        "n": 60,
+        "groups": 18,
+        "tcr": 1,
+        "parity": 1,
+        "chrF2": 90.27,
+        "ter": 13.78,
+        "nWithGold": 60
+      },
+      "seeded": {
+        "n": 23,
+        "groups": 7,
+        "tcr": 1,
+        "parity": 1,
+        "chrF2": 85.41,
+        "ter": 17.39,
+        "nWithGold": 23
+      },
+      "unseeded": {
+        "n": 37,
+        "groups": 11,
+        "tcr": 1,
+        "parity": 1,
+        "chrF2": 93.29,
+        "ter": 11.53,
+        "nWithGold": 37
+      },
+      "inconsistentGroups": []
+    },
+    "Afull": {
+      "missing": 0,
+      "all": {
+        "n": 60,
+        "groups": 18,
+        "tcr": 1,
+        "parity": 1,
+        "chrF2": 97.54,
+        "ter": 6,
+        "nWithGold": 60
+      },
+      "seeded": {
+        "n": 23,
+        "groups": 7,
+        "tcr": 1,
+        "parity": 1,
+        "chrF2": 100,
+        "ter": 0,
+        "nWithGold": 23
+      },
+      "unseeded": {
+        "n": 37,
+        "groups": 11,
+        "tcr": 1,
+        "parity": 1,
+        "chrF2": 96.01,
+        "ter": 9.73,
+        "nWithGold": 37
+      },
+      "inconsistentGroups": []
+    }
+  }
+}

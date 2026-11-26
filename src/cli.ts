@@ -10,7 +10,8 @@ import { runLayoutFix } from "./core/layout-codemods.js";
 import { runLayoutCheck } from "./core/layout.js";
 import { generatePseudoLocale } from "./core/pseudo-locale.js";
 import { PseudoMode } from "./core/pseudo.js";
-import { runQe } from "./core/qe.js";
+import { prepareQeReview, submitQeVerdicts, summarizeQe } from "./core/qe.js";
+import { resolveConfinedPath } from "./core/security.js";
 import { isXliffPath, runTmsExport, runTmsImport } from "./core/tms.js";
 import { runVisualQa } from "./core/visual-qa.js";
 import { generateReport } from "./core/report.js";
@@ -385,31 +386,42 @@ export function createCli(): Command {
 
   program
     .command("qe")
-    .description("Tiered quality estimation: deterministic Tier 1 gate, 3-critic LLM swarm (Tier 2, needs ANTHROPIC_API_KEY or GEMINI_API_KEY), composite risk + optional auto-repair")
+    .description("Quality review: your coding agent gives each translated string an ok/flag verdict in a fresh context, reading the code where it is used. Wraith calls no model.")
     .option("--locales <csv>", "Comma-separated target locales (default: config targetLocales)")
-    .option("--auto-repair", "Run one targeted repair pass for 25 <= risk <= 60 (writes through validated apply)", false)
-    .option("--fail-above <number>", "Exit 1 if any segment risk exceeds this score")
+    .option("--prepare", "Write review tasks for strings without a current verdict to .wraith/qe-tasks.json", false)
+    .option("--all", "With --prepare: include strings that already have a current verdict", false)
+    .option("--submit <file>", "Store verdicts from a JSON file ([{locale,key,verdict,reason?,suggestedFix?}])")
     .option("--json", "Output JSON", false)
     .action(async (opts) => {
       const rootDir = program.opts().cwd;
-      const res = await runQe({
-        rootDir,
-        locales: parseCsvList(opts.locales),
-        autoRepair: Boolean(opts.autoRepair),
-        failAbove: opts.failAbove !== undefined ? Number(opts.failAbove) : undefined,
-      });
-      if (opts.json) {
-        console.log(JSON.stringify(res, null, 2));
-      } else {
-        const s = res.summary;
-        console.log(
-          `${res.outcome} · ${s.total} segment(s): ${s.verified} verified · ${s.needsReview} needs_review · ${s.unscored} unscored · ${s.tier1Escalations} Tier-1 escalations · mean risk ${s.meanRisk} · max ${s.maxRisk} · ${s.llmCalls} LLM call(s) (${res.model ?? "Tier 2 unavailable"})`
-        );
-        for (const f of res.flagged.slice(0, 20)) {
-          console.log(`  [${f.status}] ${f.locale} ${f.key} risk=${f.riskScore}${f.topIssue ? `: ${f.topIssue}` : ""}`);
+      const locales = parseCsvList(opts.locales);
+      if (opts.prepare) {
+        const prep = prepareQeReview({ rootDir, locales, includeReviewed: Boolean(opts.all) });
+        if (opts.json) console.log(JSON.stringify(prep, null, 2));
+        else {
+          console.log(`${prep.toReview} string(s) to review in ${prep.tasks.length} file task(s) · ${prep.alreadyReviewed} already reviewed · ${prep.blockedByCheck.length} blocked by check errors`);
+          console.log(`Tasks: ${prep.tasksPath}`);
         }
+        return;
+      }
+      if (opts.submit) {
+        const file = resolveConfinedPath(rootDir, opts.submit, { label: "QE verdicts" });
+        const res = submitQeVerdicts({ rootDir, verdicts: JSON.parse(fs.readFileSync(file, "utf8")) });
+        if (opts.json) console.log(JSON.stringify(res, null, 2));
+        else {
+          console.log(`Stored ${res.accepted} verdict(s) · ${res.rejected.length} rejected`);
+          for (const r of res.rejected.slice(0, 20)) console.log(`  rejected ${r.locale ?? "?"} ${r.key ?? "?"}: ${r.reason}`);
+        }
+        if (res.rejected.length > 0) process.exitCode = 1;
+        return;
+      }
+      const res = summarizeQe({ rootDir, locales });
+      if (opts.json) console.log(JSON.stringify(res, null, 2));
+      else {
+        const s = res.summary;
+        console.log(`${res.outcome} · ${s.total} string(s): ${s.ok} ok · ${s.flagged} flagged · ${s.humanVerified} human-verified · ${s.unreviewed} unreviewed`);
+        for (const f of res.flagged.slice(0, 20)) console.log(`  [flag] ${f.locale} ${f.key}: ${f.reason ?? ""}${f.suggestedFix ? ` → ${f.suggestedFix}` : ""}`);
         for (const n of res.nextSteps) console.log(`  - ${n}`);
-        console.log(`Report: ${res.reportPath}`);
       }
       if (res.outcome === "FAIL") process.exitCode = 1;
       else if (res.outcome === "INCONCLUSIVE") process.exitCode = 2;
@@ -421,7 +433,7 @@ export function createCli(): Command {
     .option("--format <fmt>", "Export format (xliff2)", "xliff2")
     .option("-o, --out <dir>", "Output directory", ".wraith/exports/tms")
     .option("--locales <csv>", "Comma-separated target locales")
-    .option("--only-flagged", "Only export segments with status needs_review in .wraith/qe-report.json", false)
+    .option("--only-flagged", "Only export strings flagged in QE review", false)
     .option("--include-tm", "Write tm.tmx (TMX 1.4b)", false)
     .option("--include-glossary", "Write glossary.tbx (TBX-Basic)", false)
     .option("--bundle-screenshots", "Copy matching visual-qa failure crops into <out>/screenshots/", false)

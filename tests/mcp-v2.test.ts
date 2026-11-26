@@ -26,7 +26,7 @@ const EXPECTED: Record<string, { readOnlyHint: boolean; destructiveHint: boolean
   layout: { readOnlyHint: true, destructiveHint: false },
   layout_fix: { readOnlyHint: false, destructiveHint: true },
   visual_qa: { readOnlyHint: true, destructiveHint: false },
-  qe_audit: { readOnlyHint: false, destructiveHint: true },
+  qe_audit: { readOnlyHint: false, destructiveHint: false },
   tms_export: { readOnlyHint: true, destructiveHint: false },
   tms_import: { readOnlyHint: false, destructiveHint: true },
   review: { readOnlyHint: false, destructiveHint: false },
@@ -93,14 +93,18 @@ describe("MCP v2 stdio schema coverage", () => {
     expect(text(res).length).toBeLessThan(25000);
   });
 
-  it("qe_audit without model keys skips Tier 2 and marks nothing verified", async () => {
-    const res: any = await client.callTool({ name: "qe_audit", arguments: { locales: ["de"] } });
-    const body = JSON.parse(text(res));
-    expect(body.tier2).toBe("unavailable");
-    expect(body.summary.verified).toBe(0);
-    expect(body.summary.total).toBe(2);
-    expect(fs.existsSync(path.join(dir, ".wraith/qe-report.json"))).toBe(true);
-    expect(text(res).length).toBeLessThan(25000);
+  it("qe_audit prepares file-scoped review tasks, stores verdicts, and never calls a model", async () => {
+    const status: any = JSON.parse(text(await client.callTool({ name: "qe_audit", arguments: { locales: ["de"] } })));
+    expect(status.outcome).toBe("INCONCLUSIVE");
+    expect(status.summary.unreviewed).toBe(2);
+    const prep: any = JSON.parse(text(await client.callTool({ name: "qe_audit", arguments: { locales: ["de"], mode: "prepare" } })));
+    expect(prep.toReview).toBe(2);
+    const keys = prep.tasks.flatMap((t: any) => t.strings.map((s: any) => s.key));
+    const verdicts = keys.map((key: string) => ({ locale: "de", key, verdict: "ok" }));
+    const sub: any = JSON.parse(text(await client.callTool({ name: "qe_audit", arguments: { mode: "submit", verdicts } })));
+    expect(sub.accepted).toBe(2);
+    expect(sub.summary.ok).toBe(2);
+    expect(fs.existsSync(path.join(dir, ".wraith/qe-verdicts.json"))).toBe(true);
   });
 
   it("tms_export writes XLIFF only inside the export dir and tms_import round-trips it", async () => {

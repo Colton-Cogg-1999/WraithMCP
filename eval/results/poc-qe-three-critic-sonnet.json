@@ -1,0 +1,509 @@
+{
+  "generatedAt": "2026-11-25T23:51:27.505Z",
+  "kind": "proof-of-concept",
+  "caveat": "40 segments, 1 locale, 1 critic run, planted errors authored by the evaluator; not publishable evidence.",
+  "rejectedFindings": 0,
+  "llmCalls": 36,
+  "metrics": {
+    "n": 40,
+    "tier1Caught": 0,
+    "unscored": 0,
+    "recallNeedsReview": 85,
+    "recallMajorFinding": 85,
+    "falseFlagNeedsReview": 0,
+    "falseFlagMajorFinding": 0,
+    "missed": [
+      {
+        "key": "BillingForm.email",
+        "class": "omission",
+        "risk": 10
+      },
+      {
+        "key": "TaskBoard.close",
+        "class": "ui-form",
+        "risk": 11
+      },
+      {
+        "key": "TeamMembersList.confirmDelete",
+        "class": "register",
+        "risk": 13
+      }
+    ],
+    "falseFlags": []
+  },
+  "rows": [
+    {
+      "key": "ApiKeysPanel.active",
+      "corrupted": false,
+      "status": "verified",
+      "risk": 0,
+      "tier": "tier2",
+      "flaggedAny": false,
+      "flaggedMajor": false,
+      "issues": []
+    },
+    {
+      "key": "ApiKeysPanel.close",
+      "corrupted": true,
+      "class": "wrong-sense",
+      "status": "needs_review",
+      "risk": 32,
+      "tier": "tier2",
+      "flaggedAny": true,
+      "flaggedMajor": true,
+      "issues": [
+        "terminology/major: 'Nah' means 'near'; not the approved UI term for Close.",
+        "semantic/major: 'Nah' does not convey 'Close'."
+      ]
+    },
+    {
+      "key": "ApiKeysPanel.confirmDelete",
+      "corrupted": true,
+      "class": "negation",
+      "status": "needs_review",
+      "risk": 45,
+      "tier": "tier2",
+      "flaggedAny": true,
+      "flaggedMajor": true,
+      "issues": [
+        "semantic/critical: Inserted negation 'nicht' inverts the question."
+      ]
+    },
+    {
+      "key": "ApiKeysPanel.delete",
+      "corrupted": false,
+      "status": "verified",
+      "risk": 0,
+      "tier": "tier2",
+      "flaggedAny": false,
+      "flaggedMajor": false,
+      "issues": []
+    },
+    {
+      "key": "ApiKeysPanel.deletedToast",
+      "corrupted": false,
+      "status": "verified",
+      "risk": 8,
+      "tier": "tier2",
+      "flaggedAny": false,
+      "flaggedMajor": false,
+      "issues": []
+    },
+    {
+      "key": "BillingForm.email",
+      "corrupted": true,
+      "class": "omission",
+      "status": "verified",
+      "risk": 10,
+      "tier": "tier2",
+      "flaggedAny": true,
+      "flaggedMajor": false,
+      "issues": [
+        "semantic/minor: 'E-Mail' omitted; 'Adresse' is ambiguous."
+      ]
+    },
+    {
+      "key": "BillingForm.failed",
+      "corrupted": true,
+      "class": "inversion",
+      "status": "needs_review",
+      "risk": 45,
+      "tier": "tier2",
+      "flaggedAny": true,
+      "flaggedMajor": true,
+      "issues": [
+        "semantic/critical: 'Erfolgreich' (successful) inverts 'Failed'."
+      ]
+    },
+    {
+      "key": "BillingForm.required",
+      "corrupted": false,
+      "status": "verified",
+      "risk": 0,
+      "tier": "tier2",
+      "flaggedAny": false,
+      "flaggedMajor": false,
+      "issues": []
+    },
+    {
+      "key": "BillingForm.save",
+      "corrupted": true,
+      "class": "wrong-sense",
+      "status": "needs_review",
+      "risk": 32,
+      "tier": "tier2",
+      "flaggedAny": true,
+      "flaggedMajor": true,
+      "issues": [
+        "terminology/major: 'Sparen' means saving money; UI term is 'Speichern' (used elsewhere).",
+        "semantic/major: 'Sparen' means saving money, not Save."
+      ]
+    },
+    {
+      "key": "BillingForm.submit",
+      "corrupted": false,
+      "status": "verified",
+      "risk": 0,
+      "tier": "tier2",
+      "flaggedAny": false,
+      "flaggedMajor": false,
+      "issues": []
+    },
+    {
+      "key": "DocumentCard.archived",
+      "corrupted": false,
+      "status": "verified",
+      "risk": 0,
+      "tier": "tier2",
+      "flaggedAny": false,
+      "flaggedMajor": false,
+      "issues": []
+    },
+    {
+      "key": "DocumentCard.deletedToast",
+      "corrupted": true,
+      "class": "wrong-meaning",
+      "status": "needs_review",
+      "risk": 53,
+      "tier": "tier2",
+      "flaggedAny": true,
+      "flaggedMajor": true,
+      "issues": [
+        "semantic/critical: 'erstellt' (created) instead of deleted."
+      ]
+    },
+    {
+      "key": "DocumentCard.edit",
+      "corrupted": true,
+      "class": "ui-form",
+      "status": "needs_review",
+      "risk": 33,
+      "tier": "tier2",
+      "flaggedAny": true,
+      "flaggedMajor": true,
+      "issues": [
+        "terminology/major: Not the term 'Bearbeiten' used for Edit in InvoiceTable.",
+        "ui_context/major: Button label is a long sentence, far over a constrained Button budget; should be a short imperative/infinitive.",
+        "semantic/major: Says editing is in progress rather than the action Edit."
+      ]
+    },
+    {
+      "key": "DocumentCard.lastUpdated",
+      "corrupted": true,
+      "class": "wrong-meaning",
+      "status": "needs_review",
+      "risk": 32,
+      "tier": "tier2",
+      "flaggedAny": true,
+      "flaggedMajor": true,
+      "issues": [
+        "terminology/minor: Differs from 'Zuletzt aktualisiert' used for same source in InvoiceTable.",
+        "semantic/major: 'Zuerst erstellt' (first created) changes meaning of last updated."
+      ]
+    },
+    {
+      "key": "FileUploader.cancel",
+      "corrupted": true,
+      "class": "wrong-sense",
+      "status": "needs_review",
+      "risk": 32,
+      "tier": "tier2",
+      "flaggedAny": true,
+      "flaggedMajor": true,
+      "issues": [
+        "terminology/major: 'Kündigen' means terminate a contract; use 'Abbrechen' as elsewhere.",
+        "semantic/major: 'Kündigen' means terminate/cancel a subscription, not Cancel an action."
+      ]
+    },
+    {
+      "key": "FileUploader.failed",
+      "corrupted": false,
+      "status": "verified",
+      "risk": 0,
+      "tier": "tier2",
+      "flaggedAny": false,
+      "flaggedMajor": false,
+      "issues": []
+    },
+    {
+      "key": "FileUploader.filesSelected",
+      "corrupted": true,
+      "class": "wrong-meaning",
+      "status": "needs_review",
+      "risk": 53,
+      "tier": "tier2",
+      "flaggedAny": true,
+      "flaggedMajor": true,
+      "issues": [
+        "semantic/critical: 'gelöscht' (deleted) instead of selected."
+      ]
+    },
+    {
+      "key": "FileUploader.submit",
+      "corrupted": false,
+      "status": "verified",
+      "risk": 0,
+      "tier": "tier2",
+      "flaggedAny": false,
+      "flaggedMajor": false,
+      "issues": []
+    },
+    {
+      "key": "InvoiceTable.edit",
+      "corrupted": false,
+      "status": "verified",
+      "risk": 0,
+      "tier": "tier2",
+      "flaggedAny": false,
+      "flaggedMajor": false,
+      "issues": []
+    },
+    {
+      "key": "InvoiceTable.lastUpdated",
+      "corrupted": false,
+      "status": "verified",
+      "risk": 0,
+      "tier": "tier2",
+      "flaggedAny": false,
+      "flaggedMajor": false,
+      "issues": []
+    },
+    {
+      "key": "InvoiceTable.pending",
+      "corrupted": true,
+      "class": "inversion",
+      "status": "needs_review",
+      "risk": 44,
+      "tier": "tier2",
+      "flaggedAny": true,
+      "flaggedMajor": true,
+      "issues": [
+        "terminology/major: 'Abgelehnt' (rejected) substituted for 'Ausstehend' used elsewhere for Pending.",
+        "semantic/critical: 'Abgelehnt' (rejected) instead of Pending."
+      ]
+    },
+    {
+      "key": "NotificationPanel.items",
+      "corrupted": false,
+      "status": "verified",
+      "risk": 8,
+      "tier": "tier2",
+      "flaggedAny": false,
+      "flaggedMajor": false,
+      "issues": []
+    },
+    {
+      "key": "OrderHistory.active",
+      "corrupted": true,
+      "class": "wrong-sense",
+      "status": "needs_review",
+      "risk": 32,
+      "tier": "tier2",
+      "flaggedAny": true,
+      "flaggedMajor": true,
+      "issues": [
+        "terminology/major: 'Aktion' substituted for 'Aktiv' used elsewhere.",
+        "semantic/major: 'Aktion' (action) instead of Active."
+      ]
+    },
+    {
+      "key": "OrderHistory.pending",
+      "corrupted": false,
+      "status": "verified",
+      "risk": 0,
+      "tier": "tier2",
+      "flaggedAny": false,
+      "flaggedMajor": false,
+      "issues": []
+    },
+    {
+      "key": "ProjectSettings.archived",
+      "corrupted": true,
+      "class": "inversion",
+      "status": "needs_review",
+      "risk": 44,
+      "tier": "tier2",
+      "flaggedAny": true,
+      "flaggedMajor": true,
+      "issues": [
+        "terminology/major: 'Aktiv' substituted for 'Archiviert' used elsewhere.",
+        "semantic/critical: 'Aktiv' is the opposite of Archived."
+      ]
+    },
+    {
+      "key": "ProjectSettings.cancel",
+      "corrupted": false,
+      "status": "verified",
+      "risk": 0,
+      "tier": "tier2",
+      "flaggedAny": false,
+      "flaggedMajor": false,
+      "issues": []
+    },
+    {
+      "key": "ProjectSettings.confirmDelete",
+      "corrupted": false,
+      "status": "verified",
+      "risk": 0,
+      "tier": "tier2",
+      "flaggedAny": false,
+      "flaggedMajor": false,
+      "issues": []
+    },
+    {
+      "key": "ProjectSettings.save",
+      "corrupted": false,
+      "status": "verified",
+      "risk": 0,
+      "tier": "tier2",
+      "flaggedAny": false,
+      "flaggedMajor": false,
+      "issues": []
+    },
+    {
+      "key": "SignupForm.email",
+      "corrupted": true,
+      "class": "addition",
+      "status": "needs_review",
+      "risk": 34,
+      "tier": "tier2",
+      "flaggedAny": true,
+      "flaggedMajor": true,
+      "issues": [
+        "semantic/major: Hallucinated claim about a 10 % discount not in source."
+      ]
+    },
+    {
+      "key": "SignupForm.minChars",
+      "corrupted": true,
+      "class": "inversion",
+      "status": "needs_review",
+      "risk": 45,
+      "tier": "tier2",
+      "flaggedAny": true,
+      "flaggedMajor": true,
+      "issues": [
+        "semantic/critical: 'höchstens' (at most) inverts 'at least'."
+      ]
+    },
+    {
+      "key": "SignupForm.required",
+      "corrupted": false,
+      "status": "verified",
+      "risk": 0,
+      "tier": "tier2",
+      "flaggedAny": false,
+      "flaggedMajor": false,
+      "issues": []
+    },
+    {
+      "key": "SignupForm.submit",
+      "corrupted": true,
+      "class": "wrong-sense",
+      "status": "needs_review",
+      "risk": 32,
+      "tier": "tier2",
+      "flaggedAny": true,
+      "flaggedMajor": true,
+      "issues": [
+        "terminology/major: 'Unterwerfen' (subjugate) instead of 'Absenden' used elsewhere.",
+        "semantic/major: 'Unterwerfen' means subjugate, not Submit."
+      ]
+    },
+    {
+      "key": "TaskBoard.close",
+      "corrupted": true,
+      "class": "ui-form",
+      "status": "verified",
+      "risk": 11,
+      "tier": "tier2",
+      "flaggedAny": true,
+      "flaggedMajor": false,
+      "issues": [
+        "terminology/minor: 'Schließung' differs from the verb form 'Schließen'.",
+        "ui_context/minor: Button uses a noun ('Schließung') instead of verb form for an action.",
+        "semantic/minor: Noun 'Schließung' (closure) rather than the action Close."
+      ]
+    },
+    {
+      "key": "TaskBoard.filesSelected",
+      "corrupted": false,
+      "status": "verified",
+      "risk": 8,
+      "tier": "tier2",
+      "flaggedAny": false,
+      "flaggedMajor": false,
+      "issues": []
+    },
+    {
+      "key": "TaskBoard.save",
+      "corrupted": false,
+      "status": "verified",
+      "risk": 0,
+      "tier": "tier2",
+      "flaggedAny": false,
+      "flaggedMajor": false,
+      "issues": []
+    },
+    {
+      "key": "TeamMembersList.confirmDelete",
+      "corrupted": true,
+      "class": "register",
+      "status": "verified",
+      "risk": 13,
+      "tier": "tier2",
+      "flaggedAny": true,
+      "flaggedMajor": false,
+      "issues": [
+        "terminology/minor: Register shift: informal 'du' while other strings use formal 'Sie'."
+      ]
+    },
+    {
+      "key": "TeamMembersList.items",
+      "corrupted": true,
+      "class": "wrong-meaning",
+      "status": "needs_review",
+      "risk": 52,
+      "tier": "tier2",
+      "flaggedAny": true,
+      "flaggedMajor": true,
+      "issues": [
+        "terminology/major: 'Fehler' (errors) replaces 'Elemente' used in sibling plural string.",
+        "semantic/critical: 'Fehler' (errors) instead of items in plural branch."
+      ]
+    },
+    {
+      "key": "UserProfileForm.email",
+      "corrupted": false,
+      "status": "verified",
+      "risk": 0,
+      "tier": "tier2",
+      "flaggedAny": false,
+      "flaggedMajor": false,
+      "issues": []
+    },
+    {
+      "key": "UserProfileForm.minChars",
+      "corrupted": false,
+      "status": "verified",
+      "risk": 0,
+      "tier": "tier2",
+      "flaggedAny": false,
+      "flaggedMajor": false,
+      "issues": []
+    },
+    {
+      "key": "UserProfileForm.required",
+      "corrupted": true,
+      "class": "inversion",
+      "status": "needs_review",
+      "risk": 45,
+      "tier": "tier2",
+      "flaggedAny": true,
+      "flaggedMajor": true,
+      "issues": [
+        "semantic/critical: 'optional' inverts 'required'."
+      ]
+    }
+  ]
+}
