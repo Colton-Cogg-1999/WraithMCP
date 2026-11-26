@@ -42,7 +42,7 @@ jobs:
 
 ## Full workflow (visual QA + `/localize` agent)
 
-Workflow: [`.github/workflows/wraith.yml`](../.github/workflows/wraith.yml)
+Workflow template: [`examples/workflows/wraith.yml`](../examples/workflows/wraith.yml)
 
 | Job | Trigger | Tokens | Purpose |
 |---|---|---|---|
@@ -54,7 +54,7 @@ Workflow: [`.github/workflows/wraith.yml`](../.github/workflows/wraith.yml)
 
 1. Add Wraith as a dev dependency (`npm i -D wraith-mcp`) so `npx wraith` resolves, and commit `.wraith/config.json` with `layout.routes` and `layout.localeUrlPattern`.
 2. Add `playwright` as a dev dependency (visual-qa uses the optional peer).
-3. Copy `wraith.yml` into `.github/workflows/` and adjust `PREVIEW_BUILD` / `PREVIEW_START` / `PREVIEW_URL` (defaults: `npm run build`, `npm run start`, `http://localhost:3000`), or call it as a reusable workflow:
+3. Copy [`examples/workflows/wraith.yml`](../examples/workflows/wraith.yml) into `.github/workflows/wraith.yml` in your app repo (or into a shared workflows repo to call via `workflow_call`), and adjust `PREVIEW_BUILD` / `PREVIEW_START` / `PREVIEW_URL` (defaults: `npm run build`, `npm run start`, `http://localhost:3000`):
 
 ```yaml
 # .github/workflows/l10n.yml in your app repo

@@ -154,15 +154,18 @@ describe("E. Escaping and locale behaviour end-to-end through apply()", () => {
   });
 
   it("E4 JSON writer keeps integer-like key order (\"lossless\" claim)", () => {
+    const enRaw = '{\n  "errors": {\n    "generic": "Error",\n    "404": "Not found",\n    "500": "Server error"\n  }\n}\n';
+    const frRaw = '{\n  "errors": {\n    "generic": "Erreur",\n    "404": "Introuvable"\n  }\n}\n';
     const dir = project({
       "package.json": nextIntlPkg,
-      "messages/en.json": JSON.stringify({ errors: { generic: "Error", "404": "Not found", "500": "Server error" } }, null, 2) + "\n",
-      "messages/fr.json": JSON.stringify({ errors: { generic: "Erreur", "404": "Introuvable" } }, null, 2) + "\n",
+      "messages/en.json": enRaw,
+      "messages/fr.json": frRaw,
     });
     init(dir, ["fr"]);
     applyTranslations({ rootDir: dir, targetLocale: "fr", translations: [{ key: "errors.500", value: "Erreur serveur" }] });
     const fr = read(dir, "messages/fr.json");
     expect(fr.indexOf('"generic"')).toBeLessThan(fr.indexOf('"404"'));
+    expect(fr.indexOf('"404"')).toBeLessThan(fr.indexOf('"500"'));
   });
 
   it("E5 JSON writer tolerates a UTF-8 BOM in an existing target file", () => {

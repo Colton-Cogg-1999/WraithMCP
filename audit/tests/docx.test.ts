@@ -32,7 +32,8 @@ const hasSoffice = (() => {
 
 function sofficeText(docx: string): string {
   const out = fs.mkdtempSync(path.join(os.tmpdir(), "lo-out-"));
-  execFileSync("soffice", ["--headless", "--convert-to", "txt:Text (encoded):UTF8", "--outdir", out, docx], { stdio: "pipe", timeout: 120000 });
+  const loProfile = fs.mkdtempSync(path.join(os.tmpdir(), "lo-prof-"));
+  execFileSync("soffice", [`-env:UserInstallation=file://${loProfile}`, "--headless", "--convert-to", "txt:Text (encoded):UTF8", "--outdir", out, docx], { stdio: "pipe", timeout: 120000 });
   const txt = path.join(out, path.basename(docx).replace(/\.docx$/, ".txt"));
   if (!fs.existsSync(txt)) throw new Error("LibreOffice could not open/convert " + docx);
   return fs.readFileSync(txt, "utf8");

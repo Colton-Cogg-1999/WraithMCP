@@ -107,14 +107,33 @@ export function initProject(options: InitOptions): InitResult {
 
   let hookInstalled: string | null = null;
   if (options.installHook) {
-    if (existsOrSymlink(path.join(store.rootDir, ".git"))) {
+    const dotGitPath = path.join(store.rootDir, ".git");
+    if (existsOrSymlink(dotGitPath)) {
       resolveConfinedPath(store.rootDir, ".git", { label: ".git directory" });
-      const gitHooksDir = resolveConfinedPath(store.rootDir, path.join(".git", "hooks"), {
+      const stat = fs.statSync(dotGitPath);
+      let gitDirRel = ".git";
+      if (stat.isFile()) {
+        const pointer = fs.readFileSync(dotGitPath, "utf8").trim();
+        const match = /^gitdir:\s*(.+)$/m.exec(pointer);
+        if (!match) {
+          throw new Error(`Cannot install pre-commit hook: invalid .git file in ${store.rootDir}`);
+        }
+        const resolvedGitDir = path.resolve(store.rootDir, match[1].trim());
+        const rootReal = fs.realpathSync(store.rootDir);
+        const relToRoot = path.relative(rootReal, resolvedGitDir);
+        if (relToRoot.startsWith("..") || path.isAbsolute(relToRoot)) {
+          throw new Error(
+            `Cannot install pre-commit hook automatically in a git worktree whose gitdir (${resolvedGitDir}) lies outside the workspace root. Install the hook in the main repository's .git/hooks directory instead.`
+          );
+        }
+        gitDirRel = relToRoot;
+      }
+      const gitHooksDir = resolveConfinedPath(store.rootDir, path.join(gitDirRel, "hooks"), {
         label: ".git/hooks directory",
       });
       const hookPath = resolveConfinedPath(
         store.rootDir,
-        path.join(".git", "hooks", "pre-commit"),
+        path.join(gitDirRel, "hooks", "pre-commit"),
         { label: ".git/hooks/pre-commit" }
       );
       fs.mkdirSync(gitHooksDir, { recursive: true });

@@ -3,9 +3,9 @@
 #   deterministic-l10n-gate  pull_request          extract / check / visual-qa gate, 0 LLM tokens
 #   update-baseline          push to main          recapture .wraith/visual-baseline.json (artifact)
 #   agentic-localize         "/localize" PR comment or workflow_dispatch: agent translates changed
-#                            keys, Wraith verifies + QE-scores, flagged keys are exported as XLIFF
+#                            keys, Wraith verifies + reviews in context, flagged keys exported as XLIFF
 #
-# Reusable: call from another workflow with `uses: <owner>/<repo>/.github/workflows/wraith.yml@<ref>`.
+# Copy into `.github/workflows/wraith.yml` in your app repo (or call as a reusable workflow once placed in `.github/workflows/`).
 # See docs/GITHUB_CI.md.
 name: Wraith L10n
 

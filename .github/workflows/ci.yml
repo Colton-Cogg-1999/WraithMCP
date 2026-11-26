@@ -1,0 +1,59 @@
+# Wraith's own CI: typecheck, build, test, and run all audit suites across OS × Node.
+# For the app-repo localization gate workflow template, see examples/workflows/wraith.yml.
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: test (${{ matrix.os }}, node ${{ matrix.node }})
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        node: [20, 22, 24]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+          cache: npm
+
+      - run: npm ci
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Build
+        run: npm run build
+
+      - name: Check licenses
+        if: matrix.os == 'ubuntu-latest' && matrix.node == 22
+        run: npm run check:licenses
+
+      - name: Test suite
+        run: npm test
+
+      - name: Audit suites
+        shell: bash
+        run: |
+          npx vitest run --config audit/vitest.config.ts
+          npx vitest run --config audit2/vitest.config.ts
+          npx vitest run --config audit3/vitest.config.ts
+
+      - name: Dry-run npm pack
+        if: matrix.os == 'ubuntu-latest' && matrix.node == 22
+        run: npm pack --dry-run

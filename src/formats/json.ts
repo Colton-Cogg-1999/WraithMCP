@@ -204,7 +204,8 @@ function spliceJsonUpdate(
   keyParts: string[],
   value: string,
   indent: string,
-  eol: string
+  eol: string,
+  sourceKeyOrder?: Map<string, string[]>
 ): string {
   const root = parseJsonCst(rawJson);
   if (root.kind !== "object") {
@@ -244,7 +245,8 @@ function spliceJsonUpdate(
       );
     }
 
-    // Key does not exist in currObj -> insert before currObj's closing '}'
+    // Key does not exist in currObj -> insert according to source CST sibling order when available,
+    // otherwise append before currObj's closing '}'
     const remaining = keyParts.slice(idx);
     const props = currObj.properties ?? [];
     const entryText = buildNestedJsonSnippet(remaining, value, indent, depth + 1).replace(/\n/g, eol);
@@ -257,6 +259,33 @@ function spliceJsonUpdate(
         `${eol}${entryText}${eol}${outerPad}` +
         rawJson.slice(closeBraceIdx)
       );
+    }
+
+    const parentPath = keyParts.slice(0, idx).join(".");
+    const srcSiblings = sourceKeyOrder?.get(parentPath);
+    if (srcSiblings) {
+      const targetSrcIdx = srcSiblings.indexOf(part);
+      if (targetSrcIdx !== -1) {
+        // Find the first existing property in currObj that appears AFTER `part` in source CST
+        const nextExisting = props.find((p) => {
+          const pIdx = srcSiblings.indexOf(p.key);
+          return pIdx !== -1 && pIdx > targetSrcIdx;
+        });
+        if (nextExisting) {
+          // Insert right before nextExisting's line/keyStart
+          let insertAt = nextExisting.keyStart;
+          while (insertAt > currObj.start + 1 && (rawJson[insertAt - 1] === " " || rawJson[insertAt - 1] === "\t")) {
+            insertAt--;
+          }
+          const trimmedEntry = entryText.replace(/^[ \t]+/, "");
+          const leadingPad = rawJson.slice(insertAt, nextExisting.keyStart);
+          return (
+            rawJson.slice(0, insertAt) +
+            `${leadingPad}${trimmedEntry},${eol}` +
+            rawJson.slice(insertAt)
+          );
+        }
+      }
     }
 
     const lastProp = props[props.length - 1];
@@ -345,12 +374,34 @@ export class JsonFormatAdapter implements FormatAdapter {
       (existed && isFlatJson(existingObj)) ||
       (!existed && sourceObj !== null && isFlatJson(sourceObj));
 
+    // When target already exists, map each object path + key to its exact source CST sibling order
+    // so newly inserted keys land next to their source-order neighbors instead of after integer keys
+    // that JSON.parse() hoisted to the front in memory.
+    let sourceKeyOrder: Map<string, string[]> | undefined;
+    if (sourceBody.trim()) {
+      sourceKeyOrder = new Map<string, string[]>();
+      const recordOrder = (node: JsonCstNode, prefix: string) => {
+        if (node.kind !== "object" || !node.properties) return;
+        sourceKeyOrder!.set(prefix, node.properties.map((p) => p.key));
+        for (const p of node.properties) {
+          if (p.value.kind === "object") {
+            recordOrder(p.value, prefix ? `${prefix}.${p.key}` : p.key);
+          }
+        }
+      };
+      try {
+        recordOrder(parseJsonCst(sourceBody), "");
+      } catch {
+        sourceKeyOrder = undefined;
+      }
+    }
+
     // Start from exact existing file bytes if present (lossless splice!), or `{}` for brand-new target file
     let serialized = existingBody.trim() ? existingBody : `{}${trailingNewline ? eol : ""}`;
 
-    // When creating a new file and source exists, sort updates by source CST key order so integer-like keys keep source order too
+    // Sort updates by source CST key order when available so multi-key inserts preserve source ordering
     const orderedUpdates = [...updates];
-    if (!existed && sourceBody.trim()) {
+    if (sourceBody.trim()) {
       const orderIndex = new Map<string, number>();
       let idx = 0;
       const walkCst = (node: JsonCstNode, prefix: string) => {
@@ -373,7 +424,7 @@ export class JsonFormatAdapter implements FormatAdapter {
 
     for (const u of orderedUpdates) {
       const parts = flat ? [u.key] : u.key.split(".");
-      serialized = spliceJsonUpdate(serialized, parts, u.value, indent, eol);
+      serialized = spliceJsonUpdate(serialized, parts, u.value, indent, eol, sourceKeyOrder);
     }
 
     const finalContent = (hasBom ? "\uFEFF" : "") + serialized;

@@ -227,7 +227,7 @@ Prompt: `/localize`. Agent playbooks: [`skills/`](skills/) — `i18n-prep`, `loc
       - uses: Colton-Cogg-1999/WraithMCP@v1
 ```
 
-**Full workflow:** [`.github/workflows/wraith.yml`](.github/workflows/wraith.yml) (also usable via `workflow_call`):
+**Full workflow:** [`examples/workflows/wraith.yml`](examples/workflows/wraith.yml) (copy to `.github/workflows/wraith.yml`, also usable via `workflow_call` once placed there):
 
 - **`deterministic-l10n-gate`** (pull_request, 0 LLM tokens): `wraith extract --fail-on-unextracted`, `wraith check`, `wraith visual-qa --base .wraith/visual-baseline.json`; sticky PR summary; artifacts on failure.
 - **`update-baseline`** (push to main): recaptures the baseline as an artifact; commit it via a reviewed PR.

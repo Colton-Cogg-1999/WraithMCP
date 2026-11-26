@@ -98,9 +98,11 @@ describe("DX. Incremental DOCX translation, segment identity, formatting & revis
   });
 
   it("DX6 LibreOffice reopens a multi-batch translated document and shows every translated paragraph", () => {
+    const loProfile = fs.mkdtempSync(path.join(os.tmpdir(), "lo-prof-"));
+    const userInstArg = `-env:UserInstallation=file://${loProfile}`;
     let hasSoffice = true;
     try {
-      execFileSync("soffice", ["--version"], { stdio: "pipe" });
+      execFileSync("soffice", [userInstArg, "--headless", "--version"], { stdio: "pipe" });
     } catch {
       hasSoffice = false;
     }
@@ -111,7 +113,7 @@ describe("DX. Incremental DOCX translation, segment identity, formatting & revis
     apply(dir, segs.slice(1, 3));
     apply(dir, segs.slice(3));
     const out = fs.mkdtempSync(path.join(os.tmpdir(), "lo2-"));
-    execFileSync("soffice", ["--headless", "--convert-to", "txt:Text (encoded):UTF8", "--outdir", out, path.join(dir, "doc.de.docx")], { stdio: "pipe" });
+    execFileSync("soffice", [userInstArg, "--headless", "--convert-to", "txt:Text (encoded):UTF8", "--outdir", out, path.join(dir, "doc.de.docx")], { stdio: "pipe" });
     const txt = fs.readFileSync(path.join(out, "doc.de.txt"), "utf8");
     console.log(`[DX6] ${JSON.stringify(txt.trim().split(/\r?\n/))}`);
     expect(txt).toContain("Äpfel sind rot.");
