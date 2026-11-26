@@ -227,7 +227,19 @@ export function atomicWriteFileSync(
     } else {
       fs.writeFileSync(tmpPath, content);
     }
-    fs.renameSync(tmpPath, filePath);
+    for (let attempt = 0; ; attempt++) {
+      try {
+        fs.renameSync(tmpPath, filePath);
+        break;
+      } catch (renameErr: unknown) {
+        const code = (renameErr as NodeJS.ErrnoException)?.code;
+        if (process.platform === "win32" && (code === "EPERM" || code === "EACCES") && attempt < 5) {
+          sleepSync(10 * (attempt + 1));
+          continue;
+        }
+        throw renameErr;
+      }
+    }
   } catch (err) {
     try {
       if (fs.existsSync(tmpPath)) fs.unlinkSync(tmpPath);
@@ -318,7 +330,8 @@ export function withWorkspaceLock<T>(
       acquired = true;
     } catch (err: unknown) {
       const code = (err as NodeJS.ErrnoException)?.code;
-      if (code !== "EEXIST") {
+      // On Windows, concurrent exclusive-create ("wx") or rename while another process touches the path can surface EPERM/EACCES
+      if (code !== "EEXIST" && !(process.platform === "win32" && (code === "EPERM" || code === "EACCES"))) {
         throw err;
       }
 

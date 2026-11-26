@@ -1,6 +1,7 @@
 import { spawn } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
+import { pathToFileURL } from "node:url";
 import { strFromU8, strToU8, unzipSync, zipSync } from "fflate";
 import { describe, expect, it } from "vitest";
 import {
@@ -215,7 +216,8 @@ describe("R3-LOCK. Workspace lock", () => {
   const runScript = (dir: string, body: string) =>
     new Promise<number>((res) => {
       const f = path.join(dir, `w${Math.random().toString(36).slice(2)}.mts`);
-      fs.writeFileSync(f, `import * as P from ${JSON.stringify(path.join(REPO, "src/index.ts"))};\nP.ensureBootstrapped();\n${body}`);
+      const indexImport = pathToFileURL(path.join(REPO, "src/index.ts")).href;
+      fs.writeFileSync(f, `import * as P from ${JSON.stringify(indexImport)};\nP.ensureBootstrapped();\n${body}`);
       spawn(process.execPath, [path.join(REPO, "node_modules/tsx/dist/cli.mjs"), f], { cwd: REPO, stdio: "inherit" }).on("exit", (c) => res(c ?? -1));
     });
 

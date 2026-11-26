@@ -2,6 +2,7 @@ import { spawn } from "node:child_process";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
+import { pathToFileURL } from "node:url";
 import { strToU8, zipSync } from "fflate";
 import { describe, expect, it } from "vitest";
 import {
@@ -159,8 +160,9 @@ describe("CONC. Concurrent operations", () => {
     for (let i = 0; i < 40; i++) en[`k${i}`] = `Label ${i}`;
     const dir = project({ "package.json": nextIntlPkg, "messages/en.json": JSON.stringify(en, null, 2) + "\n" });
     init(dir, ["de"]);
+    const indexImport = pathToFileURL(path.join(REPO, "src/index.ts")).href;
     const script = (keys: number[]) =>
-      `import { applyTranslations, ensureBootstrapped } from ${JSON.stringify(path.join(REPO, "src/index.ts"))};
+      `import { applyTranslations, ensureBootstrapped } from ${JSON.stringify(indexImport)};
 ensureBootstrapped();
 for (const i of ${JSON.stringify(keys)}) applyTranslations({ rootDir: ${JSON.stringify(dir)}, targetLocale: "de", translations: [{ key: "k" + i, value: "Bezeichnung " + i }] });`;
     const a = path.join(dir, "a.mts");
