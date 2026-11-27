@@ -9,3 +9,5 @@ eval/cache/
 eval/work/
 eval/corpora/*/
 .wraith/
+.env
+.env.*

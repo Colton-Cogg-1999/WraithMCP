@@ -428,9 +428,11 @@ export async function runLayoutCheck(options: LayoutCheckOptions): Promise<Layou
               // eslint-disable-next-line @typescript-eslint/no-explicit-any
               ).filter((el: any) => {
                 const style = getCS(el);
-                if (style.display === "none" || style.visibility === "hidden") return false;
+                if (style.display === "none" || style.visibility === "hidden" || parseFloat(style.opacity || "1") === 0) return false;
+                // Skip visually-hidden screen-reader (.sr-only) elements (e.g. 1x1px, clip: rect(0,0,0,0), clip-path: inset(50%))
+                if (style.clip === "rect(0px, 0px, 0px, 0px)" || style.clipPath === "inset(50%)") return false;
                 const r = el.getBoundingClientRect();
-                if (r.width === 0 || r.height === 0) return false;
+                if (r.width === 0 || r.height === 0 || (r.width <= 1 && r.height <= 1)) return false;
                 // Only leaf-ish text containers to avoid counting ancestor wrappers twice
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 const hasDirectText = Array.from(el.childNodes).some((n: any) => n.nodeType === 3 && String(n.textContent || "").trim().length > 0);

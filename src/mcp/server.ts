@@ -217,7 +217,7 @@ export function createWraithMcpServer(options: McpServerOptions = {}): McpServer
         keys: z.array(z.string()).optional().describe("Optional specific keys to prepare."),
         includeTranslated: z.boolean().optional().default(false),
         offset: z.number().int().nonnegative().optional().default(0),
-        limit: z.number().int().min(1).max(100).optional().default(20),
+        limit: z.number().int().min(1).max(200).optional().default(50),
       },
       outputSchema: GenericObjectOutputSchema,
       annotations: READ_ONLY_ANNOTATIONS,
@@ -322,13 +322,18 @@ export function createWraithMcpServer(options: McpServerOptions = {}): McpServer
         code: z.string().optional().describe("Filter by issue code."),
         file: z.string().optional().describe("Filter by relative file path substring."),
         skipScan: z.boolean().optional().default(false),
+        scope: z
+          .enum(["all", "translations"])
+          .optional()
+          .default("all")
+          .describe('Verification scope: "all" runs full source scan + catalog checks; "translations" validates catalogs, placeholders, plurals, glossary, layout budgets, and staleness without re-scanning source files.'),
         offset: z.number().int().nonnegative().optional().default(0),
         limit: z.number().int().min(1).max(100).optional().default(25),
       },
       outputSchema: CheckOutputSchema,
       annotations: READ_ONLY_ANNOTATIONS,
     },
-    async ({ rootDir, locale, severity, code, file, skipScan, offset, limit }) => {
+    async ({ rootDir, locale, severity, code, file, skipScan, scope, offset, limit }) => {
       const res = runCheck({
         rootDir: safeRoot(rootDir),
         locale,
@@ -336,6 +341,7 @@ export function createWraithMcpServer(options: McpServerOptions = {}): McpServer
         code: code as CheckIssueCode | undefined,
         file,
         skipScan,
+        scope,
         offset,
         limit,
       });

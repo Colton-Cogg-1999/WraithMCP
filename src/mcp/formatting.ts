@@ -24,7 +24,7 @@ export function paginate<T>(items: T[], offset = 0, limit = 25): PaginatedResult
  * when returning a structured object payload.
  */
 export function mcpTextResult(data: unknown, isError = false) {
-  const text = typeof data === "string" ? data : JSON.stringify(data, null, 2);
+  const text = typeof data === "string" ? data : JSON.stringify(data);
   const isObject = typeof data === "object" && data !== null && !Array.isArray(data);
   return {
     content: [

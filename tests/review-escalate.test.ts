@@ -244,7 +244,7 @@ describe("Milestone 4: Cross-Model Review, Human Escalation, Advisory Memory, La
     const prepText = (prepRes.content as Array<{ type: string; text: string }>)[0].text;
     const prepParsed = JSON.parse(prepText);
     expect(prepParsed.totalPending).toBe(150);
-    expect(prepParsed.items).toHaveLength(20);
+    expect(prepParsed.items).toHaveLength(50);
     expect(prepParsed.hasMore).toBe(true);
 
     await client.close();
