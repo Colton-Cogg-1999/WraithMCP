@@ -67,6 +67,20 @@ export const LayoutConfigSchema = z.object({
 });
 export type LayoutConfig = z.infer<typeof LayoutConfigSchema>;
 
+export const StyleGuideConfigSchema = z.object({
+  /** Inline style guide rules (tone, voice, formality, gender-neutrality, punctuation). */
+  instructions: z.string().optional(),
+  /** Optional repo-relative path to a style guide file (defaults to .wraith/STYLE_GUIDE.md if present). */
+  file: z.string().optional(),
+  /** Additional project translation prompt appended to Wraith's built-in system guidance (never replaces it). */
+  translationPrompt: z.string().optional(),
+  /** Additional project QE review prompt appended to Wraith's built-in QE instructions (never replaces it). */
+  qePrompt: z.string().optional(),
+  /** Locale-specific style additions keyed by BCP-47 locale (e.g. "de", "es-MX"). */
+  byLocale: z.record(z.string(), z.string()).optional(),
+});
+export type StyleGuideConfig = z.infer<typeof StyleGuideConfigSchema>;
+
 export const ConfigSchema = z.object({
   version: z.literal(1).default(1),
   sourceLocale: z.string().default("en"),
@@ -78,6 +92,8 @@ export const ConfigSchema = z.object({
   layout: LayoutConfigSchema.optional(),
   /** Declared Character Limits: key or glob pattern ("checkout.*") → max characters. Binding: exceeding fails check. */
   charLimits: z.record(z.string(), z.number().int().positive()).optional(),
+  /** Optional project style guide and additive translation/QE prompts. */
+  styleGuide: StyleGuideConfigSchema.optional(),
 });
 export type WraithConfig = z.infer<typeof ConfigSchema>;
 

@@ -4,8 +4,10 @@ import { runCheck } from "./check.js";
 import { prepareBatch, PreparedItem } from "./prepare.js";
 import { atomicWriteFileSync, withWorkspaceLock } from "./security.js";
 import { sha256Short, WraithStore } from "./store.js";
-import { latestAnswerAt, listQuestions, projectDecisions } from "./context.js";
+import { latestAnswerAt, listQuestions, projectDecisions, CharLimit } from "./context.js";
+import { getLocaleConventions, LocaleConventions } from "./locales.js";
 import { appendRunEvents } from "./run-log.js";
+import { composeQeGuidance, ResolvedStyleGuide, resolveStyleGuide } from "./style-guide.js";
 
 /* ------------------------------------------------------------------------------------------------
  * Quality review (QE)
@@ -65,8 +67,9 @@ type QeVerdictsFile = z.infer<typeof QeVerdictsFileSchema>;
 
 export const QE_REVIEW_INSTRUCTIONS = `You are reviewing translations as they will appear in the product. Work in a fresh context (a subagent if your host supports one), not the context that produced the translations.
 For each task: open the file and read how each key is actually used: the element, the surrounding UI, the neighbouring strings, what the code does when the user acts on it.
-Mark a string "flag" only if a user of this UI in the target locale would find it wrong, misleading or broken, for example: the wrong sense of the word for this UI (save money vs. save a file), meaning added, dropped, negated or inverted, a grammatical form that does not fit the element, a term that differs from how the project translates the same thing elsewhere with no contextual reason, or a conflict with a project decision, an Answer, or a Term Base entry.
-Otherwise mark it "ok". Style preferences and acceptable alternatives are "ok".
+Enforce the same linguistic requirements as the translator: conventionsByLocale (register, formality, punctuation, RTL, plural forms), charLimit/formatting constraints, placeholders, termBase & doNotTranslate entries, projectDecisions, human Answers, and any Project Style Guide / translation prompt rules below.
+Mark a string "flag" only if a user of this UI in the target locale would find it wrong, misleading or broken, for example: the wrong sense of the word for this UI (save money vs. save a file), meaning added, dropped, negated or inverted, a grammatical form that does not fit the element, a locale convention violation (e.g. Spain 'vosotros' in es-MX or wrong formality), a term that differs from how the project translates the same thing elsewhere with no contextual reason, or a conflict with a project decision, an Answer, or a Term Base entry.
+Otherwise mark it "ok". Style preferences and acceptable alternatives are "ok" unless they violate an explicit Project Style Guide or prompt rule below. Never add units, nouns, or facts absent from the source to patch an apparent source UI omission; keep the translation faithful to the source and note any source UI gap as an Open Question instead.
 Every flag needs a one-line reason; add suggestedFix (the full corrected target, every placeholder, ICU branch and tag preserved) when the fix is clear. If the source's meaning itself is unclear even after reading the code, flag it with a reason starting "Unclear meaning:", unless the string already lists openQuestions: that ambiguity is already waiting on a human, so judge such a string only for other errors.`;
 
 export const QE_RESPONSE_FORMAT =
@@ -79,7 +82,12 @@ export interface QeReviewString {
   /** Content hash of source + target at prepare time; echo on submit so edits in between cannot be misattributed. */
   fingerprint: string;
   line?: number;
+  element?: string;
   comment?: string;
+  /** Placeholders that must be preserved verbatim. */
+  placeholders?: string[];
+  /** Character/width constraint for this UI element, if any. */
+  charLimit?: CharLimit;
   /** Plain-language meaning recorded for the source string. */
   contextNote?: string;
   /** Human answers about this string: binding. */
@@ -101,6 +109,12 @@ export interface QeReviewTask {
 export interface QePrepareResult {
   instructions: string;
   responseFormat: string;
+  /** Active project style guide and additive QE/translation prompts, when configured. */
+  styleGuide?: ResolvedStyleGuide;
+  /** Locale-specific linguistic conventions (register, direction, plural categories, punctuation). */
+  conventionsByLocale: Record<string, LocaleConventions>;
+  /** Project-wide do-not-translate terms from the glossary. */
+  doNotTranslate?: string[];
   /** Project-level decisions (register, brand handling, …) the reviewer must respect. */
   projectDecisions: ReturnType<typeof projectDecisions>;
   tasks: QeReviewTask[];
@@ -184,15 +198,16 @@ export function markHumanVerified(rootDir: string, entries: Array<{ locale: stri
 /* ------------------------------- collection ------------------------------------------------- */
 
 function collectTranslated(rootDir: string, locale: string, keys?: string[]): PreparedItem[] {
-  const items: PreparedItem[] = [];
-  let offset = 0;
-  for (let guard = 0; guard < 1000; guard++) {
-    const res = prepareBatch({ rootDir, targetLocale: locale, includeTranslated: true, keys, offset, limit: 100 });
-    items.push(...res.items);
-    if (!res.hasMore || res.items.length === 0) break;
-    offset += res.items.length;
-  }
-  return items.filter((i) => i.currentTarget !== undefined && i.currentTarget !== "");
+  const res = prepareBatch({
+    rootDir,
+    targetLocale: locale,
+    includeTranslated: true,
+    skipFuzzy: true,
+    keys,
+    offset: 0,
+    limit: 50_000,
+  });
+  return res.items.filter((i) => i.currentTarget !== undefined && i.currentTarget !== "");
 }
 
 function checkErrorsByKey(rootDir: string, locale: string): Map<string, string> {
@@ -253,7 +268,10 @@ export function prepareQeReview(options: QeOptions & { includeReviewed?: boolean
         fingerprint: qeFingerprint(item.source, item.currentTarget!),
       };
       if (site?.line) str.line = site.line;
+      if (site?.element) str.element = site.element;
       if (item.comment) str.comment = item.comment;
+      if (item.placeholders.length > 0) str.placeholders = item.placeholders;
+      if (item.charLimit) str.charLimit = item.charLimit;
       if (item.contextNote && item.contextNoteStatus === "current") str.contextNote = item.contextNote;
       const answered = (item.questions ?? []).filter((q) => q.answer);
       if (answered.length > 0) str.answers = answered.map((q) => ({ id: q.id, question: q.question, answer: q.answer! }));
@@ -274,10 +292,22 @@ export function prepareQeReview(options: QeOptions & { includeReviewed?: boolean
     }
   }
 
+  const resolvedStyle = resolveStyleGuide(options.rootDir, config, locales);
+  const conventionsByLocale: Record<string, LocaleConventions> = {};
+  for (const loc of locales) {
+    conventionsByLocale[loc] = getLocaleConventions(loc);
+  }
+  const dntTerms = store
+    .readGlossary()
+    .entries.filter((e) => e.doNotTranslate)
+    .map((e) => e.term);
   const taskList = [...tasks.values()];
   const result: QePrepareResult = {
-    instructions: QE_REVIEW_INSTRUCTIONS,
+    instructions: composeQeGuidance(QE_REVIEW_INSTRUCTIONS, resolvedStyle),
     responseFormat: QE_RESPONSE_FORMAT,
+    ...(resolvedStyle.hasAny ? { styleGuide: resolvedStyle } : {}),
+    conventionsByLocale,
+    ...(dntTerms.length > 0 ? { doNotTranslate: dntTerms } : {}),
     projectDecisions: projectDecisions(options.rootDir, locales),
     tasks: taskList,
     toReview: taskList.reduce((n, t) => n + t.strings.length, 0),

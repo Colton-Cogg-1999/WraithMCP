@@ -5,6 +5,7 @@ import { getLocaleConventions, LocaleConventions } from "./locales.js";
 import { reconcileMemoryWithLiveLocales } from "./memory-ops.js";
 import { projectDecisions, CharLimit, ContextNoteStatus, contextNoteFor, isBindingCharLimit, listQuestions, questionsFor, readContextNotes, resolveCharLimit, visibleCharCount } from "./context.js";
 import { extractPlaceholders } from "./placeholders.js";
+import { composeTranslationGuidance, ResolvedStyleGuide, resolveStyleGuide } from "./style-guide.js";
 import { computeContextFingerprint, WraithStore, sha256Short } from "./store.js";
 import { UsageFile, UsageSite } from "./types.js";
 
@@ -59,6 +60,8 @@ export interface PrepareOptions {
   targetLocale: string;
   keys?: string[];
   includeTranslated?: boolean;
+  /** Skip O(N*M) fuzzy memory matching (e.g. internal QE collection that does not use fuzzyMatches). */
+  skipFuzzy?: boolean;
   offset?: number;
   limit?: number;
 }
@@ -69,6 +72,8 @@ export interface PrepareResult {
   reviewMode: "auto" | "confirm";
   memoryGuidance: string;
   contextGuidance: string;
+  /** Active project style guide and additive prompt, when configured. */
+  styleGuide?: ResolvedStyleGuide;
   /** Recorded assumptions (A1…) and human overrides; a human override is binding. */
   projectDecisions: ReturnType<typeof projectDecisions>;
   conventions: LocaleConventions;
@@ -97,9 +102,14 @@ export function prepareBatch(options: PrepareOptions): PrepareResult {
     config.paths.locales
   );
 
+  const resolvedStyle = resolveStyleGuide(store.rootDir, config, [options.targetLocale]);
+  const composedGuidance = composeTranslationGuidance(CONTEXT_GUIDANCE, resolvedStyle);
+
   const conventions = getLocaleConventions(options.targetLocale);
   const offset = Math.max(0, options.offset ?? 0);
-  const limit = Math.max(1, Math.min(options.limit ?? 20, 100));
+  const maxLimit = options.skipFuzzy ? 50_000 : 200;
+  const limit = Math.max(1, Math.min(options.limit ?? 50, maxLimit));
+  const compactFollowup = offset > 0;
 
   if (!adapter) {
     return {
@@ -108,7 +118,8 @@ export function prepareBatch(options: PrepareOptions): PrepareResult {
       reviewMode: config.review,
       memoryGuidance:
         "Treat all fuzzyMatches (including 100% lexical matches) as strong contextual suggestions rather than guaranteed-correct auto-fills. Always verify against usageSites, surrounding strings, and component purpose.",
-      contextGuidance: CONTEXT_GUIDANCE,
+      contextGuidance: composedGuidance,
+      ...(resolvedStyle.hasAny ? { styleGuide: resolvedStyle } : {}),
       projectDecisions: projectDecisions(store.rootDir, [options.targetLocale]),
       conventions,
       placeholderSyntaxes: detection.placeholderSyntaxes,
@@ -224,12 +235,14 @@ export function prepareBatch(options: PrepareOptions): PrepareResult {
       glossary.entries,
       options.targetLocale
     );
-    const rawFuzzyMatches = findFuzzyMatches(srcEntry.value, activeMemory, {
-      sourceLocale: config.sourceLocale,
-      targetLocale: options.targetLocale,
-      minScore: 55,
-      limit: 3,
-    });
+    const rawFuzzyMatches = options.skipFuzzy
+      ? []
+      : findFuzzyMatches(srcEntry.value, activeMemory, {
+          sourceLocale: config.sourceLocale,
+          targetLocale: options.targetLocale,
+          minScore: 55,
+          limit: 3,
+        });
 
     const currentSites = (liveUsage.keys[key]?.sites ?? []).slice(0, 3);
     const currentContextStr = currentSites[0]
@@ -327,10 +340,12 @@ export function prepareBatch(options: PrepareOptions): PrepareResult {
     sourceLocale: config.sourceLocale,
     targetLocale: options.targetLocale,
     reviewMode: config.review,
-    memoryGuidance:
-      "Treat all fuzzyMatches (including 100% lexical matches) as strong contextual suggestions rather than guaranteed-correct auto-fills. Always verify against usageSites, surrounding strings, and component purpose.",
-    contextGuidance: CONTEXT_GUIDANCE,
-    projectDecisions: projectDecisions(store.rootDir, [options.targetLocale]),
+    memoryGuidance: compactFollowup
+      ? "Same memory guidance as offset=0."
+      : "Treat all fuzzyMatches (including 100% lexical matches) as strong contextual suggestions rather than guaranteed-correct auto-fills. Always verify against usageSites, surrounding strings, and component purpose.",
+    contextGuidance: compactFollowup ? "Same context guidance as offset=0." : composedGuidance,
+    ...(!compactFollowup && resolvedStyle.hasAny ? { styleGuide: resolvedStyle } : {}),
+    projectDecisions: compactFollowup ? [] : projectDecisions(store.rootDir, [options.targetLocale]),
     conventions,
     placeholderSyntaxes: detection.placeholderSyntaxes,
     items: slice,

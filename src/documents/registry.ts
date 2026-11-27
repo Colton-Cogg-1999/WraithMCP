@@ -13,6 +13,7 @@ import {
   withWorkspaceLock,
 } from "../core/security.js";
 import { WraithStore, sha256Short } from "../core/store.js";
+import { composeTranslationGuidance, resolveStyleGuide } from "../core/style-guide.js";
 import { DocxDocumentAdapter } from "./docx.js";
 import { MarkdownDocumentAdapter } from "./markdown.js";
 import { PptxDocumentAdapter } from "./pptx.js";
@@ -710,14 +711,18 @@ export function prepareDocument(
   const slice = evaluation.segments.slice(offset, offset + limit);
   const ctx = buildCompactDocumentContext(extracted, offset, limit);
 
+  const resolvedStyle = resolveStyleGuide(store.rootDir, config, [options.targetLocale]);
+  const baseDocumentGuidance =
+    "Translate with full document-level coherence using fullDocumentContext below. Preserve every <x id=\"...\"/> and <g id=\"...\">...</g> inline tag verbatim. Treat fuzzyMatches (even 100%) as strong contextual suggestions to verify.";
+
   return {
     file: options.documentPath,
     format: extracted.format,
     sourceLocale: config.sourceLocale,
     targetLocale: options.targetLocale,
     conventions: getLocaleConventions(options.targetLocale),
-    documentGuidance:
-      "Translate with full document-level coherence using fullDocumentContext below. Preserve every <x id=\"...\"/> and <g id=\"...\">...</g> inline tag verbatim. Treat fuzzyMatches (even 100%) as strong contextual suggestions to verify.",
+    documentGuidance: composeTranslationGuidance(baseDocumentGuidance, resolvedStyle),
+    ...(resolvedStyle.hasAny ? { styleGuide: resolvedStyle } : {}),
     stats: extracted.stats,
     fullDocumentContext: ctx.text,
     contextTruncated: ctx.truncated,
