@@ -1,0 +1,313 @@
+{
+  "generatedAt": "2026-11-27T20:49:20.987Z",
+  "exp1_catalog120": {
+    "exp1_W_before": {
+      "wallS": 110.7,
+      "telemetry": {
+        "modelTurns": 1,
+        "inputTokens": 390871,
+        "cachedInputTokens": 371584,
+        "uncachedInputTokens": 19287,
+        "outputTokens": 4024,
+        "mcpCallsCount": 8,
+        "mcpCallsByTool": {
+          "scan": 1,
+          "prepare": 1,
+          "apply": 3,
+          "check": 2,
+          "report": 1
+        },
+        "shellCallsCount": 4,
+        "estApiUsd": 0.1814,
+        "lastMessage": "Translated all **120 keys** into Mexican Spanish in [locales/es-MX.json](/tmp/wraith-simp-eval-1795812560689/exp1_W_before/locales/es-MX.json) using Wraith MCP.\n\nWraith’s full deterministic check **passed with zero errors**. All keys, placeholders, required plural forms, and glossary terms passed validation. The only warnings were for 110 catalog keys the source scanner found no references to.\n\nSk",
+        "errors": []
+      },
+      "verification": {
+        "totalKeys": 120,
+        "translatedTopLevelFlatKeys": 120,
+        "checkOutcome": "INCONCLUSIVE",
+        "checkErrors": 0,
+        "checkWarnings": 0,
+        "countsByCode": {
+          "advisory_plural_category": 31
+        },
+        "contextNotesWritten": 120
+      }
+    },
+    "exp1_W_after": {
+      "wallS": 88.9,
+      "telemetry": {
+        "modelTurns": 1,
+        "inputTokens": 268651,
+        "cachedInputTokens": 234496,
+        "uncachedInputTokens": 34155,
+        "outputTokens": 3572,
+        "mcpCallsCount": 6,
+        "mcpCallsByTool": {
+          "prepare": 1,
+          "apply": 3,
+          "check": 2
+        },
+        "shellCallsCount": 4,
+        "estApiUsd": 0.1797,
+        "lastMessage": "Translated all 120 keys into Mexican Spanish in [locales/es-MX.json](/tmp/wraith-simp-eval-1795812560689/exp1_W_after/locales/es-MX.json).\n\nWraith’s deterministic checks **passed** with zero translation errors or warnings. The static source scan flagged 110 keys with no references in the sample app. Pseudo and Playwright layout checks were skipped as requested.",
+        "errors": []
+      },
+      "verification": {
+        "totalKeys": 120,
+        "translatedTopLevelFlatKeys": 120,
+        "checkOutcome": "INCONCLUSIVE",
+        "checkErrors": 0,
+        "checkWarnings": 0,
+        "countsByCode": {
+          "advisory_plural_category": 31
+        },
+        "contextNotesWritten": 0
+      }
+    }
+  },
+  "exp2_unpreparedApp": {
+    "exp2_A0_vanilla": {
+      "wallS": 87.8,
+      "telemetry": {
+        "modelTurns": 1,
+        "inputTokens": 179707,
+        "cachedInputTokens": 169344,
+        "uncachedInputTokens": 10363,
+        "outputTokens": 3334,
+        "mcpCallsCount": 0,
+        "mcpCallsByTool": {},
+        "shellCallsCount": 15,
+        "estApiUsd": 0.1016,
+        "lastMessage": "Localized both components into Mexican Spanish and Arabic. All visible text and the publish tooltip now come from next-intl catalogs. Counts use ICU plurals, “Acme Pulse” stays untranslated, and the “Open” action, “Open” status, and “Post” action have distinct translation keys.\n\nDates and balances use the active locale. I treated the original `$` as USD across all locales. Arabic renders right-to-",
+        "errors": []
+      },
+      "verification": {
+        "sourceKeys": 13,
+        "remainingHardcodedStrings": 0,
+        "remainingConcatenations": 0,
+        "remainingHardcodedFormatting": 0,
+        "rtlLayoutRisks": 0,
+        "checkOutcome": "PASS",
+        "checkErrors": 0,
+        "checkWarnings": 2,
+        "countsByCode": {
+          "glossary_inconsistency": 2,
+          "advisory_plural_category": 2
+        }
+      }
+    },
+    "exp2_W_before": {
+      "wallS": 67.5,
+      "telemetry": {
+        "modelTurns": 1,
+        "inputTokens": 237222,
+        "cachedInputTokens": 219904,
+        "uncachedInputTokens": 17318,
+        "outputTokens": 2463,
+        "mcpCallsCount": 8,
+        "mcpCallsByTool": {
+          "scan": 1,
+          "prepare": 2,
+          "apply": 2,
+          "check": 1,
+          "memory": 1,
+          "report": 1
+        },
+        "shellCallsCount": 4,
+        "estApiUsd": 0.1229,
+        "lastMessage": "Localized `BillingCard` and `FeedHeader` into Mexican Spanish and Arabic. All 13 messages are translated in both locales, including the publish tooltip. Both counts use ICU plurals, “Acme Pulse” stays unchanged, and the Arabic layout uses RTL direction and logical CSS classes.\n\n**Wraith verification passed** with zero errors. Its two warnings flag the requested distinction between the “Open” butto",
+        "errors": []
+      },
+      "verification": {
+        "sourceKeys": 13,
+        "remainingHardcodedStrings": 0,
+        "remainingConcatenations": 0,
+        "remainingHardcodedFormatting": 0,
+        "rtlLayoutRisks": 0,
+        "checkOutcome": "PASS",
+        "checkErrors": 0,
+        "checkWarnings": 2,
+        "countsByCode": {
+          "glossary_inconsistency": 2,
+          "advisory_plural_category": 2
+        }
+      }
+    },
+    "exp2_W_after": {
+      "wallS": 92.5,
+      "telemetry": {
+        "modelTurns": 1,
+        "inputTokens": 332695,
+        "cachedInputTokens": 317312,
+        "uncachedInputTokens": 15383,
+        "outputTokens": 3298,
+        "mcpCallsCount": 6,
+        "mcpCallsByTool": {
+          "scan": 1,
+          "prepare": 2,
+          "apply": 2,
+          "check": 1
+        },
+        "shellCallsCount": 9,
+        "estApiUsd": 0.1508,
+        "lastMessage": "Localized both components for English, Mexican Spanish, and Arabic. All 13 messages use `useTranslations()`, including the publish tooltip and pluralized counts. “Acme Pulse” stays unchanged. Dates and balances use the active locale, with the original dollar amounts treated as USD. Both components use logical CSS classes and set RTL direction for Arabic.\n\nWraith passed with zero errors. Its only t",
+        "errors": []
+      },
+      "verification": {
+        "sourceKeys": 13,
+        "remainingHardcodedStrings": 0,
+        "remainingConcatenations": 0,
+        "remainingHardcodedFormatting": 0,
+        "rtlLayoutRisks": 0,
+        "checkOutcome": "PASS",
+        "checkErrors": 0,
+        "checkWarnings": 2,
+        "countsByCode": {
+          "glossary_inconsistency": 2
+        }
+      }
+    }
+  },
+  "exp3_messyDocx": {
+    "exp3_A0_vanilla": {
+      "wallS": 100.6,
+      "telemetry": {
+        "modelTurns": 1,
+        "inputTokens": 192143,
+        "cachedInputTokens": 179072,
+        "uncachedInputTokens": 13071,
+        "outputTokens": 4322,
+        "mcpCallsCount": 0,
+        "mcpCallsByTool": {},
+        "shellCallsCount": 8,
+        "estApiUsd": 0.1207,
+        "lastMessage": "[Download the Mexican Spanish Word document](./docs/scientific-manuscript.es-MX.docx)\n\nI verified that only text content changed. The translation preserves the original formatting, fragmented runs, headers, footers, text boxes, hyperlinks, and XML structure. The source document remains unchanged.",
+        "errors": []
+      },
+      "verification": {
+        "exists": true,
+        "validZip": true,
+        "totalSegments": 41,
+        "translatedSegments": 37,
+        "unchangedEnglishSegments": 4,
+        "headerTranslated": true,
+        "hasHyperlinks": true,
+        "hasTextbox": true,
+        "docVerifyOutcome": "PASS",
+        "sourcePages": 2,
+        "targetPages": 2,
+        "docVerifyFindings": []
+      }
+    },
+    "exp3_W_before": {
+      "wallS": 158.3,
+      "telemetry": {
+        "modelTurns": 1,
+        "inputTokens": 486763,
+        "cachedInputTokens": 466176,
+        "uncachedInputTokens": 20587,
+        "outputTokens": 6045,
+        "mcpCallsCount": 4,
+        "mcpCallsByTool": {
+          "prepare": 2,
+          "apply": 2
+        },
+        "shellCallsCount": 9,
+        "estApiUsd": 0.2285,
+        "lastMessage": "[Download the Mexican Spanish Word document](</tmp/wraith-simp-eval-1795812560689/exp3_W_before/docs/scientific-manuscript.es-MX.docx>).\n\nI verified that only text content changed. All Word formatting, fragmented runs, headers, footers, text boxes, hyperlinks, and XML structure were preserved. The original document’s checksum is unchanged.",
+        "errors": []
+      },
+      "verification": {
+        "exists": true,
+        "validZip": true,
+        "totalSegments": 41,
+        "translatedSegments": 37,
+        "unchangedEnglishSegments": 4,
+        "headerTranslated": true,
+        "hasHyperlinks": true,
+        "hasTextbox": true,
+        "docVerifyOutcome": "PASS",
+        "sourcePages": 2,
+        "targetPages": 2,
+        "docVerifyFindings": []
+      }
+    },
+    "exp3_W_after": {
+      "wallS": 93.2,
+      "telemetry": {
+        "modelTurns": 1,
+        "inputTokens": 322251,
+        "cachedInputTokens": 303616,
+        "uncachedInputTokens": 18635,
+        "outputTokens": 3657,
+        "mcpCallsCount": 4,
+        "mcpCallsByTool": {
+          "prepare": 2,
+          "apply": 2
+        },
+        "shellCallsCount": 6,
+        "estApiUsd": 0.1591,
+        "lastMessage": "[Download the Mexican Spanish Word document](./docs/scientific-manuscript.es-MX.docx).\n\nI used Wraith’s prepare and apply tools and verified all 24 parts of the Word file. Only text content changed. Formatting, fragmented runs, headers, footers, text boxes, hyperlinks, and XML structure were preserved. The original file’s checksum is unchanged.",
+        "errors": []
+      },
+      "verification": {
+        "exists": true,
+        "validZip": true,
+        "totalSegments": 41,
+        "translatedSegments": 39,
+        "unchangedEnglishSegments": 2,
+        "headerTranslated": true,
+        "hasHyperlinks": true,
+        "hasTextbox": true,
+        "docVerifyOutcome": "PASS",
+        "sourcePages": 2,
+        "targetPages": 2,
+        "docVerifyFindings": []
+      }
+    }
+  },
+  "exp4_lifecycle": {
+    "diagnosticQe": {
+      "scopeRiskCount": 7,
+      "skippedLowRisk": 3,
+      "verdictsAccepted": 1,
+      "catalogUntouchedByQe": true,
+      "humanVerifiedProtected": true
+    },
+    "tmsRoundTrip": {
+      "exportedFiles": [
+        "tms12/source.xlf",
+        "tms12/es-MX.xlf",
+        "tms12/tm.tmx",
+        "tms12/glossary.tbx"
+      ],
+      "exportedFlaggedUnits": 1,
+      "importedApplied": 1,
+      "importedHumanVerified": 1,
+      "importedTmUpserted": 1,
+      "navSaveAfterImport": "Guardar"
+    },
+    "catalogMaintenanceV2": {
+      "totalSourceKeysV2": 12,
+      "pendingCountV2": 4,
+      "pendingReasons": {
+        "new.export": "missing",
+        "new.import": "missing",
+        "alerts.deleted": "stale_source",
+        "settings.hint": "stale_source"
+      },
+      "manualEditNotOverwritten": true
+    },
+    "docxMaintenanceV2": {
+      "v1Segments": 163,
+      "v1ApplyOk": true,
+      "v2TotalSegments": 164,
+      "v2TranslatedCarriedByContentIdentity": 163,
+      "v2PendingCount": 1,
+      "v2ApplyOk": false,
+      "humanEditPreservedDespiteParagraphShift": true,
+      "docVerifyOutcome": "PASS"
+    }
+  }
+}

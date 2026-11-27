@@ -1,0 +1,163 @@
+{
+  "generatedAt": "2026-11-27T15:05:00.982Z",
+  "model": "sonnet",
+  "finalCheck": {
+    "outcome": "PASS",
+    "errorCount": 0,
+    "countsByCode": {}
+  },
+  "documents": [
+    {
+      "file": "clinical-patient-letter.docx",
+      "target": "clinical-patient-letter.de.docx",
+      "format": "docx",
+      "exists": true,
+      "wallS": 18.7,
+      "costUsd": 0.1148,
+      "docVerify": {
+        "outcome": "PASS",
+        "format": "docx",
+        "sourceFile": "/home/colton/Projects/Wraith MCP/eval/work/big-one/docs-project/docs/clinical-patient-letter.docx",
+        "targetFile": "/home/colton/Projects/Wraith MCP/eval/work/big-one/docs-project/docs/clinical-patient-letter.de.docx",
+        "libreOfficeAvailable": true,
+        "sourcePages": 1,
+        "targetPages": 1,
+        "findings": []
+      },
+      "subtitleAudit": null,
+      "renders": {
+        "sourcePngs": [
+          "/home/colton/Projects/Wraith MCP/eval/results/big-one-renders/clinical-patient-letter-docx-en-1.png"
+        ],
+        "targetPngs": [
+          "/home/colton/Projects/Wraith MCP/eval/results/big-one-renders/clinical-patient-letter-docx-de-1.png"
+        ]
+      }
+    },
+    {
+      "file": "northstar-policy.docx",
+      "target": "northstar-policy.de.docx",
+      "format": "docx",
+      "exists": true,
+      "wallS": 26.1,
+      "costUsd": 0.1512,
+      "docVerify": {
+        "outcome": "PASS",
+        "format": "docx",
+        "sourceFile": "/home/colton/Projects/Wraith MCP/eval/work/big-one/docs-project/docs/northstar-policy.docx",
+        "targetFile": "/home/colton/Projects/Wraith MCP/eval/work/big-one/docs-project/docs/northstar-policy.de.docx",
+        "libreOfficeAvailable": true,
+        "sourcePages": 1,
+        "targetPages": 1,
+        "findings": []
+      },
+      "subtitleAudit": null,
+      "renders": {
+        "sourcePngs": [
+          "/home/colton/Projects/Wraith MCP/eval/results/big-one-renders/northstar-policy-docx-en-1.png"
+        ],
+        "targetPngs": [
+          "/home/colton/Projects/Wraith MCP/eval/results/big-one-renders/northstar-policy-docx-de-1.png"
+        ]
+      }
+    },
+    {
+      "file": "product-launch-deck.pptx",
+      "target": "product-launch-deck.de.pptx",
+      "format": "pptx",
+      "exists": true,
+      "wallS": 12.2,
+      "costUsd": 0.0915,
+      "docVerify": {
+        "outcome": "PASS",
+        "format": "pptx",
+        "sourceFile": "/home/colton/Projects/Wraith MCP/eval/work/big-one/docs-project/docs/product-launch-deck.pptx",
+        "targetFile": "/home/colton/Projects/Wraith MCP/eval/work/big-one/docs-project/docs/product-launch-deck.de.pptx",
+        "libreOfficeAvailable": true,
+        "sourcePages": 3,
+        "targetPages": 3,
+        "findings": []
+      },
+      "subtitleAudit": null,
+      "renders": {
+        "sourcePngs": [
+          "/home/colton/Projects/Wraith MCP/eval/results/big-one-renders/product-launch-deck-pptx-en-1.png",
+          "/home/colton/Projects/Wraith MCP/eval/results/big-one-renders/product-launch-deck-pptx-en-2.png",
+          "/home/colton/Projects/Wraith MCP/eval/results/big-one-renders/product-launch-deck-pptx-en-3.png"
+        ],
+        "targetPngs": [
+          "/home/colton/Projects/Wraith MCP/eval/results/big-one-renders/product-launch-deck-pptx-de-1.png",
+          "/home/colton/Projects/Wraith MCP/eval/results/big-one-renders/product-launch-deck-pptx-de-2.png",
+          "/home/colton/Projects/Wraith MCP/eval/results/big-one-renders/product-launch-deck-pptx-de-3.png"
+        ]
+      }
+    },
+    {
+      "file": "q4-financial-model.xlsx",
+      "target": "q4-financial-model.de.xlsx",
+      "format": "xlsx",
+      "exists": true,
+      "wallS": 11.4,
+      "costUsd": 0.0874,
+      "docVerify": {
+        "outcome": "PASS",
+        "format": "xlsx",
+        "sourceFile": "/home/colton/Projects/Wraith MCP/eval/work/big-one/docs-project/docs/q4-financial-model.xlsx",
+        "targetFile": "/home/colton/Projects/Wraith MCP/eval/work/big-one/docs-project/docs/q4-financial-model.de.xlsx",
+        "libreOfficeAvailable": true,
+        "sourcePages": 1,
+        "targetPages": 1,
+        "findings": []
+      },
+      "subtitleAudit": null,
+      "renders": {
+        "sourcePngs": [
+          "/home/colton/Projects/Wraith MCP/eval/results/big-one-renders/q4-financial-model-xlsx-en-1.png"
+        ],
+        "targetPngs": [
+          "/home/colton/Projects/Wraith MCP/eval/results/big-one-renders/q4-financial-model-xlsx-de-1.png"
+        ]
+      }
+    },
+    {
+      "file": "product-demo.vtt",
+      "target": "product-demo.de.vtt",
+      "format": "vtt",
+      "exists": true,
+      "wallS": 14.5,
+      "costUsd": 0.0936,
+      "docVerify": null,
+      "subtitleAudit": {
+        "cuesPreserved": true,
+        "cueCount": 5,
+        "maxCpsObserved": 19.6,
+        "maxLinesObserved": 1,
+        "timestampsIdentical": true
+      },
+      "renders": {
+        "sourcePngs": [],
+        "targetPngs": []
+      }
+    },
+    {
+      "file": "webinar-clip.srt",
+      "target": "webinar-clip.de.srt",
+      "format": "srt",
+      "exists": true,
+      "wallS": 10.8,
+      "costUsd": 0.0825,
+      "docVerify": null,
+      "subtitleAudit": {
+        "cuesPreserved": true,
+        "cueCount": 3,
+        "maxCpsObserved": 16.4,
+        "maxLinesObserved": 1,
+        "timestampsIdentical": true
+      },
+      "renders": {
+        "sourcePngs": [],
+        "targetPngs": []
+      }
+    }
+  ]
+}

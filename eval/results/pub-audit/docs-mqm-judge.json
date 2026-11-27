@@ -1,0 +1,95 @@
+{
+  "updatedAt": "2026-11-27T16:46:21.335Z",
+  "results": [
+    {
+      "id": "northstar-policy.docx::de",
+      "locale": "de",
+      "segmentCount": 24,
+      "mapping": {
+        "System_A": "DeepL",
+        "System_B": "Wraith+Codex"
+      },
+      "DeepL": {
+        "mqmScore": 79.17,
+        "critical": 1,
+        "major": 4,
+        "minor": 5,
+        "terminologyErrors": 1,
+        "registerErrors": 0,
+        "topFindings": [
+          "CRITICAL (document-p18): The tracked-change insertion 'formally' is translated as 'unteroffiziell' ('unofficially'). This reverses the meaning of a legal approval statement.",
+          "MAJOR (document-p18): <g id=\"2\"> ends with a space and <g id=\"4\"> starts with one ('unteroffiziell </g><x/><g> vierteljährliche'). This produces a double space around the tracked-change marker.",
+          "MAJOR terminology (document-p4): 'Workspace' is left in English instead of the required glossary term 'Arbeitsbereich'.",
+          "MAJOR mistranslation (footer1-p22): 'Confidential policy summary' becomes 'Zusammenfassung der Vertraulichkeitsrichtlinie' ('summary of the confidentiality policy'), which changes what the footer says.",
+          "MAJOR broken spacing/field (footer1-p22): The space after 'Seite' is missing, so the page-number field runs straight into the word ('Seite1').",
+          "MINOR (document-p3): 'Grace Periods' is translated as 'Zahlungsfristen' (payment terms), while footnotes-p23 uses 'Nachfrist'. The term is inaccurate and inconsistent.",
+          "MINOR (document-p14): The plan name 'Enterprise' is translated as 'Unternehmensarbeitsbereich'. This is inconsistent with 'Starter-Arbeitsbereich'.",
+          "MINOR (document-p2): Spaces are moved inside the formatted brand runs ('Northstar ', 'Northstar Pay '), which can carry run formatting onto the whitespace.",
+          "MINOR (comments-p21 / header1-p24): The phrasing is awkward ('Zeitplan „erster Werktag“'), 'confirm' is weakened to 'überprüfen', and 'Richtlinien' is plural where the source is singular."
+        ]
+      },
+      "Wraith+Codex": {
+        "mqmScore": 98.33,
+        "critical": 0,
+        "major": 0,
+        "minor": 4,
+        "terminologyErrors": 0,
+        "registerErrors": 0,
+        "topFindings": [
+          "The tracked-change insertion 'formally' is correctly rendered as 'förmlich' and placed in the right position for German verb-final syntax. Tag integrity and spacing are preserved.",
+          "All glossary terms (Arbeitsbereich, Rechnung) and DNT brands (Northstar, Northstar Pay, LedgerVault) are handled correctly. The formal 'Sie' register is used throughout.",
+          "MINOR (document-p20): One source sentence is split into two. Acceptable, but it departs from the source structure.",
+          "MINOR (comments-p21): Adds 'des Abrechnungszeitraums', which is not in the source.",
+          "MINOR (document-p12 / document-p17): The phrasing is awkward ('Aktivitäten der letzten 90 Tage durchsuchbar') or wordy ('Änderungen an den rechtlichen Bestimmungen')."
+        ]
+      },
+      "winner": "Wraith+Codex",
+      "rationale": "System_A has a critical meaning inversion in the legally sensitive tracked-change segment: it renders 'formally' as 'unofficially'. It also breaks the Workspace=Arbeitsbereich glossary rule, mistranslates the confidential footer, and has spacing defects around the tracked-change marker and the page field. System_B is faithful, follows the glossary and DNT list, keeps the formal register, preserves tags and spacing, and places 'förmlich' correctly. Its only issues are minor stylistic liberties.",
+      "judgeCostUsd": 0.1699436
+    },
+    {
+      "id": "clinical-patient-letter.docx::es-MX",
+      "locale": "es-MX",
+      "segmentCount": 14,
+      "mapping": {
+        "System_A": "Wraith+Codex",
+        "System_B": "DeepL"
+      },
+      "Wraith+Codex": {
+        "mqmScore": 99.29,
+        "critical": 0,
+        "major": 0,
+        "minor": 1,
+        "terminologyErrors": 0,
+        "registerErrors": 0,
+        "topFindings": [
+          "p1: 'Resumen de alta' leaves out 'del paciente' (minor omission; still acceptable for a heading).",
+          "Uses formal 'usted' throughout (Lea, No deje, Acuda, Tome, Mídase, Evite, Su cita, lleve) as required.",
+          "All required Mexican terms are used: 'tableta', 'jugo de toronja', 'médico tratante', 'presión arterial'.",
+          "The DNT brand names CardioPulse and LedgerVault are kept, and all <g> tags are intact.",
+          "p13: 'dentro de los 14 días posteriores al alta' keeps the 'within 14 days' meaning."
+        ]
+      },
+      "DeepL": {
+        "mqmScore": 47.14,
+        "critical": 0,
+        "major": 14,
+        "minor": 4,
+        "terminologyErrors": 8,
+        "registerErrors": 7,
+        "topFindings": [
+          "Wrong register: informal 'tú' in 7 segments (p2 'Lee'; p3 'dejes/te/tu/Acude/sientes'; p8/p11 'Tómate'; p9 'Controla'; p12 'Evita'; p13 'Tu/Trae/tu') where formal 'usted' was required (7 major).",
+          "p12: 'zumo de pomelo' is Peninsular Spanish and breaks the required 'jugo de toronja'. This is a drug-food interaction warning, and Mexican patients may not recognize the term, which is a safety risk (major).",
+          "p3: 'médico de cabecera' (GP/family doctor) mistranslates 'attending physician'; the required term is 'médico tratante'. This could send patients to the wrong doctor before changing their medication (major).",
+          "p3/p9: 'tensión arterial' is Peninsular Spanish; the required term is 'presión arterial' (2 major).",
+          "p8/p11: 'comprimido' replaces the required 'tableta' (2 major).",
+          "p13: 'programada para dentro de 14 días tras el alta' changes 'within 14 days' to 'in 14 days' (mistranslation, major).",
+          "Minor Peninsular wording: 'Medicación' (p3, p4) instead of 'medicamento'; 'te han recetado' uses the Spain-style compound past; 'Trae' is used where 'lleve' is meant."
+        ]
+      },
+      "winner": "Wraith+Codex",
+      "rationale": "System_A meets every stated requirement: formal 'usted', Mexican terms (tableta, jugo de toronja, médico tratante, presión arterial), brand names left untranslated, and tags intact. Its only flaw is a minor heading omission. System_B uses informal 'tú' throughout and Peninsular Spanish (tensión arterial, comprimido, zumo de pomelo, médico de cabecera, medicación), which breaks the es-MX glossary. Some of these errors affect safety in a clinical letter: the grapefruit interaction warning and who the patient should consult before stopping blood-pressure medication. It also gets the follow-up timeframe wrong. System_A wins decisively: 99.29 to 47.14.",
+      "judgeCostUsd": 0.14651160000000002
+    }
+  ]
+}

@@ -1,0 +1,422 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Wraith MCP — Visual & Linguistic Inspection Report</title>
+<style>
+  :root { color-scheme: dark; }
+  body { font-family: system-ui, -apple-system, sans-serif; background: #0f1117; color: #e6edf3; margin: 0; padding: 24px 32px; line-height: 1.5; }
+  h1, h2, h3 { margin-top: 0; }
+  a { color: #58a6ff; }
+  nav { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 24px; padding: 12px; background: #161b22; border-radius: 8px; border: 1px solid #30363d; }
+  .card { background: #161b22; border: 1px solid #30363d; border-radius: 10px; padding: 20px; margin-bottom: 28px; }
+  .badge { font-size: 12px; font-weight: 500; background: #21262d; border: 1px solid #30363d; padding: 2px 8px; border-radius: 999px; margin-left: 8px; color: #8b949e; }
+  .metrics-row { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }
+  .pill { padding: 6px 10px; border-radius: 6px; font-size: 13px; font-weight: 600; }
+  .pill.ok { background: #122d1e; color: #3fb950; border: 1px solid #238636; }
+  .pill.warn { background: #2d2212; color: #d29922; border: 1px solid #9e6a03; }
+  .pill.bad { background: #311618; color: #f85149; border: 1px solid #da3633; }
+  .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 16px; }
+  figure { margin: 0; background: #0d1117; border: 1px solid #30363d; border-radius: 8px; padding: 10px; }
+  figcaption { font-size: 13px; font-weight: 600; margin-bottom: 8px; color: #c9d1d9; }
+  img { width: 100%; height: auto; border-radius: 4px; border: 1px solid #21262d; display: block; }
+  .table-wrap { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th, td { border: 1px solid #30363d; padding: 8px 10px; text-align: left; vertical-align: top; }
+  th { background: #21262d; }
+  td.nmt { background: #1e1315; }
+  td.wraith { background: #111f17; }
+  code { background: #21262d; padding: 1px 5px; border-radius: 4px; font-size: 12px; }
+  details { margin: 12px 0 18px; }
+  summary { cursor: pointer; font-weight: 600; color: #58a6ff; margin-bottom: 10px; }
+</style>
+</head>
+<body>
+  <h1>Wraith MCP — Visual &amp; Linguistic Inspection Report</h1>
+  <p>Direct visual &amp; side-by-side string inspection across DeepL NMT, Vanilla Codex (<code>B0</code>), Repo Codex (<code>A0</code>), and Wraith + Codex (<code>W-post</code>). Click any image to open full-size.</p>
+  <nav>
+    <a href="#web-de">German (de)</a>
+    <a href="#web-zh-Hans">Chinese (zh-Hans)</a>
+    <a href="#web-es-MX">Spanish (es-MX)</a>
+    <a href="#web-ar">Arabic (ar)</a>
+    <a href="#qe-diffs">All 4 QE Edits</a>
+    <a href="#docx">DOCX Comparisons</a>
+    <a href="#other-docs">PPTX &amp; XLSX Renders</a>
+  </nav>
+
+  
+    <section class="card" id="web-de">
+      <h2>Web UI Comparison: German (de) <span class="badge">nextjs-commerce (Synthetic Fixture, 63 keys)</span></h2>
+      <div class="metrics-row">
+        <div class="pill bad">DeepL NMT: MQM 98.10 · 0 crit / 21 maj · 16 ctx missed</div>
+        <div class="pill warn">Vanilla Codex (B0): MQM 99.86 · 0 crit / 0 maj · 3 term err</div>
+        <div class="pill warn">Repo Codex (A0): MQM 99.86 · 0 crit / 0 maj</div>
+        <div class="pill ok">Wraith + Codex (W-post): MQM 99.78 · 0 crit · 0 term err · 0 layout defects</div>
+      </div>
+
+      <h3>Mobile Viewport (375px) — DeepL NMT vs. Vanilla Codex (B0) vs. Wraith + Codex (W-post)</h3>
+      <div class="grid-3">
+        <figure>
+          <figcaption>DeepL NMT (375w)</figcaption>
+          <a href="screenshots/web-de-NMT-375w.png" target="_blank"><img src="screenshots/web-de-NMT-375w.png" alt="de NMT 375w"></a>
+        </figure>
+        <figure>
+          <figcaption>Vanilla Codex B0 — No Code/Wraith (375w)</figcaption>
+          <a href="screenshots/web-de-B0-375w.png" target="_blank"><img src="screenshots/web-de-B0-375w.png" alt="de B0 375w"></a>
+        </figure>
+        <figure>
+          <figcaption>Wraith + Codex W-post (375w)</figcaption>
+          <a href="screenshots/web-de-W-post-375w.png" target="_blank"><img src="screenshots/web-de-W-post-375w.png" alt="de W-post 375w"></a>
+        </figure>
+      </div>
+
+      <details>
+        <summary>Desktop Viewport (1280px) — Click to expand</summary>
+        <div class="grid-3">
+          <figure><figcaption>DeepL NMT (1280w)</figcaption><a href="screenshots/web-de-NMT-1280w.png" target="_blank"><img src="screenshots/web-de-NMT-1280w.png"></a></figure>
+          <figure><figcaption>Vanilla Codex B0 (1280w)</figcaption><a href="screenshots/web-de-B0-1280w.png" target="_blank"><img src="screenshots/web-de-B0-1280w.png"></a></figure>
+          <figure><figcaption>Wraith + Codex W-post (1280w)</figcaption><a href="screenshots/web-de-W-post-1280w.png" target="_blank"><img src="screenshots/web-de-W-post-1280w.png"></a></figure>
+        </div>
+      </details>
+
+      <h3>Spotlight String Diffs (de)</h3>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Key</th><th>Source (en)</th><th>DeepL NMT</th><th>Vanilla Codex (B0)</th><th>Repo Codex (A0)</th><th>Wraith (W-post)</th></tr></thead>
+          <tbody><tr>
+          <td><code>hours.openBadge</code></td>
+          <td>Open</td>
+          <td class="nmt">Öffnen</td>
+          <td>Geöffnet</td>
+          <td>Geöffnet</td>
+          <td class="wraith">Geöffnet</td>
+        </tr>
+<tr>
+          <td><code>storage.freeTag</code></td>
+          <td>Free</td>
+          <td class="nmt">Kostenlos</td>
+          <td>Frei</td>
+          <td>frei</td>
+          <td class="wraith">GB frei</td>
+        </tr>
+<tr>
+          <td><code>rich.trialEnd</code></td>
+          <td>Your trial ends in &lt;strong&gt;{days} days&lt;/strong&gt;; &lt;link&gt;upgrade now&lt;/link&gt; to keep PulseGrid active.</td>
+          <td class="nmt">Ihre Testphase endet in &lt;strong&gt;{days} Tagen&lt;/strong&gt;; &lt;link&gt;führen Sie jetzt ein Upgrade durch,&lt;/link&gt; um PulseGrid weiterhin nutzen zu können.</td>
+          <td>Ihre Testphase endet in &lt;strong&gt;{days} Tagen&lt;/strong&gt;. &lt;link&gt;Jetzt upgraden&lt;/link&gt;, um PulseGrid weiterhin zu nutzen.</td>
+          <td>Verbleibende Tage in Ihrer Testphase: &lt;strong&gt;{days}&lt;/strong&gt;. &lt;link&gt;Jetzt upgraden&lt;/link&gt;, um PulseGrid weiterhin zu nutzen.</td>
+          <td class="wraith">Ihre Testphase läuft noch &lt;strong&gt;{days, plural, one {# Tag} other {# Tage}}&lt;/strong&gt;. &lt;link&gt;Steigen Sie jetzt auf einen höheren Tarif um&lt;/link&gt;, um PulseGrid weiter zu nutzen.</td>
+        </tr>
+<tr>
+          <td><code>general.emptyInbox</code></td>
+          <td>You are all caught up. New customer messages and payout notices will appear here.</td>
+          <td class="nmt">Sie sind nun auf dem neuesten Stand. Neue Kundennachrichten und Auszahlungsbenachrichtigungen werden hier angezeigt.</td>
+          <td>Sie sind auf dem neuesten Stand. Neue Kundennachrichten und Mitteilungen zu Auszahlungen erscheinen hier.</td>
+          <td>Sie sind auf dem neuesten Stand. Neue Kundennachrichten und Mitteilungen zu Auszahlungen erscheinen hier.</td>
+          <td class="wraith">Sie sind auf dem neuesten Stand. Neue Kundennachrichten und Mitteilungen zu Auszahlungen erscheinen hier.</td>
+        </tr></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="card" id="web-zh-Hans">
+      <h2>Web UI Comparison: Simplified Chinese (zh-Hans) <span class="badge">nextjs-commerce (Synthetic Fixture, 63 keys)</span></h2>
+      <div class="metrics-row">
+        <div class="pill bad">DeepL NMT: MQM 97.78 · 3 crit / 18 maj · 12 ctx missed</div>
+        <div class="pill warn">Vanilla Codex (B0): MQM 99.86 · 0 crit / 1 maj · 0 term err</div>
+        <div class="pill warn">Repo Codex (A0): MQM 99.84 · 0 crit / 1 maj</div>
+        <div class="pill ok">Wraith + Codex (W-post): MQM 99.87 · 0 crit · 0 term err · 0 layout defects</div>
+      </div>
+
+      <h3>Mobile Viewport (375px) — DeepL NMT vs. Vanilla Codex (B0) vs. Wraith + Codex (W-post)</h3>
+      <div class="grid-3">
+        <figure>
+          <figcaption>DeepL NMT (375w)</figcaption>
+          <a href="screenshots/web-zh-Hans-NMT-375w.png" target="_blank"><img src="screenshots/web-zh-Hans-NMT-375w.png" alt="zh-Hans NMT 375w"></a>
+        </figure>
+        <figure>
+          <figcaption>Vanilla Codex B0 — No Code/Wraith (375w)</figcaption>
+          <a href="screenshots/web-zh-Hans-B0-375w.png" target="_blank"><img src="screenshots/web-zh-Hans-B0-375w.png" alt="zh-Hans B0 375w"></a>
+        </figure>
+        <figure>
+          <figcaption>Wraith + Codex W-post (375w)</figcaption>
+          <a href="screenshots/web-zh-Hans-W-post-375w.png" target="_blank"><img src="screenshots/web-zh-Hans-W-post-375w.png" alt="zh-Hans W-post 375w"></a>
+        </figure>
+      </div>
+
+      <details>
+        <summary>Desktop Viewport (1280px) — Click to expand</summary>
+        <div class="grid-3">
+          <figure><figcaption>DeepL NMT (1280w)</figcaption><a href="screenshots/web-zh-Hans-NMT-1280w.png" target="_blank"><img src="screenshots/web-zh-Hans-NMT-1280w.png"></a></figure>
+          <figure><figcaption>Vanilla Codex B0 (1280w)</figcaption><a href="screenshots/web-zh-Hans-B0-1280w.png" target="_blank"><img src="screenshots/web-zh-Hans-B0-1280w.png"></a></figure>
+          <figure><figcaption>Wraith + Codex W-post (1280w)</figcaption><a href="screenshots/web-zh-Hans-W-post-1280w.png" target="_blank"><img src="screenshots/web-zh-Hans-W-post-1280w.png"></a></figure>
+        </div>
+      </details>
+
+      <h3>Spotlight String Diffs (zh-Hans)</h3>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Key</th><th>Source (en)</th><th>DeepL NMT</th><th>Vanilla Codex (B0)</th><th>Repo Codex (A0)</th><th>Wraith (W-post)</th></tr></thead>
+          <tbody><tr>
+          <td><code>hours.openBadge</code></td>
+          <td>Open</td>
+          <td class="nmt">打开</td>
+          <td>营业中</td>
+          <td>营业中</td>
+          <td class="wraith">营业中</td>
+        </tr>
+<tr>
+          <td><code>storage.freeTag</code></td>
+          <td>Free</td>
+          <td class="nmt">免费</td>
+          <td>可用空间</td>
+          <td>GB 可用</td>
+          <td class="wraith">GB 可用</td>
+        </tr>
+<tr>
+          <td><code>rich.trialEnd</code></td>
+          <td>Your trial ends in &lt;strong&gt;{days} days&lt;/strong&gt;; &lt;link&gt;upgrade now&lt;/link&gt; to keep PulseGrid active.</td>
+          <td class="nmt">您的试用期将在&lt;strong&gt;{days}天&lt;/strong&gt;后结束；&lt;link&gt;请立即升级&lt;/link&gt;以保持PulseGrid的正常运行。</td>
+          <td>您的试用期将在 &lt;strong&gt;{days} 天&lt;/strong&gt;后结束。&lt;link&gt;立即升级&lt;/link&gt;即可继续使用 PulseGrid。</td>
+          <td>您的试用期将在 &lt;strong&gt;{days} 天&lt;/strong&gt;后结束。&lt;link&gt;立即升级&lt;/link&gt;即可继续使用 PulseGrid。</td>
+          <td class="wraith">试用期将在 &lt;strong&gt;{days} 天&lt;/strong&gt;后结束。&lt;link&gt;立即升级&lt;/link&gt;即可继续使用 PulseGrid。</td>
+        </tr>
+<tr>
+          <td><code>general.emptyInbox</code></td>
+          <td>You are all caught up. New customer messages and payout notices will appear here.</td>
+          <td class="nmt">您已查看完所有内容。新的客户消息和付款通知将显示在此处。</td>
+          <td>所有消息均已读完。新的客户消息和结算款通知会显示在这里。</td>
+          <td>您已读完所有消息。新的客户消息和打款通知会显示在这里。</td>
+          <td class="wraith">消息已全部看完。新的客户消息和结算打款通知会显示在这里。</td>
+        </tr></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="card" id="web-es-MX">
+      <h2>Web UI Comparison: Mexican Spanish (es-MX) <span class="badge">nextjs-commerce (Synthetic Fixture, 63 keys)</span></h2>
+      <div class="metrics-row">
+        <div class="pill bad">DeepL NMT: MQM 97.33 · 9 crit / 11 maj · 14 ctx missed</div>
+        <div class="pill warn">Vanilla Codex (B0): MQM 99.98 · 0 crit / 0 maj · 0 term err</div>
+        <div class="pill warn">Repo Codex (A0): MQM 99.86 · 0 crit / 1 maj</div>
+        <div class="pill ok">Wraith + Codex (W-post): MQM 99.84 · 0 crit · 0 term err · 0 layout defects</div>
+      </div>
+
+      <h3>Mobile Viewport (375px) — DeepL NMT vs. Vanilla Codex (B0) vs. Wraith + Codex (W-post)</h3>
+      <div class="grid-3">
+        <figure>
+          <figcaption>DeepL NMT (375w)</figcaption>
+          <a href="screenshots/web-es-MX-NMT-375w.png" target="_blank"><img src="screenshots/web-es-MX-NMT-375w.png" alt="es-MX NMT 375w"></a>
+        </figure>
+        <figure>
+          <figcaption>Vanilla Codex B0 — No Code/Wraith (375w)</figcaption>
+          <a href="screenshots/web-es-MX-B0-375w.png" target="_blank"><img src="screenshots/web-es-MX-B0-375w.png" alt="es-MX B0 375w"></a>
+        </figure>
+        <figure>
+          <figcaption>Wraith + Codex W-post (375w)</figcaption>
+          <a href="screenshots/web-es-MX-W-post-375w.png" target="_blank"><img src="screenshots/web-es-MX-W-post-375w.png" alt="es-MX W-post 375w"></a>
+        </figure>
+      </div>
+
+      <details>
+        <summary>Desktop Viewport (1280px) — Click to expand</summary>
+        <div class="grid-3">
+          <figure><figcaption>DeepL NMT (1280w)</figcaption><a href="screenshots/web-es-MX-NMT-1280w.png" target="_blank"><img src="screenshots/web-es-MX-NMT-1280w.png"></a></figure>
+          <figure><figcaption>Vanilla Codex B0 (1280w)</figcaption><a href="screenshots/web-es-MX-B0-1280w.png" target="_blank"><img src="screenshots/web-es-MX-B0-1280w.png"></a></figure>
+          <figure><figcaption>Wraith + Codex W-post (1280w)</figcaption><a href="screenshots/web-es-MX-W-post-1280w.png" target="_blank"><img src="screenshots/web-es-MX-W-post-1280w.png"></a></figure>
+        </div>
+      </details>
+
+      <h3>Spotlight String Diffs (es-MX)</h3>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Key</th><th>Source (en)</th><th>DeepL NMT</th><th>Vanilla Codex (B0)</th><th>Repo Codex (A0)</th><th>Wraith (W-post)</th></tr></thead>
+          <tbody><tr>
+          <td><code>hours.openBadge</code></td>
+          <td>Open</td>
+          <td class="nmt">Abrir</td>
+          <td>Abierto</td>
+          <td>Abierto</td>
+          <td class="wraith">Abierto</td>
+        </tr>
+<tr>
+          <td><code>storage.freeTag</code></td>
+          <td>Free</td>
+          <td class="nmt">Gratis</td>
+          <td>Libre</td>
+          <td>GB libres</td>
+          <td class="wraith">GB sin usar</td>
+        </tr>
+<tr>
+          <td><code>rich.trialEnd</code></td>
+          <td>Your trial ends in &lt;strong&gt;{days} days&lt;/strong&gt;; &lt;link&gt;upgrade now&lt;/link&gt; to keep PulseGrid active.</td>
+          <td class="nmt">Tu periodo de prueba termina en &lt;strong&gt;{days} días&lt;/strong&gt;; &lt;link&gt;actualiza ahora&lt;/link&gt; para mantener PulseGrid activo.</td>
+          <td>Tu periodo de prueba termina en &lt;strong&gt;{days} días&lt;/strong&gt;. Para seguir usando PulseGrid, &lt;link&gt;mejora tu plan ahora&lt;/link&gt;.</td>
+          <td>Tu periodo de prueba termina en &lt;strong&gt;{days} días&lt;/strong&gt;. &lt;link&gt;Mejora tu plan ahora&lt;/link&gt; para seguir usando PulseGrid.</td>
+          <td class="wraith">Tu prueba termina en &lt;strong&gt;{days, plural, one {# día} other {# días}}&lt;/strong&gt;. &lt;link&gt;Mejora tu plan ahora&lt;/link&gt; para seguir usando PulseGrid.</td>
+        </tr>
+<tr>
+          <td><code>general.emptyInbox</code></td>
+          <td>You are all caught up. New customer messages and payout notices will appear here.</td>
+          <td class="nmt">Ya estás al día. Aquí aparecerán los mensajes de los nuevos clientes y los avisos de pago.</td>
+          <td>Estás al día. Aquí aparecerán los nuevos mensajes de tus clientes y los avisos de depósitos.</td>
+          <td>Estás al día. Aquí aparecerán los nuevos mensajes de clientes y los avisos de depósitos.</td>
+          <td class="wraith">Estás al día. Aquí verás los nuevos mensajes de tus clientes y los avisos de depósitos.</td>
+        </tr></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="card" id="web-ar">
+      <h2>Web UI Comparison: Arabic (ar — RTL) <span class="badge">nextjs-commerce (Synthetic Fixture, 63 keys)</span></h2>
+      <div class="metrics-row">
+        <div class="pill bad">DeepL NMT: MQM 96.68 · 9 crit / 19 maj · 17 ctx missed</div>
+        <div class="pill warn">Vanilla Codex (B0): MQM 99.75 · 0 crit / 1 maj · 0 term err</div>
+        <div class="pill warn">Repo Codex (A0): MQM 99.73 · 0 crit / 1 maj</div>
+        <div class="pill ok">Wraith + Codex (W-post): MQM 99.87 · 0 crit · 0 term err · 0 layout defects</div>
+      </div>
+
+      <h3>Mobile Viewport (375px) — DeepL NMT vs. Vanilla Codex (B0) vs. Wraith + Codex (W-post)</h3>
+      <div class="grid-3">
+        <figure>
+          <figcaption>DeepL NMT (375w)</figcaption>
+          <a href="screenshots/web-ar-NMT-375w.png" target="_blank"><img src="screenshots/web-ar-NMT-375w.png" alt="ar NMT 375w"></a>
+        </figure>
+        <figure>
+          <figcaption>Vanilla Codex B0 — No Code/Wraith (375w)</figcaption>
+          <a href="screenshots/web-ar-B0-375w.png" target="_blank"><img src="screenshots/web-ar-B0-375w.png" alt="ar B0 375w"></a>
+        </figure>
+        <figure>
+          <figcaption>Wraith + Codex W-post (375w)</figcaption>
+          <a href="screenshots/web-ar-W-post-375w.png" target="_blank"><img src="screenshots/web-ar-W-post-375w.png" alt="ar W-post 375w"></a>
+        </figure>
+      </div>
+
+      <details>
+        <summary>Desktop Viewport (1280px) — Click to expand</summary>
+        <div class="grid-3">
+          <figure><figcaption>DeepL NMT (1280w)</figcaption><a href="screenshots/web-ar-NMT-1280w.png" target="_blank"><img src="screenshots/web-ar-NMT-1280w.png"></a></figure>
+          <figure><figcaption>Vanilla Codex B0 (1280w)</figcaption><a href="screenshots/web-ar-B0-1280w.png" target="_blank"><img src="screenshots/web-ar-B0-1280w.png"></a></figure>
+          <figure><figcaption>Wraith + Codex W-post (1280w)</figcaption><a href="screenshots/web-ar-W-post-1280w.png" target="_blank"><img src="screenshots/web-ar-W-post-1280w.png"></a></figure>
+        </div>
+      </details>
+
+      <h3>Spotlight String Diffs (ar)</h3>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Key</th><th>Source (en)</th><th>DeepL NMT</th><th>Vanilla Codex (B0)</th><th>Repo Codex (A0)</th><th>Wraith (W-post)</th></tr></thead>
+          <tbody><tr>
+          <td><code>hours.openBadge</code></td>
+          <td>Open</td>
+          <td class="nmt">فتح</td>
+          <td>مفتوح</td>
+          <td>مفتوح</td>
+          <td class="wraith">مفتوح</td>
+        </tr>
+<tr>
+          <td><code>storage.freeTag</code></td>
+          <td>Free</td>
+          <td class="nmt">مجاني</td>
+          <td>مساحة متاحة</td>
+          <td>غيغابايت متاحة</td>
+          <td class="wraith">غيغابايت من المساحة المتاحة</td>
+        </tr>
+<tr>
+          <td><code>rich.trialEnd</code></td>
+          <td>Your trial ends in &lt;strong&gt;{days} days&lt;/strong&gt;; &lt;link&gt;upgrade now&lt;/link&gt; to keep PulseGrid active.</td>
+          <td class="nmt">ستنتهي فترة الإصدار التجريبي الخاصة بك بعد &lt;strong&gt;{days} يومًا&lt;/strong&gt;؛ &lt;link&gt;قم بالترقية الآن&lt;/link&gt; للحفاظ على PulseGrid نشطًا.</td>
+          <td>تنتهي فترتك التجريبية خلال &lt;strong&gt;{days} يومًا&lt;/strong&gt;؛ &lt;link&gt;بادر بالترقية الآن&lt;/link&gt; لإبقاء PulseGrid نشطًا.</td>
+          <td>الأيام المتبقية من فترتك التجريبية: &lt;strong&gt;{days}&lt;/strong&gt;. &lt;link&gt;قم بالترقية الآن&lt;/link&gt; لمواصلة استخدام PulseGrid.</td>
+          <td class="wraith">تنتهي فترتك التجريبية &lt;strong&gt;{days, plural, zero {اليوم} one {بعد يوم واحد} two {بعد يومين} few {بعد # أيام} many {بعد # يومًا} other {بعد # يوم}}&lt;/strong&gt;. &lt;link&gt;رقِّ اشتراكك الآن&lt;/link&gt; للإبقاء على ⁦PulseGrid⁩ نشطًا.</td>
+        </tr>
+<tr>
+          <td><code>general.emptyInbox</code></td>
+          <td>You are all caught up. New customer messages and payout notices will appear here.</td>
+          <td class="nmt">لقد تم إطلاعك على كل المستجدات. ستظهر هنا رسائل العملاء الجديدة وإشعارات الدفع.</td>
+          <td>اطّلعت على كل الرسائل. ستظهر هنا رسائل العملاء الجديدة وإشعارات تحويل المستحقات.</td>
+          <td>اطّلعت على كل الرسائل والإشعارات. ستظهر هنا رسائل العملاء الجديدة وإشعارات صرف المستحقات.</td>
+          <td class="wraith">اطّلعت على كل الرسائل والإشعارات. ستظهر هنا رسائل العملاء الجديدة وإشعارات تحويل المستحقات.</td>
+        </tr></tbody>
+        </table>
+      </div>
+    </section>
+
+  <section class="card" id="qe-diffs">
+    <h2>Every Fresh-Context QE Subagent Edit (<code>W-pre</code> → <code>W-post</code>)</h2>
+    <p>Across 384 translated string instances (12 runs), the fresh-context Codex QE subagent flagged and modified exactly 4 strings (all in <code>nextjs-commerce</code>). Three were genuine improvements; the 4th (<code>ar: storage.freeTag</code>) added the unit "GB" absent from the English source string ("Free"), which Opus penalized as a major addition (-5 pts), explaining the entire 0.01 aggregate dip from 99.84 to 99.83.</p>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Run &amp; Key</th><th>Source (en)</th><th>W-pre (Before QE)</th><th>W-post (After QE)</th><th>QE Subagent Rationale</th></tr></thead>
+        <tbody><tr>
+        <td><code>nextjs-commerce::de</code><br><code>rich.trialEnd</code></td>
+        <td>Your trial ends in &lt;strong&gt;{days} days&lt;/strong&gt;; &lt;link&gt;upgrade now&lt;/link&gt; to keep PulseGrid active.</td>
+        <td>Ihre Testphase läuft noch &lt;strong&gt;{days, plural, one {# Tag} other {# Tage}}&lt;/strong&gt;. &lt;link&gt;Wechseln Sie jetzt den Tarif&lt;/link&gt;, um PulseGrid weiter zu nutzen.</td>
+        <td>Ihre Testphase läuft noch &lt;strong&gt;{days, plural, one {# Tag} other {# Tage}}&lt;/strong&gt;. &lt;link&gt;Steigen Sie jetzt auf einen höheren Tarif um&lt;/link&gt;, um PulseGrid weiter zu nutzen.</td>
+        <td>The link says to change plans, which suggests any plan change will keep PulseGrid active, while the source and /upgrade link specify an upgrade.</td>
+      </tr>
+<tr>
+        <td><code>nextjs-commerce::zh-Hans</code><br><code>general.emptyInbox</code></td>
+        <td>You are all caught up. New customer messages and payout notices will appear here.</td>
+        <td>消息已全部看完。新的客户消息和收款通知会显示在这里。</td>
+        <td>消息已全部看完。新的客户消息和结算打款通知会显示在这里。</td>
+        <td>In the merchant inbox, 收款通知 suggests notices of individual payments received and loses the distinction that these are merchant payout notices.</td>
+      </tr>
+<tr>
+        <td><code>nextjs-commerce::ar</code><br><code>storage.freeTag</code></td>
+        <td>Free</td>
+        <td>متاحة</td>
+        <td>غيغابايت من المساحة المتاحة</td>
+        <td>The quota component supplies a bare number, so «42 متاحة» leaves the shopper unable to tell that the available capacity is measured in gigabytes.</td>
+      </tr>
+<tr>
+        <td><code>nextjs-commerce::ar</code><br><code>icu.ticketAssign</code></td>
+        <td>{actor} assigned ticket {ticket} to {assignee}.</td>
+        <td>أسند ⁨{actor}⁩ التذكرة ⁨{ticket}⁩ إلى ⁨{assignee}⁩.</td>
+        <td>أُسندت التذكرة ⁨{ticket}⁩ إلى ⁨{assignee}⁩ من قِبل ⁨{actor}⁩.</td>
+        <td>The verb «أسند» is masculine, so a female actor’s name produces a grammatical error in the activity message.</td>
+      </tr></tbody>
+      </table>
+    </div>
+  </section>
+
+  <div id="docx">
+    <section class="card">
+      <h2>DOCX Comparison: northstar-policy.docx::de <span class="badge">Synthetic 1-page DOCX fixture</span></h2>
+      <div class="metrics-row">
+        <div class="pill bad">DeepL Document API: MQM 79.17 (1 crit / 4 maj / 5 min) · $1.25/doc</div>
+        <div class="pill ok">Wraith + Codex: MQM 98.33 (0 crit / 0 maj / 4 min) · $0.07/doc</div>
+      </div>
+      <p><strong>Blinded Opus Rationale:</strong> System_A has a critical meaning inversion in the legally sensitive tracked-change segment: it renders 'formally' as 'unofficially'. It also breaks the Workspace=Arbeitsbereich glossary rule, mistranslates the confidential footer, and has spacing defects around the tracked-change marker and the page field. System_B is faithful, follows the glossary and DNT list, keeps the formal register, preserves tags and spacing, and places 'förmlich' correctly. Its only issues are minor stylistic liberties.</p>
+      <p>Open translated Word files directly: <a href="../../work/pub-audit/docs/docs/northstar-policy.de.docx">Wraith DOCX</a> · <a href="../../work/pub-audit/docs/docs/northstar-policy.deepl.de.docx">DeepL DOCX</a></p>
+      <div class="grid-3">
+        <figure><figcaption>Source English (LibreOffice Render)</figcaption><a href="doc-renders/northstar-policy-en-1.png" target="_blank"><img src="doc-renders/northstar-policy-en-1.png"></a></figure>
+        <figure><figcaption>DeepL Document API (79.17 MQM)</figcaption><a href="doc-renders/northstar-policy-de-deepl-1.png" target="_blank"><img src="doc-renders/northstar-policy-de-deepl-1.png"></a></figure>
+        <figure><figcaption>Wraith + Codex (98.33 MQM)</figcaption><a href="doc-renders/northstar-policy-de-wraith-1.png" target="_blank"><img src="doc-renders/northstar-policy-de-wraith-1.png"></a></figure>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>DOCX Comparison: clinical-patient-letter.docx::es-MX <span class="badge">Synthetic 1-page DOCX fixture</span></h2>
+      <div class="metrics-row">
+        <div class="pill bad">DeepL Document API: MQM 47.14 (0 crit / 14 maj / 4 min) · $1.25/doc</div>
+        <div class="pill ok">Wraith + Codex: MQM 99.29 (0 crit / 0 maj / 1 min) · $0.08/doc</div>
+      </div>
+      <p><strong>Blinded Opus Rationale:</strong> System_A meets every stated requirement: formal 'usted', Mexican terms (tableta, jugo de toronja, médico tratante, presión arterial), brand names left untranslated, and tags intact. Its only flaw is a minor heading omission. System_B uses informal 'tú' throughout and Peninsular Spanish (tensión arterial, comprimido, zumo de pomelo, médico de cabecera, medicación), which breaks the es-MX glossary. Some of these errors affect safety in a clinical letter: the grapefruit interaction warning and who the patient should consult before stopping blood-pressure medication. It also gets the follow-up timeframe wrong. System_A wins decisively: 99.29 to 47.14.</p>
+      <p>Open translated Word files directly: <a href="../../work/pub-audit/docs/docs/clinical-patient-letter.es-MX.docx">Wraith DOCX</a> · <a href="../../work/pub-audit/docs/docs/clinical-patient-letter.deepl.es-MX.docx">DeepL DOCX</a></p>
+      <div class="grid-3">
+        <figure><figcaption>Source English (LibreOffice Render)</figcaption><a href="doc-renders/clinical-patient-letter-en-1.png" target="_blank"><img src="doc-renders/clinical-patient-letter-en-1.png"></a></figure>
+        <figure><figcaption>DeepL Document API (47.14 MQM)</figcaption><a href="doc-renders/clinical-patient-letter-es-MX-deepl-1.png" target="_blank"><img src="doc-renders/clinical-patient-letter-es-MX-deepl-1.png"></a></figure>
+        <figure><figcaption>Wraith + Codex (99.29 MQM)</figcaption><a href="doc-renders/clinical-patient-letter-es-MX-wraith-1.png" target="_blank"><img src="doc-renders/clinical-patient-letter-es-MX-wraith-1.png"></a></figure>
+      </div>
+    </section></div>
+
+  <section class="card" id="other-docs">
+    <h2>PPTX &amp; XLSX LibreOffice Visual Renders (Wraith + Codex)</h2>
+    <div class="grid-3">
+      <figure><figcaption>PPTX Slide 1 — Source (en)</figcaption><a href="doc-renders/product-launch-deck-en-1.png" target="_blank"><img src="doc-renders/product-launch-deck-en-1.png"></a></figure>
+      <figure><figcaption>PPTX Slide 1 — Wraith (de)</figcaption><a href="doc-renders/product-launch-deck-de-wraith-1.png" target="_blank"><img src="doc-renders/product-launch-deck-de-wraith-1.png"></a></figure>
+      <figure><figcaption>XLSX Sheet — Wraith (de, 5/5 formulas intact)</figcaption><a href="doc-renders/q4-financial-model-de-wraith-1.png" target="_blank"><img src="doc-renders/q4-financial-model-de-wraith-1.png"></a></figure>
+    </div>
+  </section>
+</body>
+</html>

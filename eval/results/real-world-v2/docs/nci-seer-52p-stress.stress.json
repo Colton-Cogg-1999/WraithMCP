@@ -1,0 +1,29 @@
+{
+  "id": "nci-seer-52p-stress",
+  "title": "US National Cancer Institute SEER Cancer Statistics Report (52-Page Scalability Stress Test)",
+  "segmentsTotal": 864,
+  "wordCount": 18370,
+  "sampleTranslatedCount": 45,
+  "extractMs": 118,
+  "noopApplyMs": 107,
+  "noopByteIdentical": true,
+  "mutatedApplyMs": 153,
+  "mutatedApplyOk": true,
+  "verifyMs": 3854,
+  "verifyOutcome": "PASS",
+  "verifyFindings": [
+    {
+      "code": "doc_reflow_info",
+      "severity": "info",
+      "message": "Translated DOCX reflowed cleanly from 52 to 53 page(s) with intact formatting (informational; set maxPages only for fixed-page layouts)."
+    }
+  ],
+  "rssDeltaMB": 146,
+  "codexUsage": {
+    "inputTokens": 22566,
+    "cachedInputTokens": 16896,
+    "outputTokens": 5783,
+    "durationMs": 119224,
+    "estimatedUsd": 0.0762
+  }
+}

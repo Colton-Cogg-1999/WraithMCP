@@ -1,0 +1,426 @@
+{
+  "totalSourceKeys": 1466,
+  "languages": {
+    "es-MX": {
+      "nmt": {
+        "counts": {
+          "totalKeys": 1466,
+          "translatedCount": 1465,
+          "missingOrEmpty": 1,
+          "untranslatedIdentical": 8,
+          "icuParseErrors": 0,
+          "placeholderMismatches": 0,
+          "richTagMismatches": 0,
+          "arabicIncompletePlurals": 0,
+          "dntViolations": 0,
+          "glossaryMisses": 9,
+          "spainSpanishDrift": 2
+        },
+        "examples": {
+          "icuParseErrors": [],
+          "placeholderMismatches": [],
+          "richTagMismatches": [],
+          "arabicIncompletePlurals": [],
+          "dntViolations": [],
+          "spainSpanishDrift": [
+            {
+              "key": "block_modal.no_collections",
+              "src": "Neither of you can add each other to collections. You'll be automatically removed from each others' existing collections, if applicable.",
+              "tgt": "Ninguno de los dos podéis añadiros mutuamente a las colecciones. Se os eliminará automáticamente de las colecciones existentes del otro, si es el caso."
+            },
+            {
+              "key": "block_modal.they_cant_mention",
+              "src": "You can't mention, follow, or quote each other.",
+              "tgt": "No podéis mencionaros, seguiros ni citaros unos a otros."
+            }
+          ]
+        },
+        "usage": {
+          "billedChars": 39661,
+          "sourceChars": 44794,
+          "estimatedUsd": 0.9915,
+          "durationMs": 26434,
+          "glossarySupported": true,
+          "localeMappingNote": "DeepL has no ES-MX target code; mapped to ES (formality: prefer_less) + ES glossary."
+        },
+        "qeDiffCount": 0
+      },
+      "b0": {
+        "counts": {
+          "totalKeys": 1466,
+          "translatedCount": 1466,
+          "missingOrEmpty": 0,
+          "untranslatedIdentical": 9,
+          "icuParseErrors": 0,
+          "placeholderMismatches": 0,
+          "richTagMismatches": 0,
+          "arabicIncompletePlurals": 0,
+          "dntViolations": 0,
+          "glossaryMisses": 0,
+          "spainSpanishDrift": 0
+        },
+        "examples": {
+          "icuParseErrors": [],
+          "placeholderMismatches": [],
+          "richTagMismatches": [],
+          "arabicIncompletePlurals": [],
+          "dntViolations": [],
+          "spainSpanishDrift": []
+        },
+        "usage": {
+          "modelTurns": 15,
+          "inputTokens": 295273,
+          "cachedInputTokens": 216576,
+          "outputTokens": 26389,
+          "durationMs": 584619,
+          "chunks": 15,
+          "estimatedUsd": 0.5148
+        },
+        "qeDiffCount": 0
+      },
+      "a0": {
+        "counts": {
+          "totalKeys": 1466,
+          "translatedCount": 1466,
+          "missingOrEmpty": 0,
+          "untranslatedIdentical": 8,
+          "icuParseErrors": 0,
+          "placeholderMismatches": 0,
+          "richTagMismatches": 0,
+          "arabicIncompletePlurals": 0,
+          "dntViolations": 0,
+          "glossaryMisses": 0,
+          "spainSpanishDrift": 0
+        },
+        "examples": {
+          "icuParseErrors": [],
+          "placeholderMismatches": [],
+          "richTagMismatches": [],
+          "arabicIncompletePlurals": [],
+          "dntViolations": [],
+          "spainSpanishDrift": []
+        },
+        "usage": {
+          "modelTurns": 19,
+          "inputTokens": 1101950,
+          "cachedInputTokens": 950912,
+          "outputTokens": 32210,
+          "durationMs": 794926,
+          "chunks": 19,
+          "estimatedUsd": 0.9374
+        },
+        "qeDiffCount": 0
+      },
+      "w-pre": {
+        "counts": {
+          "totalKeys": 1466,
+          "translatedCount": 1435,
+          "missingOrEmpty": 31,
+          "untranslatedIdentical": 6,
+          "icuParseErrors": 0,
+          "placeholderMismatches": 0,
+          "richTagMismatches": 0,
+          "arabicIncompletePlurals": 0,
+          "dntViolations": 0,
+          "glossaryMisses": 0,
+          "spainSpanishDrift": 0
+        },
+        "examples": {
+          "icuParseErrors": [],
+          "placeholderMismatches": [],
+          "richTagMismatches": [],
+          "arabicIncompletePlurals": [],
+          "dntViolations": [],
+          "spainSpanishDrift": []
+        },
+        "usage": {
+          "modelTurns": 27,
+          "inputTokens": 3946880,
+          "cachedInputTokens": 3427968,
+          "outputTokens": 38721,
+          "durationMs": 1109319,
+          "chunks": 26,
+          "estimatedUsd": 2.5415
+        },
+        "qeDiffCount": 0
+      },
+      "w-post": {
+        "counts": {
+          "totalKeys": 1466,
+          "translatedCount": 1435,
+          "missingOrEmpty": 31,
+          "untranslatedIdentical": 6,
+          "icuParseErrors": 0,
+          "placeholderMismatches": 0,
+          "richTagMismatches": 0,
+          "arabicIncompletePlurals": 0,
+          "dntViolations": 0,
+          "glossaryMisses": 0,
+          "spainSpanishDrift": 0
+        },
+        "examples": {
+          "icuParseErrors": [],
+          "placeholderMismatches": [],
+          "richTagMismatches": [],
+          "arabicIncompletePlurals": [],
+          "dntViolations": [],
+          "spainSpanishDrift": []
+        },
+        "usage": {
+          "modelTurns": 26,
+          "inputTokens": 7525218,
+          "cachedInputTokens": 6888064,
+          "outputTokens": 29239,
+          "durationMs": 1310255,
+          "chunks": 26,
+          "estimatedUsd": 3.6073
+        },
+        "qeDiffCount": 22
+      }
+    },
+    "ar": {
+      "nmt": {
+        "counts": {
+          "totalKeys": 1466,
+          "translatedCount": 1465,
+          "missingOrEmpty": 1,
+          "untranslatedIdentical": 0,
+          "icuParseErrors": 0,
+          "placeholderMismatches": 0,
+          "richTagMismatches": 0,
+          "arabicIncompletePlurals": 68,
+          "dntViolations": 25,
+          "glossaryMisses": 7,
+          "spainSpanishDrift": 0
+        },
+        "examples": {
+          "icuParseErrors": [],
+          "placeholderMismatches": [],
+          "richTagMismatches": [],
+          "arabicIncompletePlurals": [
+            {
+              "key": "account.familiar_followers_many",
+              "src": "Followed by {name1}, {name2}, and {othersCount, plural, one {one other you know} other {# others you know}}",
+              "tgt": "تليها {name1}، و{name2}، و {othersCount, plural, one {وهناك شخص آخر، كما تعلم} other {#أشخاص آخرون تعرفهم}}"
+            },
+            {
+              "key": "account.followers_counter",
+              "src": "{count, plural, one {{counter} follower} other {{counter} followers}}",
+              "tgt": "{count, plural, one {{counter} متابع} other {{counter} متابع}}"
+            },
+            {
+              "key": "account.following_counter",
+              "src": "{count, plural, one {{counter} following} other {{counter} following}}",
+              "tgt": "{count, plural, one {{counter}ما يلي} other {{counter}ما يلي}}"
+            },
+            {
+              "key": "account.join_modal.years",
+              "src": "{number, plural, one {year} other {years}}",
+              "tgt": "{number, plural, one {سنة} other {سنوات}}"
+            },
+            {
+              "key": "account.statuses_counter",
+              "src": "{count, plural, one {{counter} post} other {{counter} posts}}",
+              "tgt": "{count, plural, one {منشور {counter}} other {المشاركات {counter}}}"
+            },
+            {
+              "key": "account_edit_tags.tag_status_count",
+              "src": "{count, plural, one {# post} other {# posts}}",
+              "tgt": "{count, plural, one {منشور #} other {المشاركات #}}"
+            },
+            {
+              "key": "account_list.total",
+              "src": "{total, plural, one {# account} other {# accounts}}",
+              "tgt": "{total, plural, one {# الحساب} other {الحسابات #}}"
+            },
+            {
+              "key": "annual_report.summary.followers.new_followers",
+              "src": "{count, plural, one {new follower} other {new followers}}",
+              "tgt": "{count, plural, one {متابع جديد} other {المتابعون الجدد}}"
+            }
+          ],
+          "dntViolations": [
+            {
+              "key": "about.disclaimer",
+              "term": "Mastodon",
+              "src": "Mastodon is free, open-source software, and a trademark of Mastodon GmbH.",
+              "tgt": "ماستودون هو برنامج مجاني مفتوح المصدر، وعلامة تجارية مسجلة لشركة ماستودون GmbH."
+            },
+            {
+              "key": "about.domain_blocks.preamble",
+              "term": "Mastodon",
+              "src": "Mastodon generally allows you to view content from and interact with users from any other server in the fediverse. These are the exceptions that have been made on this particular server.",
+              "tgt": "يتيح لك «ماستودون» عمومًا عرض المحتوى الوارد من مستخدمين على أي خادم آخر في «فيدفيرس» والتفاعل معهم. وفيما يلي الاستثناءات التي تم تطبيقها على هذا الخادم بالذات."
+            },
+            {
+              "key": "account.name.help.footer",
+              "term": "Mastodon",
+              "src": "Just like you can send emails to people using different email providers, you can interact with people on other Mastodon servers, and with anyone on other Fediverse apps.",
+              "tgt": "تمامًا كما يمكنك إرسال رسائل بريد إلكتروني إلى أشخاص يستخدمون مزودي خدمات بريد إلكتروني مختلفين، يمكنك التفاعل مع أشخاص على خوادم ماستودون أخرى، ومع أي شخص على تطبيقات فيديفيرس الأخرى."
+            },
+            {
+              "key": "account_edit.custom_fields.tip_content",
+              "term": "Mastodon",
+              "src": "You can easily add credibility to your Mastodon account by verifying links to any websites you own.",
+              "tgt": "يمكنك بسهولة تعزيز مصداقية حسابك على «ماستودون» من خلال التحقق من صحة الروابط المؤدية إلى أي مواقع إلكترونية تمتلكها."
+            },
+            {
+              "key": "annual_report.announcement.description",
+              "term": "Mastodon",
+              "src": "Discover more about your engagement on Mastodon over the past year.",
+              "tgt": "اكتشف المزيد عن تفاعلك على «ماستودون» خلال العام الماضي."
+            },
+            {
+              "key": "annual_report.shared_page.footer",
+              "term": "Mastodon",
+              "src": "Generated with {heart} by the Mastodon team",
+              "tgt": "تم إنشاؤه باستخدام {heart} بواسطة فريق ماستودون"
+            }
+          ],
+          "spainSpanishDrift": []
+        },
+        "usage": {
+          "billedChars": 38557,
+          "sourceChars": 44794,
+          "estimatedUsd": 0.9639,
+          "durationMs": 26075,
+          "glossarySupported": false,
+          "localeMappingNote": "DeepL mapped to AR; DeepL does not support AR glossaries or formality."
+        },
+        "qeDiffCount": 0
+      },
+      "b0": {
+        "counts": {
+          "totalKeys": 1466,
+          "translatedCount": 1466,
+          "missingOrEmpty": 0,
+          "untranslatedIdentical": 4,
+          "icuParseErrors": 0,
+          "placeholderMismatches": 0,
+          "richTagMismatches": 0,
+          "arabicIncompletePlurals": 0,
+          "dntViolations": 0,
+          "glossaryMisses": 1,
+          "spainSpanishDrift": 0
+        },
+        "examples": {
+          "icuParseErrors": [],
+          "placeholderMismatches": [],
+          "richTagMismatches": [],
+          "arabicIncompletePlurals": [],
+          "dntViolations": [],
+          "spainSpanishDrift": []
+        },
+        "usage": {
+          "modelTurns": 15,
+          "inputTokens": 294050,
+          "cachedInputTokens": 235008,
+          "outputTokens": 34009,
+          "durationMs": 740795,
+          "chunks": 15,
+          "estimatedUsd": 0.5464
+        },
+        "qeDiffCount": 0
+      },
+      "a0": {
+        "counts": {
+          "totalKeys": 1466,
+          "translatedCount": 1466,
+          "missingOrEmpty": 0,
+          "untranslatedIdentical": 4,
+          "icuParseErrors": 0,
+          "placeholderMismatches": 0,
+          "richTagMismatches": 0,
+          "arabicIncompletePlurals": 0,
+          "dntViolations": 0,
+          "glossaryMisses": 0,
+          "spainSpanishDrift": 0
+        },
+        "examples": {
+          "icuParseErrors": [],
+          "placeholderMismatches": [],
+          "richTagMismatches": [],
+          "arabicIncompletePlurals": [],
+          "dntViolations": [],
+          "spainSpanishDrift": []
+        },
+        "usage": {
+          "modelTurns": 19,
+          "inputTokens": 1000184,
+          "cachedInputTokens": 888320,
+          "outputTokens": 39340,
+          "durationMs": 934324,
+          "chunks": 19,
+          "estimatedUsd": 0.8951
+        },
+        "qeDiffCount": 0
+      },
+      "w-pre": {
+        "counts": {
+          "totalKeys": 1466,
+          "translatedCount": 1435,
+          "missingOrEmpty": 31,
+          "untranslatedIdentical": 0,
+          "icuParseErrors": 0,
+          "placeholderMismatches": 0,
+          "richTagMismatches": 0,
+          "arabicIncompletePlurals": 0,
+          "dntViolations": 0,
+          "glossaryMisses": 0,
+          "spainSpanishDrift": 0
+        },
+        "examples": {
+          "icuParseErrors": [],
+          "placeholderMismatches": [],
+          "richTagMismatches": [],
+          "arabicIncompletePlurals": [],
+          "dntViolations": [],
+          "spainSpanishDrift": []
+        },
+        "usage": {
+          "modelTurns": 32,
+          "inputTokens": 5128959,
+          "cachedInputTokens": 4483968,
+          "outputTokens": 59543,
+          "durationMs": 1614488,
+          "chunks": 31,
+          "estimatedUsd": 3.3289
+        },
+        "qeDiffCount": 0
+      },
+      "w-post": {
+        "counts": {
+          "totalKeys": 1466,
+          "translatedCount": 1435,
+          "missingOrEmpty": 31,
+          "untranslatedIdentical": 0,
+          "icuParseErrors": 0,
+          "placeholderMismatches": 0,
+          "richTagMismatches": 0,
+          "arabicIncompletePlurals": 0,
+          "dntViolations": 0,
+          "glossaryMisses": 0,
+          "spainSpanishDrift": 0
+        },
+        "examples": {
+          "icuParseErrors": [],
+          "placeholderMismatches": [],
+          "richTagMismatches": [],
+          "arabicIncompletePlurals": [],
+          "dntViolations": [],
+          "spainSpanishDrift": []
+        },
+        "usage": {
+          "modelTurns": 26,
+          "inputTokens": 11141572,
+          "cachedInputTokens": 10413184,
+          "outputTokens": 57810,
+          "durationMs": 2203585,
+          "chunks": 26,
+          "estimatedUsd": 5.0024
+        },
+        "qeDiffCount": 81
+      }
+    }
+  }
+}

@@ -1,0 +1,190 @@
+[
+  {
+    "file": "northstar-policy.docx",
+    "locale": "de",
+    "billableChars": 50000,
+    "verify": {
+      "outcome": "PASS",
+      "format": "docx",
+      "sourceFile": "/home/colton/Projects/Wraith MCP/eval/work/pub-audit/docs/docs/northstar-policy.docx",
+      "targetFile": "/home/colton/Projects/Wraith MCP/eval/work/pub-audit/docs/docs/northstar-policy.deepl.de.docx",
+      "libreOfficeAvailable": true,
+      "sourcePages": 1,
+      "targetPages": 1,
+      "findings": []
+    },
+    "segCount": 24,
+    "segments": [
+      {
+        "id": "document-p1",
+        "text": "Richtlinie von Northstar zur Rechnungsstellung und Datenaufbewahrung"
+      },
+      {
+        "id": "document-p2",
+        "text": "Diese Richtlinie erläutert, wie Northstar Abonnementzahlungen über Northstar Pay abwickelt und Compliance-Unterlagen in LedgerVault archiviert."
+      },
+      {
+        "id": "document-p3",
+        "text": "1. Abonnementrechnungen und Zahlungsfristen"
+      },
+      {
+        "id": "document-p4",
+        "text": "Jeder Workspace erhält am ersten Werktag des Abrechnungszyklus eine detaillierte Monatsrechnung."
+      },
+      {
+        "id": "document-p5",
+        "text": "Sollte eine Zahlung fehlschlagen, führen wir vierzehn Kalendertage lang automatisch erneute Zahlungsversuche durch, bevor wir nicht wesentliche Analyseexporte aussetzen."
+      },
+      {
+        "id": "document-p6",
+        "text": "Bitte lesen Sie die vollständigen Steuerunterlagen im Northstar-Hilfezentrum durch, bevor Sie eine Befreiungsbescheinigung einreichen."
+      },
+      {
+        "id": "document-p7",
+        "text": "2. Servicestufen und Aufbewahrungsfristen"
+      },
+      {
+        "id": "document-p8",
+        "text": "Tarifstufe"
+      },
+      {
+        "id": "document-p9",
+        "text": "Aufbewahrungsfrist für Audit-Protokolle"
+      },
+      {
+        "id": "document-p10",
+        "text": "Zielwert für die Support-Reaktionszeit"
+      },
+      {
+        "id": "document-p11",
+        "text": "Starter-Arbeitsbereich"
+      },
+      {
+        "id": "document-p12",
+        "text": "90 Tage durchsuchbare Aktivitäten"
+      },
+      {
+        "id": "document-p13",
+        "text": "Zwei Werktage per E-Mail"
+      },
+      {
+        "id": "document-p14",
+        "text": "Unternehmensarbeitsbereich"
+      },
+      {
+        "id": "document-p15",
+        "text": "Sieben Jahre in LedgerVault"
+      },
+      {
+        "id": "document-p16",
+        "text": "Vier Stunden mit vorrangiger Eskalation"
+      },
+      {
+        "id": "document-p17",
+        "text": "3. Genehmigte rechtliche Änderungen"
+      },
+      {
+        "id": "document-p18",
+        "text": "Der Compliance-Ausschuss hat unteroffiziell  vierteljährliche Löschprüfungen für inaktive Händlerkonten genehmigt."
+      },
+      {
+        "id": "document-p19",
+        "text": "Kontoinhaber können nach Begleichung aller offenen Rechnungen die sofortige Löschung archivierter Exporte beantragen."
+      },
+      {
+        "id": "document-p20",
+        "text": "Sicherheitsbenachrichtigungen werden an den Hauptadministrator gesendet und in PulseGrid protokolliert."
+      },
+      {
+        "id": "comments-p21",
+        "text": "Bitte überprüfen Sie, ob für Jahresrechnungen derselbe Zeitplan „erster Werktag“ gilt."
+      },
+      {
+        "id": "footer1-p22",
+        "text": "Zusammenfassung der Vertraulichkeitsrichtlinie – Seite"
+      },
+      {
+        "id": "footnotes-p23",
+        "text": "Erinnerungen zur Nachfrist werden automatisch am dritten, siebten und zwölften Tag versendet."
+      },
+      {
+        "id": "header1-p24",
+        "text": "Northstar Commerce – Richtlinien zur Kundenabrechnung"
+      }
+    ]
+  },
+  {
+    "file": "clinical-patient-letter.docx",
+    "locale": "es-MX",
+    "billableChars": 50000,
+    "verify": {
+      "outcome": "PASS",
+      "format": "docx",
+      "sourceFile": "/home/colton/Projects/Wraith MCP/eval/work/pub-audit/docs/docs/clinical-patient-letter.docx",
+      "targetFile": "/home/colton/Projects/Wraith MCP/eval/work/pub-audit/docs/docs/clinical-patient-letter.deepl.es-MX.docx",
+      "libreOfficeAvailable": true,
+      "sourcePages": 1,
+      "targetPages": 1,
+      "findings": []
+    },
+    "segCount": 14,
+    "segments": [
+      {
+        "id": "document-p1",
+        "text": "Centro Médico Northstar — Resumen de alta del paciente"
+      },
+      {
+        "id": "document-p2",
+        "text": "Estimado paciente, gracias por participar en el estudio CardioPulse de fase III. Lee con atención las instrucciones de seguimiento."
+      },
+      {
+        "id": "document-p3",
+        "text": "Advertencia de seguridad importante: No dejes de tomar la medicación para la tensión arterial que te han recetado sin consultar antes a tu médico de cabecera. Acude inmediatamente a urgencias si sientes dolor en el pecho, dificultad para respirar o mareos repentinos."
+      },
+      {
+        "id": "document-p4",
+        "text": "Medicación"
+      },
+      {
+        "id": "document-p5",
+        "text": "Dosis y horario"
+      },
+      {
+        "id": "document-p6",
+        "text": "Notas"
+      },
+      {
+        "id": "document-p7",
+        "text": "Lisinopril 10 mg"
+      },
+      {
+        "id": "document-p8",
+        "text": "Tómate un comprimido por vía oral cada mañana con agua."
+      },
+      {
+        "id": "document-p9",
+        "text": "Controla la tensión arterial dos veces por semana."
+      },
+      {
+        "id": "document-p10",
+        "text": "Atorvastatina 20 mg"
+      },
+      {
+        "id": "document-p11",
+        "text": "Tómate un comprimido por la noche, con o sin comida."
+      },
+      {
+        "id": "document-p12",
+        "text": "Evita el zumo de pomelo durante el tratamiento."
+      },
+      {
+        "id": "document-p13",
+        "text": "Tu cita de seguimiento con el cardiólogo está programada para dentro de 14 días tras el alta. Trae tu diario de síntomas y la lista actualizada de medicamentos a cada visita a la clínica para que la enfermera del estudio pueda actualizar tu historial electrónico con precisión."
+      },
+      {
+        "id": "document-p14",
+        "text": "Aviso de confidencialidad: Todos los registros del estudio clínico están protegidos por la normativa vigente en materia de privacidad sanitaria y se almacenan en LedgerVault."
+      }
+    ]
+  }
+]

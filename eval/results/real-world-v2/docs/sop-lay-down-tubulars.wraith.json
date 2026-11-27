@@ -1,0 +1,1038 @@
+{
+  "id": "sop-lay-down-tubulars",
+  "title": "240-DOP-1013A Lay Down Tubulars — Rig Floor Standard Operating Procedure",
+  "targetLocale": "es-MX",
+  "sourceFile": "/home/colton/Projects/Wraith MCP/eval/corpora/real-docs/sop-lay-down-tubulars.docx",
+  "outputFile": "/home/colton/Projects/Wraith MCP/eval/results/real-world-v2/docs/translated/sop-lay-down-tubulars.wraith.es-MX.docx",
+  "segmentsTotal": 163,
+  "segmentsUpdated": 153,
+  "wordCount": 1377,
+  "parts": [
+    "word/document.xml",
+    "word/footer.xml",
+    "word/header.xml"
+  ],
+  "unsupportedParts": [],
+  "verify": {
+    "outcome": "PASS",
+    "format": "docx",
+    "sourceFile": "/home/colton/Projects/Wraith MCP/eval/corpora/real-docs/sop-lay-down-tubulars.docx",
+    "targetFile": "/home/colton/Projects/Wraith MCP/eval/results/real-world-v2/docs/translated/sop-lay-down-tubulars.wraith.es-MX.docx",
+    "libreOfficeAvailable": true,
+    "sourcePages": 5,
+    "targetPages": 6,
+    "findings": [
+      {
+        "code": "doc_reflow_info",
+        "severity": "info",
+        "message": "Translated DOCX reflowed cleanly from 5 to 6 page(s) with intact formatting (informational; set maxPages only for fixed-page layouts)."
+      }
+    ]
+  },
+  "originalPages": 5,
+  "translatedPages": 6,
+  "originalPngs": [
+    "sop-lay-down-tubulars-en-1.png",
+    "sop-lay-down-tubulars-en-2.png",
+    "sop-lay-down-tubulars-en-3.png",
+    "sop-lay-down-tubulars-en-4.png",
+    "sop-lay-down-tubulars-en-5.png"
+  ],
+  "translatedPngs": [
+    "sop-lay-down-tubulars-wraith-es-MX-1.png",
+    "sop-lay-down-tubulars-wraith-es-MX-2.png",
+    "sop-lay-down-tubulars-wraith-es-MX-3.png",
+    "sop-lay-down-tubulars-wraith-es-MX-4.png",
+    "sop-lay-down-tubulars-wraith-es-MX-5.png",
+    "sop-lay-down-tubulars-wraith-es-MX-6.png"
+  ],
+  "usage": {
+    "modelTurns": 4,
+    "inputTokens": 98454,
+    "cachedInputTokens": 83712,
+    "outputTokens": 4427,
+    "durationMs": 105571,
+    "estimatedUsd": 0.1021,
+    "wallMs": 115104
+  },
+  "segments": [
+    {
+      "id": "document-p1",
+      "part": "word/document.xml",
+      "source": "Last Issue Date",
+      "translated": "Fecha de la última emisión"
+    },
+    {
+      "id": "document-p2",
+      "part": "word/document.xml",
+      "source": "Task and Revision Number",
+      "translated": "Número de tarea y de revisión"
+    },
+    {
+      "id": "document-p3",
+      "part": "word/document.xml",
+      "source": "11 December 2017",
+      "translated": "11 de diciembre de 2017"
+    },
+    {
+      "id": "document-p4",
+      "part": "word/document.xml",
+      "source": "240-DOP-1013A                                                      Revision: 1",
+      "translated": "240-DOP-1013A                                                      Revisión: 1"
+    },
+    {
+      "id": "document-p5",
+      "part": "word/document.xml",
+      "source": "Task Name:",
+      "translated": "Nombre de la tarea:"
+    },
+    {
+      "id": "document-p6",
+      "part": "word/document.xml",
+      "source": "Lay Down Tubulars",
+      "translated": "Tendido de tubulares"
+    },
+    {
+      "id": "document-p7",
+      "part": "word/document.xml",
+      "source": "Job Location:",
+      "translated": "Lugar de trabajo:"
+    },
+    {
+      "id": "document-p8",
+      "part": "word/document.xml",
+      "source": "Rig Floor",
+      "translated": "Piso de perforación"
+    },
+    {
+      "id": "document-p9",
+      "part": "word/document.xml",
+      "source": "PART A (1 of 2)",
+      "translated": "PARTE A (1 de 2)"
+    },
+    {
+      "id": "document-p10",
+      "part": "word/document.xml",
+      "source": "Documentation",
+      "translated": "Documentación"
+    },
+    {
+      "id": "document-p11",
+      "part": "word/document.xml",
+      "source": "Hot Work",
+      "translated": "Trabajo en caliente"
+    },
+    {
+      "id": "document-p12",
+      "part": "word/document.xml",
+      "source": "Cold Work",
+      "translated": "Trabajo en frío"
+    },
+    {
+      "id": "document-p13",
+      "part": "word/document.xml",
+      "source": "Isolation",
+      "translated": "Aislamiento"
+    },
+    {
+      "id": "document-p14",
+      "part": "word/document.xml",
+      "source": "Confined Space",
+      "translated": "Espacio confinado"
+    },
+    {
+      "id": "document-p15",
+      "part": "word/document.xml",
+      "source": "Lift Plan",
+      "translated": "Plan de izaje"
+    },
+    {
+      "id": "document-p16",
+      "part": "word/document.xml",
+      "source": "Safety Critical Considerations",
+      "translated": "Consideraciones críticas de seguridad"
+    },
+    {
+      "id": "document-p17",
+      "part": "word/document.xml",
+      "source": "Occupational Health Controls",
+      "translated": "Controles de salud ocupacional"
+    },
+    {
+      "id": "document-p18",
+      "part": "word/document.xml",
+      "source": "Review MSDS for thread dope being used.",
+      "translated": "Revise la hoja de datos de seguridad (HDS) del compuesto para roscas que se utilice."
+    },
+    {
+      "id": "document-p19",
+      "part": "word/document.xml",
+      "source": "RMS References",
+      "translated": "Referencias del RMS"
+    },
+    {
+      "id": "document-p20",
+      "part": "word/document.xml",
+      "source": "Red Zone RMS-QHSE-0116",
+      "translated": "Zona roja RMS-QHSE-0116"
+    },
+    {
+      "id": "document-p21",
+      "part": "word/document.xml",
+      "source": "Green on Green RMS-DOP-013",
+      "translated": "Green on Green RMS-DOP-013"
+    },
+    {
+      "id": "document-p22",
+      "part": "word/document.xml",
+      "source": "Lifting Operations RMS-DOP-904",
+      "translated": "Operaciones de izaje RMS-DOP-904"
+    },
+    {
+      "id": "document-p23",
+      "part": "word/document.xml",
+      "source": "Lifting Equip. Procedure RMS-DOP-909",
+      "translated": "Procedimiento para equipos de izaje RMS-DOP-909"
+    },
+    {
+      "id": "document-p24",
+      "part": "word/document.xml",
+      "source": "Manual Handling Operation Policy RMS-QHSE-0109",
+      "translated": "Política de manejo manual de cargas RMS-QHSE-0109"
+    },
+    {
+      "id": "document-p25",
+      "part": "word/document.xml",
+      "source": "Platinum Rules RMS-WCM-003",
+      "translated": "Reglas de platino RMS-WCM-003"
+    },
+    {
+      "id": "document-p26",
+      "part": "word/document.xml",
+      "source": "Key Personnel",
+      "translated": "Personal clave"
+    },
+    {
+      "id": "document-p27",
+      "part": "word/document.xml",
+      "source": "Drill Crew and Crane Crew",
+      "translated": "Cuadrilla de perforación y cuadrilla de grúa"
+    },
+    {
+      "id": "document-p28",
+      "part": "word/document.xml",
+      "source": "Specific PPE",
+      "translated": "EPP específico"
+    },
+    {
+      "id": "document-p29",
+      "part": "word/document.xml",
+      "source": "Safety Harness ",
+      "translated": "Arnés de seguridad "
+    },
+    {
+      "id": "document-p30",
+      "part": "word/document.xml",
+      "source": "Specific Tools",
+      "translated": "Herramientas específicas"
+    },
+    {
+      "id": "document-p31",
+      "part": "word/document.xml",
+      "source": "Iron Roughneck, Correct Size Handling Equipment (Slips, Elevators, Single Joint Elevators), Signalers Vest",
+      "translated": "Llave mecanizada de apriete y quiebre (Iron Roughneck), equipo de manejo de tubulares de la medida adecuada (cuñas, elevadores y elevadores para un solo tubo), chaleco para el señalero"
+    },
+    {
+      "id": "document-p32",
+      "part": "word/document.xml",
+      "source": "Step",
+      "translated": "Paso"
+    },
+    {
+      "id": "document-p33",
+      "part": "word/document.xml",
+      "source": "Work Activity",
+      "translated": "Actividad de trabajo"
+    },
+    {
+      "id": "document-p34",
+      "part": "word/document.xml",
+      "source": "Known Hazards",
+      "translated": "Peligros conocidos"
+    },
+    {
+      "id": "document-p35",
+      "part": "word/document.xml",
+      "source": "Base Line Control",
+      "translated": "Medida de control básica"
+    },
+    {
+      "id": "document-p36",
+      "part": "word/document.xml",
+      "source": "Lay down Tubulars DOP-1013 RSOP has been developed to control the method for laying down tubulars not requiring special consideration and should be used in most cases.",
+      "translated": "El RSOP DOP-1013, Tendido de tubulares, establece el método para tender tubulares que no requieren consideraciones especiales. Debe aplicarse en la mayoría de los casos."
+    },
+    {
+      "id": "document-p37",
+      "part": "word/document.xml",
+      "source": "Any tubulars with special considerations will require a series 5000 RSOP to be developed for use by the rig",
+      "translated": "Para cualquier tubular que requiera consideraciones especiales, elabore un RSOP de la serie 5000 para su uso en el equipo de perforación."
+    },
+    {
+      "id": "document-p38",
+      "part": "word/document.xml",
+      "source": "1",
+      "translated": "1"
+    },
+    {
+      "id": "document-p39",
+      "part": "word/document.xml",
+      "source": "Check elevator and slip size and condition.",
+      "translated": "Revise la medida y el estado del elevador y de las cuñas."
+    },
+    {
+      "id": "document-p40",
+      "part": "word/document.xml",
+      "source": "Verify correct sizes using calipers on the tubular as well as the handling tools.",
+      "translated": "Verifique con un calibrador que las dimensiones del tubular y de las herramientas de manejo sean las correctas."
+    },
+    {
+      "id": "document-p41",
+      "part": "word/document.xml",
+      "source": "Latch elevators to the stump.",
+      "translated": "Cierre y asegure los elevadores alrededor del extremo de la sarta que sobresale de la mesa rotaria."
+    },
+    {
+      "id": "document-p42",
+      "part": "word/document.xml",
+      "source": "Raise the string, and pull the slips.",
+      "translated": "Eleve la sarta y retire las cuñas."
+    },
+    {
+      "id": "document-p43",
+      "part": "word/document.xml",
+      "source": "Hand and body crush between the elevators and stump. ",
+      "translated": "Aplastamiento de las manos y de otras partes del cuerpo entre los elevadores y el extremo sobresaliente de la sarta. "
+    },
+    {
+      "id": "document-p44",
+      "part": "word/document.xml",
+      "source": "<g id=\"1\" type=\"format\">Automated Slips;</g><g id=\"2\" type=\"format\"> Hands and other body parts caught in moving parts.</g>",
+      "translated": "<g id=\"1\" type=\"format\">Cuñas automatizadas:</g><g id=\"2\" type=\"format\"> Atrapamiento de las manos y de otras partes del cuerpo en los componentes móviles.</g>"
+    },
+    {
+      "id": "document-p45",
+      "part": "word/document.xml",
+      "source": "<g id=\"1\" type=\"format\">Manual Slips;</g><g id=\"2\" type=\"format\"> Muscle strains when pulling/setting the slips.</g>",
+      "translated": "<g id=\"1\" type=\"format\">Cuñas manuales:</g><g id=\"2\" type=\"format\"> Distensiones musculares al retirar o colocar las cuñas.</g>"
+    },
+    {
+      "id": "document-p46",
+      "part": "word/document.xml",
+      "source": "Pay attention to hand placement.",
+      "translated": "Preste atención a dónde coloca las manos."
+    },
+    {
+      "id": "document-p47",
+      "part": "word/document.xml",
+      "source": "Green on Green policy/procedure. ",
+      "translated": "Política/procedimiento Green on Green. "
+    },
+    {
+      "id": "document-p48",
+      "part": "word/document.xml",
+      "source": "Use proper lifting techniques and team work when pulling/setting the slips.",
+      "translated": "Use técnicas de levantamiento adecuadas y trabaje en equipo al retirar o colocar las cuñas."
+    },
+    {
+      "id": "document-p49",
+      "part": "word/document.xml",
+      "source": "2",
+      "translated": "2"
+    },
+    {
+      "id": "document-p50",
+      "part": "word/document.xml",
+      "source": "Pull joint, and set slips, verify adequate distance for latching elevators on stump.",
+      "translated": "Levante el tramo de tubería y coloque las cuñas. Verifique que el extremo de la sarta sobresalga lo suficiente para cerrar los elevadores sobre él."
+    },
+    {
+      "id": "document-p51",
+      "part": "word/document.xml",
+      "source": "When instructed by the driller, position the Wrangler to receive the pipe.",
+      "translated": "Cuando lo indique el perforador, coloque el Wrangler en posición para recibir la tubería."
+    },
+    {
+      "id": "document-p52",
+      "part": "word/document.xml",
+      "source": "<g id=\"1\" type=\"format\">Automated Slips;</g><g id=\"2\" type=\"format\"> Hands and other body parts caught in moving parts.</g>",
+      "translated": "<g id=\"1\" type=\"format\">Cuñas automáticas:</g><g id=\"2\" type=\"format\"> Atrapamiento de las manos u otras partes del cuerpo en las piezas móviles.</g>"
+    },
+    {
+      "id": "document-p53",
+      "part": "word/document.xml",
+      "source": "<g id=\"1\" type=\"format\">Manual Slips;</g><g id=\"2\" type=\"format\"> Muscle strains when pulling/setting the slips. </g>",
+      "translated": "<g id=\"1\" type=\"format\">Cuñas manuales:</g><g id=\"2\" type=\"format\"> Distensiones musculares al retirar o colocar las cuñas. </g>"
+    },
+    {
+      "id": "document-p54",
+      "part": "word/document.xml",
+      "source": "Dropping a joint on someone, or damaging equipment.",
+      "translated": "Caída de un tramo de tubería sobre una persona o sobre el equipo, con posibles daños al equipo."
+    },
+    {
+      "id": "document-p55",
+      "part": "word/document.xml",
+      "source": "Crushed between Wrangler and loads coming in and out of the V-door and equipment on the drill floor.",
+      "translated": "Aplastamiento entre el Wrangler, las cargas que entran o salen por la puerta en V y los equipos del piso de perforación."
+    },
+    {
+      "id": "document-p56",
+      "part": "word/document.xml",
+      "source": "Pay attention to hand placement.",
+      "translated": "Preste atención a dónde coloca las manos."
+    },
+    {
+      "id": "document-p57",
+      "part": "word/document.xml",
+      "source": "Green on Green policy/procedure. ",
+      "translated": "Política/procedimiento Green on Green. "
+    },
+    {
+      "id": "document-p58",
+      "part": "word/document.xml",
+      "source": "Use proper lifting techniques and team work when pulling/setting the slips.",
+      "translated": "Use técnicas de levantamiento adecuadas y trabaje en equipo al retirar o colocar las cuñas."
+    },
+    {
+      "id": "document-p59",
+      "part": "word/document.xml",
+      "source": "<g id=\"1\" type=\"format\">Ensure that </g><g id=\"2\" type=\"format\">ALL</g><g id=\"3\" type=\"format\"> handling tools are the correct size for the tubulars being utilized. </g>",
+      "translated": "<g id=\"1\" type=\"format\">Verifique que </g><g id=\"2\" type=\"format\">TODAS</g><g id=\"3\" type=\"format\"> las herramientas de manejo sean del tamaño adecuado para los tubulares que se utilicen. </g>"
+    },
+    {
+      "id": "document-p60",
+      "part": "word/document.xml",
+      "source": "Never turn your back to the V-door.  ",
+      "translated": "Nunca dé la espalda a la puerta en V.  "
+    },
+    {
+      "id": "document-p61",
+      "part": "word/document.xml",
+      "source": "Enforce Red Zones.",
+      "translated": "Haga respetar las restricciones de acceso a las zonas rojas."
+    },
+    {
+      "id": "document-p62",
+      "part": "word/document.xml",
+      "source": "3",
+      "translated": "3"
+    },
+    {
+      "id": "document-p63",
+      "part": "word/document.xml",
+      "source": "Position the iron roughneck, break and spin out the joint. ",
+      "translated": "Coloque la llave de piso automatizada en posición, afloje la conexión y desenrosque por completo el tramo de tubería. "
+    },
+    {
+      "id": "document-p64",
+      "part": "word/document.xml",
+      "source": "Retract and store the iron roughneck.",
+      "translated": "Retraiga la llave de piso automatizada y déjela en su posición de resguardo."
+    },
+    {
+      "id": "document-p65",
+      "part": "word/document.xml",
+      "source": "Being crushed between the iron roughneck and the drill pipe, or in the mechanics of the unit itself. ",
+      "translated": "Aplastamiento entre la llave de piso automatizada y la tubería de perforación o entre las piezas del mecanismo de la propia llave. "
+    },
+    {
+      "id": "document-p66",
+      "part": "word/document.xml",
+      "source": "Enforce Red Zone.  Keep personnel clear.",
+      "translated": "Haga respetar las restricciones de acceso a la zona roja. Mantenga al personal fuera de ella."
+    },
+    {
+      "id": "document-p67",
+      "part": "word/document.xml",
+      "source": "NEVER get between the iron roughneck and the drill pipe. ",
+      "translated": "NUNCA se coloque entre la llave de piso automatizada y la tubería de perforación. "
+    },
+    {
+      "id": "document-p68",
+      "part": "word/document.xml",
+      "source": "Enforce Red Zone.  Keep personnel clear.",
+      "translated": "Haga respetar las restricciones de acceso a la zona roja. Mantenga al personal fuera de ella."
+    },
+    {
+      "id": "document-p69",
+      "part": "word/document.xml",
+      "source": "Step",
+      "translated": "Paso"
+    },
+    {
+      "id": "document-p70",
+      "part": "word/document.xml",
+      "source": "Work Activity",
+      "translated": "Actividad de trabajo"
+    },
+    {
+      "id": "document-p71",
+      "part": "word/document.xml",
+      "source": "Known Hazards",
+      "translated": "Peligros conocidos"
+    },
+    {
+      "id": "document-p72",
+      "part": "word/document.xml",
+      "source": "Base Line Control",
+      "translated": "Medida de control básica"
+    },
+    {
+      "id": "document-p73",
+      "part": "word/document.xml",
+      "source": "4",
+      "translated": "4"
+    },
+    {
+      "id": "document-p74",
+      "part": "word/document.xml",
+      "source": "Raise the joint with the TDS & activate the link tilt toward the trough ",
+      "translated": "Eleve el tramo de tubería con el TDS y accione el mecanismo de inclinación de los brazos del elevador hacia la canaleta. "
+    },
+    {
+      "id": "document-p75",
+      "part": "word/document.xml",
+      "source": "Clean and dope threads and shoulder face.",
+      "translated": "Limpie las roscas y la cara del hombro de la conexión y aplique grasa para roscas en ambas superficies."
+    },
+    {
+      "id": "document-p76",
+      "part": "word/document.xml",
+      "source": "Install the protector on the pin.",
+      "translated": "Instale el protector de rosca en el piñón."
+    },
+    {
+      "id": "document-p77",
+      "part": "word/document.xml",
+      "source": "Activate the link tilt to drill position. ",
+      "translated": "Accione el mecanismo de inclinación para llevar los brazos del elevador a la posición de perforación. "
+    },
+    {
+      "id": "document-p78",
+      "part": "word/document.xml",
+      "source": "Dropping a joint on someone, or damaging equipment.",
+      "translated": "Caída de un tramo de tubería sobre una persona o sobre el equipo, con posibles daños al equipo."
+    },
+    {
+      "id": "document-p79",
+      "part": "word/document.xml",
+      "source": "Threads hanging up in the box, then coming free suddenly, and hitting someone, or dropping the string",
+      "translated": "Las roscas del piñón pueden atorarse en la caja y soltarse de golpe, lo que puede provocar que el tramo golpee a una persona o que caiga la sarta."
+    },
+    {
+      "id": "document-p80",
+      "part": "word/document.xml",
+      "source": "Threads not cleaned, lubed, or protected properly, can cause problem later.",
+      "translated": "La limpieza, lubricación o protección deficientes de las roscas pueden causar problemas más adelante."
+    },
+    {
+      "id": "document-p81",
+      "part": "word/document.xml",
+      "source": "Thread protector not being installed properly and falling off hitting someone, or threads of pipe getting damaged.",
+      "translated": "Si el protector de rosca se instala mal, puede desprenderse y golpear a una persona, o pueden dañarse las roscas de la tubería."
+    },
+    {
+      "id": "document-p82",
+      "part": "word/document.xml",
+      "source": "Falling from the V-door.",
+      "translated": "Caída de una persona desde la puerta en V."
+    },
+    {
+      "id": "document-p83",
+      "part": "word/document.xml",
+      "source": "Ensure that ALL handling tools are the correct size for the tubulars being utilized.",
+      "translated": "Verifique que TODAS las herramientas de manejo sean del tamaño adecuado para los tubulares que se utilicen."
+    },
+    {
+      "id": "document-p84",
+      "part": "word/document.xml",
+      "source": "Come up slowly with TDS when pulling a joint from a connection. ",
+      "translated": "Eleve lentamente el TDS al separar el tramo de tubería de la conexión. "
+    },
+    {
+      "id": "document-p85",
+      "part": "word/document.xml",
+      "source": "Properly clean and lube the pipe threads, and install the protector to the shoulder.",
+      "translated": "Limpie y lubrique bien las roscas de la tubería e instale el protector hasta que asiente contra el hombro."
+    },
+    {
+      "id": "document-p86",
+      "part": "word/document.xml",
+      "source": "If the V-door is not properly barricaded, a safety harness should be worn by whoever is working it.",
+      "translated": "Si la puerta en V carece de una barrera de protección adecuada, toda persona que trabaje en ella debe usar arnés de seguridad."
+    },
+    {
+      "id": "document-p87",
+      "part": "word/document.xml",
+      "source": "5",
+      "translated": "5"
+    },
+    {
+      "id": "document-p88",
+      "part": "word/document.xml",
+      "source": "<g id=\"1\" type=\"format\">E</g><g id=\"2\" type=\"format\">nsure skate is positioned to catch pin of joint. </g>",
+      "translated": "<g id=\"1\" type=\"format\">V</g><g id=\"2\" type=\"format\">erifique que el patín esté en posición para recibir el piñón del tramo de tubería. </g>"
+    },
+    {
+      "id": "document-p89",
+      "part": "word/document.xml",
+      "source": "Push or have two people standing off to both sides of the wrangler with a rope to pull the joint over the skate. ",
+      "translated": "Empuje el tramo hasta situarlo sobre el patín o pida a dos personas, ubicadas una a cada lado del Wrangler, que lo jalen con una cuerda hasta esa posición. "
+    },
+    {
+      "id": "document-p90",
+      "part": "word/document.xml",
+      "source": "Lower the pin onto skate, once joint is on the skate, continue to slack off on TDS.",
+      "translated": "Baje el piñón hasta apoyarlo en el patín. Una vez que el tramo esté apoyado, siga bajando el TDS para descargar el peso sobre el patín."
+    },
+    {
+      "id": "document-p91",
+      "part": "word/document.xml",
+      "source": "The Pipe Wrangler operator will lower the skate keeping up with the TDS as it descends.",
+      "translated": "El operador del Pipe Wrangler debe bajar el patín al ritmo de descenso del TDS."
+    },
+    {
+      "id": "document-p92",
+      "part": "word/document.xml",
+      "source": "Moving equipment can crush and cut off body parts.",
+      "translated": "Los equipos en movimiento pueden aplastar o amputar partes del cuerpo."
+    },
+    {
+      "id": "document-p93",
+      "part": "word/document.xml",
+      "source": "Running over the joint with the TDS.",
+      "translated": "El TDS puede aplastar el tramo de tubería al descender sobre él."
+    },
+    {
+      "id": "document-p94",
+      "part": "word/document.xml",
+      "source": "Losing the joint off of the Wrangler.",
+      "translated": "El tramo puede caer del Wrangler."
+    },
+    {
+      "id": "document-p95",
+      "part": "word/document.xml",
+      "source": "Pay attention to hand placement.",
+      "translated": "Preste atención a dónde coloca las manos."
+    },
+    {
+      "id": "document-p96",
+      "part": "word/document.xml",
+      "source": "Green on Green policy/procedure. ",
+      "translated": "Política y procedimiento «Green on Green». "
+    },
+    {
+      "id": "document-p97",
+      "part": "word/document.xml",
+      "source": "<g id=\"1\" type=\"format\">Be aware of moving equipment.</g><g id=\"2\" type=\"format\"> </g><g id=\"3\" type=\"format\">Especially the chain that operates the skate. </g>",
+      "translated": "<g id=\"1\" type=\"format\">Manténgase alerta ante los equipos en movimiento.</g><g id=\"2\" type=\"format\"> </g><g id=\"3\" type=\"format\">Preste especial atención a la cadena que acciona el patín. </g>"
+    },
+    {
+      "id": "document-p98",
+      "part": "word/document.xml",
+      "source": "Red Zone , do not stand between elevators & stump.",
+      "translated": "En la zona roja, no se coloque entre los elevadores y el extremo de la sarta que sobresale de la mesa rotaria."
+    },
+    {
+      "id": "document-p99",
+      "part": "word/document.xml",
+      "source": "The driller and Wrangler operator must work together.",
+      "translated": "El perforador y el operador del Wrangler deben coordinar sus movimientos."
+    },
+    {
+      "id": "document-p100",
+      "part": "word/document.xml",
+      "source": "Use radio if needed.",
+      "translated": "Use el radio si es necesario."
+    },
+    {
+      "id": "document-p101",
+      "part": "word/document.xml",
+      "source": "Keep windows of the drillers shack clean.",
+      "translated": "Mantenga limpias las ventanas de la cabina del perforador."
+    },
+    {
+      "id": "document-p102",
+      "part": "word/document.xml",
+      "source": "6",
+      "translated": "6"
+    },
+    {
+      "id": "document-p103",
+      "part": "word/document.xml",
+      "source": "<g id=\"1\" type=\"format\">Once the pipe is close to the trough or resting on the Wrangler, r</g><g id=\"2\" type=\"format\">elease elevators from joint. Wrangler operator may have to skate the joint toward the stump for elevators to open. </g>",
+      "translated": "<g id=\"1\" type=\"format\">Una vez que el tramo esté cerca de la canaleta o apoyado en el Wrangler, </g><g id=\"2\" type=\"format\">suelte los elevadores del tramo. Para que abran los elevadores, puede ser necesario que el operador del Wrangler use el patín para acercar el tramo al extremo sobresaliente de la sarta. </g>"
+    },
+    {
+      "id": "document-p104",
+      "part": "word/document.xml",
+      "source": "Once elevators have opened, lower the back arm of the wrangler to lift joint from elevators. ",
+      "translated": "Una vez abiertos los elevadores, baje el brazo trasero del Wrangler para levantar el tramo y separarlo de los elevadores. "
+    },
+    {
+      "id": "document-p105",
+      "part": "word/document.xml",
+      "source": "Activate link tilt toward stump, lower TDS & latch elevators. ",
+      "translated": "Accione el mecanismo de inclinación de los eslabones hacia el extremo sobresaliente de la sarta, baje el TDS y asegure el cierre de los elevadores. "
+    },
+    {
+      "id": "document-p106",
+      "part": "word/document.xml",
+      "source": "Skate pipe away from rotary & raise back arm. ",
+      "translated": "Use el patín para alejar el tramo de la mesa rotaria y levante el brazo trasero. "
+    },
+    {
+      "id": "document-p107",
+      "part": "word/document.xml",
+      "source": "Clean and dope box and install the box end protector once lying on the Wrangler.",
+      "translated": "Una vez que el tramo esté apoyado en el Wrangler, limpie la rosca de la caja, aplique grasa para roscas e instale el protector de caja."
+    },
+    {
+      "id": "document-p108",
+      "part": "word/document.xml",
+      "source": "Moving equipment can crush and cut off body parts.",
+      "translated": "Los equipos en movimiento pueden aplastar o amputar partes del cuerpo."
+    },
+    {
+      "id": "document-p109",
+      "part": "word/document.xml",
+      "source": "Hands and any other body parts that get between the elevators and stump will be crushed. ",
+      "translated": "Las manos o cualquier otra parte del cuerpo que quede entre los elevadores y el extremo sobresaliente de la sarta sufrirán lesiones por aplastamiento. "
+    },
+    {
+      "id": "document-p110",
+      "part": "word/document.xml",
+      "source": "Threads not cleaned, lubed, or protected properly, can cause problems later. ",
+      "translated": "Las deficiencias en la limpieza, lubricación o protección de las roscas pueden causar problemas más adelante. "
+    },
+    {
+      "id": "document-p111",
+      "part": "word/document.xml",
+      "source": "Thread protector not being installed properly and falling off hitting someone, or threads of pipe getting damaged.",
+      "translated": "Un protector de rosca mal instalado puede desprenderse y golpear a alguien o dejar la rosca de la tubería expuesta a daños."
+    },
+    {
+      "id": "document-p112",
+      "part": "word/document.xml",
+      "source": "Red Zone recognition and awareness of surroundings.",
+      "translated": "Identifique la zona roja y manténgase atento a lo que ocurre a su alrededor."
+    },
+    {
+      "id": "document-p113",
+      "part": "word/document.xml",
+      "source": "Be mindful of where the pipe wrangler is at all times stay clear of pipe wrangler path.  ",
+      "translated": "Ubique el Pipe Wrangler en todo momento y manténgase fuera de su trayectoria.  "
+    },
+    {
+      "id": "document-p114",
+      "part": "word/document.xml",
+      "source": "Properly clean and lube the pipe threads, and install the protector to the shoulder.",
+      "translated": "Limpie y lubrique bien las roscas de la tubería y enrosque el protector hasta que asiente contra el hombro de la conexión."
+    },
+    {
+      "id": "document-p115",
+      "part": "word/document.xml",
+      "source": "Have protectors staged to the side for easy access. ",
+      "translated": "Coloque los protectores a un lado, al alcance de la mano. "
+    },
+    {
+      "id": "document-p116",
+      "part": "word/document.xml",
+      "source": "7",
+      "translated": "7"
+    },
+    {
+      "id": "document-p117",
+      "part": "word/document.xml",
+      "source": "<g id=\"1\" type=\"format\">Exit V-Door with Pipe Wrangler.</g><g id=\"2\" type=\"format\"> </g>",
+      "translated": "<g id=\"1\" type=\"format\">Saque el tramo por la puerta en V con el Pipe Wrangler.</g><g id=\"2\" type=\"format\"> </g>"
+    },
+    {
+      "id": "document-p118",
+      "part": "word/document.xml",
+      "source": "Joint rolling off of the Wrangler. ",
+      "translated": "El tramo puede rodar y caer del Wrangler. "
+    },
+    {
+      "id": "document-p119",
+      "part": "word/document.xml",
+      "source": "Enforce Red zone beneath V-door.",
+      "translated": "Haga respetar las restricciones de acceso a la zona roja debajo de la puerta en V."
+    },
+    {
+      "id": "document-p120",
+      "part": "word/document.xml",
+      "source": "Wrangler operator make sure area on cantilever is clear before lowering joint to cantilever.",
+      "translated": "Antes de bajar el tramo al voladizo, el operador del Wrangler debe verificar que el área de recepción esté despejada."
+    },
+    {
+      "id": "document-p121",
+      "part": "word/document.xml",
+      "source": "Step",
+      "translated": "Paso"
+    },
+    {
+      "id": "document-p122",
+      "part": "word/document.xml",
+      "source": "Work Activity",
+      "translated": "Actividad de trabajo"
+    },
+    {
+      "id": "document-p123",
+      "part": "word/document.xml",
+      "source": "Known Hazards",
+      "translated": "Peligros conocidos"
+    },
+    {
+      "id": "document-p124",
+      "part": "word/document.xml",
+      "source": "Base Line Control",
+      "translated": "Medida básica de control"
+    },
+    {
+      "id": "document-p125",
+      "part": "word/document.xml",
+      "source": "8",
+      "translated": "8"
+    },
+    {
+      "id": "document-p126",
+      "part": "word/document.xml",
+      "source": "The Wrangler operator will kick the single onto the gull wings.",
+      "translated": "El operador del Wrangler debe accionar el expulsor para pasar el tramo a las alas de gaviota."
+    },
+    {
+      "id": "document-p127",
+      "part": "word/document.xml",
+      "source": "Joint rolling off of the gull wings injuring men working nearby. ",
+      "translated": "El tramo puede rodar y caer de las alas de gaviota y lesionar al personal que trabaja cerca. "
+    },
+    {
+      "id": "document-p128",
+      "part": "word/document.xml",
+      "source": "Injury to skin and eyes due to coming in contact with drilling or completion fluids.",
+      "translated": "El contacto con fluidos de perforación o de terminación puede causar lesiones en la piel y los ojos."
+    },
+    {
+      "id": "document-p129",
+      "part": "word/document.xml",
+      "source": "Ensure not to have gull wings to low. ",
+      "translated": "Verifique que las alas de gaviota no estén demasiado bajas. "
+    },
+    {
+      "id": "document-p130",
+      "part": "word/document.xml",
+      "source": "Do not pull joint from trough if it does not kick out, push the joint out.",
+      "translated": "Si el expulsor no saca el tramo de la canaleta, empújelo hacia afuera. No jale el tramo."
+    },
+    {
+      "id": "document-p131",
+      "part": "word/document.xml",
+      "source": "Make sure stanchion posts are in position in case joint rolls off of the gull wings.",
+      "translated": "Verifique que los postes de contención estén en posición para detener el tramo si rueda fuera de las alas de gaviota."
+    },
+    {
+      "id": "document-p132",
+      "part": "word/document.xml",
+      "source": "9",
+      "translated": "9"
+    },
+    {
+      "id": "document-p133",
+      "part": "word/document.xml",
+      "source": "When the pre-determined number of joints is rolled onto gull wings, the crane operator will remove the joints from the gull wings. ",
+      "translated": "Una vez que haya rodado hasta las alas de gaviota la cantidad prevista de tramos, el operador de la grúa debe retirarlos de las alas. "
+    },
+    {
+      "id": "document-p134",
+      "part": "word/document.xml",
+      "source": "Continue with steps 1-9 until the required number of joints are laid down.",
+      "translated": "Repita los pasos del 1 al 9 hasta completar la descarga de la cantidad requerida de tramos."
+    },
+    {
+      "id": "document-p135",
+      "part": "word/document.xml",
+      "source": "Dropped objects, pinch points. ",
+      "translated": "Caída de objetos y puntos de atrapamiento. "
+    },
+    {
+      "id": "document-p136",
+      "part": "word/document.xml",
+      "source": "Injury to skin and eyes due to coming in contact with drilling or completion fluids.",
+      "translated": "Lesiones en la piel y los ojos por contacto con fluidos de perforación o de terminación."
+    },
+    {
+      "id": "document-p137",
+      "part": "word/document.xml",
+      "source": "Be mindful of pinch points when wrapping pipe on gull wings. ",
+      "translated": "Identifique los puntos de atrapamiento al colocar las eslingas alrededor de la tubería en los soportes tipo ala de gaviota. "
+    },
+    {
+      "id": "document-p138",
+      "part": "word/document.xml",
+      "source": "Ensure to wrap all 6 joints and wrap both sets of slings the same way and direction.",
+      "translated": "Asegúrese de que ambos juegos de eslingas rodeen los 6 tramos de tubería de la misma manera y en el mismo sentido."
+    },
+    {
+      "id": "document-p139",
+      "part": "word/document.xml",
+      "source": "Improvements to Procedure / Post-Job Review Notes",
+      "translated": "Mejoras al procedimiento / Notas de la revisión posterior al trabajo"
+    },
+    {
+      "id": "document-p140",
+      "part": "word/document.xml",
+      "source": "Workplace Risk Assessment (To Be Completed at The Job Site)",
+      "translated": "Evaluación de riesgos en el lugar de trabajo (llenar en el sitio de la operación)"
+    },
+    {
+      "id": "document-p141",
+      "part": "word/document.xml",
+      "source": "PART B (2 of 2)",
+      "translated": "PARTE B (2 de 2)"
+    },
+    {
+      "id": "document-p142",
+      "part": "word/document.xml",
+      "source": "Job Supervisor Name",
+      "translated": "Nombre del supervisor del trabajo"
+    },
+    {
+      "id": "document-p143",
+      "part": "word/document.xml",
+      "source": "Date",
+      "translated": "Fecha"
+    },
+    {
+      "id": "document-p144",
+      "part": "word/document.xml",
+      "source": "Job Steps",
+      "translated": "Pasos del trabajo"
+    },
+    {
+      "id": "document-p145",
+      "part": "word/document.xml",
+      "source": "Specific Potential Hazards",
+      "translated": "Peligros potenciales específicos"
+    },
+    {
+      "id": "document-p146",
+      "part": "word/document.xml",
+      "source": "Specific Hazard Additional Controls",
+      "translated": "Controles adicionales para cada peligro específico"
+    },
+    {
+      "id": "document-p147",
+      "part": "word/document.xml",
+      "source": "Responsible",
+      "translated": "Responsable"
+    },
+    {
+      "id": "document-p148",
+      "part": "word/document.xml",
+      "source": "Pre-Job Safety Meeting?",
+      "translated": "¿Se realizó la reunión de seguridad previa al trabajo?"
+    },
+    {
+      "id": "document-p149",
+      "part": "word/document.xml",
+      "source": "Open Questions Used?",
+      "translated": "¿Se hicieron preguntas abiertas?"
+    },
+    {
+      "id": "document-p150",
+      "part": "word/document.xml",
+      "source": "Task Understood?",
+      "translated": "¿La cuadrilla comprendió la tarea?"
+    },
+    {
+      "id": "document-p151",
+      "part": "word/document.xml",
+      "source": "Superior Appointed?",
+      "translated": "¿Se designó a un supervisor?"
+    },
+    {
+      "id": "document-p152",
+      "part": "word/document.xml",
+      "source": "SWA Promoted?",
+      "translated": "¿Se promovió el ejercicio de la autoridad para detener el trabajo (SWA)?"
+    },
+    {
+      "id": "document-p153",
+      "part": "word/document.xml",
+      "source": "Lessons Learned From Industry",
+      "translated": "Lecciones aprendidas en la industria"
+    },
+    {
+      "id": "document-p154",
+      "part": "word/document.xml",
+      "source": "Incident Date: January 26th 2013 2013-7",
+      "translated": "Fecha del incidente: 26 de enero de 2013 2013-7"
+    },
+    {
+      "id": "document-p155",
+      "part": "word/document.xml",
+      "source": "Rowan HSE Alerts are intended communicate fleet wide information on recent safety, health and environmental related incidents that occur on either a Rowan installation or other drilling installation. Please contact the HSE Department for further information. Thank you!",
+      "translated": "Las alertas de seguridad, salud y medio ambiente (HSE) de Rowan informan a toda la flota sobre incidentes recientes en estas materias ocurridos en instalaciones de Rowan o en otras instalaciones de perforación. Para obtener más información, comuníquese con el Departamento de HSE. ¡Gracias!"
+    },
+    {
+      "id": "document-p156",
+      "part": "word/document.xml",
+      "source": "Laying Out Pipe Causes Injury to Foot:",
+      "translated": "Lesión en el pie al tender tubería:"
+    },
+    {
+      "id": "document-p157",
+      "part": "word/document.xml",
+      "source": "During the operation of laying out drill pipe on the cantilever deck, the crew began removing the slings from the bundles. One sling became stuck between two pieces of drill pipe, causing an employee to force the sling free. The joints of drill pipe began to separate; rolling toward the individual as he attempted to escape by jumping off the previously stacked drill pipe. The rolling drill pipe caught the individual’s right foot between the joint of drill pipe and the Samson post.",
+      "translated": "Mientras tendía la tubería de perforación sobre la cubierta en voladizo, la cuadrilla comenzó a retirar las eslingas de los paquetes de tubería. Una eslinga quedó atorada entre dos tramos y un trabajador la liberó a la fuerza. Los tramos comenzaron a separarse y a rodar hacia él. El trabajador intentó ponerse a salvo saltando de la tubería que ya estaba estibada. Su pie derecho quedó atrapado entre uno de los tramos que rodaban y el poste Samson."
+    },
+    {
+      "id": "document-p158",
+      "part": "word/document.xml",
+      "source": "Causes:",
+      "translated": "Causas:"
+    },
+    {
+      "id": "document-p159",
+      "part": "word/document.xml",
+      "source": "Injured person did not have a safe exit route when the drill pipe began to roll towards him. Stop Work Authority (SWA) was not utilized when the unsafe action began and slings that were used to land the pipe were too short for the job.",
+      "translated": "El trabajador lesionado carecía de una vía de escape segura cuando la tubería de perforación comenzó a rodar hacia él. Nadie ejerció la autoridad para detener el trabajo (SWA) al iniciarse la maniobra insegura. Las eslingas utilizadas para depositar la tubería en la cubierta eran demasiado cortas para la maniobra."
+    },
+    {
+      "id": "document-p160",
+      "part": "word/document.xml",
+      "source": "Corrective Action:",
+      "translated": "Acción correctiva:"
+    },
+    {
+      "id": "document-p161",
+      "part": "word/document.xml",
+      "source": "Chokes or rope stubs are to be used to separate tubulars, escape routes shall be established and understood by the crew before the job begins, and an HSE Alert shall be generated.",
+      "translated": "Utilice lazos de estrangulamiento o tramos cortos de cabo para separar los tubulares. Antes de iniciar el trabajo, establezca las vías de escape y asegúrese de que toda la cuadrilla las conozca. Emita una alerta de HSE."
+    },
+    {
+      "id": "document-p162",
+      "part": "word/document.xml",
+      "source": "Work Party Sign: Risks are acceptable as per RMS-QHSE-0107 Risk Assessment Procedure. I understand the task and my role.",
+      "translated": "Firma de los integrantes de la cuadrilla: Los riesgos son aceptables de acuerdo con el Procedimiento de Evaluación de Riesgos RMS-QHSE-0107. Comprendo la tarea y mi función."
+    },
+    {
+      "id": "document-p163",
+      "part": "word/document.xml",
+      "source": "Additional AA (If required)",
+      "translated": "AA adicional (si se requiere)"
+    }
+  ]
+}

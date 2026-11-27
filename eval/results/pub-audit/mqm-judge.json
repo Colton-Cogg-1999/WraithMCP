@@ -1,0 +1,5037 @@
+{
+  "updatedAt": "2026-11-27T16:36:07.699Z",
+  "judgedRuns": {
+    "nextjs-commerce::de": {
+      "appId": "nextjs-commerce",
+      "locale": "de",
+      "judgeModel": "opus",
+      "judgeCostUsd": 0.8509,
+      "summaryByArm": {
+        "NMT": {
+          "n": 63,
+          "scoreSum": 6180,
+          "contextMissed": 16,
+          "terminologyErrors": 3,
+          "criticalErrors": 0,
+          "majorErrors": 21,
+          "minorErrors": 14,
+          "avgMqmScore": 98.1
+        },
+        "B0": {
+          "n": 63,
+          "scoreSum": 6291,
+          "contextMissed": 0,
+          "terminologyErrors": 3,
+          "criticalErrors": 0,
+          "majorErrors": 0,
+          "minorErrors": 9,
+          "avgMqmScore": 99.86
+        },
+        "A0": {
+          "n": 63,
+          "scoreSum": 6291,
+          "contextMissed": 0,
+          "terminologyErrors": 0,
+          "criticalErrors": 0,
+          "majorErrors": 0,
+          "minorErrors": 9,
+          "avgMqmScore": 99.86
+        },
+        "W-pre": {
+          "n": 63,
+          "scoreSum": 6286,
+          "contextMissed": 0,
+          "terminologyErrors": 0,
+          "criticalErrors": 0,
+          "majorErrors": 1,
+          "minorErrors": 9,
+          "avgMqmScore": 99.78
+        },
+        "W-post": {
+          "n": 63,
+          "scoreSum": 6286,
+          "contextMissed": 0,
+          "terminologyErrors": 0,
+          "criticalErrors": 0,
+          "majorErrors": 1,
+          "minorErrors": 9,
+          "avgMqmScore": 99.78
+        }
+      },
+      "rawUnblindedSample": {
+        "hours.openBadge": {
+          "NMT": {
+            "score": 95,
+            "contextMissed": true,
+            "terminologyError": false,
+            "errors": [
+              {
+                "type": "wrong_sense",
+                "severity": "major",
+                "note": "'Öffnen' is the verb 'to open'. The badge needs the adjective state 'Geöffnet' (store is open)."
+              }
+            ]
+          },
+          "B0": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "A0": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "W-pre": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "W-post": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          }
+        },
+        "invoice.openAction": {
+          "B0": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "A0": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "W-pre": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "W-post": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "NMT": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          }
+        },
+        "community.postHeading": {
+          "A0": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "W-pre": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "W-post": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "NMT": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "B0": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          }
+        },
+        "composer.postAction": {
+          "W-pre": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "W-post": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "NMT": {
+            "score": 95,
+            "contextMissed": true,
+            "terminologyError": false,
+            "errors": [
+              {
+                "type": "wrong_sense",
+                "severity": "major",
+                "note": "'Beitrag' is the noun 'a post'. The button needs an imperative verb such as 'Senden' or 'Veröffentlichen'."
+              }
+            ]
+          },
+          "B0": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "A0": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          }
+        },
+        "checkout.orderLabel": {
+          "W-post": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "NMT": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "B0": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "A0": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "W-pre": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          }
+        },
+        "catalog.orderLabel": {
+          "NMT": {
+            "score": 95,
+            "contextMissed": true,
+            "terminologyError": false,
+            "errors": [
+              {
+                "type": "wrong_sense",
+                "severity": "major",
+                "note": "'Bestellung' means a purchase order. The context is sort order, which is 'Sortierung' or 'Reihenfolge'."
+              }
+            ]
+          },
+          "B0": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "A0": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "W-pre": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "W-post": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          }
+        },
+        "modal.closeButton": {
+          "B0": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "A0": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "W-pre": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "W-post": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "NMT": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          }
+        },
+        "branch.closeBadge": {
+          "A0": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "W-pre": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "W-post": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "NMT": {
+            "score": 95,
+            "contextMissed": true,
+            "terminologyError": false,
+            "errors": [
+              {
+                "type": "wrong_sense",
+                "severity": "major",
+                "note": "'Schließen' is the verb 'to close'. The badge means geographically nearby, so it should be 'In der Nähe'."
+              }
+            ]
+          },
+          "B0": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          }
+        },
+        "pricing.freeTag": {
+          "W-pre": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "W-post": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "NMT": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "B0": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "A0": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          }
+        },
+        "storage.freeTag": {
+          "W-post": {
+            "score": 95,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": [
+              {
+                "type": "addition",
+                "severity": "major",
+                "note": "Adds the unit 'GB', which is not in the source. If the UI already renders the amount, the unit will appear twice."
+              }
+            ]
+          },
+          "NMT": {
+            "score": 95,
+            "contextMissed": true,
+            "terminologyError": false,
+            "errors": [
+              {
+                "type": "wrong_sense",
+                "severity": "major",
+                "note": "'Kostenlos' means free of charge. Available storage space should be 'frei'."
+              }
+            ]
+          },
+          "B0": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "A0": {
+            "score": 99,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": [
+              {
+                "type": "capitalization",
+                "severity": "minor",
+                "note": "Lowercase 'frei' is inconsistent with standalone tag casing."
+              }
+            ]
+          },
+          "W-pre": {
+            "score": 95,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": [
+              {
+                "type": "addition",
+                "severity": "major",
+                "note": "Adds the unit 'GB', which is not in the source. If the UI already renders the amount, the unit will appear twice."
+              }
+            ]
+          }
+        }
+      }
+    },
+    "nextjs-commerce::zh-Hans": {
+      "appId": "nextjs-commerce",
+      "locale": "zh-Hans",
+      "judgeModel": "opus",
+      "judgeCostUsd": 0.799,
+      "summaryByArm": {
+        "NMT": {
+          "n": 63,
+          "scoreSum": 6160,
+          "contextMissed": 12,
+          "terminologyErrors": 2,
+          "criticalErrors": 3,
+          "majorErrors": 18,
+          "minorErrors": 20,
+          "avgMqmScore": 97.78
+        },
+        "B0": {
+          "n": 63,
+          "scoreSum": 6291,
+          "contextMissed": 1,
+          "terminologyErrors": 0,
+          "criticalErrors": 0,
+          "majorErrors": 1,
+          "minorErrors": 4,
+          "avgMqmScore": 99.86
+        },
+        "A0": {
+          "n": 63,
+          "scoreSum": 6290,
+          "contextMissed": 0,
+          "terminologyErrors": 0,
+          "criticalErrors": 0,
+          "majorErrors": 1,
+          "minorErrors": 5,
+          "avgMqmScore": 99.84
+        },
+        "W-pre": {
+          "n": 63,
+          "scoreSum": 6291,
+          "contextMissed": 0,
+          "terminologyErrors": 0,
+          "criticalErrors": 0,
+          "majorErrors": 1,
+          "minorErrors": 4,
+          "avgMqmScore": 99.86
+        },
+        "W-post": {
+          "n": 63,
+          "scoreSum": 6292,
+          "contextMissed": 0,
+          "terminologyErrors": 0,
+          "criticalErrors": 0,
+          "majorErrors": 1,
+          "minorErrors": 3,
+          "avgMqmScore": 99.87
+        }
+      },
+      "rawUnblindedSample": {
+        "hours.openBadge": {
+          "NMT": {
+            "score": 95,
+            "contextMissed": true,
+            "terminologyError": false,
+            "errors": [
+              {
+                "type": "wrong_sense",
+                "severity": "major",
+                "note": "'打开' is the verb 'to open'. The context needs the store-status adjective, which is '营业中'."
+              }
+            ]
+          },
+          "B0": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "A0": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "W-pre": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "W-post": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          }
+        },
+        "invoice.openAction": {
+          "B0": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "A0": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "W-pre": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "W-post": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "NMT": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          }
+        },
+        "community.postHeading": {
+          "A0": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "W-pre": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "W-post": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "NMT": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "B0": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          }
+        },
+        "composer.postAction": {
+          "W-pre": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "W-post": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "NMT": {
+            "score": 95,
+            "contextMissed": true,
+            "terminologyError": false,
+            "errors": [
+              {
+                "type": "wrong_sense",
+                "severity": "major",
+                "note": "'帖子' is the noun 'a post'. The button needs the imperative verb '发布'."
+              }
+            ]
+          },
+          "B0": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "A0": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          }
+        },
+        "checkout.orderLabel": {
+          "W-post": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "NMT": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "B0": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "A0": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "W-pre": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          }
+        },
+        "catalog.orderLabel": {
+          "NMT": {
+            "score": 95,
+            "contextMissed": true,
+            "terminologyError": false,
+            "errors": [
+              {
+                "type": "wrong_sense",
+                "severity": "major",
+                "note": "'订单' means a purchase order. The sort toolbar needs the sort-sequence sense, '排序'."
+              }
+            ]
+          },
+          "B0": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "A0": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "W-pre": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "W-post": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          }
+        },
+        "modal.closeButton": {
+          "B0": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "A0": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "W-pre": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "W-post": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "NMT": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          }
+        },
+        "branch.closeBadge": {
+          "A0": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "W-pre": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "W-post": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "NMT": {
+            "score": 95,
+            "contextMissed": true,
+            "terminologyError": false,
+            "errors": [
+              {
+                "type": "wrong_sense",
+                "severity": "major",
+                "note": "'关闭' is the verb 'to close'. The context needs the proximity adjective, '附近'."
+              }
+            ]
+          },
+          "B0": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          }
+        },
+        "pricing.freeTag": {
+          "W-pre": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "W-post": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "NMT": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "B0": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "A0": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          }
+        },
+        "storage.freeTag": {
+          "W-post": {
+            "score": 95,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": [
+              {
+                "type": "addition",
+                "severity": "major",
+                "note": "Adds the unit 'GB', which is not in the source string. If the component already renders the amount and unit, the UI will show a duplicate or wrong unit."
+              }
+            ]
+          },
+          "NMT": {
+            "score": 95,
+            "contextMissed": true,
+            "terminologyError": false,
+            "errors": [
+              {
+                "type": "wrong_sense",
+                "severity": "major",
+                "note": "'免费' means free of charge. The storage context needs available space, '可用'."
+              }
+            ]
+          },
+          "B0": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "A0": {
+            "score": 95,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": [
+              {
+                "type": "addition",
+                "severity": "major",
+                "note": "Adds the unit 'GB', which is not in the source string. If the component already renders the amount and unit, the UI will show a duplicate or wrong unit."
+              }
+            ]
+          },
+          "W-pre": {
+            "score": 95,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": [
+              {
+                "type": "addition",
+                "severity": "major",
+                "note": "Adds the unit 'GB', which is not in the source string. If the component already renders the amount and unit, the UI will show a duplicate or wrong unit."
+              }
+            ]
+          }
+        }
+      }
+    },
+    "nextjs-commerce::es-MX": {
+      "appId": "nextjs-commerce",
+      "locale": "es-MX",
+      "judgeModel": "opus",
+      "judgeCostUsd": 0.8416,
+      "summaryByArm": {
+        "NMT": {
+          "n": 63,
+          "scoreSum": 6132,
+          "contextMissed": 14,
+          "terminologyErrors": 5,
+          "criticalErrors": 9,
+          "majorErrors": 11,
+          "minorErrors": 23,
+          "avgMqmScore": 97.33
+        },
+        "B0": {
+          "n": 63,
+          "scoreSum": 6299,
+          "contextMissed": 0,
+          "terminologyErrors": 0,
+          "criticalErrors": 0,
+          "majorErrors": 0,
+          "minorErrors": 1,
+          "avgMqmScore": 99.98
+        },
+        "A0": {
+          "n": 63,
+          "scoreSum": 6291,
+          "contextMissed": 0,
+          "terminologyErrors": 0,
+          "criticalErrors": 0,
+          "majorErrors": 1,
+          "minorErrors": 4,
+          "avgMqmScore": 99.86
+        },
+        "W-pre": {
+          "n": 63,
+          "scoreSum": 6290,
+          "contextMissed": 0,
+          "terminologyErrors": 0,
+          "criticalErrors": 0,
+          "majorErrors": 1,
+          "minorErrors": 5,
+          "avgMqmScore": 99.84
+        },
+        "W-post": {
+          "n": 63,
+          "scoreSum": 6290,
+          "contextMissed": 0,
+          "terminologyErrors": 0,
+          "criticalErrors": 0,
+          "majorErrors": 1,
+          "minorErrors": 5,
+          "avgMqmScore": 99.84
+        }
+      },
+      "rawUnblindedSample": {
+        "hours.openBadge": {
+          "NMT": {
+            "score": 90,
+            "contextMissed": true,
+            "terminologyError": false,
+            "errors": [
+              {
+                "type": "wrong_sense",
+                "severity": "critical",
+                "note": "'Abrir' is the verb (to open a file). The badge needs the adjective meaning the store is open for business."
+              }
+            ]
+          },
+          "B0": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "A0": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "W-pre": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "W-post": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          }
+        },
+        "invoice.openAction": {
+          "B0": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "A0": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "W-pre": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "W-post": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "NMT": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          }
+        },
+        "community.postHeading": {
+          "A0": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "W-pre": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "W-post": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "NMT": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "B0": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          }
+        },
+        "composer.postAction": {
+          "W-pre": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "W-post": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "NMT": {
+            "score": 90,
+            "contextMissed": true,
+            "terminologyError": false,
+            "errors": [
+              {
+                "type": "wrong_sense",
+                "severity": "critical",
+                "note": "'Publicación' is the noun. The submit button needs the verb 'Publicar'."
+              }
+            ]
+          },
+          "B0": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "A0": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          }
+        },
+        "checkout.orderLabel": {
+          "W-post": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "NMT": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "B0": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "A0": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "W-pre": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          }
+        },
+        "catalog.orderLabel": {
+          "NMT": {
+            "score": 90,
+            "contextMissed": true,
+            "terminologyError": false,
+            "errors": [
+              {
+                "type": "wrong_sense",
+                "severity": "critical",
+                "note": "'Pedido' means a purchase order. A sort toolbar needs 'Orden' (sort sequence)."
+              }
+            ]
+          },
+          "B0": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "A0": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "W-pre": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "W-post": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          }
+        },
+        "modal.closeButton": {
+          "B0": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "A0": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "W-pre": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "W-post": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "NMT": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          }
+        },
+        "branch.closeBadge": {
+          "A0": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "W-pre": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "W-post": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "NMT": {
+            "score": 90,
+            "contextMissed": true,
+            "terminologyError": false,
+            "errors": [
+              {
+                "type": "wrong_sense",
+                "severity": "critical",
+                "note": "'Cerrar' is the verb 'to close'. The badge means nearby, so it needs 'Cerca'."
+              }
+            ]
+          },
+          "B0": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          }
+        },
+        "pricing.freeTag": {
+          "W-pre": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "W-post": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "NMT": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "B0": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "A0": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          }
+        },
+        "storage.freeTag": {
+          "W-post": {
+            "score": 95,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": [
+              {
+                "type": "addition",
+                "severity": "major",
+                "note": "Adds the unit 'GB', which is not in the source. The UI may show the unit twice if it already renders the value (e.g. '12 GB GB sin usar')."
+              }
+            ]
+          },
+          "NMT": {
+            "score": 90,
+            "contextMissed": true,
+            "terminologyError": false,
+            "errors": [
+              {
+                "type": "wrong_sense",
+                "severity": "critical",
+                "note": "'Gratis' means free of charge. The context is unused or available storage."
+              }
+            ]
+          },
+          "B0": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "A0": {
+            "score": 95,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": [
+              {
+                "type": "addition",
+                "severity": "major",
+                "note": "Adds the unit 'GB', which is not in the source. The unit may be duplicated or wrong if the quota is shown in another unit."
+              }
+            ]
+          },
+          "W-pre": {
+            "score": 95,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": [
+              {
+                "type": "addition",
+                "severity": "major",
+                "note": "Adds the unit 'GB', which is not in the source. The unit may be duplicated in the rendered UI."
+              }
+            ]
+          }
+        }
+      }
+    },
+    "nextjs-commerce::ar": {
+      "appId": "nextjs-commerce",
+      "locale": "ar",
+      "judgeModel": "opus",
+      "judgeCostUsd": 0.8979,
+      "summaryByArm": {
+        "NMT": {
+          "n": 63,
+          "scoreSum": 6091,
+          "contextMissed": 17,
+          "terminologyErrors": 2,
+          "criticalErrors": 9,
+          "majorErrors": 19,
+          "minorErrors": 25,
+          "avgMqmScore": 96.68
+        },
+        "B0": {
+          "n": 63,
+          "scoreSum": 6284,
+          "contextMissed": 0,
+          "terminologyErrors": 0,
+          "criticalErrors": 0,
+          "majorErrors": 1,
+          "minorErrors": 11,
+          "avgMqmScore": 99.75
+        },
+        "A0": {
+          "n": 63,
+          "scoreSum": 6283,
+          "contextMissed": 0,
+          "terminologyErrors": 0,
+          "criticalErrors": 0,
+          "majorErrors": 1,
+          "minorErrors": 12,
+          "avgMqmScore": 99.73
+        },
+        "W-pre": {
+          "n": 63,
+          "scoreSum": 6297,
+          "contextMissed": 0,
+          "terminologyErrors": 0,
+          "criticalErrors": 0,
+          "majorErrors": 0,
+          "minorErrors": 3,
+          "avgMqmScore": 99.95
+        },
+        "W-post": {
+          "n": 63,
+          "scoreSum": 6292,
+          "contextMissed": 0,
+          "terminologyErrors": 0,
+          "criticalErrors": 0,
+          "majorErrors": 1,
+          "minorErrors": 3,
+          "avgMqmScore": 99.87
+        }
+      },
+      "rawUnblindedSample": {
+        "hours.openBadge": {
+          "NMT": {
+            "score": 95,
+            "contextMissed": true,
+            "terminologyError": false,
+            "errors": [
+              {
+                "type": "wrong_sense",
+                "severity": "major",
+                "note": "'فتح' is the verbal noun 'opening/to open'; the badge needs the adjective 'مفتوح' (store is open)."
+              }
+            ]
+          },
+          "B0": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "A0": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "W-pre": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "W-post": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          }
+        },
+        "invoice.openAction": {
+          "B0": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "A0": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "W-pre": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "W-post": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "NMT": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          }
+        },
+        "community.postHeading": {
+          "A0": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "W-pre": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "W-post": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "NMT": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "B0": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          }
+        },
+        "composer.postAction": {
+          "W-pre": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "W-post": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "NMT": {
+            "score": 95,
+            "contextMissed": true,
+            "terminologyError": false,
+            "errors": [
+              {
+                "type": "wrong_sense",
+                "severity": "major",
+                "note": "'منشور' is the noun 'a post'; the button needs the action 'نشر' (publish)."
+              }
+            ]
+          },
+          "B0": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "A0": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          }
+        },
+        "checkout.orderLabel": {
+          "W-post": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "NMT": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "B0": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "A0": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "W-pre": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          }
+        },
+        "catalog.orderLabel": {
+          "NMT": {
+            "score": 90,
+            "contextMissed": true,
+            "terminologyError": false,
+            "errors": [
+              {
+                "type": "mistranslation",
+                "severity": "critical",
+                "note": "'الطلب' means a purchase order; the sort toolbar needs 'الترتيب' (sort order)."
+              }
+            ]
+          },
+          "B0": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "A0": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "W-pre": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "W-post": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          }
+        },
+        "modal.closeButton": {
+          "B0": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "A0": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "W-pre": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "W-post": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "NMT": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          }
+        },
+        "branch.closeBadge": {
+          "A0": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "W-pre": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "W-post": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "NMT": {
+            "score": 90,
+            "contextMissed": true,
+            "terminologyError": false,
+            "errors": [
+              {
+                "type": "mistranslation",
+                "severity": "critical",
+                "note": "'إغلاق' means 'closing/close (action)'; the badge means geographically nearby ('قريب')."
+              }
+            ]
+          },
+          "B0": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          }
+        },
+        "pricing.freeTag": {
+          "W-pre": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "W-post": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "NMT": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "B0": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "A0": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          }
+        },
+        "storage.freeTag": {
+          "W-post": {
+            "score": 95,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": [
+              {
+                "type": "addition",
+                "severity": "major",
+                "note": "Adds 'GB of space' not in the source; likely duplicates the unit the UI renders separately."
+              }
+            ]
+          },
+          "NMT": {
+            "score": 90,
+            "contextMissed": true,
+            "terminologyError": false,
+            "errors": [
+              {
+                "type": "mistranslation",
+                "severity": "critical",
+                "note": "'مجاني' means free of charge; the context is available storage space."
+              }
+            ]
+          },
+          "B0": {
+            "score": 99,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": [
+              {
+                "type": "addition",
+                "severity": "minor",
+                "note": "Adds 'space' (مساحة); acceptable, but longer than the source tag."
+              }
+            ]
+          },
+          "A0": {
+            "score": 95,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": [
+              {
+                "type": "addition",
+                "severity": "major",
+                "note": "Adds the 'GB' unit not in the source; risks duplicating the unit the UI renders."
+              }
+            ]
+          },
+          "W-pre": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          }
+        }
+      }
+    },
+    "oss-android-fossify::de": {
+      "appId": "oss-android-fossify",
+      "locale": "de",
+      "judgeModel": "opus",
+      "judgeCostUsd": 0.1826,
+      "summaryByArm": {
+        "NMT": {
+          "n": 13,
+          "scoreSum": 1282,
+          "contextMissed": 2,
+          "terminologyErrors": 5,
+          "criticalErrors": 0,
+          "majorErrors": 3,
+          "minorErrors": 3,
+          "avgMqmScore": 98.62
+        },
+        "B0": {
+          "n": 13,
+          "scoreSum": 1300,
+          "contextMissed": 0,
+          "terminologyErrors": 0,
+          "criticalErrors": 0,
+          "majorErrors": 0,
+          "minorErrors": 0,
+          "avgMqmScore": 100
+        },
+        "A0": {
+          "n": 13,
+          "scoreSum": 1298,
+          "contextMissed": 0,
+          "terminologyErrors": 0,
+          "criticalErrors": 0,
+          "majorErrors": 0,
+          "minorErrors": 2,
+          "avgMqmScore": 99.85
+        },
+        "W-pre": {
+          "n": 13,
+          "scoreSum": 1299,
+          "contextMissed": 0,
+          "terminologyErrors": 0,
+          "criticalErrors": 0,
+          "majorErrors": 0,
+          "minorErrors": 1,
+          "avgMqmScore": 99.92
+        },
+        "W-post": {
+          "n": 13,
+          "scoreSum": 1299,
+          "contextMissed": 0,
+          "terminologyErrors": 0,
+          "criticalErrors": 0,
+          "majorErrors": 0,
+          "minorErrors": 1,
+          "avgMqmScore": 99.92
+        }
+      },
+      "rawUnblindedSample": {
+        "fetching_event_failed": {
+          "NMT": {
+            "score": 99,
+            "contextMissed": false,
+            "terminologyError": true,
+            "errors": [
+              {
+                "type": "terminology",
+                "severity": "minor",
+                "note": "'Ereignis' is less idiomatic than 'Termin' for calendar events in German calendar apps"
+              }
+            ]
+          },
+          "B0": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "A0": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "W-pre": {
+            "score": 99,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": [
+              {
+                "type": "punctuation",
+                "severity": "minor",
+                "note": "Adds a trailing period that the source does not have"
+              }
+            ]
+          },
+          "W-post": {
+            "score": 99,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": [
+              {
+                "type": "punctuation",
+                "severity": "minor",
+                "note": "Adds a trailing period that the source does not have"
+              }
+            ]
+          }
+        },
+        "app_launcher_name": {
+          "B0": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "A0": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "W-pre": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "W-post": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "NMT": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          }
+        },
+        "change_view": {
+          "A0": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "W-pre": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "W-post": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "NMT": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "B0": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          }
+        },
+        "daily_view": {
+          "W-pre": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "W-post": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "NMT": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "B0": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "A0": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          }
+        },
+        "weekly_view": {
+          "W-post": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "NMT": {
+            "score": 99,
+            "contextMissed": false,
+            "terminologyError": true,
+            "errors": [
+              {
+                "type": "consistency",
+                "severity": "minor",
+                "note": "'Wochenübersicht' (overview) is inconsistent with the sibling '-ansicht' view names (Tages-/Monats-/Jahresansicht)"
+              }
+            ]
+          },
+          "B0": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "A0": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "W-pre": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          }
+        },
+        "monthly_view": {
+          "NMT": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "B0": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "A0": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "W-pre": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "W-post": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          }
+        },
+        "yearly_view": {
+          "B0": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "A0": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "W-pre": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "W-post": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "NMT": {
+            "score": 99,
+            "contextMissed": false,
+            "terminologyError": true,
+            "errors": [
+              {
+                "type": "consistency",
+                "severity": "minor",
+                "note": "'Jahresübersicht' (overview) is inconsistent with the sibling '-ansicht' view names"
+              }
+            ]
+          }
+        },
+        "monthly_daily_view": {
+          "A0": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "W-pre": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "W-post": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "NMT": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "B0": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          }
+        },
+        "simple_event_list": {
+          "W-pre": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "W-post": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "NMT": {
+            "score": 95,
+            "contextMissed": true,
+            "terminologyError": true,
+            "errors": [
+              {
+                "type": "wrong_sense",
+                "severity": "major",
+                "note": "'Veranstaltung' means a public event or function; a calendar entry is a 'Termin'"
+              }
+            ]
+          },
+          "B0": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "A0": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          }
+        },
+        "no_upcoming_events": {
+          "W-post": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "NMT": {
+            "score": 90,
+            "contextMissed": true,
+            "terminologyError": true,
+            "errors": [
+              {
+                "type": "mistranslation",
+                "severity": "major",
+                "note": "'finden derzeit ... statt' (currently taking place) changes the meaning from 'upcoming' to 'happening now'"
+              },
+              {
+                "type": "wrong_sense",
+                "severity": "major",
+                "note": "'Veranstaltungen' (public events) is the wrong sense; a calendar entry is a 'Termin'"
+              }
+            ]
+          },
+          "B0": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "A0": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "W-pre": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          }
+        }
+      }
+    },
+    "oss-android-fossify::zh-Hans": {
+      "appId": "oss-android-fossify",
+      "locale": "zh-Hans",
+      "judgeModel": "opus",
+      "judgeCostUsd": 0.1851,
+      "summaryByArm": {
+        "NMT": {
+          "n": 13,
+          "scoreSum": 1293,
+          "contextMissed": 1,
+          "terminologyErrors": 2,
+          "criticalErrors": 0,
+          "majorErrors": 0,
+          "minorErrors": 7,
+          "avgMqmScore": 99.46
+        },
+        "B0": {
+          "n": 13,
+          "scoreSum": 1300,
+          "contextMissed": 0,
+          "terminologyErrors": 0,
+          "criticalErrors": 0,
+          "majorErrors": 0,
+          "minorErrors": 0,
+          "avgMqmScore": 100
+        },
+        "A0": {
+          "n": 13,
+          "scoreSum": 1300,
+          "contextMissed": 0,
+          "terminologyErrors": 0,
+          "criticalErrors": 0,
+          "majorErrors": 0,
+          "minorErrors": 0,
+          "avgMqmScore": 100
+        },
+        "W-pre": {
+          "n": 13,
+          "scoreSum": 1300,
+          "contextMissed": 0,
+          "terminologyErrors": 0,
+          "criticalErrors": 0,
+          "majorErrors": 0,
+          "minorErrors": 0,
+          "avgMqmScore": 100
+        },
+        "W-post": {
+          "n": 13,
+          "scoreSum": 1300,
+          "contextMissed": 0,
+          "terminologyErrors": 0,
+          "criticalErrors": 0,
+          "majorErrors": 0,
+          "minorErrors": 0,
+          "avgMqmScore": 100
+        }
+      },
+      "rawUnblindedSample": {
+        "fetching_event_failed": {
+          "NMT": {
+            "score": 99,
+            "contextMissed": false,
+            "terminologyError": true,
+            "errors": [
+              {
+                "type": "terminology",
+                "severity": "minor",
+                "note": "'事件' is a literal rendering; Chinese calendar UIs normally use '日程' (or '活动') for a calendar event"
+              }
+            ]
+          },
+          "B0": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "A0": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "W-pre": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "W-post": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          }
+        },
+        "app_launcher_name": {
+          "B0": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "A0": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "W-pre": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "W-post": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "NMT": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          }
+        },
+        "change_view": {
+          "A0": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "W-pre": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "W-post": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "NMT": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "B0": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          }
+        },
+        "daily_view": {
+          "W-pre": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "W-post": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "NMT": {
+            "score": 99,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": [
+              {
+                "type": "style",
+                "severity": "minor",
+                "note": "'每日视图' is less idiomatic than the standard '日视图'; doesn't match the 周视图/月视图/年视图 series"
+              }
+            ]
+          },
+          "B0": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "A0": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          }
+        },
+        "weekly_view": {
+          "W-post": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "NMT": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "B0": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "A0": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "W-pre": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          }
+        },
+        "monthly_view": {
+          "NMT": {
+            "score": 99,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": [
+              {
+                "type": "style",
+                "severity": "minor",
+                "note": "'按月视图' is awkward; standard calendar term is '月视图', consistent with sibling view labels"
+              }
+            ]
+          },
+          "B0": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "A0": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "W-pre": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "W-post": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          }
+        },
+        "yearly_view": {
+          "B0": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "A0": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "W-pre": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "W-post": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "NMT": {
+            "score": 99,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": [
+              {
+                "type": "consistency",
+                "severity": "minor",
+                "note": "'年度视图' breaks the 日/周/月/年视图 naming series; '年度' leans toward fiscal/annual-report sense"
+              }
+            ]
+          }
+        },
+        "monthly_daily_view": {
+          "A0": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "W-pre": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "W-post": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "NMT": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "B0": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          }
+        },
+        "simple_event_list": {
+          "W-pre": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "W-post": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "NMT": {
+            "score": 98,
+            "contextMissed": false,
+            "terminologyError": true,
+            "errors": [
+              {
+                "type": "terminology",
+                "severity": "minor",
+                "note": "'事件' rather than calendar-standard '日程'; inconsistent with other strings"
+              },
+              {
+                "type": "style",
+                "severity": "minor",
+                "note": "'简单的…' with 的 is wordy for a view-option label"
+              }
+            ]
+          },
+          "B0": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "A0": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          }
+        },
+        "no_upcoming_events": {
+          "W-post": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "NMT": {
+            "score": 99,
+            "contextMissed": true,
+            "terminologyError": false,
+            "errors": [
+              {
+                "type": "wrong_sense",
+                "severity": "minor",
+                "note": "'即将举行的活动' reads as hosted gatherings/activities rather than personal calendar entries ('日程')"
+              }
+            ]
+          },
+          "B0": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "A0": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "W-pre": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          }
+        }
+      }
+    },
+    "oss-android-fossify::es-MX": {
+      "appId": "oss-android-fossify",
+      "locale": "es-MX",
+      "judgeModel": "opus",
+      "judgeCostUsd": 0.1697,
+      "summaryByArm": {
+        "NMT": {
+          "n": 13,
+          "scoreSum": 1299,
+          "contextMissed": 0,
+          "terminologyErrors": 0,
+          "criticalErrors": 0,
+          "majorErrors": 0,
+          "minorErrors": 1,
+          "avgMqmScore": 99.92
+        },
+        "B0": {
+          "n": 13,
+          "scoreSum": 1300,
+          "contextMissed": 0,
+          "terminologyErrors": 0,
+          "criticalErrors": 0,
+          "majorErrors": 0,
+          "minorErrors": 0,
+          "avgMqmScore": 100
+        },
+        "A0": {
+          "n": 13,
+          "scoreSum": 1299,
+          "contextMissed": 0,
+          "terminologyErrors": 0,
+          "criticalErrors": 0,
+          "majorErrors": 0,
+          "minorErrors": 1,
+          "avgMqmScore": 99.92
+        },
+        "W-pre": {
+          "n": 13,
+          "scoreSum": 1300,
+          "contextMissed": 0,
+          "terminologyErrors": 0,
+          "criticalErrors": 0,
+          "majorErrors": 0,
+          "minorErrors": 0,
+          "avgMqmScore": 100
+        },
+        "W-post": {
+          "n": 13,
+          "scoreSum": 1300,
+          "contextMissed": 0,
+          "terminologyErrors": 0,
+          "criticalErrors": 0,
+          "majorErrors": 0,
+          "minorErrors": 0,
+          "avgMqmScore": 100
+        }
+      },
+      "rawUnblindedSample": {
+        "fetching_event_failed": {
+          "NMT": {
+            "score": 99,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": [
+              {
+                "type": "locale_convention",
+                "severity": "minor",
+                "note": "'Se ha producido' sounds more like Spain Spanish; es-MX more commonly uses 'Se produjo' / 'Ocurrió', and the phrasing is wordier than needed for a short error message"
+              }
+            ]
+          },
+          "B0": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "A0": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "W-pre": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "W-post": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          }
+        },
+        "app_launcher_name": {
+          "B0": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "A0": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "W-pre": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "W-post": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "NMT": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          }
+        },
+        "change_view": {
+          "A0": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "W-pre": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "W-post": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "NMT": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "B0": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          }
+        },
+        "daily_view": {
+          "W-pre": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "W-post": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "NMT": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "B0": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "A0": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          }
+        },
+        "weekly_view": {
+          "W-post": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "NMT": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "B0": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "A0": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "W-pre": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          }
+        },
+        "monthly_view": {
+          "NMT": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "B0": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "A0": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "W-pre": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "W-post": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          }
+        },
+        "yearly_view": {
+          "B0": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "A0": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "W-pre": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "W-post": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "NMT": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          }
+        },
+        "monthly_daily_view": {
+          "A0": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "W-pre": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "W-post": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "NMT": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "B0": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          }
+        },
+        "simple_event_list": {
+          "W-pre": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "W-post": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "NMT": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "B0": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "A0": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          }
+        },
+        "no_upcoming_events": {
+          "W-post": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "NMT": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "B0": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "A0": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "W-pre": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          }
+        }
+      }
+    },
+    "oss-android-fossify::ar": {
+      "appId": "oss-android-fossify",
+      "locale": "ar",
+      "judgeModel": "opus",
+      "judgeCostUsd": 0.1835,
+      "summaryByArm": {
+        "NMT": {
+          "n": 13,
+          "scoreSum": 1290,
+          "contextMissed": 1,
+          "terminologyErrors": 2,
+          "criticalErrors": 0,
+          "majorErrors": 1,
+          "minorErrors": 5,
+          "avgMqmScore": 99.23
+        },
+        "B0": {
+          "n": 13,
+          "scoreSum": 1300,
+          "contextMissed": 0,
+          "terminologyErrors": 0,
+          "criticalErrors": 0,
+          "majorErrors": 0,
+          "minorErrors": 0,
+          "avgMqmScore": 100
+        },
+        "A0": {
+          "n": 13,
+          "scoreSum": 1300,
+          "contextMissed": 0,
+          "terminologyErrors": 0,
+          "criticalErrors": 0,
+          "majorErrors": 0,
+          "minorErrors": 0,
+          "avgMqmScore": 100
+        },
+        "W-pre": {
+          "n": 13,
+          "scoreSum": 1299,
+          "contextMissed": 0,
+          "terminologyErrors": 0,
+          "criticalErrors": 0,
+          "majorErrors": 0,
+          "minorErrors": 1,
+          "avgMqmScore": 99.92
+        },
+        "W-post": {
+          "n": 13,
+          "scoreSum": 1299,
+          "contextMissed": 0,
+          "terminologyErrors": 0,
+          "criticalErrors": 0,
+          "majorErrors": 0,
+          "minorErrors": 1,
+          "avgMqmScore": 99.92
+        }
+      },
+      "rawUnblindedSample": {
+        "fetching_event_failed": {
+          "NMT": {
+            "score": 95,
+            "contextMissed": true,
+            "terminologyError": true,
+            "errors": [
+              {
+                "type": "wrong_sense",
+                "severity": "major",
+                "note": "Uses 'العنصر' (item) for 'event'. This is a calendar app, so it should be 'الحدث'."
+              }
+            ]
+          },
+          "B0": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "A0": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "W-pre": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "W-post": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          }
+        },
+        "app_launcher_name": {
+          "B0": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "A0": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "W-pre": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "W-post": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "NMT": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          }
+        },
+        "change_view": {
+          "A0": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "W-pre": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "W-post": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "NMT": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "B0": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          }
+        },
+        "daily_view": {
+          "W-pre": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "W-post": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "NMT": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "B0": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "A0": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          }
+        },
+        "weekly_view": {
+          "W-post": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "NMT": {
+            "score": 99,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": [
+              {
+                "type": "consistency",
+                "severity": "minor",
+                "note": "Uses the indefinite 'عرض أسبوعي', but the sibling view labels use the definite form 'العرض ...'."
+              }
+            ]
+          },
+          "B0": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "A0": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "W-pre": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          }
+        },
+        "monthly_view": {
+          "NMT": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "B0": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "A0": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "W-pre": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "W-post": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          }
+        },
+        "yearly_view": {
+          "B0": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "A0": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "W-pre": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "W-post": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "NMT": {
+            "score": 99,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": [
+              {
+                "type": "consistency",
+                "severity": "minor",
+                "note": "Uses the indefinite 'عرض سنوي', but the sibling view labels use the definite form 'العرض ...'."
+              }
+            ]
+          }
+        },
+        "monthly_daily_view": {
+          "A0": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "W-pre": {
+            "score": 99,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": [
+              {
+                "type": "accuracy",
+                "severity": "minor",
+                "note": "'عرض الشهر وتفاصيل اليوم' adds 'details' and moves away from the parallel 'Monthly and daily view' label. It is still understandable."
+              }
+            ]
+          },
+          "W-post": {
+            "score": 99,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": [
+              {
+                "type": "accuracy",
+                "severity": "minor",
+                "note": "'عرض الشهر وتفاصيل اليوم' adds 'details' and moves away from the parallel 'Monthly and daily view' label. It is still understandable."
+              }
+            ]
+          },
+          "NMT": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "B0": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          }
+        },
+        "simple_event_list": {
+          "W-pre": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "W-post": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "NMT": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "B0": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "A0": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          }
+        },
+        "no_upcoming_events": {
+          "W-post": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "NMT": {
+            "score": 99,
+            "contextMissed": false,
+            "terminologyError": true,
+            "errors": [
+              {
+                "type": "terminology",
+                "severity": "minor",
+                "note": "'فعاليات' means public events or happenings. The app uses 'أحداث' for calendar entries everywhere else."
+              }
+            ]
+          },
+          "B0": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "A0": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "W-pre": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          }
+        }
+      }
+    },
+    "oss-ios-icecubes::de": {
+      "appId": "oss-ios-icecubes",
+      "locale": "de",
+      "judgeModel": "opus",
+      "judgeCostUsd": 0.2363,
+      "summaryByArm": {
+        "NMT": {
+          "n": 20,
+          "scoreSum": 1982,
+          "contextMissed": 2,
+          "terminologyErrors": 0,
+          "criticalErrors": 1,
+          "majorErrors": 1,
+          "minorErrors": 3,
+          "avgMqmScore": 99.1
+        },
+        "B0": {
+          "n": 20,
+          "scoreSum": 1999,
+          "contextMissed": 0,
+          "terminologyErrors": 0,
+          "criticalErrors": 0,
+          "majorErrors": 0,
+          "minorErrors": 1,
+          "avgMqmScore": 99.95
+        },
+        "A0": {
+          "n": 20,
+          "scoreSum": 1999,
+          "contextMissed": 0,
+          "terminologyErrors": 0,
+          "criticalErrors": 0,
+          "majorErrors": 0,
+          "minorErrors": 1,
+          "avgMqmScore": 99.95
+        },
+        "W-pre": {
+          "n": 20,
+          "scoreSum": 1998,
+          "contextMissed": 0,
+          "terminologyErrors": 0,
+          "criticalErrors": 0,
+          "majorErrors": 0,
+          "minorErrors": 2,
+          "avgMqmScore": 99.9
+        },
+        "W-post": {
+          "n": 20,
+          "scoreSum": 1998,
+          "contextMissed": 0,
+          "terminologyErrors": 0,
+          "criticalErrors": 0,
+          "majorErrors": 0,
+          "minorErrors": 2,
+          "avgMqmScore": 99.9
+        }
+      },
+      "rawUnblindedSample": {
+        "#%@": {
+          "NMT": {
+            "score": 95,
+            "contextMissed": true,
+            "terminologyError": false,
+            "errors": [
+              {
+                "type": "format_string",
+                "severity": "major",
+                "note": "Inserted a space between '#' and the placeholder. The hashtag now renders as '# tag' instead of '#tag'."
+              }
+            ]
+          },
+          "B0": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "A0": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "W-pre": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "W-post": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          }
+        },
+        "%@": {
+          "B0": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "A0": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "W-pre": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "W-post": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "NMT": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          }
+        },
+        "%@ add-tag-groups.edit.tags.field.warning.search-results.already-selected": {
+          "A0": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "W-pre": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "W-post": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "NMT": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "B0": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          }
+        },
+        "%@ add-tag-groups.edit.title.field.warning.already-exists": {
+          "W-pre": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "W-post": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "NMT": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "B0": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "A0": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          }
+        },
+        "%@ add-tag-groups.edit.title.field.warning.invalid-sfsymbol-name": {
+          "W-post": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "NMT": {
+            "score": 99,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": [
+              {
+                "type": "style",
+                "severity": "minor",
+                "note": "Word-for-word phrasing, and 'SFSymbol' should be written as Apple's 'SF Symbol'."
+              }
+            ]
+          },
+          "B0": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "A0": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "W-pre": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          }
+        },
+        "%@ was posted on Mastodon": {
+          "NMT": {
+            "score": 99,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": [
+              {
+                "type": "register",
+                "severity": "minor",
+                "note": "'gepostet' is a colloquial anglicism. 'veröffentlicht' is the more standard choice."
+              }
+            ]
+          },
+          "B0": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "A0": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "W-pre": {
+            "score": 99,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": [
+              {
+                "type": "punctuation",
+                "severity": "minor",
+                "note": "Adds a final period that is not in the source."
+              }
+            ]
+          },
+          "W-post": {
+            "score": 99,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": [
+              {
+                "type": "punctuation",
+                "severity": "minor",
+                "note": "Adds a final period that is not in the source."
+              }
+            ]
+          }
+        },
+        "%@© 2024 Thomas Ricouard": {
+          "B0": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "A0": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "W-pre": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "W-post": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "NMT": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          }
+        },
+        "%lld. ": {
+          "A0": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "W-pre": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "W-post": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "NMT": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "B0": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          }
+        },
+        "  ⸱  ": {
+          "W-pre": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "W-post": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "NMT": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "B0": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "A0": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          }
+        },
+        "accessibility.app-account.selector.accounts": {
+          "W-post": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "NMT": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "B0": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "A0": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "W-pre": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          }
+        }
+      }
+    },
+    "oss-ios-icecubes::zh-Hans": {
+      "appId": "oss-ios-icecubes",
+      "locale": "zh-Hans",
+      "judgeModel": "opus",
+      "judgeCostUsd": 0.2411,
+      "summaryByArm": {
+        "NMT": {
+          "n": 20,
+          "scoreSum": 1977,
+          "contextMissed": 2,
+          "terminologyErrors": 2,
+          "criticalErrors": 1,
+          "majorErrors": 2,
+          "minorErrors": 3,
+          "avgMqmScore": 98.85
+        },
+        "B0": {
+          "n": 20,
+          "scoreSum": 2000,
+          "contextMissed": 0,
+          "terminologyErrors": 0,
+          "criticalErrors": 0,
+          "majorErrors": 0,
+          "minorErrors": 0,
+          "avgMqmScore": 100
+        },
+        "A0": {
+          "n": 20,
+          "scoreSum": 2000,
+          "contextMissed": 0,
+          "terminologyErrors": 0,
+          "criticalErrors": 0,
+          "majorErrors": 0,
+          "minorErrors": 0,
+          "avgMqmScore": 100
+        },
+        "W-pre": {
+          "n": 20,
+          "scoreSum": 1992,
+          "contextMissed": 1,
+          "terminologyErrors": 0,
+          "criticalErrors": 0,
+          "majorErrors": 1,
+          "minorErrors": 3,
+          "avgMqmScore": 99.6
+        },
+        "W-post": {
+          "n": 20,
+          "scoreSum": 1992,
+          "contextMissed": 1,
+          "terminologyErrors": 0,
+          "criticalErrors": 0,
+          "majorErrors": 1,
+          "minorErrors": 3,
+          "avgMqmScore": 99.6
+        }
+      },
+      "rawUnblindedSample": {
+        "#%@": {
+          "NMT": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "B0": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "A0": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "W-pre": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "W-post": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          }
+        },
+        "%@": {
+          "B0": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "A0": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "W-pre": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "W-post": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "NMT": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          }
+        },
+        "%@ add-tag-groups.edit.tags.field.warning.search-results.already-selected": {
+          "A0": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "W-pre": {
+            "score": 95,
+            "contextMissed": true,
+            "terminologyError": false,
+            "errors": [
+              {
+                "type": "wrong_sense",
+                "severity": "major",
+                "note": "Adds '图标' (icon), but %@ here is a tag from the tag search results, not an icon."
+              }
+            ]
+          },
+          "W-post": {
+            "score": 95,
+            "contextMissed": true,
+            "terminologyError": false,
+            "errors": [
+              {
+                "type": "wrong_sense",
+                "severity": "major",
+                "note": "Adds '图标' (icon), but %@ here is a tag from the tag search results, not an icon."
+              }
+            ]
+          },
+          "NMT": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "B0": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          }
+        },
+        "%@ add-tag-groups.edit.title.field.warning.already-exists": {
+          "W-pre": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "W-post": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "NMT": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "B0": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "A0": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          }
+        },
+        "%@ add-tag-groups.edit.title.field.warning.invalid-sfsymbol-name": {
+          "W-post": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "NMT": {
+            "score": 99,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": [
+              {
+                "type": "fluency",
+                "severity": "minor",
+                "note": "'是一个无效的' is a word-for-word rendering; '不是有效的' reads more naturally."
+              }
+            ]
+          },
+          "B0": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "A0": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "W-pre": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          }
+        },
+        "%@ was posted on Mastodon": {
+          "NMT": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "B0": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "A0": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "W-pre": {
+            "score": 99,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": [
+              {
+                "type": "accuracy",
+                "severity": "minor",
+                "note": "Changes the passive '%@ was posted' to an active form with an implied subject ('[someone] posted %@'), which shifts who did the posting."
+              }
+            ]
+          },
+          "W-post": {
+            "score": 99,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": [
+              {
+                "type": "accuracy",
+                "severity": "minor",
+                "note": "Changes the passive '%@ was posted' to an active form with an implied subject ('[someone] posted %@'), which shifts who did the posting."
+              }
+            ]
+          }
+        },
+        "%@© 2024 Thomas Ricouard": {
+          "B0": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "A0": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "W-pre": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "W-post": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "NMT": {
+            "score": 95,
+            "contextMissed": false,
+            "terminologyError": true,
+            "errors": [
+              {
+                "type": "mistranslation",
+                "severity": "major",
+                "note": "Transliterates the copyright holder's name. Personal names in copyright notices should stay unchanged."
+              }
+            ]
+          }
+        },
+        "%lld. ": {
+          "A0": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "W-pre": {
+            "score": 99,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": [
+              {
+                "type": "formatting",
+                "severity": "minor",
+                "note": "Replaces '. ' with '、' and drops the trailing space. This is acceptable in Chinese but changes the list format the UI expects."
+              }
+            ]
+          },
+          "W-post": {
+            "score": 99,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": [
+              {
+                "type": "formatting",
+                "severity": "minor",
+                "note": "Replaces '. ' with '、' and drops the trailing space. This is acceptable in Chinese but changes the list format the UI expects."
+              }
+            ]
+          },
+          "NMT": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "B0": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          }
+        },
+        "  ⸱  ": {
+          "W-pre": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "W-post": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "NMT": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "B0": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "A0": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          }
+        },
+        "accessibility.app-account.selector.accounts": {
+          "W-post": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "NMT": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "B0": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "A0": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "W-pre": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          }
+        }
+      }
+    },
+    "oss-ios-icecubes::es-MX": {
+      "appId": "oss-ios-icecubes",
+      "locale": "es-MX",
+      "judgeModel": "opus",
+      "judgeCostUsd": 0.2299,
+      "summaryByArm": {
+        "NMT": {
+          "n": 20,
+          "scoreSum": 1988,
+          "contextMissed": 1,
+          "terminologyErrors": 0,
+          "criticalErrors": 1,
+          "majorErrors": 0,
+          "minorErrors": 2,
+          "avgMqmScore": 99.4
+        },
+        "B0": {
+          "n": 20,
+          "scoreSum": 1999,
+          "contextMissed": 0,
+          "terminologyErrors": 0,
+          "criticalErrors": 0,
+          "majorErrors": 0,
+          "minorErrors": 1,
+          "avgMqmScore": 99.95
+        },
+        "A0": {
+          "n": 20,
+          "scoreSum": 1999,
+          "contextMissed": 0,
+          "terminologyErrors": 0,
+          "criticalErrors": 0,
+          "majorErrors": 0,
+          "minorErrors": 1,
+          "avgMqmScore": 99.95
+        },
+        "W-pre": {
+          "n": 20,
+          "scoreSum": 1995,
+          "contextMissed": 1,
+          "terminologyErrors": 0,
+          "criticalErrors": 0,
+          "majorErrors": 1,
+          "minorErrors": 0,
+          "avgMqmScore": 99.75
+        },
+        "W-post": {
+          "n": 20,
+          "scoreSum": 1995,
+          "contextMissed": 1,
+          "terminologyErrors": 0,
+          "criticalErrors": 0,
+          "majorErrors": 1,
+          "minorErrors": 0,
+          "avgMqmScore": 99.75
+        }
+      },
+      "rawUnblindedSample": {
+        "#%@": {
+          "NMT": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "B0": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "A0": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "W-pre": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "W-post": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          }
+        },
+        "%@": {
+          "B0": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "A0": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "W-pre": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "W-post": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "NMT": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          }
+        },
+        "%@ add-tag-groups.edit.tags.field.warning.search-results.already-selected": {
+          "A0": {
+            "score": 99,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": [
+              {
+                "type": "register",
+                "severity": "minor",
+                "note": "Turns a neutral status message into one about the user ('Ya seleccionaste'). Still correct, but less neutral than the source."
+              }
+            ]
+          },
+          "W-pre": {
+            "score": 95,
+            "contextMissed": true,
+            "terminologyError": false,
+            "errors": [
+              {
+                "type": "wrong_sense",
+                "severity": "major",
+                "note": "%@ here is a hashtag in the tag-group tags field, not a symbol. 'El símbolo' gets the context wrong."
+              }
+            ]
+          },
+          "W-post": {
+            "score": 95,
+            "contextMissed": true,
+            "terminologyError": false,
+            "errors": [
+              {
+                "type": "wrong_sense",
+                "severity": "major",
+                "note": "%@ here is a hashtag in the tag-group tags field, not a symbol. 'El símbolo' gets the context wrong."
+              }
+            ]
+          },
+          "NMT": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "B0": {
+            "score": 99,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": [
+              {
+                "type": "register",
+                "severity": "minor",
+                "note": "Turns a neutral status message into one about the user ('Ya seleccionaste'). Still correct, but less neutral than the source."
+              }
+            ]
+          }
+        },
+        "%@ add-tag-groups.edit.title.field.warning.already-exists": {
+          "W-pre": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "W-post": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "NMT": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "B0": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "A0": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          }
+        },
+        "%@ add-tag-groups.edit.title.field.warning.invalid-sfsymbol-name": {
+          "W-post": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "NMT": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "B0": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "A0": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "W-pre": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          }
+        },
+        "%@ was posted on Mastodon": {
+          "NMT": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "B0": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "A0": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "W-pre": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "W-post": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          }
+        },
+        "%@© 2024 Thomas Ricouard": {
+          "B0": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "A0": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "W-pre": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "W-post": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "NMT": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          }
+        },
+        "%lld. ": {
+          "A0": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "W-pre": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "W-post": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "NMT": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "B0": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          }
+        },
+        "  ⸱  ": {
+          "W-pre": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "W-post": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "NMT": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "B0": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "A0": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          }
+        },
+        "accessibility.app-account.selector.accounts": {
+          "W-post": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "NMT": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "B0": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "A0": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "W-pre": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          }
+        }
+      }
+    },
+    "oss-ios-icecubes::ar": {
+      "appId": "oss-ios-icecubes",
+      "locale": "ar",
+      "judgeModel": "opus",
+      "judgeCostUsd": 0.249,
+      "summaryByArm": {
+        "NMT": {
+          "n": 20,
+          "scoreSum": 1977,
+          "contextMissed": 1,
+          "terminologyErrors": 1,
+          "criticalErrors": 1,
+          "majorErrors": 2,
+          "minorErrors": 3,
+          "avgMqmScore": 98.85
+        },
+        "B0": {
+          "n": 20,
+          "scoreSum": 1989,
+          "contextMissed": 0,
+          "terminologyErrors": 1,
+          "criticalErrors": 1,
+          "majorErrors": 0,
+          "minorErrors": 1,
+          "avgMqmScore": 99.45
+        },
+        "A0": {
+          "n": 20,
+          "scoreSum": 1985,
+          "contextMissed": 1,
+          "terminologyErrors": 1,
+          "criticalErrors": 1,
+          "majorErrors": 1,
+          "minorErrors": 0,
+          "avgMqmScore": 99.25
+        },
+        "W-pre": {
+          "n": 20,
+          "scoreSum": 1993,
+          "contextMissed": 1,
+          "terminologyErrors": 0,
+          "criticalErrors": 0,
+          "majorErrors": 1,
+          "minorErrors": 2,
+          "avgMqmScore": 99.65
+        },
+        "W-post": {
+          "n": 20,
+          "scoreSum": 1993,
+          "contextMissed": 1,
+          "terminologyErrors": 0,
+          "criticalErrors": 0,
+          "majorErrors": 1,
+          "minorErrors": 2,
+          "avgMqmScore": 99.65
+        }
+      },
+      "rawUnblindedSample": {
+        "#%@": {
+          "NMT": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "B0": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "A0": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "W-pre": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "W-post": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          }
+        },
+        "%@": {
+          "B0": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "A0": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "W-pre": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "W-post": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "NMT": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          }
+        },
+        "%@ add-tag-groups.edit.tags.field.warning.search-results.already-selected": {
+          "A0": {
+            "score": 95,
+            "contextMissed": true,
+            "terminologyError": false,
+            "errors": [
+              {
+                "type": "wrong_sense",
+                "severity": "major",
+                "note": "Adds 'الرمز' (symbol/code), but %@ is a hashtag in the tag-group search results. It should be 'الوسم' or left out."
+              }
+            ]
+          },
+          "W-pre": {
+            "score": 95,
+            "contextMissed": true,
+            "terminologyError": false,
+            "errors": [
+              {
+                "type": "wrong_sense",
+                "severity": "major",
+                "note": "Adds 'الرمز' (symbol), but %@ is a hashtag. It should be 'الوسم' or left out."
+              }
+            ]
+          },
+          "W-post": {
+            "score": 95,
+            "contextMissed": true,
+            "terminologyError": false,
+            "errors": [
+              {
+                "type": "wrong_sense",
+                "severity": "major",
+                "note": "Adds 'الرمز' (symbol), but %@ is a hashtag. It should be 'الوسم' or left out."
+              }
+            ]
+          },
+          "NMT": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "B0": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          }
+        },
+        "%@ add-tag-groups.edit.title.field.warning.already-exists": {
+          "W-pre": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "W-post": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "NMT": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "B0": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "A0": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          }
+        },
+        "%@ add-tag-groups.edit.title.field.warning.invalid-sfsymbol-name": {
+          "W-post": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "NMT": {
+            "score": 99,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": [
+              {
+                "type": "awkward_phrasing",
+                "severity": "minor",
+                "note": "Word-for-word copy of the English 'is an invalid SFSymbol name', and the placeholder is not bidi-isolated."
+              }
+            ]
+          },
+          "B0": {
+            "score": 99,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": [
+              {
+                "type": "terminology",
+                "severity": "minor",
+                "note": "Shortens the product name 'SF Symbols' to 'رموز SF'."
+              }
+            ]
+          },
+          "A0": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "W-pre": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          }
+        },
+        "%@ was posted on Mastodon": {
+          "NMT": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "B0": {
+            "score": 90,
+            "contextMissed": false,
+            "terminologyError": true,
+            "errors": [
+              {
+                "type": "dnt_violation",
+                "severity": "critical",
+                "note": "The DNT brand 'Mastodon' is transliterated as 'ماستودون'."
+              }
+            ]
+          },
+          "A0": {
+            "score": 90,
+            "contextMissed": false,
+            "terminologyError": true,
+            "errors": [
+              {
+                "type": "dnt_violation",
+                "severity": "critical",
+                "note": "The DNT brand 'Mastodon' is transliterated as 'ماستودون'."
+              }
+            ]
+          },
+          "W-pre": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "W-post": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          }
+        },
+        "%@© 2024 Thomas Ricouard": {
+          "B0": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "A0": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "W-pre": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "W-post": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "NMT": {
+            "score": 95,
+            "contextMissed": false,
+            "terminologyError": true,
+            "errors": [
+              {
+                "type": "proper_name_altered",
+                "severity": "major",
+                "note": "Transliterates the copyright holder's legal name. It should stay in Latin script."
+              }
+            ]
+          }
+        },
+        "%lld. ": {
+          "A0": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "W-pre": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "W-post": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "NMT": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "B0": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          }
+        },
+        "  ⸱  ": {
+          "W-pre": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "W-post": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "NMT": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "B0": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "A0": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          }
+        },
+        "accessibility.app-account.selector.accounts": {
+          "W-post": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "NMT": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "B0": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "A0": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          },
+          "W-pre": {
+            "score": 100,
+            "contextMissed": false,
+            "terminologyError": false,
+            "errors": []
+          }
+        }
+      }
+    }
+  }
+}
