@@ -43,6 +43,8 @@ export interface DocumentSegmentRecord {
   sourceHash: string;
   source: string;
   translation: string;
+  /** Re-extracted text from the written target document so tag normalization never causes false manual_edit_conflict. */
+  writtenDiskText?: string;
   lastSegmentId: string;
   origin?: "agent" | "manual";
   updatedAt: string;
@@ -208,9 +210,11 @@ function inspectDocumentState(
       let manualEditTagConflict = false;
 
       const diskSeg = existingTargetById.get(matchedPrior.lastSegmentId);
+      const expectedDiskText = matchedPrior.writtenDiskText ?? matchedPrior.translation;
       if (
         diskSeg &&
         diskSeg.part === item.segment.part &&
+        diskSeg.text !== expectedDiskText &&
         diskSeg.text !== matchedPrior.translation &&
         diskSeg.text !== item.segment.text
       ) {
@@ -562,16 +566,27 @@ function applyDocumentTranslationsUnlocked(
     const staleSegments: Record<string, DocumentStaleRecord> = {};
     let translatedCount = 0;
 
+    // Re-extract written target once so we record exact post-splice disk text (avoids false manual_edit_conflict on run/tag normalization)
+    const writtenDiskById = new Map<string, string>();
+    try {
+      const writtenDoc = adapter.extract(absTarget);
+      for (const s of writtenDoc.segments) writtenDiskById.set(s.id, s.text);
+    } catch {
+      // Fall back to pre-splice translation string if target cannot be re-extracted
+    }
+
     for (const ev of evaluation.segments) {
       const merged = mergedMap.get(ev.segment.id);
       if (merged) {
         translatedCount++;
+        const diskText = writtenDiskById.get(ev.segment.id);
         segmentRecords[ev.contentKey] = {
           contentKey: ev.contentKey,
           part: ev.segment.part,
           sourceHash: ev.sourceHash,
           source: ev.segment.text,
           translation: merged.text,
+          ...(diskText !== undefined ? { writtenDiskText: diskText } : {}),
           lastSegmentId: ev.segment.id,
           origin: merged.origin,
           updatedAt: now,
@@ -669,6 +684,7 @@ export function prepareDocument(
   options: {
     documentPath: string;
     targetLocale: string;
+    detail?: "compact" | "full";
     offset?: number;
     limit?: number;
   }
@@ -707,30 +723,53 @@ export function prepareDocument(
   );
 
   const offset = Math.max(0, options.offset ?? 0);
-  const limit = Math.max(1, Math.min(options.limit ?? 30, 100));
+  const limit = Math.max(1, Math.min(options.limit ?? 30, 300));
   const slice = evaluation.segments.slice(offset, offset + limit);
   const ctx = buildCompactDocumentContext(extracted, offset, limit);
+  const isCompact = options.detail === "compact";
+  const isFollowup = isCompact && offset > 0;
 
   const resolvedStyle = resolveStyleGuide(store.rootDir, config, [options.targetLocale]);
   const baseDocumentGuidance =
     "Translate with full document-level coherence using fullDocumentContext below. Preserve every <x id=\"...\"/> and <g id=\"...\">...</g> inline tag verbatim. Treat fuzzyMatches (even 100%) as strong contextual suggestions to verify.";
 
-  return {
-    file: options.documentPath,
-    format: extracted.format,
-    sourceLocale: config.sourceLocale,
-    targetLocale: options.targetLocale,
-    conventions: getLocaleConventions(options.targetLocale),
-    documentGuidance: composeTranslationGuidance(baseDocumentGuidance, resolvedStyle),
-    ...(resolvedStyle.hasAny ? { styleGuide: resolvedStyle } : {}),
-    stats: extracted.stats,
-    fullDocumentContext: ctx.text,
-    contextTruncated: ctx.truncated,
-    translatedSegments: evaluation.translatedCount,
-    staleSegments: evaluation.staleCount,
-    untranslatedSegments: evaluation.untranslatedCount,
-    pendingSegments: evaluation.pendingCount,
-    segments: slice.map((ev) => ({
+  const segments = slice.map((ev) => {
+    const glossaryHits = matchGlossaryTerms(ev.segment.plainText, glossary.entries, options.targetLocale);
+    const fuzzyMatches = findFuzzyMatches(ev.segment.text, memory, {
+      sourceLocale: config.sourceLocale,
+      targetLocale: options.targetLocale,
+      minScore: 55,
+      limit: 3,
+    }).map((m) => ({
+      ...m,
+      advisory:
+        m.score >= 95
+          ? "strong_suggestion_verify_context"
+          : "partial_suggestion_verify_context",
+    }));
+
+    if (isCompact) {
+      return {
+        id: ev.segment.id,
+        part: ev.segment.part,
+        source: ev.segment.text,
+        status: ev.status,
+        ...(ev.carriedTranslation !== undefined ? { currentTranslation: ev.carriedTranslation } : {}),
+        ...(ev.manuallyEdited ? { manuallyEdited: true } : {}),
+        ...(ev.staleInfo
+          ? {
+              previousSource: ev.staleInfo.previousSource,
+              previousTranslation: ev.staleInfo.previousTranslation,
+            }
+          : {}),
+        ...(ev.segment.tags.length > 0 ? { tags: ev.segment.tags } : {}),
+        ...(ev.segment.constraints ? { constraints: ev.segment.constraints } : {}),
+        ...(glossaryHits.length > 0 ? { glossaryHits } : {}),
+        ...(fuzzyMatches.length > 0 ? { fuzzyMatches } : {}),
+      };
+    }
+
+    return {
       id: ev.segment.id,
       part: ev.segment.part,
       source: ev.segment.text,
@@ -747,20 +786,32 @@ export function prepareDocument(
         : {}),
       tags: ev.segment.tags,
       ...(ev.segment.constraints ? { constraints: ev.segment.constraints } : {}),
-      glossaryHits: matchGlossaryTerms(ev.segment.plainText, glossary.entries, options.targetLocale),
-      fuzzyMatches: findFuzzyMatches(ev.segment.text, memory, {
-        sourceLocale: config.sourceLocale,
-        targetLocale: options.targetLocale,
-        minScore: 55,
-        limit: 3,
-      }).map((m) => ({
-        ...m,
-        advisory:
-          m.score >= 95
-            ? "strong_suggestion_verify_context"
-            : "partial_suggestion_verify_context",
-      })),
-    })),
+      glossaryHits,
+      fuzzyMatches,
+    };
+  });
+
+  return {
+    file: options.documentPath,
+    format: extracted.format,
+    sourceLocale: config.sourceLocale,
+    targetLocale: options.targetLocale,
+    ...(isFollowup
+      ? {}
+      : {
+          conventions: getLocaleConventions(options.targetLocale),
+          documentGuidance: composeTranslationGuidance(baseDocumentGuidance, resolvedStyle),
+          ...(resolvedStyle.hasAny ? { styleGuide: resolvedStyle } : {}),
+          stats: extracted.stats,
+        }),
+    ...(!isFollowup || ctx.truncated
+      ? { fullDocumentContext: ctx.text, contextTruncated: ctx.truncated }
+      : {}),
+    translatedSegments: evaluation.translatedCount,
+    staleSegments: evaluation.staleCount,
+    untranslatedSegments: evaluation.untranslatedCount,
+    pendingSegments: evaluation.pendingCount,
+    segments,
     totalSegments: extracted.segments.length,
     offset,
     limit,

@@ -1,17 +1,19 @@
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import { strToU8, zipSync } from "fflate";
+import { strFromU8, strToU8, unzipSync, zipSync } from "fflate";
 import { describe, expect, it } from "vitest";
 import { detectProjectAdapter, loadSourceCatalog } from "../src/adapters/registry.js";
 import { FlutterAdapter } from "../src/adapters/flutter.js";
 import { IosAdapter } from "../src/adapters/ios.js";
 import { applyTranslations } from "../src/core/apply.js";
 import { runCheck } from "../src/core/check.js";
+import { initProject } from "../src/core/init.js";
 import { prepareQeReview, submitQeVerdicts } from "../src/core/qe.js";
 import { WraithStore } from "../src/core/store.js";
 import { runTmsExport, runTmsImport } from "../src/core/tms.js";
 import { DocxDocumentAdapter } from "../src/documents/docx.js";
+import { applyDocumentTranslations, extractDocument, prepareDocument } from "../src/documents/registry.js";
 import { JsonFormatAdapter } from "../src/formats/json.js";
 
 function makeTmp(prefix: string): string {
@@ -246,5 +248,66 @@ Text("profile.posts \\(count)")`
     expect(iScan.usageByKey["profile.action.follow"]).toBeDefined();
     expect(iScan.usageByKey["profile.posts %lld"]).toBeDefined();
     fs.rmSync(iDir, { recursive: true, force: true });
+  });
+
+  it("REL-012: incremental DOCX v2 update after prepending a paragraph preserves human edits without false manual_edit_conflict on run-normalized tags", () => {
+    const dir = makeTmp("wraith-rel-docx-v2-");
+    fs.mkdirSync(path.join(dir, "docs"), { recursive: true });
+    const wNs = 'xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"';
+    const docXml = `<?xml version="1.0" encoding="UTF-8"?>
+<w:document ${wNs}><w:body>
+  <w:p><w:r><w:rPr><w:b/></w:rPr><w:t>Manual Slips;</w:t></w:r><w:r><w:t xml:space="preserve"> Muscle strains when pulling.</w:t></w:r></w:p>
+  <w:p><w:r><w:t>Hot Work</w:t></w:r></w:p>
+</w:body></w:document>`;
+    const makeDoc = (xml: string) =>
+      zipSync({
+        "[Content_Types].xml": strToU8(`<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"/>`),
+        "word/document.xml": strToU8(xml),
+      });
+    const srcPath = path.join(dir, "docs/sop.docx");
+    const tgtPath = path.join(dir, "docs/sop.es-MX.docx");
+    fs.writeFileSync(srcPath, makeDoc(docXml));
+    initProject({ rootDir: dir, sourceLocale: "en", targetLocales: ["es-MX"], documents: ["docs"], writeAgentRule: false });
+
+    const v1 = extractDocument(srcPath);
+    const r1 = applyDocumentTranslations(dir, {
+      sourceFile: "docs/sop.docx",
+      targetFile: "docs/sop.es-MX.docx",
+      targetLocale: "es-MX",
+      updates: [
+        { id: v1.segments[0].id, text: `Prefijo ${v1.segments[0].text}` },
+        { id: v1.segments[1].id, text: "Trabajo en caliente" },
+      ],
+    });
+    expect(r1.ok).toBe(true);
+
+    // Human edits second paragraph directly in target DOCX
+    const tgtZip = unzipSync(fs.readFileSync(tgtPath));
+    tgtZip["word/document.xml"] = strToU8(
+      strFromU8(tgtZip["word/document.xml"]).replace("Trabajo en caliente", "Trabajo con fuego (humano)")
+    );
+    fs.writeFileSync(tgtPath, zipSync(tgtZip));
+
+    // Source v2 prepends a new paragraph at top, shifting positional IDs
+    const v2Xml = docXml.replace("<w:body>", "<w:body><w:p><w:r><w:t>Revision 2 Addendum</w:t></w:r></w:p>");
+    fs.writeFileSync(srcPath, makeDoc(v2Xml));
+
+    const prep2 = prepareDocument(dir, { documentPath: "docs/sop.docx", targetLocale: "es-MX" });
+    expect(prep2.translatedSegments).toBe(2);
+    expect(prep2.pendingSegments).toBe(1);
+    const pending = prep2.segments.filter((s) => s.status !== "translated");
+    const r2 = applyDocumentTranslations(dir, {
+      sourceFile: "docs/sop.docx",
+      targetFile: "docs/sop.es-MX.docx",
+      targetLocale: "es-MX",
+      updates: [{ id: pending[0].id, text: "Anexo Revisión 2" }],
+    });
+    expect(r2.ok).toBe(true);
+    expect(r2.errors).toHaveLength(0);
+
+    const finalTgt = extractDocument(tgtPath);
+    expect(finalTgt.segments.some((s) => s.plainText === "Anexo Revisión 2")).toBe(true);
+    expect(finalTgt.segments.some((s) => s.plainText === "Trabajo con fuego (humano)")).toBe(true);
+    fs.rmSync(dir, { recursive: true, force: true });
   });
 });
