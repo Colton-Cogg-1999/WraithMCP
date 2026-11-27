@@ -44,9 +44,9 @@ afterAll(async () => {
 });
 
 describe(`T. MCP over real stdio (${BIN ?? "tsx src/bin.ts"})`, () => {
-  it("T1 lists 17 tools; every input schema is an object schema", async () => {
+  it("T1 lists 12 consolidated tools; every input schema is an object schema", async () => {
     const { tools } = await client.listTools();
-    expect(tools.length).toBe(17);
+    expect(tools.length).toBe(12);
     for (const t of tools) expect(t.inputSchema.type).toBe("object");
   });
 
@@ -62,7 +62,7 @@ describe(`T. MCP over real stdio (${BIN ?? "tsx src/bin.ts"})`, () => {
     const { tools } = await client.listTools();
     const annotated = tools.filter((t) => t.annotations && ("readOnlyHint" in t.annotations || "destructiveHint" in t.annotations));
     console.log(`[T3] annotated tools: ${annotated.length}/${tools.length}`);
-    expect(annotated.length).toBe(17);
+    expect(annotated.length).toBe(12);
   });
 
   it("T4 'memory' schema expresses per-action required fields (not a bag of 16 optional fields)", async () => {

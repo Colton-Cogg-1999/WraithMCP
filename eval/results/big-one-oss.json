@@ -1,0 +1,254 @@
+{
+  "generatedAt": "2026-11-27T15:14:42.078Z",
+  "model": "sonnet",
+  "repos": [
+    {
+      "id": "android-fossify-calendar",
+      "repo": "FossifyOrg/Calendar",
+      "framework": "android",
+      "format": "android-xml",
+      "sampledKeys": 30,
+      "a0": {
+        "translated": 30,
+        "parseError": null,
+        "catalogErrors": 0,
+        "countsByCode": {
+          "missing_source_key": 223,
+          "orphaned_key": 11
+        },
+        "chrf2VsHuman": 0,
+        "wallS": 20.2,
+        "costUsd": 0.0977
+      },
+      "wraith": {
+        "translated": 30,
+        "catalogErrors": 0,
+        "countsByCode": {
+          "missing_source_key": 223,
+          "orphaned_key": 11
+        },
+        "chrf2VsHuman": 0,
+        "contextNotesWritten": 30,
+        "questionsAsked": 0,
+        "qeInitialFlagged": 0,
+        "qeFinalSummary": {
+          "total": 30,
+          "ok": 30,
+          "flagged": 0,
+          "unreviewed": 0,
+          "humanVerified": 0
+        },
+        "qeFinalOutcome": "PASS",
+        "translateWallS": 60.9,
+        "qeWallS": 35.8,
+        "totalCostUsd": 0.5633
+      }
+    },
+    {
+      "id": "ios-icecubes",
+      "repo": "Dimillian/IceCubesApp",
+      "framework": "ios",
+      "format": "xcstrings",
+      "sampledKeys": 30,
+      "a0": {
+        "translated": 30,
+        "parseError": null,
+        "catalogErrors": 0,
+        "countsByCode": {
+          "missing_source_key": 63,
+          "orphaned_key": 29,
+          "untranslated": 2
+        },
+        "chrf2VsHuman": 0,
+        "wallS": 29.8,
+        "costUsd": 0.13
+      },
+      "wraith": {
+        "translated": 30,
+        "catalogErrors": 0,
+        "countsByCode": {
+          "missing_source_key": 63,
+          "open_question": 3,
+          "orphaned_key": 29,
+          "untranslated": 2
+        },
+        "chrf2VsHuman": 0,
+        "contextNotesWritten": 30,
+        "questionsAsked": 3,
+        "qeInitialFlagged": 0,
+        "qeFinalSummary": {
+          "total": 30,
+          "ok": 30,
+          "flagged": 0,
+          "unreviewed": 0,
+          "humanVerified": 0
+        },
+        "qeFinalOutcome": "PASS",
+        "translateWallS": 73.2,
+        "qeWallS": 40,
+        "totalCostUsd": 0.5939
+      }
+    },
+    {
+      "id": "flutter-musify",
+      "repo": "gokadzev/Musify",
+      "framework": "flutter",
+      "format": "arb",
+      "sampledKeys": 30,
+      "a0": {
+        "translated": 30,
+        "parseError": null,
+        "catalogErrors": 0,
+        "countsByCode": {
+          "hardcoded_string": 1,
+          "missing_plural_category": 1,
+          "missing_source_key": 84,
+          "orphaned_key": 19,
+          "untranslated": 2
+        },
+        "chrf2VsHuman": 0,
+        "wallS": 27.2,
+        "costUsd": 0.1173
+      },
+      "wraith": {
+        "translated": 30,
+        "catalogErrors": 0,
+        "countsByCode": {
+          "hardcoded_string": 1,
+          "missing_source_key": 84,
+          "orphaned_key": 19,
+          "untranslated": 2
+        },
+        "chrf2VsHuman": 0,
+        "contextNotesWritten": 30,
+        "questionsAsked": 0,
+        "qeInitialFlagged": 0,
+        "qeFinalSummary": {
+          "total": 30,
+          "ok": 30,
+          "flagged": 0,
+          "unreviewed": 0,
+          "humanVerified": 0
+        },
+        "qeFinalOutcome": "PASS",
+        "translateWallS": 60.5,
+        "qeWallS": 39.9,
+        "totalCostUsd": 0.6681
+      }
+    },
+    {
+      "id": "astro-starlight",
+      "repo": "withastro/starlight",
+      "framework": "astro",
+      "format": "json",
+      "sampledKeys": 1,
+      "a0": {
+        "translated": 1,
+        "parseError": null,
+        "catalogErrors": 0,
+        "countsByCode": {
+          "hardcoded_string": 96
+        },
+        "chrf2VsHuman": 0,
+        "wallS": 9.4,
+        "costUsd": 0.0698
+      },
+      "wraith": {
+        "translated": 1,
+        "catalogErrors": 0,
+        "countsByCode": {
+          "hardcoded_string": 96
+        },
+        "chrf2VsHuman": 0,
+        "contextNotesWritten": 1,
+        "questionsAsked": 0,
+        "qeInitialFlagged": 0,
+        "qeFinalSummary": {
+          "total": 1,
+          "ok": 1,
+          "flagged": 0,
+          "unreviewed": 0,
+          "humanVerified": 0
+        },
+        "qeFinalOutcome": "PASS",
+        "translateWallS": 25.5,
+        "qeWallS": 21.7,
+        "totalCostUsd": 0.248
+      }
+    },
+    {
+      "id": "rails-mastodon",
+      "repo": "mastodon/mastodon",
+      "framework": "rails",
+      "format": "yaml",
+      "sampledKeys": 30,
+      "a0": {
+        "translated": 30,
+        "parseError": null,
+        "catalogErrors": 0,
+        "countsByCode": {},
+        "chrf2VsHuman": 0,
+        "wallS": 26.2,
+        "costUsd": 0.0998
+      },
+      "wraith": {
+        "translated": 30,
+        "catalogErrors": 0,
+        "countsByCode": {
+          "open_question": 1
+        },
+        "chrf2VsHuman": 0,
+        "contextNotesWritten": 30,
+        "questionsAsked": 1,
+        "qeInitialFlagged": 0,
+        "qeFinalSummary": {
+          "total": 30,
+          "ok": 30,
+          "flagged": 0,
+          "unreviewed": 0,
+          "humanVerified": 0
+        },
+        "qeFinalOutcome": "PASS",
+        "translateWallS": 49.4,
+        "qeWallS": 39.7,
+        "totalCostUsd": 0.4227
+      }
+    },
+    {
+      "id": "django-wagtail",
+      "repo": "wagtail/wagtail",
+      "framework": "django",
+      "format": "po",
+      "sampledKeys": 0,
+      "a0": {
+        "translated": 0,
+        "parseError": null,
+        "catalogErrors": 0,
+        "countsByCode": {},
+        "chrf2VsHuman": 0,
+        "wallS": 11,
+        "costUsd": 0.0694
+      },
+      "wraith": {
+        "translated": 0,
+        "catalogErrors": 0,
+        "countsByCode": {},
+        "chrf2VsHuman": 0,
+        "contextNotesWritten": 0,
+        "questionsAsked": 0,
+        "qeInitialFlagged": 0,
+        "qeFinalSummary": {
+          "total": 0,
+          "ok": 0,
+          "flagged": 0,
+          "unreviewed": 0,
+          "humanVerified": 0
+        },
+        "qeFinalOutcome": "PASS",
+        "translateWallS": 69.4,
+        "qeWallS": 21.6,
+        "totalCostUsd": 0.4262
+      }
+    }
+  ]
+}

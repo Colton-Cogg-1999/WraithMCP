@@ -149,7 +149,7 @@ export class AstroAdapter implements ScannerAdapter {
 
     const discovered = discoverJsonLocaleFiles(
       rootDir,
-      localesPathOverride ? [localesPathOverride] : ["src/i18n", "messages", "locales", "src/locales"]
+      localesPathOverride ? [localesPathOverride] : ["src/i18n", "src/content/i18n", "messages", "locales", "src/locales"]
     );
     return {
       framework: "astro",

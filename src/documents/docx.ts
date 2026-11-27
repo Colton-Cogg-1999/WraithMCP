@@ -727,10 +727,15 @@ function parseDocxInternal(filePath: string): {
   paragraphs: ExtractedDocxParagraph[];
   protectedTrackedChanges: number;
   parts: string[];
+  unsupportedParts: string[];
 } {
   const rawZipBytes = fs.readFileSync(filePath);
   const entries = safeUnzipSync(rawZipBytes);
-  const parts = discoverDocxXmlParts(Object.keys(entries));
+  const allEntryNames = Object.keys(entries);
+  const parts = discoverDocxXmlParts(allEntryNames);
+  const unsupportedParts = allEntryNames
+    .filter((n) => /^word\/charts\/chart\d+\.xml$/.test(n) || /^word\/diagrams\/data\d+\.xml$/.test(n))
+    .sort();
   const xmlStrings = new Map<string, string>();
   const paragraphs: ExtractedDocxParagraph[] = [];
   let protectedTrackedChanges = 0;
@@ -762,6 +767,7 @@ function parseDocxInternal(filePath: string): {
     paragraphs,
     protectedTrackedChanges,
     parts,
+    unsupportedParts,
   };
 }
 
@@ -981,6 +987,7 @@ export class DocxDocumentAdapter implements DocumentAdapter {
         wordCount,
         parts: parsed.parts,
         protectedTrackedChanges: parsed.protectedTrackedChanges,
+        ...(parsed.unsupportedParts.length > 0 ? { unsupportedParts: parsed.unsupportedParts } : {}),
       },
     };
   }

@@ -4,8 +4,23 @@ release/
 *.tsbuildinfo
 .DS_Store
 coverage/
-# eval scratch (large / third-party corpora / caches)
+# eval scratch (large / third-party corpora / caches / binary renders & raw logs)
 eval/cache/
 eval/work/
 eval/corpora/*/
+eval/results/big-one-renders/
+eval/results/gallery-claude-pilot/
+eval/results/pub-audit/gallery/
+eval/results/pub-audit/doc-renders/
+eval/results/pub-audit/screenshots/
+eval/results/pub-audit/docs/
+eval/results/pub-audit/logs/
+eval/results/real-world-v2/docs/renders/
+eval/results/real-world-v2/docs/translated/
+eval/results/real-world-v2/visual-qa/
+eval/results/unprepared-e2e/screenshots/
+eval/results/unprepared-e2e/doc-renders/
+eval/results/**/*.jsonl
 .wraith/
+.env
+.env.*

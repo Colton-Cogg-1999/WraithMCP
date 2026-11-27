@@ -5,6 +5,7 @@ import { getLocaleConventions, LocaleConventions } from "./locales.js";
 import { reconcileMemoryWithLiveLocales } from "./memory-ops.js";
 import { projectDecisions, CharLimit, ContextNoteStatus, contextNoteFor, isBindingCharLimit, listQuestions, questionsFor, readContextNotes, resolveCharLimit, visibleCharCount } from "./context.js";
 import { extractPlaceholders } from "./placeholders.js";
+import { composeTranslationGuidance, ResolvedStyleGuide, resolveStyleGuide } from "./style-guide.js";
 import { computeContextFingerprint, WraithStore, sha256Short } from "./store.js";
 import { UsageFile, UsageSite } from "./types.js";
 
@@ -52,13 +53,17 @@ export interface PreparedItem {
 }
 
 export const CONTEXT_GUIDANCE =
-  "Read the code at usageSites before translating. When contextNoteStatus is missing or stale, pass contextNote to apply: one plain-language sentence a translator could use, saying what the string means and where it appears (e.g. \"Button that saves the open document, not about saving money\"). Respect charLimit: declared (config) and rendered (measured UI width) limits are binding errors in check; a heuristic element budget is advisory, so shorten to fit and only if that loses meaning file an Open Question. Treat every Answer in questions as binding. If the meaning is still unclear after reading the code, translate your best guess and file an Open Question (memory add_question) instead of stopping; after an Answer, revisit the string and resolve the question.";
+  "Check usageSites when a string is short, ambiguous, or UI-constrained. Pass an optional contextNote to apply only for genuinely ambiguous or domain-specific keys worth clarifying for future translators (not needed for self-explanatory strings). Respect charLimit: declared (config) and rendered (measured UI width) limits are binding errors in check; heuristic element budgets are advisory. Treat human Answers in questions as binding; file an Open Question (memory add_question) only when code cannot settle meaning.";
 
 export interface PrepareOptions {
   rootDir: string;
   targetLocale: string;
   keys?: string[];
   includeTranslated?: boolean;
+  /** Skip O(N*M) fuzzy memory matching (e.g. internal QE collection that does not use fuzzyMatches). */
+  skipFuzzy?: boolean;
+  /** Payload detail level: "full" (default for programmatic API) or "compact" (lean payload for agents). */
+  detail?: "compact" | "full";
   offset?: number;
   limit?: number;
 }
@@ -69,6 +74,8 @@ export interface PrepareResult {
   reviewMode: "auto" | "confirm";
   memoryGuidance: string;
   contextGuidance: string;
+  /** Active project style guide and additive prompt, when configured. */
+  styleGuide?: ResolvedStyleGuide;
   /** Recorded assumptions (A1…) and human overrides; a human override is binding. */
   projectDecisions: ReturnType<typeof projectDecisions>;
   conventions: LocaleConventions;
@@ -97,9 +104,14 @@ export function prepareBatch(options: PrepareOptions): PrepareResult {
     config.paths.locales
   );
 
+  const resolvedStyle = resolveStyleGuide(store.rootDir, config, [options.targetLocale]);
+  const composedGuidance = composeTranslationGuidance(CONTEXT_GUIDANCE, resolvedStyle);
+
   const conventions = getLocaleConventions(options.targetLocale);
   const offset = Math.max(0, options.offset ?? 0);
-  const limit = Math.max(1, Math.min(options.limit ?? 20, 100));
+  const maxLimit = options.skipFuzzy ? 50_000 : 300;
+  const limit = Math.max(1, Math.min(options.limit ?? 100, maxLimit));
+  const compactFollowup = offset > 0;
 
   if (!adapter) {
     return {
@@ -108,7 +120,8 @@ export function prepareBatch(options: PrepareOptions): PrepareResult {
       reviewMode: config.review,
       memoryGuidance:
         "Treat all fuzzyMatches (including 100% lexical matches) as strong contextual suggestions rather than guaranteed-correct auto-fills. Always verify against usageSites, surrounding strings, and component purpose.",
-      contextGuidance: CONTEXT_GUIDANCE,
+      contextGuidance: composedGuidance,
+      ...(resolvedStyle.hasAny ? { styleGuide: resolvedStyle } : {}),
       projectDecisions: projectDecisions(store.rootDir, [options.targetLocale]),
       conventions,
       placeholderSyntaxes: detection.placeholderSyntaxes,
@@ -224,12 +237,14 @@ export function prepareBatch(options: PrepareOptions): PrepareResult {
       glossary.entries,
       options.targetLocale
     );
-    const rawFuzzyMatches = findFuzzyMatches(srcEntry.value, activeMemory, {
-      sourceLocale: config.sourceLocale,
-      targetLocale: options.targetLocale,
-      minScore: 55,
-      limit: 3,
-    });
+    const rawFuzzyMatches = options.skipFuzzy
+      ? []
+      : findFuzzyMatches(srcEntry.value, activeMemory, {
+          sourceLocale: config.sourceLocale,
+          targetLocale: options.targetLocale,
+          minScore: 55,
+          limit: 3,
+        });
 
     const currentSites = (liveUsage.keys[key]?.sites ?? []).slice(0, 3);
     const currentContextStr = currentSites[0]
@@ -327,10 +342,12 @@ export function prepareBatch(options: PrepareOptions): PrepareResult {
     sourceLocale: config.sourceLocale,
     targetLocale: options.targetLocale,
     reviewMode: config.review,
-    memoryGuidance:
-      "Treat all fuzzyMatches (including 100% lexical matches) as strong contextual suggestions rather than guaranteed-correct auto-fills. Always verify against usageSites, surrounding strings, and component purpose.",
-    contextGuidance: CONTEXT_GUIDANCE,
-    projectDecisions: projectDecisions(store.rootDir, [options.targetLocale]),
+    memoryGuidance: compactFollowup
+      ? "Same memory guidance as offset=0."
+      : "Treat all fuzzyMatches (including 100% lexical matches) as strong contextual suggestions rather than guaranteed-correct auto-fills. Always verify against usageSites, surrounding strings, and component purpose.",
+    contextGuidance: compactFollowup ? "Same context guidance as offset=0." : composedGuidance,
+    ...(!compactFollowup && resolvedStyle.hasAny ? { styleGuide: resolvedStyle } : {}),
+    projectDecisions: compactFollowup ? [] : projectDecisions(store.rootDir, [options.targetLocale]),
     conventions,
     placeholderSyntaxes: detection.placeholderSyntaxes,
     items: slice,
@@ -339,4 +356,79 @@ export function prepareBatch(options: PrepareOptions): PrepareResult {
     limit,
     hasMore: offset + slice.length < allCandidates.length,
   };
+}
+
+/**
+ * Strip empty arrays, redundant defaults, and repeated header metadata for lean MCP responses.
+ * Preserves all actionable signals (source, placeholders, plurals, usage sites, glossary, TM, limits, style).
+ */
+export function compactPrepareResult(result: PrepareResult): Record<string, unknown> {
+  const isFollowup = result.offset > 0;
+  const compactItems = result.items.map((item) => {
+    const out: Record<string, unknown> = {
+      key: item.key,
+      source: item.source,
+      reason: item.reason,
+    };
+    if (item.sourcePlurals) out.sourcePlurals = item.sourcePlurals;
+    if (item.currentTarget !== undefined) out.currentTarget = item.currentTarget;
+    if (item.placeholders.length > 0) out.placeholders = item.placeholders;
+    if (item.hasPlurals) out.hasPlurals = true;
+    if (item.advisoryPluralCategories && item.advisoryPluralCategories.length > 0) {
+      out.advisoryPluralCategories = item.advisoryPluralCategories;
+    }
+    if (item.usageSites.length > 0) {
+      const keepSurrounding = item.source.trim().length <= 24;
+      out.usageSites = item.usageSites.map((s) => ({
+        file: s.file,
+        line: s.line,
+        ...(s.component ? { component: s.component } : {}),
+        ...(s.element ? { element: s.element } : {}),
+        ...(keepSurrounding && s.surrounding.length > 0 ? { surrounding: s.surrounding } : {}),
+      }));
+    }
+    if (item.layout) out.layout = item.layout;
+    if (item.contextNote) {
+      out.contextNote = item.contextNote;
+      if (item.contextNoteStatus !== "current") out.contextNoteStatus = item.contextNoteStatus;
+    }
+    if (item.charLimit) out.charLimit = item.charLimit;
+    if (item.questions && item.questions.length > 0) out.questions = item.questions;
+    if (item.glossaryHits.length > 0) out.glossaryHits = item.glossaryHits;
+    if (item.fuzzyMatches.length > 0) {
+      out.fuzzyMatches = item.fuzzyMatches.map((m) => ({
+        source: m.source,
+        target: m.target,
+        score: m.score,
+        origin: m.origin,
+        ...(m.context ? { context: m.context } : {}),
+        advisory: m.advisory,
+        contextAlignment: m.contextAlignment,
+      }));
+    }
+    if (item.comment) out.comment = item.comment;
+    return out;
+  });
+
+  const payload: Record<string, unknown> = {
+    sourceLocale: result.sourceLocale,
+    targetLocale: result.targetLocale,
+    ...(isFollowup
+      ? {}
+      : {
+          reviewMode: result.reviewMode,
+          memoryGuidance: result.memoryGuidance,
+          contextGuidance: result.contextGuidance,
+          ...(result.styleGuide ? { styleGuide: result.styleGuide } : {}),
+          ...(result.projectDecisions.length > 0 ? { projectDecisions: result.projectDecisions } : {}),
+          conventions: result.conventions,
+          placeholderSyntaxes: result.placeholderSyntaxes,
+        }),
+    items: compactItems,
+    totalPending: result.totalPending,
+    offset: result.offset,
+    limit: result.limit,
+    hasMore: result.hasMore,
+  };
+  return payload;
 }

@@ -27,6 +27,8 @@ export interface CheckOptions {
   limit?: number;
   /** Skip source scanner checks (e.g. for fast format-only checks) */
   skipScan?: boolean;
+  /** Scope verification: "all" (default, full source scan + catalogs) or "translations" (catalogs, placeholders, ICU/plurals, glossary, layout budgets, staleness — skips repo source scan). */
+  scope?: "all" | "translations";
 }
 
 export interface VerificationCoverage {
@@ -192,7 +194,8 @@ export function runCheck(options: CheckOptions): CheckSummary {
 
   if (adapter) {
     // 1. Source scan: hardcoded strings, concatenations, and live key usage sites (READ-ONLY: never mutates .wraith/usage.json)
-    if (!options.skipScan) {
+    const effectiveSkipScan = Boolean(options.skipScan || options.scope === "translations");
+    if (!effectiveSkipScan) {
       executedChecks.push("source_scan");
       const scanRes = adapter.scanSource(store.rootDir, {
         sourcePaths: config.paths.source,

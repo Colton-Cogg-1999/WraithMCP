@@ -1,0 +1,1372 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<title>Wraith Real-World Production Stress-Test (Mastodon 1,466 Keys + Real DOCX)</title>
+<style>
+  body { font-family: system-ui, -apple-system, sans-serif; margin: 0; padding: 24px 32px; background: #0f1117; color: #e6edf3; line-height: 1.5; }
+  h1, h2, h3 { color: #fff; }
+  .card { background: #161b22; border: 1px solid #30363d; border-radius: 10px; padding: 18px 22px; margin-bottom: 24px; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; margin: 12px 0; }
+  th, td { border: 1px solid #30363d; padding: 8px 10px; text-align: left; vertical-align: top; }
+  th { background: #1f2630; color: #c9d1d9; }
+  .good { color: #3fb950; font-weight: 600; }
+  .warn { color: #d29922; font-weight: 600; }
+  .bad { color: #f85149; font-weight: 600; }
+  .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-top: 12px; }
+  .grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; margin-top: 12px; }
+  .shot { background: #0d1117; border: 1px solid #30363d; border-radius: 8px; padding: 8px; }
+  .shot img { width: 100%; border-radius: 4px; display: block; background: #fff; }
+  .shot-cap { font-size: 12px; color: #8b949e; margin-top: 6px; }
+  code { background: #21262d; padding: 2px 5px; border-radius: 4px; font-size: 12px; }
+</style>
+</head>
+<body>
+<h1>Wraith Real-World Production Stress-Test Dashboard</h1>
+<p><strong>Mastodon Frontend (1,466 unique EN keys × es-MX &amp; ar = 14,660 translations across 5 arms)</strong> + <strong>3 Publicly Sourced Complex Word Documents + 52-Page NCI SEER Scalability Stress Test</strong>. Synthetic fixtures from <code>pub-audit/</code> are kept strictly separate.</p>
+
+<div class="card">
+  <h2>1. Mastodon 5-Arm Quality, Structural Integrity &amp; Cost</h2>
+  
+    <h3>Mexican Spanish (es-MX)</h3>
+    <table>
+      <tr><th>Arm</th><th>Keys</th><th>Opus MQM (n=200)</th><th>Crit / Maj / Min</th><th>ICU Err</th><th>Placeholder Err</th><th>Rich-Tag Err</th><th>Ar Plural Gap</th><th>DNT Viol</th><th>es-ES Drift</th><th>Est. USD</th></tr>
+      <tr>
+          <td><strong>NMT (DeepL)</strong></td>
+          <td>1465/1466</td>
+          <td class="warn">96.91</td>
+          <td>12 / 42 / 70</td>
+          <td class="good">0</td>
+          <td class="good">0</td>
+          <td class="good">0</td>
+          <td class="good">0</td>
+          <td>0</td>
+          <td>2</td>
+          <td>$0.99</td>
+        </tr><tr>
+          <td><strong>B0 (Codex Catalog)</strong></td>
+          <td>1466/1466</td>
+          <td class="good">99.95</td>
+          <td>0 / 0 / 10</td>
+          <td class="good">0</td>
+          <td class="good">0</td>
+          <td class="good">0</td>
+          <td class="good">0</td>
+          <td>0</td>
+          <td>0</td>
+          <td>$0.51</td>
+        </tr><tr>
+          <td><strong>A0 (Codex Repo)</strong></td>
+          <td>1466/1466</td>
+          <td class="good">99.96</td>
+          <td>0 / 0 / 7</td>
+          <td class="good">0</td>
+          <td class="good">0</td>
+          <td class="good">0</td>
+          <td class="good">0</td>
+          <td>0</td>
+          <td>0</td>
+          <td>$0.94</td>
+        </tr><tr>
+          <td><strong>W-pre (Wraith)</strong></td>
+          <td>1435/1466</td>
+          <td class="warn">98.18</td>
+          <td>13 / 2 / 8</td>
+          <td class="good">0</td>
+          <td class="good">0</td>
+          <td class="good">0</td>
+          <td class="good">0</td>
+          <td>0</td>
+          <td>0</td>
+          <td>$2.54</td>
+        </tr><tr>
+          <td><strong>W-post (Wraith+QE)</strong></td>
+          <td>1435/1466</td>
+          <td class="warn">98.18</td>
+          <td>13 / 2 / 7</td>
+          <td class="good">0</td>
+          <td class="good">0</td>
+          <td class="good">0</td>
+          <td class="good">0</td>
+          <td>0</td>
+          <td>0</td>
+          <td>$6.15</td>
+        </tr>
+    </table>
+  
+    <h3>Arabic (ar — RTL)</h3>
+    <table>
+      <tr><th>Arm</th><th>Keys</th><th>Opus MQM (n=200)</th><th>Crit / Maj / Min</th><th>ICU Err</th><th>Placeholder Err</th><th>Rich-Tag Err</th><th>Ar Plural Gap</th><th>DNT Viol</th><th>es-ES Drift</th><th>Est. USD</th></tr>
+      <tr>
+          <td><strong>NMT (DeepL)</strong></td>
+          <td>1465/1466</td>
+          <td class="warn">95.84</td>
+          <td>9 / 93 / 92</td>
+          <td class="good">0</td>
+          <td class="good">0</td>
+          <td class="good">0</td>
+          <td class="warn">68</td>
+          <td>25</td>
+          <td>0</td>
+          <td>$0.96</td>
+        </tr><tr>
+          <td><strong>B0 (Codex Catalog)</strong></td>
+          <td>1466/1466</td>
+          <td class="good">99.81</td>
+          <td>0 / 3 / 21</td>
+          <td class="good">0</td>
+          <td class="good">0</td>
+          <td class="good">0</td>
+          <td class="good">0</td>
+          <td>0</td>
+          <td>0</td>
+          <td>$0.55</td>
+        </tr><tr>
+          <td><strong>A0 (Codex Repo)</strong></td>
+          <td>1466/1466</td>
+          <td class="good">99.78</td>
+          <td>0 / 1 / 36</td>
+          <td class="good">0</td>
+          <td class="good">0</td>
+          <td class="good">0</td>
+          <td class="good">0</td>
+          <td>0</td>
+          <td>0</td>
+          <td>$0.90</td>
+        </tr><tr>
+          <td><strong>W-pre (Wraith)</strong></td>
+          <td>1435/1466</td>
+          <td class="warn">98.15</td>
+          <td>13 / 2 / 13</td>
+          <td class="good">0</td>
+          <td class="good">0</td>
+          <td class="good">0</td>
+          <td class="good">0</td>
+          <td>0</td>
+          <td>0</td>
+          <td>$3.33</td>
+        </tr><tr>
+          <td><strong>W-post (Wraith+QE)</strong></td>
+          <td>1435/1466</td>
+          <td class="warn">98.06</td>
+          <td>13 / 1 / 34</td>
+          <td class="good">0</td>
+          <td class="good">0</td>
+          <td class="good">0</td>
+          <td class="good">0</td>
+          <td>0</td>
+          <td>0</td>
+          <td>$8.33</td>
+        </tr>
+    </table>
+  
+</div>
+
+<div class="card">
+  <h2>2. Fresh-Context QE Subagent Diffs (100% Judged Blinded by Claude Opus)</h2>
+  
+      <h3>es-MX — 22 edits applied (22 Opus-judged: <span class="good">7 improved</span>, 9 neutral, <span class="bad">6 regressed</span>)</h3>
+      <table>
+        <tr><th>Key</th><th>Verdict</th><th>Δ</th><th>Source</th><th>Before (W-pre)</th><th>After (W-post)</th><th>QE Reason / Opus Note</th></tr>
+        <tr>
+          <td><code>account_edit.name_modal.add_title</code></td>
+          <td class="">tie</td>
+          <td>+0</td>
+          <td>Add display name</td>
+          <td>Agregar nombre para mostrar</td>
+          <td>Agregar nombre visible</td>
+          <td>Both acceptable renderings of 'display name'</td>
+        </tr><tr>
+          <td><code>account_edit.name_modal.edit_title</code></td>
+          <td class="">tie</td>
+          <td>+0</td>
+          <td>Edit display name</td>
+          <td>Editar nombre para mostrar</td>
+          <td>Editar nombre visible</td>
+          <td>Both acceptable; terminology choice only</td>
+        </tr><tr>
+          <td><code>account.open_original_page</code></td>
+          <td class="good">improved</td>
+          <td>+1</td>
+          <td>Open original page</td>
+          <td>Abrir el perfil original</td>
+          <td>Abrir la página original</td>
+          <td>A reinterprets 'page' as 'perfil'; B is faithful</td>
+        </tr><tr>
+          <td><code>status.remove_from_saved</code></td>
+          <td class="bad">regressed</td>
+          <td>-1</td>
+          <td>Remove from Saved</td>
+          <td>Quitar de Guardados</td>
+          <td>Quitar de Publicaciones guardadas</td>
+          <td>B mirrors the 'Saved' feature label; A expands it</td>
+        </tr><tr>
+          <td><code>about.domain_blocks.no_reason_available</code></td>
+          <td class="">tie</td>
+          <td>+0</td>
+          <td>Reason not available</td>
+          <td>No se indicó el motivo</td>
+          <td>Motivo no disponible</td>
+          <td>Both accurate; B more literal, A more natural</td>
+        </tr><tr>
+          <td><code>account_edit.display_name.placeholder</code></td>
+          <td class="good">improved</td>
+          <td>+1</td>
+          <td>Your display name is how your name appears on your profile and in timelines.</td>
+          <td>Así aparecerá tu nombre en tu perfil y en las cronologías.</td>
+          <td>El nombre visible es el que aparece en tu perfil y en las cronologías.</td>
+          <td>B drops the explicit 'display name' concept</td>
+        </tr><tr>
+          <td><code>account.join_modal.share.celebrate</code></td>
+          <td class="bad">regressed</td>
+          <td>-1</td>
+          <td>Share a celebratory post</td>
+          <td>Publicar un mensaje para celebrar</td>
+          <td>Compartir publicación para celebrar</td>
+          <td>B lacks article, slightly unnatural</td>
+        </tr><tr>
+          <td><code>account.join_modal.share.intro</code></td>
+          <td class="bad">regressed</td>
+          <td>-1</td>
+          <td>Share an intro post</td>
+          <td>Publicar un mensaje de presentación</td>
+          <td>Compartir publicación de presentación</td>
+          <td>A lacks article, slightly unnatural</td>
+        </tr><tr>
+          <td><code>account.join_modal.share.welcome</code></td>
+          <td class="bad">regressed</td>
+          <td>-1</td>
+          <td>Share a welcome post</td>
+          <td>Publicar un mensaje de bienvenida</td>
+          <td>Compartir publicación de bienvenida</td>
+          <td>B lacks article, slightly unnatural</td>
+        </tr><tr>
+          <td><code>navigation_bar.blocked</code></td>
+          <td class="bad">regressed</td>
+          <td>-1</td>
+          <td>Blocked</td>
+          <td>Cuentas bloqueadas</td>
+          <td>Bloqueos</td>
+          <td>'Cuentas bloqueadas' clearer as nav label than 'Bloqueos'</td>
+        </tr><tr>
+          <td><code>alert.rate_limited.message</code></td>
+          <td class="">tie</td>
+          <td>+0</td>
+          <td>Please retry after {retry_time, time, medium}.</td>
+          <td>Vuelve a intentarlo después de las {retry_time, time, medium}.</td>
+          <td>Vuelve a intentarlo después de esta hora: {retry_time, time, medium}.</td>
+          <td>A 'las' breaks for 1 o'clock; B is safe but awkward</td>
+        </tr><tr>
+          <td><code>annual_report.summary.percentile.text</code></td>
+          <td class="">tie</td>
+          <td>+0</td>
+          <td>&lt;topLabel&gt;That puts you in the top&lt;/topLabel&gt;&lt;percentage&gt;&lt;/percentage&gt;&lt;bottomLabel&gt;of {domain} users.&lt;/bottomLabel&gt;</td>
+          <td>&lt;topLabel&gt;Eso te coloca en el&lt;/topLabel&gt;&lt;percentage&gt;&lt;/percentage&gt;&lt;bottomLabel&gt;de usuarios que más publicaron en {domain}.&lt;/bottomLabel&gt;</td>
+          <td>&lt;topLabel&gt;Eso te coloca en el&lt;/topLabel&gt;&lt;percentage&gt;&lt;/percentage&gt;&lt;bottomLabel&gt;de usuarios de {domain} que más publicaron.&lt;/bottomLabel&gt;</td>
+          <td>Both add 'que más publicaron' not in source; tags preserved</td>
+        </tr><tr>
+          <td><code>collections.suggestions.can_not_add_desc</code></td>
+          <td class="good">improved</td>
+          <td>+1</td>
+          <td>These accounts may have opted out of discovery, or they might be on a server that doesn’t support collections.</td>
+          <td>Es posible que estas cuentas hayan elegido no aparecer en las recomendaciones o que estén en un servidor que no admita colecciones.</td>
+          <td>Es posible que estas cuentas hayan desactivado la opción que permite a otras personas descubrir su perfil o que estén en un servidor que no admita colecciones.</td>
+          <td>A narrows 'discovery' to recommendations; B accurate though verbose</td>
+        </tr><tr>
+          <td><code>collections.maximum_collection_count_description</code></td>
+          <td class="">tie</td>
+          <td>+0</td>
+          <td>Your server allows creation of up to {count} collections.</td>
+          <td>Tu servidor te permite crear hasta {count} colecciones.</td>
+          <td>Tu servidor limita a {count} el número de colecciones que puedes crear.</td>
+          <td>Both accurate; B more direct</td>
+        </tr><tr>
+          <td><code>column.settings</code></td>
+          <td class="bad">regressed</td>
+          <td>-5</td>
+          <td>Column Settings</td>
+          <td>Configuración de la columna</td>
+          <td>(configuración de la columna)</td>
+          <td>B wraps the title in parentheses it shouldn't have</td>
+        </tr><tr>
+          <td><code>confirmations.revoke_quote.title</code></td>
+          <td class="">tie</td>
+          <td>+1</td>
+          <td>Remove post?</td>
+          <td>¿Quitar tu publicación de la cita?</td>
+          <td>¿Quitar la publicación?</td>
+          <td>A is a faithful literal rendering. B adds 'de la cita', which is not in the source (minor addition), but it makes clear the post is removed from the quote rather than deleted, which the modal context supports. Overall a wash.</td>
+        </tr><tr>
+          <td><code>email_subscriptions.submitted.lead</code></td>
+          <td class="good">improved</td>
+          <td>+1</td>
+          <td>Check your inbox for an email to finish signing up for email updates.</td>
+          <td>Revisa tu bandeja de entrada. Ahí encontrarás un correo para completar tu suscripción.</td>
+          <td>Busca en tu bandeja de entrada el correo para completar tu suscripción a las novedades por correo electrónico.</td>
+          <td>A leaves out 'email updates' and splits the sentence into two, which reads less naturally. B is complete and fluent.</td>
+        </tr><tr>
+          <td><code>quote_error.private_mentions</code></td>
+          <td class="">tie</td>
+          <td>+0</td>
+          <td>Quoting is not allowed with direct mentions.</td>
+          <td>No puedes agregar una cita a una mención directa.</td>
+          <td>No puedes agregar una cita a una mención privada.</td>
+          <td>Both are accurate. A's 'mención privada' matches Mastodon's current UI term and the key name. B's 'mención directa' follows the source literally.</td>
+        </tr><tr>
+          <td><code>report_notification.categories.legal</code></td>
+          <td class="good">improved</td>
+          <td>+1</td>
+          <td>Legal</td>
+          <td>Asunto legal</td>
+          <td>Motivo legal</td>
+          <td>Both add a noun to the bare label. 'Motivo legal' fits a report-category list better than 'Asunto legal'.</td>
+        </tr><tr>
+          <td><code>report_notification.categories.other</code></td>
+          <td class="">tie</td>
+          <td>+0</td>
+          <td>Other</td>
+          <td>Otro</td>
+          <td>Otro motivo</td>
+          <td>'Otro' is the exact equivalent. 'Otro motivo' is acceptable and clear as a category label.</td>
+        </tr><tr>
+          <td><code>status.history.created</code></td>
+          <td class="good">improved</td>
+          <td>+1</td>
+          <td>{name} created {date}</td>
+          <td>{name} la publicó {date}</td>
+          <td>Publicada por {name} · {date}</td>
+          <td>In A, 'la publicó {date}' with no preposition or article reads awkwardly once a formatted date is filled in. B's 'Publicada por {name} · {date}' handles a variable date cleanly and keeps both placeholders.</td>
+        </tr><tr>
+          <td><code>status.history.edited</code></td>
+          <td class="good">improved</td>
+          <td>+1</td>
+          <td>{name} edited {date}</td>
+          <td>{name} la editó {date}</td>
+          <td>Editada por {name} · {date}</td>
+          <td>This mirrors the previous item. A's 'Editada por {name} · {date}' is robust, while B's 'la editó {date}' is awkward with an inserted date.</td>
+        </tr>
+      </table>
+    
+      <h3>ar — 81 edits applied (81 Opus-judged: <span class="good">18 improved</span>, 30 neutral, <span class="bad">33 regressed</span>)</h3>
+      <table>
+        <tr><th>Key</th><th>Verdict</th><th>Δ</th><th>Source</th><th>Before (W-pre)</th><th>After (W-post)</th><th>QE Reason / Opus Note</th></tr>
+        <tr>
+          <td><code>status.embed</code></td>
+          <td class="">tie</td>
+          <td>+0</td>
+          <td>Get embed code</td>
+          <td>الحصول على رمز التضمين</td>
+          <td>الحصول على شيفرة التضمين</td>
+          <td>Both are correct. رمز (A) can also mean 'symbol', so شيفرة (B) is slightly clearer for 'code', but not enough to penalize A.</td>
+        </tr><tr>
+          <td><code>status.redraft</code></td>
+          <td class="good">improved</td>
+          <td>+5</td>
+          <td>Delete &amp; re-draft</td>
+          <td>حذف المنشور وإعادته إلى المسودات</td>
+          <td>حذف المنشور وإعادة صياغته</td>
+          <td>Mastodon has no drafts folder. Re-draft reloads the post into the composer, so B's 'return it to drafts' misdescribes the feature. A's 'rewrite' matches the meaning.</td>
+        </tr><tr>
+          <td><code>about.domain_blocks.silenced.explanation</code></td>
+          <td class="good">improved</td>
+          <td>+1</td>
+          <td>You will generally not see profiles and content from this server, unless you explicitly look it up or opt into it by following.</td>
+          <td>لن تظهر لك عادةً ملفات مستخدمي هذا الخادم ولا محتواهم، إلا إذا بحثت عنها مباشرةً أو اخترت متابعة هؤلاء المستخدمين.</td>
+          <td>لن ترى عادةً الملفات الشخصية لمستخدمي هذا الخادم أو محتواهم، إلا إذا بحثت عنها مباشرةً أو اخترت متابعة هؤلاء المستخدمين.</td>
+          <td>A drops الشخصية, so ملفات is ambiguous ('files'). B correctly says 'profiles'.</td>
+        </tr><tr>
+          <td><code>account_edit_tags.tag_status_count</code></td>
+          <td class="bad">regressed</td>
+          <td>-1</td>
+          <td>{count, plural, one {# post} other {# posts}}</td>
+          <td>{count, plural, zero {لا توجد منشورات} one {منشور واحد} two {منشوران} few {⁦#⁩ منشورات} many {⁦#⁩ منشورًا} other {⁦#⁩ منشور}}</td>
+          <td>{count, plural, zero {عدد المنشورات: ⁦#⁩} one {عدد المنشورات: ⁦#⁩} two {عدد المنشورات: ⁦#⁩} few {عدد المنشورات: ⁦#⁩} many {عدد المنشورات: ⁦#⁩} other {عدد المنشورات: ⁦#⁩}}</td>
+          <td>A uses one 'Number of posts: #' label for every plural form, which reads awkwardly. B gives correct, natural Arabic plural agreement for each category.</td>
+        </tr><tr>
+          <td><code>account_edit.advanced_settings.bot_hint</code></td>
+          <td class="good">improved</td>
+          <td>+5</td>
+          <td>Signal to others that the account mainly performs automated actions and might not be monitored</td>
+          <td>أخبر الآخرين بأن هذا الحساب ينفّذ معظم مهامه آليًا، وقد لا يتابعه أحد.</td>
+          <td>أخبر الآخرين بأن هذا الحساب ينفّذ معظم مهامه آليًا، وقد لا يشرف عليه أحد.</td>
+          <td>In a social app, A's يتابعه reads as 'nobody follows it', not 'not monitored'. B's يشرف عليه conveys supervision correctly.</td>
+        </tr><tr>
+          <td><code>account_list.total</code></td>
+          <td class="bad">regressed</td>
+          <td>-1</td>
+          <td>{total, plural, one {# account} other {# accounts}}</td>
+          <td>{total, plural, zero {لا حسابات} one {حساب واحد} two {حسابان} few {⁦#⁩ حسابات} many {⁦#⁩ حسابًا} other {⁦#⁩ حساب}}</td>
+          <td>{total, plural, zero {عدد الحسابات: ⁦#⁩} one {عدد الحسابات: ⁦#⁩} two {عدد الحسابات: ⁦#⁩} few {عدد الحسابات: ⁦#⁩} many {عدد الحسابات: ⁦#⁩} other {عدد الحسابات: ⁦#⁩}}</td>
+          <td>A uses the same label form for every plural category. B gives proper plural agreement for each form.</td>
+        </tr><tr>
+          <td><code>account.menu.add_to_feed</code></td>
+          <td class="">tie</td>
+          <td>+0</td>
+          <td>Add to custom feed…</td>
+          <td>إضافة إلى موجز مخصص…</td>
+          <td>إضافة إلى خلاصة مخصصة…</td>
+          <td>موجز and خلاصة are both acceptable terms for 'feed'.</td>
+        </tr><tr>
+          <td><code>account.menu.direct</code></td>
+          <td class="good">improved</td>
+          <td>+1</td>
+          <td>Privately mention</td>
+          <td>ذكر الحساب على الخاص</td>
+          <td>إشارة خاصة إلى الحساب</td>
+          <td>B's على الخاص is colloquial and doesn't suit UI text. A is in Modern Standard Arabic and fits a menu item.</td>
+        </tr><tr>
+          <td><code>account_edit.field_edit_modal.link_emoji_warning</code></td>
+          <td class="">tie</td>
+          <td>+0</td>
+          <td>We recommend against the use of custom emoji in combination with urls. Custom fields containing both will display as text only instead of as a link, in order to prevent user confusion.</td>
+          <td>نوصي بتجنّب الجمع بين الرموز التعبيرية المخصصة وعناوين الويب في حقل واحد. إذا جمع الحقل المخصص بينهما، فسيظهر محتواه كنص فقط دون رابط قابل للنقر، تفاديًا للالتباس.</td>
+          <td>نوصي بتجنّب الجمع بين الرموز التعبيرية المخصصة وعناوين ⁦URL⁩ في حقل واحد. إذا جمع الحقل المخصص بينهما، فسيظهر محتواه كنص فقط دون رابط قابل للنقر، تفاديًا للالتباس.</td>
+          <td>Both are accurate. A localizes 'URL' as عناوين الويب, and B keeps 'URL' with bidi isolation. Both are acceptable.</td>
+        </tr><tr>
+          <td><code>account.familiar_followers_many</code></td>
+          <td class="good">improved</td>
+          <td>+6</td>
+          <td>Followed by {name1}, {name2}, and {othersCount, plural, one {one other you know} other {# others you know}}</td>
+          <td>يتابع هذا الحساب ⁨{name1}⁩ و⁨{name2}⁩{othersCount, plural, zero {} one { وشخص آخر تعرفه} two { وشخصان آخران تعرفهما} few { و# أشخاص آخرين تعرفهم} many { و# شخصًا آخر ممن تعرفهم} other { و# شخص آخر ممن تعرفهم}}</td>
+          <td>من متابعي هذا الحساب: ⁨{name1}⁩ و⁨{name2}⁩{othersCount, plural, zero {} one { وشخص آخر تعرفه} two { وشخصان آخران تعرفهما} few { و⁦#⁩ أشخاص آخرين تعرفهم} many { و⁦#⁩ شخصًا آخر ممن تعرفهم} other { و⁦#⁩ شخص آخر ممن تعرفهم}}</td>
+          <td>Arabic word order (verb–subject–object) makes B's 'يتابع هذا الحساب X' read as 'this account follows X', which reverses the meaning. B also leaves # without bidi isolation.</td>
+        </tr><tr>
+          <td><code>account.familiar_followers_one</code></td>
+          <td class="good">improved</td>
+          <td>+5</td>
+          <td>Followed by {name1}</td>
+          <td>يتابع هذا الحساب ⁨{name1}⁩</td>
+          <td>من متابعي هذا الحساب: ⁨{name1}⁩</td>
+          <td>A's 'يتابع هذا الحساب X' reads as 'this account follows X', the reverse of the source. B's 'من متابعي هذا الحساب' is correct.</td>
+        </tr><tr>
+          <td><code>account.familiar_followers_two</code></td>
+          <td class="good">improved</td>
+          <td>+5</td>
+          <td>Followed by {name1} and {name2}</td>
+          <td>يتابع هذا الحساب ⁨{name1}⁩ و⁨{name2}⁩</td>
+          <td>من متابعي هذا الحساب: ⁨{name1}⁩ و⁨{name2}⁩</td>
+          <td>B reverses the follow direction. A is correct.</td>
+        </tr><tr>
+          <td><code>account.followers_counter</code></td>
+          <td class="good">improved</td>
+          <td>+1</td>
+          <td>{count, plural, one {{counter} follower} other {{counter} followers}}</td>
+          <td>{count, plural, zero {المتابعون: {counter}} one {المتابعون: {counter}} two {المتابعون: {counter}} few {المتابعون: {counter}} many {المتابعون: {counter}} other {المتابعون: {counter}}}</td>
+          <td>{count, plural, zero {المتابعون: ⁨{counter}⁩} one {المتابعون: ⁨{counter}⁩} two {المتابعون: ⁨{counter}⁩} few {المتابعون: ⁨{counter}⁩} many {المتابعون: ⁨{counter}⁩} other {المتابعون: ⁨{counter}⁩}}</td>
+          <td>B isolates {counter}, so formatted counts like '1.2K' display safely in right-to-left text. A doesn't.</td>
+        </tr><tr>
+          <td><code>account.followers_you_know_counter</code></td>
+          <td class="good">improved</td>
+          <td>+1</td>
+          <td>{counter} you know</td>
+          <td>متابعون تعرفهم: {counter}</td>
+          <td>متابعون تعرفهم: ⁨{counter}⁩</td>
+          <td>A isolates {counter} for right-to-left display. B doesn't.</td>
+        </tr><tr>
+          <td><code>account.following_counter</code></td>
+          <td class="good">improved</td>
+          <td>+1</td>
+          <td>{count, plural, one {{counter} following} other {{counter} following}}</td>
+          <td>{count, plural, zero {حسابات يتابعها: {counter}} one {حسابات يتابعها: {counter}} two {حسابات يتابعها: {counter}} few {حسابات يتابعها: {counter}} many {حسابات يتابعها: {counter}} other {حسابات يتابعها: {counter}}}</td>
+          <td>{count, plural, zero {حسابات يتابعها: ⁨{counter}⁩} one {حسابات يتابعها: ⁨{counter}⁩} two {حسابات يتابعها: ⁨{counter}⁩} few {حسابات يتابعها: ⁨{counter}⁩} many {حسابات يتابعها: ⁨{counter}⁩} other {حسابات يتابعها: ⁨{counter}⁩}}</td>
+          <td>B isolates {counter} for right-to-left display. A doesn't.</td>
+        </tr><tr>
+          <td><code>account.statuses_counter</code></td>
+          <td class="good">improved</td>
+          <td>+1</td>
+          <td>{count, plural, one {{counter} post} other {{counter} posts}}</td>
+          <td>{count, plural, zero {المنشورات: {counter}} one {المنشورات: {counter}} two {المنشورات: {counter}} few {المنشورات: {counter}} many {المنشورات: {counter}} other {المنشورات: {counter}}}</td>
+          <td>{count, plural, zero {المنشورات: ⁨{counter}⁩} one {المنشورات: ⁨{counter}⁩} two {المنشورات: ⁨{counter}⁩} few {المنشورات: ⁨{counter}⁩} many {المنشورات: ⁨{counter}⁩} other {المنشورات: ⁨{counter}⁩}}</td>
+          <td>Same wording in both. A puts bidi isolates around {counter}, which keeps the number placed correctly in RTL text. B leaves it unisolated.</td>
+        </tr><tr>
+          <td><code>annual_report.summary.percentile.text</code></td>
+          <td class="good">improved</td>
+          <td>+5</td>
+          <td>&lt;topLabel&gt;That puts you in the top&lt;/topLabel&gt;&lt;percentage&gt;&lt;/percentage&gt;&lt;bottomLabel&gt;of {domain} users.&lt;/bottomLabel&gt;</td>
+          <td>&lt;topLabel&gt;بهذا أصبحت ضمن أعلى&lt;/topLabel&gt;&lt;percentage&gt;&lt;/percentage&gt;&lt;bottomLabel&gt;من مستخدمي ⁨{domain}⁩ من حيث عدد المنشورات.&lt;/bottomLabel&gt;</td>
+          <td>&lt;topLabel&gt;بهذا أصبحت ضمن أعلى&lt;/topLabel&gt;&lt;percentage&gt;&lt;/percentage&gt;&lt;bottomLabel&gt;من مستخدمي ⁨{domain}⁩.&lt;/bottomLabel&gt;</td>
+          <td>A adds 'in terms of number of posts', which the source doesn't say. B is faithful.</td>
+        </tr><tr>
+          <td><code>annual_report.announcement.action_build</code></td>
+          <td class="">tie</td>
+          <td>+0</td>
+          <td>Build my Wrapstodon</td>
+          <td>إنشاء ملخصي في ⁦Wrapstodon⁩</td>
+          <td>إنشاء ملخص ⁦Wrapstodon⁩ الخاص بي</td>
+          <td>Both are accurate and natural. They differ only in phrasing.</td>
+        </tr><tr>
+          <td><code>annual_report.announcement.action_view</code></td>
+          <td class="">tie</td>
+          <td>+0</td>
+          <td>View my Wrapstodon</td>
+          <td>عرض ملخصي في ⁦Wrapstodon⁩</td>
+          <td>عرض ملخص ⁦Wrapstodon⁩ الخاص بي</td>
+          <td>Both are accurate and natural.</td>
+        </tr><tr>
+          <td><code>annual_report.shared_page.footer</code></td>
+          <td class="good">improved</td>
+          <td>+1</td>
+          <td>Generated with {heart} by the Mastodon team</td>
+          <td>أعدّ فريق ⁦Mastodon⁩ هذا الملخص بكل حب {heart}</td>
+          <td>أعدّ فريق ⁦Mastodon⁩ هذا الملخص بـ{heart}</td>
+          <td>In A, {heart} itself stands for 'love', as in the source. B adds 'بكل حب' (with all love) next to the heart, which says it twice.</td>
+        </tr><tr>
+          <td><code>status.header.message_from_me</code></td>
+          <td class="bad">regressed</td>
+          <td>-2</td>
+          <td>You to {name} {count, plural, =0 {} one {+ # other} other {+ # others}}</td>
+          <td>منك إلى ⁨{name}⁩{count, plural, =0 {} zero {} one { وشخص آخر} two { وشخصين آخرين} few { و⁦#⁩ أشخاص آخرين} many { و⁦#⁩ شخصًا آخر} other { و⁦#⁩ شخص آخر}}</td>
+          <td>منك إلى ⁨{name}⁩{count, plural, =0 {} zero {} one { (مستلمون آخرون: ⁦#⁩)} two { (مستلمون آخرون: ⁦#⁩)} few { (مستلمون آخرون: ⁦#⁩)} many { (مستلمون آخرون: ⁦#⁩)} other { (مستلمون آخرون: ⁦#⁩)}}</td>
+          <td>A uses natural Arabic plural forms. B uses one generic '(other recipients: #)' pattern for every form, which reads awkwardly, e.g. 'recipients: 1'.</td>
+        </tr><tr>
+          <td><code>status.header.message_to_me</code></td>
+          <td class="bad">regressed</td>
+          <td>-2</td>
+          <td>{author} to You {count, plural, =0 {} one {+ # other} other {+ # others}}</td>
+          <td>من ⁨{author}⁩ إليك{count, plural, =0 {} zero {} one { وإلى شخص آخر} two { وإلى شخصين آخرين} few { وإلى ⁦#⁩ أشخاص آخرين} many { وإلى ⁦#⁩ شخصًا آخر} other { وإلى ⁦#⁩ شخص آخر}}</td>
+          <td>من ⁨{author}⁩ إليك{count, plural, =0 {} zero {} one { (مستلمون آخرون: ⁦#⁩)} two { (مستلمون آخرون: ⁦#⁩)} few { (مستلمون آخرون: ⁦#⁩)} many { (مستلمون آخرون: ⁦#⁩)} other { (مستلمون آخرون: ⁦#⁩)}}</td>
+          <td>B uses natural plural forms. A uses the generic 'recipients: #' pattern for every form.</td>
+        </tr><tr>
+          <td><code>status.header.to_followers</code></td>
+          <td class="bad">regressed</td>
+          <td>-2</td>
+          <td>{author} to Followers {count, plural, =0 {} one {+ # other} other {+ # others}}</td>
+          <td>من ⁨{author}⁩ إلى المتابعين{count, plural, =0 {} zero {} one { وشخص آخر} two { وشخصين آخرين} few { و⁦#⁩ أشخاص آخرين} many { و⁦#⁩ شخصًا آخر} other { و⁦#⁩ شخص آخر}}</td>
+          <td>من ⁨{author}⁩ إلى المتابعين{count, plural, =0 {} zero {} one { (مستلمون آخرون: ⁦#⁩)} two { (مستلمون آخرون: ⁦#⁩)} few { (مستلمون آخرون: ⁦#⁩)} many { (مستلمون آخرون: ⁦#⁩)} other { (مستلمون آخرون: ⁦#⁩)}}</td>
+          <td>A uses natural plural forms. B uses the generic 'recipients: #' pattern for every form.</td>
+        </tr><tr>
+          <td><code>navigation_bar.blocked</code></td>
+          <td class="bad">regressed</td>
+          <td>-1</td>
+          <td>Blocked</td>
+          <td>الحسابات المحظورة</td>
+          <td>قائمة الحظر</td>
+          <td>B, 'blocked accounts', is clearer as a menu label. A, 'block list', is acceptable but less precise.</td>
+        </tr><tr>
+          <td><code>collections.account_count</code></td>
+          <td class="bad">regressed</td>
+          <td>-1</td>
+          <td>{count, plural, one {# account} other {# accounts}}</td>
+          <td>{count, plural, zero {لا حسابات} one {حساب واحد} two {حسابان} few {⁦#⁩ حسابات} many {⁦#⁩ حسابًا} other {⁦#⁩ حساب}}</td>
+          <td>{count, plural, zero {عدد الحسابات: ⁦#⁩} one {عدد الحسابات: ⁦#⁩} two {عدد الحسابات: ⁦#⁩} few {⁦#⁩ حسابات} many {⁦#⁩ حسابًا} other {⁦#⁩ حساب}}</td>
+          <td>A has idiomatic forms for zero, one and two. B uses 'number of accounts: #', which is awkward for one.</td>
+        </tr><tr>
+          <td><code>collections.hidden_accounts_link</code></td>
+          <td class="bad">regressed</td>
+          <td>-1</td>
+          <td>{count, plural, one {# hidden account} other {# hidden accounts}}</td>
+          <td>{count, plural, zero {لا حسابات مخفية} one {حساب واحد مخفي} two {حسابان مخفيان} few {⁦#⁩ حسابات مخفية} many {⁦#⁩ حسابًا مخفيًا} other {⁦#⁩ حساب مخفي}}</td>
+          <td>{count, plural, zero {عدد الحسابات المخفية: ⁦#⁩} one {عدد الحسابات المخفية: ⁦#⁩} two {عدد الحسابات المخفية: ⁦#⁩} few {⁦#⁩ حسابات مخفية} many {⁦#⁩ حسابًا مخفيًا} other {⁦#⁩ حساب مخفي}}</td>
+          <td>B has idiomatic forms for zero, one and two. A uses the awkward 'count: #' pattern.</td>
+        </tr><tr>
+          <td><code>column.custom_feeds</code></td>
+          <td class="">tie</td>
+          <td>+0</td>
+          <td>Custom Feeds</td>
+          <td>الخلاصات المخصصة</td>
+          <td>الموجزات المخصصة</td>
+          <td>Both terms for 'feeds' (خلاصات and موجزات) are acceptable.</td>
+        </tr><tr>
+          <td><code>custom_feeds.create_a_list_to_organize</code></td>
+          <td class="good">improved</td>
+          <td>+1</td>
+          <td>Create a new custom feed to organize your Following feed.</td>
+          <td>أنشئ خلاصة مخصصة جديدة لتنظيم منشورات الحسابات التي تتابعها.</td>
+          <td>أنشئ موجزًا مخصصًا جديدًا لتنظيم موجز الحسابات التي تتابعها.</td>
+          <td>A keeps 'Following feed' as a feed. B paraphrases it as 'posts of accounts you follow', which loses the feed reference.</td>
+        </tr><tr>
+          <td><code>custom_feeds.no_custom_feeds_yet</code></td>
+          <td class="">tie</td>
+          <td>+0</td>
+          <td>No custom feeds yet.</td>
+          <td>لا توجد خلاصات مخصصة بعد.</td>
+          <td>لا توجد موجزات مخصصة بعد.</td>
+          <td>Both are accurate. They differ only in the word chosen for 'feeds'.</td>
+        </tr><tr>
+          <td><code>combobox.results_available</code></td>
+          <td class="bad">regressed</td>
+          <td>-1</td>
+          <td>{count, plural, one {# suggestion} other {# suggestions}} available. Use up and down arrow keys to navigate. Press Enter key to select.</td>
+          <td>{count, plural, zero {لا توجد اقتراحات متاحة} one {يتوفر اقتراح واحد} two {يتوفر اقتراحان} few {تتوفر ⁦#⁩ اقتراحات} many {يتوفر ⁦#⁩ اقتراحًا} other {يتوفر ⁦#⁩ اقتراح}}. استخدم مفتاحي السهم لأعلى ولأسفل للتنقل. اضغط على مفتاح الإدخال للاختيار.</td>
+          <td>{count, plural, zero {عدد الاقتراحات المتاحة: ⁦#⁩} one {عدد الاقتراحات المتاحة: ⁦#⁩} two {عدد الاقتراحات المتاحة: ⁦#⁩} few {تتوفر ⁦#⁩ اقتراحات} many {يتوفر ⁦#⁩ اقتراحًا} other {يتوفر ⁦#⁩ اقتراح}}. استخدم مفتاحي السهم لأعلى ولأسفل للتنقل. اضغط على مفتاح الإدخال للاختيار.</td>
+          <td>B has natural zero, one and two forms, which suits a screen-reader announcement. A uses 'number of available suggestions: #'.</td>
+        </tr><tr>
+          <td><code>intervals.full.days</code></td>
+          <td class="bad">regressed</td>
+          <td>-2</td>
+          <td>{number, plural, one {# day} other {# days}}</td>
+          <td>{number, plural, zero {⁦#⁩ يوم} one {يوم واحد} two {يومان} few {⁦#⁩ أيام} many {⁦#⁩ يومًا} other {⁦#⁩ يوم}}</td>
+          <td>{number, plural, zero {⁦#⁩ يوم} one {عدد الأيام: ⁦#⁩} two {عدد الأيام: ⁦#⁩} few {⁦#⁩ أيام} many {⁦#⁩ يومًا} other {⁦#⁩ يوم}}</td>
+          <td>A uses the natural Arabic singular and dual forms (يوم واحد / يومان). B uses an awkward label-style 'عدد الأيام: #' in the one and two forms.</td>
+        </tr><tr>
+          <td><code>intervals.full.hours</code></td>
+          <td class="bad">regressed</td>
+          <td>-2</td>
+          <td>{number, plural, one {# hour} other {# hours}}</td>
+          <td>{number, plural, zero {⁦#⁩ ساعة} one {ساعة واحدة} two {ساعتان} few {⁦#⁩ ساعات} many {⁦#⁩ ساعةً} other {⁦#⁩ ساعة}}</td>
+          <td>{number, plural, zero {⁦#⁩ ساعة} one {عدد الساعات: ⁦#⁩} two {عدد الساعات: ⁦#⁩} few {⁦#⁩ ساعات} many {⁦#⁩ ساعةً} other {⁦#⁩ ساعة}}</td>
+          <td>B uses the natural forms ساعة واحدة / ساعتان. A uses the awkward 'عدد الساعات: #' in the one and two forms.</td>
+        </tr><tr>
+          <td><code>intervals.full.minutes</code></td>
+          <td class="bad">regressed</td>
+          <td>-2</td>
+          <td>{number, plural, one {# minute} other {# minutes}}</td>
+          <td>{number, plural, zero {⁦#⁩ دقيقة} one {دقيقة واحدة} two {دقيقتان} few {⁦#⁩ دقائق} many {⁦#⁩ دقيقةً} other {⁦#⁩ دقيقة}}</td>
+          <td>{number, plural, zero {⁦#⁩ دقيقة} one {عدد الدقائق: ⁦#⁩} two {عدد الدقائق: ⁦#⁩} few {⁦#⁩ دقائق} many {⁦#⁩ دقيقةً} other {⁦#⁩ دقيقة}}</td>
+          <td>A uses the natural forms دقيقة واحدة / دقيقتان. B uses the awkward label-style forms for one and two.</td>
+        </tr><tr>
+          <td><code>collections.list.collections_with_count</code></td>
+          <td class="bad">regressed</td>
+          <td>-3</td>
+          <td>{count, plural, one {# Collection} other {# Collections}}</td>
+          <td>{count, plural, zero {لا توجد مجموعات} one {مجموعة واحدة} two {مجموعتان} few {⁦#⁩ مجموعات} many {⁦#⁩ مجموعةً} other {⁦#⁩ مجموعة}}</td>
+          <td>{count, plural, zero {عدد المجموعات: ⁦#⁩} one {عدد المجموعات: ⁦#⁩} two {عدد المجموعات: ⁦#⁩} few {⁦#⁩ مجموعات} many {⁦#⁩ مجموعةً} other {⁦#⁩ مجموعة}}</td>
+          <td>B has idiomatic zero, one and two forms. A uses the awkward 'عدد المجموعات: #' in three categories.</td>
+        </tr><tr>
+          <td><code>column_header.move_column_left</code></td>
+          <td class="bad">regressed</td>
+          <td>-5</td>
+          <td>Move column left</td>
+          <td>نقل العمود إلى اليسار</td>
+          <td>نقل العمود إلى اليمين</td>
+          <td>B says 'right' where the source says 'left', which reverses the meaning. A is correct.</td>
+        </tr><tr>
+          <td><code>column_header.move_column_right</code></td>
+          <td class="bad">regressed</td>
+          <td>-5</td>
+          <td>Move column right</td>
+          <td>نقل العمود إلى اليمين</td>
+          <td>نقل العمود إلى اليسار</td>
+          <td>A says 'left' where the source says 'right', and it duplicates the translation for the left key. B is correct.</td>
+        </tr><tr>
+          <td><code>status.quote_error.filtered_details</code></td>
+          <td class="">tie</td>
+          <td>+0</td>
+          <td>Hidden due to your filter “{filters}”</td>
+          <td>هذا المنشور مخفي بسبب عامل التصفية «⁨{filters}⁩» الذي أعددته</td>
+          <td>أُخفي هذا المنشور وفق إعدادات التصفية لديك: ⁨{filters}⁩</td>
+          <td>Both are accurate. A adds slightly verbose padding ('الذي أعددته'). B drops the quotation marks around the filter name.</td>
+        </tr><tr>
+          <td><code>status.quote_error.revoked</code></td>
+          <td class="bad">regressed</td>
+          <td>-5</td>
+          <td>Post removed by author</td>
+          <td>أزال صاحب المنشور منشوره</td>
+          <td>سحب صاحب المنشور الأصلي الإذن باقتباسه هنا</td>
+          <td>A changes the meaning to 'author revoked permission to quote', which does not match 'Post removed by author'. B is faithful.</td>
+        </tr><tr>
+          <td><code>confirmations.delete_collection.title</code></td>
+          <td class="">tie</td>
+          <td>+0</td>
+          <td>Delete &quot;{name}&quot;?</td>
+          <td>حذف مجموعة «⁨{name}⁩»؟</td>
+          <td>حذف «⁨{name}⁩»؟</td>
+          <td>Both are correct. A adds a harmless clarifying word, 'مجموعة'.</td>
+        </tr><tr>
+          <td><code>confirmations.delete_custom_feed.message</code></td>
+          <td class="">tie</td>
+          <td>+0</td>
+          <td>Are you sure you want to permanently delete this custom feed?</td>
+          <td>هل أنت متأكد من أنك تريد حذف هذه الخلاصة المخصصة نهائيًا؟</td>
+          <td>هل أنت متأكد من أنك تريد حذف هذا الموجز المخصص نهائيًا؟</td>
+          <td>Both are accurate. They differ only in the term for 'feed' (موجز vs خلاصة), and both terms are acceptable.</td>
+        </tr><tr>
+          <td><code>confirmations.delete_custom_feed.title</code></td>
+          <td class="">tie</td>
+          <td>+0</td>
+          <td>Delete custom feed?</td>
+          <td>حذف الخلاصة المخصصة؟</td>
+          <td>حذف الموجز المخصص؟</td>
+          <td>Both are accurate. The terminology choice is equivalent.</td>
+        </tr><tr>
+          <td><code>confirmations.redraft.confirm</code></td>
+          <td class="good">improved</td>
+          <td>+1</td>
+          <td>Delete &amp; redraft</td>
+          <td>حذف وإعادة إلى المسودات</td>
+          <td>حذف وإعادة صياغة</td>
+          <td>A's 'حذف وإعادة صياغة' is concise and standard. B's phrasing is awkward and long for a button label.</td>
+        </tr><tr>
+          <td><code>confirmations.redraft.message</code></td>
+          <td class="good">improved</td>
+          <td>+1</td>
+          <td>Are you sure you want to delete this post and re-draft it? Favorites and boosts will be lost, and replies to the original post will be orphaned.</td>
+          <td>هل أنت متأكد من أنك تريد حذف هذا المنشور وإعادته إلى المسودات؟ ستفقد كل الإضافات إلى المفضلة والترويجات، وستبقى الردود على المنشور الأصلي منفصلة عنه.</td>
+          <td>هل أنت متأكد من أنك تريد حذف هذا المنشور وإعادة صياغته؟ ستفقد كل الإضافات إلى المفضلة والترويجات، وستفقد الردود ارتباطها بالمنشور الأصلي.</td>
+          <td>B conveys 'orphaned' more precisely ('ستفقد الردود ارتباطها'). A's 'منفصلة عنه' is a bit vague.</td>
+        </tr><tr>
+          <td><code>confirmations.redraft.title</code></td>
+          <td class="good">improved</td>
+          <td>+1</td>
+          <td>Delete &amp; redraft post?</td>
+          <td>حذف المنشور وإعادته إلى المسودات؟</td>
+          <td>حذف المنشور وإعادة صياغته؟</td>
+          <td>A's 'إعادة صياغته' is more natural for 'redraft'. B's phrasing is wordier.</td>
+        </tr><tr>
+          <td><code>featured_tags.suggestions</code></td>
+          <td class="">tie</td>
+          <td>+0</td>
+          <td>Lately you’ve posted about {items}. Add these as featured hashtags?</td>
+          <td>نشرت مؤخرًا عن ⁨{items}⁩. هل تريد إضافتها إلى وسومك البارزة؟</td>
+          <td>نشرت مؤخرًا عن ⁨{items}⁩. هل تريد إضافتها إلى وسومك المميزة؟</td>
+          <td>Both are accurate and fluent. 'البارزة' and 'المميزة' are both acceptable for 'featured'.</td>
+        </tr><tr>
+          <td><code>filter_warning.matches_filter</code></td>
+          <td class="">tie</td>
+          <td>+0</td>
+          <td>Matches filter “&lt;span&gt;{title}&lt;/span&gt;”</td>
+          <td>يطابق المحتوى مرشّح «&lt;span&gt;{title}&lt;/span&gt;»</td>
+          <td>يطابق المحتوى عامل التصفية «&lt;span&gt;⁨{title}⁩&lt;/span&gt;»</td>
+          <td>Both are accurate and keep the placeholders. A uses the standard Mastodon term عامل التصفية and adds bidi isolation; مرشّح in B is also acceptable.</td>
+        </tr><tr>
+          <td><code>confirmations.revoke_quote.title</code></td>
+          <td class="">tie</td>
+          <td>+0</td>
+          <td>Remove post?</td>
+          <td>هل تريد إزالة منشورك من الاقتباس؟</td>
+          <td>هل تريد إزالة المنشور؟</td>
+          <td>B is a literal translation. A adds context (removing your post from the quote) that fits the revoke-quote modal. Both work.</td>
+        </tr><tr>
+          <td><code>custom_feed.delete</code></td>
+          <td class="">tie</td>
+          <td>+0</td>
+          <td>Delete feed</td>
+          <td>حذف الخلاصة</td>
+          <td>حذف الموجز</td>
+          <td>Both موجز and خلاصة are valid for 'feed'. Neither candidate is consistent across the feed strings, and both mix the terms to the same degree.</td>
+        </tr><tr>
+          <td><code>custom_feed.edit</code></td>
+          <td class="">tie</td>
+          <td>+0</td>
+          <td>Edit feed</td>
+          <td>تعديل الخلاصة</td>
+          <td>تعديل الموجز</td>
+          <td>Both are correct. Both candidates mix the two terms for 'feed' equally.</td>
+        </tr><tr>
+          <td><code>custom_feed.options</code></td>
+          <td class="">tie</td>
+          <td>+0</td>
+          <td>Feed Options</td>
+          <td>خيارات الخلاصة</td>
+          <td>خيارات الموجز</td>
+          <td>Both are correct and use valid terms.</td>
+        </tr><tr>
+          <td><code>empty_column.custom_feed</code></td>
+          <td class="">tie</td>
+          <td>+0</td>
+          <td>There is nothing in this custom feed yet. When members of this feed post new statuses, they will appear here.</td>
+          <td>لا توجد منشورات في هذه الخلاصة المخصصة بعد. ستظهر هنا منشورات أعضائها الجديدة.</td>
+          <td>لا توجد منشورات في هذا الموجز المخصص بعد. ستظهر هنا منشورات أعضائه الجديدة.</td>
+          <td>Both are fluent and accurate, with correct gender agreement for each chosen noun.</td>
+        </tr><tr>
+          <td><code>custom_feeds.add_to_feeds</code></td>
+          <td class="">tie</td>
+          <td>+0</td>
+          <td>Add {name} to custom feeds</td>
+          <td>إضافة ⁦{name}⁩ إلى الخلاصات المخصصة</td>
+          <td>إضافة ⁦{name}⁩ إلى الموجزات المخصصة</td>
+          <td>Both are correct and keep the placeholder isolated.</td>
+        </tr><tr>
+          <td><code>custom_feeds.new_feed_name</code></td>
+          <td class="">tie</td>
+          <td>+0</td>
+          <td>New feed name</td>
+          <td>اسم الخلاصة الجديدة</td>
+          <td>اسم الموجز الجديد</td>
+          <td>Both are correct, with the adjective agreeing in each case.</td>
+        </tr><tr>
+          <td><code>domain_block_modal.you_will_lose_num_followers</code></td>
+          <td class="bad">regressed</td>
+          <td>-1</td>
+          <td>You will lose {followersCount, plural, one {{followersCountDisplay} follower} other {{followersCountDisplay} followers}} and {followingCount, plural, one {{followingCountDisplay} person you follow} other {{followingCountDisplay} people you follow}}.</td>
+          <td>{followersCount, plural, zero {لن تفقد أي متابع} one {ستفقد متابعًا واحدًا} two {ستفقد متابعَين} few {ستفقد ⁦{followersCountDisplay}⁩ متابعين} many {ستفقد ⁦{followersCountDisplay}⁩ متابعًا} other {ستفقد ⁦{followersCountDisplay}⁩ من متابعيك}}، و{followingCount, plural, zero {لن تتوقف عن متابعة أي حساب} one {ستتوقف عن متابعة حساب واحد} two {ستتوقف عن متابعة حسابَين} few {ستتوقف عن متابعة ⁦{followingCountDisplay}⁩ حسابات} many {ستتوقف عن متابعة ⁦{followingCountDisplay}⁩ حسابًا} other {ستتوقف عن متابعة ⁦{followingCountDisplay}⁩ من الحسابات التي تتابعها}}.</td>
+          <td>عدد المتابعين الذين ستفقدهم: {followersCount, plural, zero {⁨{followersCountDisplay}⁩} one {⁨{followersCountDisplay}⁩} two {⁨{followersCountDisplay}⁩} few {⁨{followersCountDisplay}⁩} many {⁨{followersCountDisplay}⁩} other {⁨{followersCountDisplay}⁩}}، وعدد الحسابات التي ستتوقف عن متابعتها: {followingCount, plural, zero {⁨{followingCountDisplay}⁩} one {⁨{followingCountDisplay}⁩} two {⁨{followingCountDisplay}⁩} few {⁨{followingCountDisplay}⁩} many {⁨{followingCountDisplay}⁩} other {⁨{followingCountDisplay}⁩}}.</td>
+          <td>A restructures the sentence as a stilted 'count: N' label and doesn't use the plural branches meaningfully. B uses proper Arabic plural forms for each category and reads naturally.</td>
+        </tr><tr>
+          <td><code>ignore_notifications_modal.filter_to_act_users</code></td>
+          <td class="">tie</td>
+          <td>+0</td>
+          <td>You'll still be able to accept, reject, or report users</td>
+          <td>سيظل بإمكانك قبول طلبات المستخدمين أو رفضها أو الإبلاغ عن أصحابها</td>
+          <td>سيظل بإمكانك قبول المستخدمين أو رفضهم أو الإبلاغ عنهم</td>
+          <td>A spells out that the user accepts requests, which is accurate in this context. B is literal and still clear.</td>
+        </tr><tr>
+          <td><code>follow_suggestions.dismiss</code></td>
+          <td class="">tie</td>
+          <td>+0</td>
+          <td>Don't show again</td>
+          <td>عدم عرض هذا الاقتراح مجددًا</td>
+          <td>عدم العرض مجددًا</td>
+          <td>A is literal. B adds 'this suggestion', which matches the card context. Both are acceptable.</td>
+        </tr><tr>
+          <td><code>home.column_settings.show_reblogs</code></td>
+          <td class="bad">regressed</td>
+          <td>-1</td>
+          <td>Show boosts</td>
+          <td>عرض المنشورات المروّجة</td>
+          <td>عرض الترويجات</td>
+          <td>A's 'boosted posts' is clearer. B's الترويجات is a less natural noun for this setting.</td>
+        </tr><tr>
+          <td><code>load_pending</code></td>
+          <td class="bad">regressed</td>
+          <td>-1</td>
+          <td>{count, plural, one {# new item} other {# new items}}</td>
+          <td>{count, plural, zero {لا توجد عناصر جديدة} one {عنصر جديد واحد} two {عنصران جديدان} few {⁦#⁩ عناصر جديدة} many {⁦#⁩ عنصرًا جديدًا} other {⁦#⁩ عنصر جديد}}</td>
+          <td>{count, plural, zero {العناصر الجديدة: ⁦#⁩} one {العناصر الجديدة: ⁦#⁩} two {العناصر الجديدة: ⁦#⁩} few {العناصر الجديدة: ⁦#⁩} many {العناصر الجديدة: ⁦#⁩} other {العناصر الجديدة: ⁦#⁩}}</td>
+          <td>A uses the same 'label: #' text in every branch, which reads unnaturally. B gives grammatically correct Arabic forms for each plural category.</td>
+        </tr><tr>
+          <td><code>notification.reblog.name_and_others_with_link</code></td>
+          <td class="bad">regressed</td>
+          <td>-2</td>
+          <td>{name} and &lt;a&gt;{count, plural, one {# other} other {# others}}&lt;/a&gt; boosted your post</td>
+          <td>روّج ⁨{name}⁩ &lt;a&gt;{count, plural, zero {وحده} one {وشخص آخر} two {وشخصان آخران} few {و⁨#⁩ أشخاص آخرون} many {و⁨#⁩ شخصًا آخر} other {و⁨#⁩ شخص آخر}}&lt;/a&gt; لمنشورك</td>
+          <td>روّج ⁨{name}⁩ &lt;a&gt;{count, plural, zero {و⁨#⁩ من الآخرين} one {و⁨#⁩ من الآخرين} two {و⁨#⁩ من الآخرين} few {و⁨#⁩ أشخاص آخرين} many {و⁨#⁩ شخصًا آخر} other {و⁨#⁩ شخص آخر}}&lt;/a&gt; لمنشورك</td>
+          <td>A has correct case and number agreement in every branch. B's zero, one and two branches use the awkward 'و# من الآخرين', and its few branch has a case error: آخرين should be آخرون.</td>
+        </tr><tr>
+          <td><code>report_notification.categories.other</code></td>
+          <td class="">tie</td>
+          <td>+0</td>
+          <td>Other</td>
+          <td>أخرى</td>
+          <td>سبب آخر</td>
+          <td>Both are acceptable for a report category. A's 'another reason' is slightly more explicit.</td>
+        </tr><tr>
+          <td><code>tabs_bar.create_custom_feed</code></td>
+          <td class="">tie</td>
+          <td>+0</td>
+          <td>Create Feed</td>
+          <td>إنشاء موجز</td>
+          <td>إنشاء خلاصة</td>
+          <td>Both موجز and خلاصة are acceptable Arabic terms for 'feed'.</td>
+        </tr><tr>
+          <td><code>tabs_bar.custom_feeds</code></td>
+          <td class="">tie</td>
+          <td>+0</td>
+          <td>Custom Feeds</td>
+          <td>الموجزات المخصصة</td>
+          <td>الخلاصات المخصصة</td>
+          <td>Both are accurate and fluent. They differ only in which term they use for 'feed'.</td>
+        </tr><tr>
+          <td><code>notification.admin.report_account</code></td>
+          <td class="bad">regressed</td>
+          <td>+0</td>
+          <td>{name} reported {count, plural, one {one post} other {# posts}} from {target} for {category}</td>
+          <td>أبلغ ⁨{name}⁩ عن {count, plural, zero {حساب} one {منشور واحد من حساب} two {منشورين من حساب} few {⁨#⁩ منشورات من حساب} many {⁨#⁩ منشورًا من حساب} other {⁨#⁩ منشور من حساب}} ⁨{target}⁩ بسبب {category}</td>
+          <td>أبلغ ⁨{name}⁩ عن {count, plural, zero {⁨#⁩ من منشورات حساب} one {منشور واحد من حساب} two {⁨#⁩ من منشورات حساب} few {⁨#⁩ منشورات من حساب} many {⁨#⁩ منشورًا من حساب} other {⁨#⁩ منشور من حساب}} ⁨{target}⁩ بسبب {category}</td>
+          <td>A's zero form 'حساب' drops the post count (minor), but it uses the correct dual 'منشورين'. B's two form '# من منشورات' is awkward and handles the dual less well.</td>
+        </tr><tr>
+          <td><code>notification.admin.report_account_other</code></td>
+          <td class="bad">regressed</td>
+          <td>+0</td>
+          <td>{name} reported {count, plural, one {one post} other {# posts}} from {target}</td>
+          <td>أبلغ ⁨{name}⁩ عن {count, plural, zero {حساب} one {منشور واحد من حساب} two {منشورين من حساب} few {⁨#⁩ منشورات من حساب} many {⁨#⁩ منشورًا من حساب} other {⁨#⁩ منشور من حساب}} ⁨{target}⁩</td>
+          <td>أبلغ ⁨{name}⁩ عن {count, plural, zero {⁨#⁩ من منشورات حساب} one {منشور واحد من حساب} two {⁨#⁩ من منشورات حساب} few {⁨#⁩ منشورات من حساب} many {⁨#⁩ منشورًا من حساب} other {⁨#⁩ منشور من حساب}} ⁨{target}⁩</td>
+          <td>Same pattern as the previous item with sides swapped: B uses the proper dual 'منشورين', and A's two form is awkward.</td>
+        </tr><tr>
+          <td><code>notification.admin.sign_up.name_and_others</code></td>
+          <td class="bad">regressed</td>
+          <td>-2</td>
+          <td>{name} and {count, plural, one {# other} other {# others}} signed up</td>
+          <td>انضمّ ⁨{name}⁩ {count, plural, zero {وحده} one {وشخص آخر} two {وشخصان آخران} few {و⁨#⁩ أشخاص آخرون} many {و⁨#⁩ شخصًا آخر} other {و⁨#⁩ شخص آخر}} إلى الخادم</td>
+          <td>انضمّ ⁨{name}⁩ {count, plural, zero {و⁨#⁩ من الآخرين} one {و⁨#⁩ من الآخرين} two {و⁨#⁩ من الآخرين} few {و⁨#⁩ أشخاص آخرين} many {و⁨#⁩ شخصًا آخر} other {و⁨#⁩ شخص آخر}} إلى الخادم</td>
+          <td>A uses natural one/two forms and the correct nominative 'آخرون' for a coordinated subject. B has the awkward 'و1 من الآخرين' and an incorrect case in 'آخرين'.</td>
+        </tr><tr>
+          <td><code>notification.follow_request.name_and_others</code></td>
+          <td class="bad">regressed</td>
+          <td>-2</td>
+          <td>{name} and {count, plural, one {# other} other {# others}} has requested to follow you</td>
+          <td>طلب ⁨{name}⁩ {count, plural, zero {وحده} one {وشخص آخر} two {وشخصان آخران} few {و⁨#⁩ أشخاص آخرون} many {و⁨#⁩ شخصًا آخر} other {و⁨#⁩ شخص آخر}} متابعتك</td>
+          <td>طلب ⁨{name}⁩ {count, plural, zero {و⁨#⁩ من الآخرين} one {و⁨#⁩ من الآخرين} two {و⁨#⁩ من الآخرين} few {و⁨#⁩ أشخاص آخرين} many {و⁨#⁩ شخصًا آخر} other {و⁨#⁩ شخص آخر}} متابعتك</td>
+          <td>B has natural dual and singular forms and correct nominative case. A's one and two forms are awkward, and 'آخرين' is in the wrong case.</td>
+        </tr><tr>
+          <td><code>notification.follow.name_and_others</code></td>
+          <td class="bad">regressed</td>
+          <td>-2</td>
+          <td>{name} and &lt;a&gt;{count, plural, one {# other} other {# others}}&lt;/a&gt; followed you</td>
+          <td>تابعك ⁨{name}⁩ &lt;a&gt;{count, plural, zero {وحده} one {وشخص آخر} two {وشخصان آخران} few {و⁨#⁩ أشخاص آخرون} many {و⁨#⁩ شخصًا آخر} other {و⁨#⁩ شخص آخر}}&lt;/a&gt;</td>
+          <td>تابعك ⁨{name}⁩ &lt;a&gt;{count, plural, zero {و⁨#⁩ من الآخرين} one {و⁨#⁩ من الآخرين} two {و⁨#⁩ من الآخرين} few {و⁨#⁩ أشخاص آخرين} many {و⁨#⁩ شخصًا آخر} other {و⁨#⁩ شخص آخر}}&lt;/a&gt;</td>
+          <td>A uses proper one/two forms and the nominative 'آخرون'. B has the awkward 'و1 من الآخرين' and the case error 'آخرين'.</td>
+        </tr><tr>
+          <td><code>notification.like.name_and_others_with_link</code></td>
+          <td class="bad">regressed</td>
+          <td>-2</td>
+          <td>{name} and &lt;a&gt;{count, plural, one {# other} other {# others}}&lt;/a&gt; liked your post</td>
+          <td>أُعجب ⁨{name}⁩ &lt;a&gt;{count, plural, zero {وحده} one {وشخص آخر} two {وشخصان آخران} few {و⁨#⁩ أشخاص آخرون} many {و⁨#⁩ شخصًا آخر} other {و⁨#⁩ شخص آخر}}&lt;/a&gt; بمنشورك</td>
+          <td>أُعجب ⁨{name}⁩ &lt;a&gt;{count, plural, zero {و⁨#⁩ من الآخرين} one {و⁨#⁩ من الآخرين} two {و⁨#⁩ من الآخرين} few {و⁨#⁩ أشخاص آخرين} many {و⁨#⁩ شخصًا آخر} other {و⁨#⁩ شخص آخر}}&lt;/a&gt; بمنشورك</td>
+          <td>B uses idiomatic plural forms and correct case agreement. A's one and two forms are awkward, and its case is wrong.</td>
+        </tr><tr>
+          <td><code>poll.total_people</code></td>
+          <td class="bad">regressed</td>
+          <td>+0</td>
+          <td>{count, plural, one {# person} other {# people}}</td>
+          <td>{count, plural, zero {لم يصوّت أحد} one {شخص واحد} two {شخصان} few {⁦#⁩ أشخاص} many {⁦#⁩ شخصًا} other {⁦#⁩ شخص}}</td>
+          <td>{count, plural, zero {عدد المصوّتين: ⁦#⁩} one {عدد المصوّتين: ⁦#⁩} two {عدد المصوّتين: ⁦#⁩} few {⁦#⁩ أشخاص} many {⁦#⁩ شخصًا} other {⁦#⁩ شخص}}</td>
+          <td>A's zero form 'لم يصوّت أحد' adds some meaning but reads naturally. B switches to a 'number of voters:' label for some forms but not others, so its style is inconsistent and less natural.</td>
+        </tr><tr>
+          <td><code>poll.total_votes</code></td>
+          <td class="bad">regressed</td>
+          <td>-1</td>
+          <td>{count, plural, one {# vote} other {# votes}}</td>
+          <td>{count, plural, zero {لا أصوات} one {صوت واحد} two {صوتان} few {⁦#⁩ أصوات} many {⁦#⁩ صوتًا} other {⁦#⁩ صوت}}</td>
+          <td>{count, plural, zero {عدد الأصوات: ⁦#⁩} one {عدد الأصوات: ⁦#⁩} two {عدد الأصوات: ⁦#⁩} few {⁦#⁩ أصوات} many {⁦#⁩ صوتًا} other {⁦#⁩ صوت}}</td>
+          <td>B has natural forms (صوت واحد / صوتان). A mixes a 'عدد الأصوات:' label with bare plural forms.</td>
+        </tr><tr>
+          <td><code>poll.votes</code></td>
+          <td class="bad">regressed</td>
+          <td>-1</td>
+          <td>{votes, plural, one {# vote} other {# votes}}</td>
+          <td>{votes, plural, zero {لا أصوات} one {صوت واحد} two {صوتان} few {⁦#⁩ أصوات} many {⁦#⁩ صوتًا} other {⁦#⁩ صوت}}</td>
+          <td>{votes, plural, zero {عدد الأصوات: ⁦#⁩} one {عدد الأصوات: ⁦#⁩} two {عدد الأصوات: ⁦#⁩} few {⁦#⁩ أصوات} many {⁦#⁩ صوتًا} other {⁦#⁩ صوت}}</td>
+          <td>A has natural forms. B mixes the label style with bare forms.</td>
+        </tr><tr>
+          <td><code>privacy.direct.short</code></td>
+          <td class="bad">regressed</td>
+          <td>-1</td>
+          <td>Private mention</td>
+          <td>إشارة خاصة</td>
+          <td>لأشخاص محددين</td>
+          <td>B translates 'Private mention' accurately. A paraphrases it as 'for specific people' and loses the 'mention' concept.</td>
+        </tr><tr>
+          <td><code>report.rules.title</code></td>
+          <td class="">tie</td>
+          <td>+0</td>
+          <td>Which rules are being violated?</td>
+          <td>ما القواعد التي خالفها هذا المحتوى؟</td>
+          <td>ما القواعد التي تُنتهك؟</td>
+          <td>A adds 'this content', which is natural and helps clarity. B's passive is literal and acceptable.</td>
+        </tr><tr>
+          <td><code>search_popout.full_text_search_disabled_message</code></td>
+          <td class="">tie</td>
+          <td>+0</td>
+          <td>Not available on {domain}.</td>
+          <td>غير متاح على ⁦{domain}⁩.</td>
+          <td>غير متاحة على ⁦{domain}⁩.</td>
+          <td>The gender of the implied subject (feature or search) is ambiguous, so both agreements are defensible.</td>
+        </tr><tr>
+          <td><code>search_popout.full_text_search_logged_out_message</code></td>
+          <td class="">tie</td>
+          <td>+0</td>
+          <td>Only available when logged in.</td>
+          <td>متاح فقط بعد تسجيل الدخول.</td>
+          <td>متاحة فقط بعد تسجيل الدخول.</td>
+          <td>The gender of the implied subject is ambiguous, so both are acceptable.</td>
+        </tr><tr>
+          <td><code>search.search_or_paste</code></td>
+          <td class="bad">regressed</td>
+          <td>-1</td>
+          <td>Search or paste link…</td>
+          <td>ابحث أو الصق رابطًا…</td>
+          <td>ابحث أو ألصق رابطًا…</td>
+          <td>The standard imperative of لصق is الصق. A's ألصق is the form-IV verb (&quot;attach&quot;), which is common in UIs but less correct.</td>
+        </tr><tr>
+          <td><code>status.thread_none</code></td>
+          <td class="good">improved</td>
+          <td>+1</td>
+          <td>Nothing else has been added to the conversation yet.</td>
+          <td>لم يُضف أي رد إلى المحادثة بعد.</td>
+          <td>لم يُضف شيء آخر إلى المحادثة بعد.</td>
+          <td>A narrows &quot;nothing else&quot; to &quot;no reply&quot;. B matches the source exactly.</td>
+        </tr><tr>
+          <td><code>status.edited_x_times</code></td>
+          <td class="">tie</td>
+          <td>+0</td>
+          <td>Edited {count, plural, one {{count} time} other {{count} times}}</td>
+          <td>{count, plural, zero {لم يُعدّل المنشور} one {عُدّل المنشور مرة واحدة} two {عُدّل المنشور مرتين} few {عُدّل المنشور {count} مرات} many {عُدّل المنشور {count} مرةً} other {عُدّل المنشور {count} مرة}}</td>
+          <td>{count, plural, zero {لم يُعدّل المنشور} one {عُدّل المنشور مرة واحدة} two {عُدّل المنشور مرتين} few {عُدّل المنشور ⁦{count}⁩ مرات} many {عُدّل المنشور ⁦{count}⁩ مرةً} other {عُدّل المنشور ⁦{count}⁩ مرة}}</td>
+          <td>Both have the same full Arabic plural forms. A's bidi isolates around {count} are a harmless safeguard, not a meaningful difference.</td>
+        </tr><tr>
+          <td><code>subscribed_languages.lead</code></td>
+          <td class="">tie</td>
+          <td>+0</td>
+          <td>Only posts in selected languages will appear on your home and list timelines after the change. Select none to receive posts in all languages.</td>
+          <td>بعد التغيير، لن تظهر في خطك الزمني الرئيسي وقوائمك إلا منشورات هذا الحساب المكتوبة باللغات التي تختارها. لتلقي منشوراته بجميع اللغات، اترك كل اللغات دون تحديد.</td>
+          <td>بعد التغيير، سيقتصر ما يظهر من منشورات هذا الحساب في خطك الزمني الرئيسي وقوائمك على المنشورات المكتوبة باللغات المحددة. لتلقّي منشوراته بجميع اللغات، اترك كل اللغات دون تحديد.</td>
+          <td>Both add &quot;this account&quot;, which fits the per-account modal. Both are accurate and fluent. B's المحددة is slightly closer to &quot;selected&quot;, and A's phrasing is slightly more natural.</td>
+        </tr><tr>
+          <td><code>trends.counter_by_accounts</code></td>
+          <td class="bad">regressed</td>
+          <td>-2</td>
+          <td>{count, plural, one {{counter} person} other {{counter} people}} in the past {days, plural, one {day} other {{days} days}}</td>
+          <td>{count, plural, zero {لم يستخدم أحد هذا الوسم} one {شخص واحد} two {شخصان} few {⁨{counter}⁩ أشخاص} many {⁨{counter}⁩ شخصًا} other {⁨{counter}⁩ شخص}} {days, plural, zero {خلال آخر ⁦{days}⁩ يوم} one {خلال اليوم الماضي} two {خلال اليومين الماضيين} few {خلال آخر ⁦{days}⁩ أيام} many {خلال آخر ⁦{days}⁩ يومًا} other {خلال آخر ⁦{days}⁩ يوم}}</td>
+          <td>{count, plural, zero {عدد الأشخاص: ⁨{counter}⁩} one {عدد الأشخاص: ⁨{counter}⁩} two {عدد الأشخاص: ⁨{counter}⁩} few {⁨{counter}⁩ أشخاص} many {⁨{counter}⁩ شخصًا} other {⁨{counter}⁩ شخص}} {days, plural, zero {خلال آخر ⁦{days}⁩ يوم} one {خلال اليوم الماضي} two {خلال اليومين الماضيين} few {خلال آخر ⁦{days}⁩ أيام} many {خلال آخر ⁦{days}⁩ يومًا} other {خلال آخر ⁦{days}⁩ يوم}}</td>
+          <td>A's &quot;عدد الأشخاص: N&quot; in the zero/one/two branches is stilted and doesn't match its own other branches. B uses natural dual/singular forms. Leaving out {counter} in the one/two branches is valid ICU.</td>
+        </tr><tr>
+          <td><code>units.short.thousand</code></td>
+          <td class="bad">regressed</td>
+          <td>-1</td>
+          <td>{count}K</td>
+          <td>⁦{count}⁩ ألف</td>
+          <td>⁦{count}K⁩</td>
+          <td>A localizes the abbreviation as ألف, which is standard in Arabic Mastodon. B leaves the Latin &quot;K&quot; untranslated.</td>
+        </tr>
+      </table>
+    
+</div>
+
+<div class="card">
+  <h2>3. Mastodon Storybook Visual QA (Playwright + MSW — Desktop, Mobile &amp; RTL)</h2>
+  
+          <h3>Navigation Panel — es-MX (desktop)</h3>
+          <div class="grid-3">
+            
+              <div class="shot">
+                <img src="mastodon/screenshots/nav-panel_es-MX_nmt_desktop.png" alt="nav-panel_es-MX_nmt_desktop.png"/>
+                <div class="shot-cap"><strong>NMT (DeepL)</strong> · overflow=false · clipped=0 · rawICU=false</div>
+              </div>
+            
+              <div class="shot">
+                <img src="mastodon/screenshots/nav-panel_es-MX_b0_desktop.png" alt="nav-panel_es-MX_b0_desktop.png"/>
+                <div class="shot-cap"><strong>B0 (Codex Catalog)</strong> · overflow=false · clipped=0 · rawICU=false</div>
+              </div>
+            
+              <div class="shot">
+                <img src="mastodon/screenshots/nav-panel_es-MX_w-post_desktop.png" alt="nav-panel_es-MX_w-post_desktop.png"/>
+                <div class="shot-cap"><strong>W-post (Wraith+QE)</strong> · overflow=false · clipped=0 · rawICU=false</div>
+              </div>
+            
+          </div>
+        
+          <h3>Navigation Panel — es-MX (mobile)</h3>
+          <div class="grid-3">
+            
+              <div class="shot">
+                <img src="mastodon/screenshots/nav-panel_es-MX_nmt_mobile.png" alt="nav-panel_es-MX_nmt_mobile.png"/>
+                <div class="shot-cap"><strong>NMT (DeepL)</strong> · overflow=false · clipped=0 · rawICU=false</div>
+              </div>
+            
+              <div class="shot">
+                <img src="mastodon/screenshots/nav-panel_es-MX_b0_mobile.png" alt="nav-panel_es-MX_b0_mobile.png"/>
+                <div class="shot-cap"><strong>B0 (Codex Catalog)</strong> · overflow=false · clipped=0 · rawICU=false</div>
+              </div>
+            
+              <div class="shot">
+                <img src="mastodon/screenshots/nav-panel_es-MX_w-post_mobile.png" alt="nav-panel_es-MX_w-post_mobile.png"/>
+                <div class="shot-cap"><strong>W-post (Wraith+QE)</strong> · overflow=false · clipped=0 · rawICU=false</div>
+              </div>
+            
+          </div>
+        
+          <h3>Navigation Panel — ar (desktop, RTL)</h3>
+          <div class="grid-3">
+            
+              <div class="shot">
+                <img src="mastodon/screenshots/nav-panel_ar_nmt_desktop.png" alt="nav-panel_ar_nmt_desktop.png"/>
+                <div class="shot-cap"><strong>NMT (DeepL)</strong> · overflow=false · clipped=0 · rawICU=false</div>
+              </div>
+            
+              <div class="shot">
+                <img src="mastodon/screenshots/nav-panel_ar_b0_desktop.png" alt="nav-panel_ar_b0_desktop.png"/>
+                <div class="shot-cap"><strong>B0 (Codex Catalog)</strong> · overflow=false · clipped=0 · rawICU=false</div>
+              </div>
+            
+              <div class="shot">
+                <img src="mastodon/screenshots/nav-panel_ar_w-post_desktop.png" alt="nav-panel_ar_w-post_desktop.png"/>
+                <div class="shot-cap"><strong>W-post (Wraith+QE)</strong> · overflow=false · clipped=0 · rawICU=false</div>
+              </div>
+            
+          </div>
+        
+          <h3>Navigation Panel — ar (mobile, RTL)</h3>
+          <div class="grid-3">
+            
+              <div class="shot">
+                <img src="mastodon/screenshots/nav-panel_ar_nmt_mobile.png" alt="nav-panel_ar_nmt_mobile.png"/>
+                <div class="shot-cap"><strong>NMT (DeepL)</strong> · overflow=false · clipped=0 · rawICU=false</div>
+              </div>
+            
+              <div class="shot">
+                <img src="mastodon/screenshots/nav-panel_ar_b0_mobile.png" alt="nav-panel_ar_b0_mobile.png"/>
+                <div class="shot-cap"><strong>B0 (Codex Catalog)</strong> · overflow=false · clipped=0 · rawICU=false</div>
+              </div>
+            
+              <div class="shot">
+                <img src="mastodon/screenshots/nav-panel_ar_w-post_mobile.png" alt="nav-panel_ar_w-post_mobile.png"/>
+                <div class="shot-cap"><strong>W-post (Wraith+QE)</strong> · overflow=false · clipped=0 · rawICU=false</div>
+              </div>
+            
+          </div>
+        
+          <h3>Compose Post — es-MX (desktop)</h3>
+          <div class="grid-3">
+            
+              <div class="shot">
+                <img src="mastodon/screenshots/compose-post_es-MX_nmt_desktop.png" alt="compose-post_es-MX_nmt_desktop.png"/>
+                <div class="shot-cap"><strong>NMT (DeepL)</strong> · overflow=false · clipped=0 · rawICU=false</div>
+              </div>
+            
+              <div class="shot">
+                <img src="mastodon/screenshots/compose-post_es-MX_b0_desktop.png" alt="compose-post_es-MX_b0_desktop.png"/>
+                <div class="shot-cap"><strong>B0 (Codex Catalog)</strong> · overflow=false · clipped=0 · rawICU=false</div>
+              </div>
+            
+              <div class="shot">
+                <img src="mastodon/screenshots/compose-post_es-MX_w-post_desktop.png" alt="compose-post_es-MX_w-post_desktop.png"/>
+                <div class="shot-cap"><strong>W-post (Wraith+QE)</strong> · overflow=false · clipped=0 · rawICU=false</div>
+              </div>
+            
+          </div>
+        
+          <h3>Compose Post — es-MX (mobile)</h3>
+          <div class="grid-3">
+            
+              <div class="shot">
+                <img src="mastodon/screenshots/compose-post_es-MX_nmt_mobile.png" alt="compose-post_es-MX_nmt_mobile.png"/>
+                <div class="shot-cap"><strong>NMT (DeepL)</strong> · overflow=true · clipped=0 · rawICU=false</div>
+              </div>
+            
+              <div class="shot">
+                <img src="mastodon/screenshots/compose-post_es-MX_b0_mobile.png" alt="compose-post_es-MX_b0_mobile.png"/>
+                <div class="shot-cap"><strong>B0 (Codex Catalog)</strong> · overflow=true · clipped=0 · rawICU=false</div>
+              </div>
+            
+              <div class="shot">
+                <img src="mastodon/screenshots/compose-post_es-MX_w-post_mobile.png" alt="compose-post_es-MX_w-post_mobile.png"/>
+                <div class="shot-cap"><strong>W-post (Wraith+QE)</strong> · overflow=true · clipped=0 · rawICU=false</div>
+              </div>
+            
+          </div>
+        
+          <h3>Compose Post — ar (desktop, RTL)</h3>
+          <div class="grid-3">
+            
+              <div class="shot">
+                <img src="mastodon/screenshots/compose-post_ar_nmt_desktop.png" alt="compose-post_ar_nmt_desktop.png"/>
+                <div class="shot-cap"><strong>NMT (DeepL)</strong> · overflow=false · clipped=0 · rawICU=false</div>
+              </div>
+            
+              <div class="shot">
+                <img src="mastodon/screenshots/compose-post_ar_b0_desktop.png" alt="compose-post_ar_b0_desktop.png"/>
+                <div class="shot-cap"><strong>B0 (Codex Catalog)</strong> · overflow=false · clipped=0 · rawICU=false</div>
+              </div>
+            
+              <div class="shot">
+                <img src="mastodon/screenshots/compose-post_ar_w-post_desktop.png" alt="compose-post_ar_w-post_desktop.png"/>
+                <div class="shot-cap"><strong>W-post (Wraith+QE)</strong> · overflow=false · clipped=0 · rawICU=false</div>
+              </div>
+            
+          </div>
+        
+          <h3>Compose Post — ar (mobile, RTL)</h3>
+          <div class="grid-3">
+            
+              <div class="shot">
+                <img src="mastodon/screenshots/compose-post_ar_nmt_mobile.png" alt="compose-post_ar_nmt_mobile.png"/>
+                <div class="shot-cap"><strong>NMT (DeepL)</strong> · overflow=true · clipped=0 · rawICU=false</div>
+              </div>
+            
+              <div class="shot">
+                <img src="mastodon/screenshots/compose-post_ar_b0_mobile.png" alt="compose-post_ar_b0_mobile.png"/>
+                <div class="shot-cap"><strong>B0 (Codex Catalog)</strong> · overflow=true · clipped=0 · rawICU=false</div>
+              </div>
+            
+              <div class="shot">
+                <img src="mastodon/screenshots/compose-post_ar_w-post_mobile.png" alt="compose-post_ar_w-post_mobile.png"/>
+                <div class="shot-cap"><strong>W-post (Wraith+QE)</strong> · overflow=true · clipped=0 · rawICU=false</div>
+              </div>
+            
+          </div>
+        
+          <h3>Status Card — es-MX (desktop)</h3>
+          <div class="grid-3">
+            
+              <div class="shot">
+                <img src="mastodon/screenshots/status-card_es-MX_nmt_desktop.png" alt="status-card_es-MX_nmt_desktop.png"/>
+                <div class="shot-cap"><strong>NMT (DeepL)</strong> · overflow=false · clipped=0 · rawICU=false</div>
+              </div>
+            
+              <div class="shot">
+                <img src="mastodon/screenshots/status-card_es-MX_b0_desktop.png" alt="status-card_es-MX_b0_desktop.png"/>
+                <div class="shot-cap"><strong>B0 (Codex Catalog)</strong> · overflow=false · clipped=0 · rawICU=false</div>
+              </div>
+            
+              <div class="shot">
+                <img src="mastodon/screenshots/status-card_es-MX_w-post_desktop.png" alt="status-card_es-MX_w-post_desktop.png"/>
+                <div class="shot-cap"><strong>W-post (Wraith+QE)</strong> · overflow=false · clipped=0 · rawICU=false</div>
+              </div>
+            
+          </div>
+        
+          <h3>Status Card — es-MX (mobile)</h3>
+          <div class="grid-3">
+            
+              <div class="shot">
+                <img src="mastodon/screenshots/status-card_es-MX_nmt_mobile.png" alt="status-card_es-MX_nmt_mobile.png"/>
+                <div class="shot-cap"><strong>NMT (DeepL)</strong> · overflow=false · clipped=0 · rawICU=false</div>
+              </div>
+            
+              <div class="shot">
+                <img src="mastodon/screenshots/status-card_es-MX_b0_mobile.png" alt="status-card_es-MX_b0_mobile.png"/>
+                <div class="shot-cap"><strong>B0 (Codex Catalog)</strong> · overflow=false · clipped=0 · rawICU=false</div>
+              </div>
+            
+              <div class="shot">
+                <img src="mastodon/screenshots/status-card_es-MX_w-post_mobile.png" alt="status-card_es-MX_w-post_mobile.png"/>
+                <div class="shot-cap"><strong>W-post (Wraith+QE)</strong> · overflow=false · clipped=0 · rawICU=false</div>
+              </div>
+            
+          </div>
+        
+          <h3>Status Card — ar (desktop, RTL)</h3>
+          <div class="grid-3">
+            
+              <div class="shot">
+                <img src="mastodon/screenshots/status-card_ar_nmt_desktop.png" alt="status-card_ar_nmt_desktop.png"/>
+                <div class="shot-cap"><strong>NMT (DeepL)</strong> · overflow=false · clipped=0 · rawICU=false</div>
+              </div>
+            
+              <div class="shot">
+                <img src="mastodon/screenshots/status-card_ar_b0_desktop.png" alt="status-card_ar_b0_desktop.png"/>
+                <div class="shot-cap"><strong>B0 (Codex Catalog)</strong> · overflow=false · clipped=0 · rawICU=false</div>
+              </div>
+            
+              <div class="shot">
+                <img src="mastodon/screenshots/status-card_ar_w-post_desktop.png" alt="status-card_ar_w-post_desktop.png"/>
+                <div class="shot-cap"><strong>W-post (Wraith+QE)</strong> · overflow=false · clipped=0 · rawICU=false</div>
+              </div>
+            
+          </div>
+        
+          <h3>Status Card — ar (mobile, RTL)</h3>
+          <div class="grid-3">
+            
+              <div class="shot">
+                <img src="mastodon/screenshots/status-card_ar_nmt_mobile.png" alt="status-card_ar_nmt_mobile.png"/>
+                <div class="shot-cap"><strong>NMT (DeepL)</strong> · overflow=false · clipped=0 · rawICU=false</div>
+              </div>
+            
+              <div class="shot">
+                <img src="mastodon/screenshots/status-card_ar_b0_mobile.png" alt="status-card_ar_b0_mobile.png"/>
+                <div class="shot-cap"><strong>B0 (Codex Catalog)</strong> · overflow=false · clipped=0 · rawICU=false</div>
+              </div>
+            
+              <div class="shot">
+                <img src="mastodon/screenshots/status-card_ar_w-post_mobile.png" alt="status-card_ar_w-post_mobile.png"/>
+                <div class="shot-cap"><strong>W-post (Wraith+QE)</strong> · overflow=false · clipped=0 · rawICU=false</div>
+              </div>
+            
+          </div>
+        
+          <h3>Account Card — es-MX (desktop)</h3>
+          <div class="grid-3">
+            
+              <div class="shot">
+                <img src="mastodon/screenshots/account-card_es-MX_nmt_desktop.png" alt="account-card_es-MX_nmt_desktop.png"/>
+                <div class="shot-cap"><strong>NMT (DeepL)</strong> · overflow=false · clipped=0 · rawICU=false</div>
+              </div>
+            
+              <div class="shot">
+                <img src="mastodon/screenshots/account-card_es-MX_b0_desktop.png" alt="account-card_es-MX_b0_desktop.png"/>
+                <div class="shot-cap"><strong>B0 (Codex Catalog)</strong> · overflow=false · clipped=0 · rawICU=false</div>
+              </div>
+            
+              <div class="shot">
+                <img src="mastodon/screenshots/account-card_es-MX_w-post_desktop.png" alt="account-card_es-MX_w-post_desktop.png"/>
+                <div class="shot-cap"><strong>W-post (Wraith+QE)</strong> · overflow=false · clipped=0 · rawICU=false</div>
+              </div>
+            
+          </div>
+        
+          <h3>Account Card — es-MX (mobile)</h3>
+          <div class="grid-3">
+            
+              <div class="shot">
+                <img src="mastodon/screenshots/account-card_es-MX_nmt_mobile.png" alt="account-card_es-MX_nmt_mobile.png"/>
+                <div class="shot-cap"><strong>NMT (DeepL)</strong> · overflow=true · clipped=0 · rawICU=false</div>
+              </div>
+            
+              <div class="shot">
+                <img src="mastodon/screenshots/account-card_es-MX_b0_mobile.png" alt="account-card_es-MX_b0_mobile.png"/>
+                <div class="shot-cap"><strong>B0 (Codex Catalog)</strong> · overflow=true · clipped=0 · rawICU=false</div>
+              </div>
+            
+              <div class="shot">
+                <img src="mastodon/screenshots/account-card_es-MX_w-post_mobile.png" alt="account-card_es-MX_w-post_mobile.png"/>
+                <div class="shot-cap"><strong>W-post (Wraith+QE)</strong> · overflow=true · clipped=0 · rawICU=false</div>
+              </div>
+            
+          </div>
+        
+          <h3>Account Card — ar (desktop, RTL)</h3>
+          <div class="grid-3">
+            
+              <div class="shot">
+                <img src="mastodon/screenshots/account-card_ar_nmt_desktop.png" alt="account-card_ar_nmt_desktop.png"/>
+                <div class="shot-cap"><strong>NMT (DeepL)</strong> · overflow=false · clipped=0 · rawICU=false</div>
+              </div>
+            
+              <div class="shot">
+                <img src="mastodon/screenshots/account-card_ar_b0_desktop.png" alt="account-card_ar_b0_desktop.png"/>
+                <div class="shot-cap"><strong>B0 (Codex Catalog)</strong> · overflow=false · clipped=0 · rawICU=false</div>
+              </div>
+            
+              <div class="shot">
+                <img src="mastodon/screenshots/account-card_ar_w-post_desktop.png" alt="account-card_ar_w-post_desktop.png"/>
+                <div class="shot-cap"><strong>W-post (Wraith+QE)</strong> · overflow=false · clipped=0 · rawICU=false</div>
+              </div>
+            
+          </div>
+        
+          <h3>Account Card — ar (mobile, RTL)</h3>
+          <div class="grid-3">
+            
+              <div class="shot">
+                <img src="mastodon/screenshots/account-card_ar_nmt_mobile.png" alt="account-card_ar_nmt_mobile.png"/>
+                <div class="shot-cap"><strong>NMT (DeepL)</strong> · overflow=false · clipped=0 · rawICU=false</div>
+              </div>
+            
+              <div class="shot">
+                <img src="mastodon/screenshots/account-card_ar_b0_mobile.png" alt="account-card_ar_b0_mobile.png"/>
+                <div class="shot-cap"><strong>B0 (Codex Catalog)</strong> · overflow=false · clipped=0 · rawICU=false</div>
+              </div>
+            
+              <div class="shot">
+                <img src="mastodon/screenshots/account-card_ar_w-post_mobile.png" alt="account-card_ar_w-post_mobile.png"/>
+                <div class="shot-cap"><strong>W-post (Wraith+QE)</strong> · overflow=false · clipped=0 · rawICU=false</div>
+              </div>
+            
+          </div>
+        
+</div>
+
+<div class="card">
+  <h2>4. Real-World Complex Word Documents (Original EN vs Wraith es-MX)</h2>
+  
+      <h3>240-DOP-1013A Lay Down Tubulars — Rig Floor Standard Operating Procedure — 5p → 6p · doc-verify: <span class="good">PASS</span> · Opus MQM: <span class="good">99.87</span></h3>
+      <div class="grid-2">
+        <div class="shot">
+          <img src="docs/renders/sop-lay-down-tubulars-en-1.png" alt="Original EN page 1"/>
+          <div class="shot-cap">Original EN (Page 1 of 5)</div>
+        </div>
+        <div class="shot">
+          <img src="docs/renders/sop-lay-down-tubulars-wraith-es-MX-1.png" alt="Wraith es-MX page 1"/>
+          <div class="shot-cap">Wraith + Codex es-MX (Page 1 of 6)</div>
+        </div>
+      </div>
+    
+      <h3>HIPAA Notice of Privacy Practices — 5p → 6p · doc-verify: <span class="good">PASS</span> · Opus MQM: <span class="good">99.73</span></h3>
+      <div class="grid-2">
+        <div class="shot">
+          <img src="docs/renders/hipaa-privacy-notice-en-1.png" alt="Original EN page 1"/>
+          <div class="shot-cap">Original EN (Page 1 of 5)</div>
+        </div>
+        <div class="shot">
+          <img src="docs/renders/hipaa-privacy-notice-wraith-es-MX-1.png" alt="Wraith es-MX page 1"/>
+          <div class="shot-cap">Wraith + Codex es-MX (Page 1 of 6)</div>
+        </div>
+      </div>
+    
+      <h3>Journal of Integrated Science &amp; Technology — Manuscript Template — 2p → 2p · doc-verify: <span class="good">PASS</span> · Opus MQM: <span class="good">99.9</span></h3>
+      <div class="grid-2">
+        <div class="shot">
+          <img src="docs/renders/scientific-manuscript-en-1.png" alt="Original EN page 1"/>
+          <div class="shot-cap">Original EN (Page 1 of 2)</div>
+        </div>
+        <div class="shot">
+          <img src="docs/renders/scientific-manuscript-wraith-es-MX-1.png" alt="Wraith es-MX page 1"/>
+          <div class="shot-cap">Wraith + Codex es-MX (Page 1 of 2)</div>
+        </div>
+      </div>
+    
+</div>
+</body>
+</html>

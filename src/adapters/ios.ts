@@ -100,9 +100,38 @@ export class IosAdapter implements ScannerAdapter {
         const lineText = lines[idx];
         const line = idx + 1;
 
-        // String(localized: "key") / NSLocalizedString("key", ...) / Text("key") (SwiftUI LocalizedStringKey)
+        // 1. Standard Swift / SwiftUI localization calls & modifiers:
+        //    String(localized: "key"), NSLocalizedString("key", ...), LocalizedStringKey("key"),
+        //    Text("key"), Button("key", ...), Label("key", ...), Toggle("key", ...),
+        //    Section("key"), Picker("key", ...), navigationTitle("key"), accessibilityLabel("key"),
+        //    alert("key", ...), confirmationDialog("key", ...)
         for (const m of lineText.matchAll(
-          /\b(?:String\(\s*localized:\s*|NSLocalizedString\(\s*|Text\(\s*)"([^"\\]+)"/g
+          /\b(?:String\(\s*localized:\s*|NSLocalizedString\(\s*|LocalizedStringKey\(\s*|(?:Text|Button|Label|Toggle|Section|Picker|Link|Menu|DisclosureGroup|navigationTitle|accessibilityLabel|accessibilityHint|alert|confirmationDialog)\(\s*)"([^"\\]*(?:\\.[^"\\]*)*)"/g
+        )) {
+          const rawLit = m[1];
+          // Convert SwiftUI string interpolation `\(expr)` to xcstrings format specifiers (%@ / %lld)
+          const candidates = new Set<string>();
+          if (!rawLit.includes("\\(")) {
+            candidates.add(rawLit);
+          } else {
+            candidates.add(rawLit.replace(/\\\([^)]*\)/g, "%@"));
+            candidates.add(rawLit.replace(/\\\([^)]*\)/g, "%lld"));
+            candidates.add(rawLit.replace(/\\\([^)]*\)/g, "%d"));
+          }
+          for (const key of candidates) {
+            usageByKey[key] = usageByKey[key] ?? [];
+            usageByKey[key].push({
+              file: relFile,
+              line,
+              component: componentName,
+              surrounding: [],
+            });
+          }
+        }
+
+        // 2. Typed LocalizedStringKey assignments: `let title: LocalizedStringKey = "key"` or `return "key"` inside LocalizedStringKey
+        for (const m of lineText.matchAll(
+          /:\s*LocalizedStringKey\s*=\s*"([^"\\]+)"/g
         )) {
           const key = m[1];
           usageByKey[key] = usageByKey[key] ?? [];

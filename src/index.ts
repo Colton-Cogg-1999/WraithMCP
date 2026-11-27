@@ -59,3 +59,4 @@ export * from "./mcp/formatting.js";
 export * from "./mcp/server.js";
 export * from "./cli.js";
 export * from "./core/context.js";
+export * from "./core/style-guide.js";

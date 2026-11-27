@@ -1,27 +1,21 @@
-# QE Review (`wraith qe` / MCP `qe_audit`)
+# Diagnostic QE Audit (`wraith qe` / MCP `qe_audit`)
 
-QE is a review, not a score. Each translated string gets one verdict, `ok` or `flag`, from your coding agent, which reads the code where the string is used. Wraith calls no model. It decides what needs reviewing, supplies facts the agent can't see from one file, and stores the verdicts.
+QE is a **diagnostic-only** audit by default, not an automatic post-editor. Each translated string gets an `ok` or `flag` verdict from a fresh-context reviewer inspecting the code (and any visual-QA defects) where the string is used. Flags carry `severity` (`critical` | `major` | `minor`), `category`, concrete `evidence`, optional `visualEvidence`, and an optional `suggestedFix`. Wraith calls no model and **never automatically edits catalogs without explicit authorization**.
 
 ```bash
-wraith qe --prepare [--locales de,ja] [--all] [--json]   # write review tasks → .wraith/qe-tasks.json
-wraith qe --submit verdicts.json                          # store verdicts
-wraith qe [--locales de,ja] [--json]                      # status: PASS / FAIL (flagged) / INCONCLUSIVE (unreviewed)
+wraith qe --prepare [--locales de,ja] [--scope all|risk] [--all] [--json]   # write review tasks → .wraith/qe-tasks.json
+wraith qe --submit verdicts.json                                            # store diagnostic verdicts
+wraith qe [--locales de,ja] [--json]                                        # status: PASS / FAIL (flagged) / INCONCLUSIVE (unreviewed)
 ```
 
-MCP: `qe_audit` with `mode: "prepare" | "submit" | "status"` (default `status`). It never edits catalogs; flagged strings are fixed with `apply`.
+MCP: `qe_audit` with `mode: "status" | "prepare" | "submit" | "package_mqm" | "ingest_mqm"` (default `status`). It never edits catalogs; flagged findings are triaged for human review, exported via `export` (`--only-flagged`), or fixed via `apply` only after explicit authorization.
 
 ## Review loop
 
-1. **Prepare.** One task per locale × file, covering every translated string without a current verdict (`human-verified` strings are excluded even with `--all`). Strings with `check` errors are listed in `blockedByCheck` and left out until they're fixed. Each string carries:
-   - `fingerprint`: short content hash of `source + target` at prepare time.
-   - `sameSourceElsewhere`: how the project translates the same source text elsewhere.
-   - `termBase`: Term Base hits.
-   - `comment`: the developer comment, if any.
-
-   The result also includes `projectDecisions` (recorded assumptions such as register or brand handling) and one set of reviewer `instructions`.
-2. **Review in a fresh context.** Spawn a subagent (e.g. Claude Code `Agent` tool or a fresh `codex exec` session) so the reviewer never shares context with the translator. The reviewer opens each file and reads how every key is used, then marks a string `flag` only if a user of that UI would find it wrong, misleading or broken. Every flag needs a reason, plus `suggestedFix` when the fix is clear. An unclear source gets a reason starting `"Unclear meaning:"`.
-3. **Submit.** Each verdict must echo the string's `fingerprint` (or `target`) and is stored in `.wraith/qe-verdicts.json`. If the catalog changed between `prepare` and `submit`, the verdict is rejected (`text_changed`) so an `ok` or `flag` never lands on unreviewed text; agent submits also cannot overwrite `human-verified` records (`human_verified`). Editing source or target later makes the string `unreviewed` again, so the next run reviews only what changed. Corrupt `qe-verdicts.json` files fail loudly rather than being overwritten.
-4. **Fix and hand off.** Fix flagged strings with `apply` and re-review them once. Strings that still need a human go out through `wraith export --only-flagged`, and TMS import records reviewed units as `human-verified` (see [TMS.md](TMS.md)).
+1. **Prepare.** One task per locale × file, covering translated strings without a current verdict (`human-verified` strings are excluded even with `--all`). Use `--scope risk` (`scope: "risk"`) to prioritize high-risk strings (ambiguous short terms, glossary/DNT hits, ICU/plurals, layout/char limits, same-source variants, questions/answers, and visual-QA defects). Strings with `check` errors are listed in `blockedByCheck` and left out until fixed. Each task carries full linguistic parity: `styleGuide`, locale rules, supplemental translation/QE prompts, `conventionsByLocale`, `doNotTranslate`, `projectDecisions`, `termBase`, `charLimit`, `placeholders`, `sameSourceElsewhere`, and any `visualDefects`.
+2. **Audit in a fresh context.** Spawn a subagent (or fresh session) so the reviewer never shares context with the translator. Open each file, inspect how every key is used and any attached `visualDefects`, and flag only genuine linguistic or visual defects (never style preferences unless violating an explicit style guide/prompt rule). Every flag requires `reason`, and should include `severity`, `category`, `evidence`, optional `visualEvidence`, and optional `suggestedFix`. Never auto-edit deliverables.
+3. **Submit.** Each verdict echoes the string's `fingerprint` (or `target`) and is stored in `.wraith/qe-verdicts.json`. If the catalog changed between `prepare` and `submit`, the verdict is rejected (`text_changed`); agent submits cannot overwrite `human-verified` records (`human_verified`). Editing source or target later resets the string to `unreviewed`. Corrupt `qe-verdicts.json` files fail loudly rather than being overwritten.
+4. **Triage & hand off.** Present diagnostic findings in `report`, export them to a TMS (`wraith export --only-flagged` / MCP `export`) or standalone human review (`export` `format: "human"`), or apply corrections via `apply` only after explicit human authorization. TMS import records approved units as `human-verified` (see [TMS.md](TMS.md)).
 
 Status per string: `unreviewed` | `ok` | `flagged` | `human-verified`.
 

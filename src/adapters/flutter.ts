@@ -20,7 +20,7 @@ function discoverArbFiles(
 ): { localesDir: string | null; localeFiles: Record<string, string[]> } {
   const candidates = localesPathOverride
     ? [localesPathOverride]
-    : ["lib/l10n", "l10n", "assets/l10n", "assets/translations"];
+    : ["lib/l10n", "lib/localization", "l10n", "assets/l10n", "assets/translations"];
 
   for (const rel of candidates) {
     const abs = path.join(rootDir, rel);
@@ -97,9 +97,9 @@ export class FlutterAdapter implements ScannerAdapter {
         const lineText = lines[idx];
         const line = idx + 1;
 
-        // Track AppLocalizations.of(context)!.key / S.of(context).key / l10n.key
+        // Track AppLocalizations.of(context)!.key / S.of(context).key / context.l10n!.key / context.l10n?.key / l10n.key
         for (const m of lineText.matchAll(
-          /(?:AppLocalizations\.of\([^)]+\)!?|S\.of\([^)]+\)|\bl10n|\btr)\.([a-zA-Z_][a-zA-Z0-9_]*)\b/g
+          /(?:AppLocalizations\.of\([^)]+\)|S\.of\([^)]+\)|\bl10n|\btr)[!?]?\.([a-zA-Z_][a-zA-Z0-9_]*)\b/g
         )) {
           const key = m[1];
           usageByKey[key] = usageByKey[key] ?? [];

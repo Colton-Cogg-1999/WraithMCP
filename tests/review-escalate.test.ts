@@ -186,7 +186,7 @@ describe("Milestone 4: Cross-Model Review, Human Escalation, Advisory Memory, La
     expect(pseudo.qaChecklist.some((step) => step.includes('dir="rtl"'))).toBe(true);
   });
 
-  it("exposes all 17 MCP tools, /localize prompt, and keeps tool responses compact on large catalogs", async () => {
+  it("exposes all 12 consolidated MCP tools, /localize prompt, and keeps tool responses compact on large catalogs", async () => {
     const dir = makeCleanProject();
     initProject({ rootDir: dir, sourceLocale: "en", targetLocales: ["es-MX"], writeAgentRule: false });
 
@@ -207,21 +207,16 @@ describe("Milestone 4: Cross-Model Review, Human Escalation, Advisory Memory, La
     expect(names).toEqual([
       "apply",
       "check",
-      "escalate",
+      "export",
       "import",
       "layout",
-      "layout_fix",
       "memory",
       "prepare",
       "pseudo",
       "qe_audit",
       "report",
-      "review",
       "scan",
       "status",
-      "tms_export",
-      "tms_import",
-      "visual_qa",
     ]);
 
     const prompts = await client.listPrompts();
@@ -236,7 +231,7 @@ describe("Milestone 4: Cross-Model Review, Human Escalation, Advisory Memory, La
     expect(parsed.issues.hasMore).toBe(true);
     expect(text.length).toBeLessThan(12_000);
 
-    // Call prepare -> default pagination caps returned items at 20!
+    // Call prepare -> default pagination caps returned items at 75 and strips empty arrays!
     const prepRes = await client.callTool({
       name: "prepare",
       arguments: { rootDir: dir, targetLocale: "es-MX" },
@@ -244,8 +239,10 @@ describe("Milestone 4: Cross-Model Review, Human Escalation, Advisory Memory, La
     const prepText = (prepRes.content as Array<{ type: string; text: string }>)[0].text;
     const prepParsed = JSON.parse(prepText);
     expect(prepParsed.totalPending).toBe(150);
-    expect(prepParsed.items).toHaveLength(20);
+    expect(prepParsed.items).toHaveLength(75);
     expect(prepParsed.hasMore).toBe(true);
+    expect(prepParsed.items[0].placeholders).toBeUndefined();
+    expect(prepParsed.items[0].contextNoteStatus).toBeUndefined();
 
     await client.close();
     await server.close();

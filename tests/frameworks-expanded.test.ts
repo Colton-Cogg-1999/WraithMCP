@@ -203,5 +203,21 @@ class HomeScreen extends StatelessWidget {
     expect(check.countsByCode["missing_translation"] ?? 0).toBe(0);
     expect(check.countsByCode["placeholder_mismatch"] ?? 0).toBe(0);
     expect(check.errorCount).toBe(1);
+
+    // Script subtags (e.g. zh-Hans) must use Android BCP-47 values-b+zh+Hans/strings.xml
+    const applyZh = applyTranslations({
+      rootDir: dir,
+      targetLocale: "zh-Hans",
+      translations: [
+        { key: "greeting", value: "你好，%1$s！" },
+        { key: "save_btn", value: "保存" },
+      ],
+    });
+    expect(applyZh.appliedCount).toBe(2);
+    const zhXmlPath = path.join(dir, "app/src/main/res/values-b+zh+Hans/strings.xml");
+    expect(fs.existsSync(zhXmlPath)).toBe(true);
+    const checkZh = runCheck({ rootDir: dir, locale: "zh-Hans" });
+    expect(checkZh.countsByCode["missing_translation"] ?? 0).toBe(0);
+    expect(checkZh.countsByCode["placeholder_mismatch"] ?? 0).toBe(0);
   });
 });

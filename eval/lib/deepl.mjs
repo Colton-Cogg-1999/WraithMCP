@@ -20,16 +20,17 @@ export function getGlossaryDeletionLog() {
  * NEVER prints, logs, caches, or persists the key anywhere.
  */
 function loadDeepLCredentials() {
-  if (!fs.existsSync(DEEPL_ENV_PATH)) {
-    throw new Error(`DeepL .env file not found at ${DEEPL_ENV_PATH}`);
+  const envPath = process.env.WRAITH_DEEPL_ENV_PATH || DEEPL_ENV_PATH;
+  if (!fs.existsSync(envPath)) {
+    throw new Error(`DeepL .env file not found at ${envPath}`);
   }
-  const raw = fs.readFileSync(DEEPL_ENV_PATH, "utf8");
+  const raw = fs.readFileSync(envPath, "utf8");
   const m = /^DEEPL_API_KEY\s*=\s*(.+)$/m.exec(raw);
   if (!m) {
-    throw new Error(`DEEPL_API_KEY not found in ${DEEPL_ENV_PATH}`);
+    throw new Error(`DEEPL_API_KEY not found in ${envPath}`);
   }
   const key = m[1].trim().replace(/^["']|["']$/g, "");
-  if (!key) throw new Error("DEEPL_API_KEY is empty");
+  if (!key) throw new Error(`DEEPL_API_KEY is empty in ${envPath}`);
   const isFree = key.endsWith(":fx");
   return {
     key,

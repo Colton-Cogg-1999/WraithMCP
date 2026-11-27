@@ -1,0 +1,295 @@
+{
+  "id": "scientific-manuscript",
+  "title": "Journal of Integrated Science & Technology — Manuscript Template",
+  "targetLocale": "es-MX",
+  "sourceFile": "/home/colton/Projects/Wraith MCP/eval/corpora/real-docs/scientific-manuscript.docx",
+  "outputFile": "/home/colton/Projects/Wraith MCP/eval/results/real-world-v2/docs/translated/scientific-manuscript.wraith.es-MX.docx",
+  "segmentsTotal": 41,
+  "segmentsUpdated": 37,
+  "wordCount": 1334,
+  "parts": [
+    "word/document.xml",
+    "word/endnotes.xml",
+    "word/footer1.xml",
+    "word/footnotes.xml",
+    "word/header1.xml"
+  ],
+  "unsupportedParts": [],
+  "verify": {
+    "outcome": "PASS",
+    "format": "docx",
+    "sourceFile": "/home/colton/Projects/Wraith MCP/eval/corpora/real-docs/scientific-manuscript.docx",
+    "targetFile": "/home/colton/Projects/Wraith MCP/eval/results/real-world-v2/docs/translated/scientific-manuscript.wraith.es-MX.docx",
+    "libreOfficeAvailable": true,
+    "sourcePages": 2,
+    "targetPages": 2,
+    "findings": []
+  },
+  "originalPages": 2,
+  "translatedPages": 2,
+  "originalPngs": [
+    "scientific-manuscript-en-1.png",
+    "scientific-manuscript-en-2.png"
+  ],
+  "translatedPngs": [
+    "scientific-manuscript-wraith-es-MX-1.png",
+    "scientific-manuscript-wraith-es-MX-2.png"
+  ],
+  "usage": {
+    "modelTurns": 1,
+    "inputTokens": 21480,
+    "cachedInputTokens": 13824,
+    "outputTokens": 3289,
+    "durationMs": 68760,
+    "estimatedUsd": 0.0555,
+    "wallMs": 77942
+  },
+  "segments": [
+    {
+      "id": "document-p1",
+      "part": "word/document.xml",
+      "source": "<g id=\"1\" type=\"format\">J. Int. Sci. Technol. 2017, 5(1), xx-xx</g><g id=\"2\" type=\"format\">                                             </g><g id=\"3\" type=\"format\">                       </g><g id=\"4\" type=\"format\">.</g><g id=\"5\" type=\"format\">   </g><g id=\"6\" type=\"format\">Article </g><g id=\"7\" type=\"format\">.</g>",
+      "translated": "<g id=\"1\" type=\"format\">J. Int. Sci. Technol. 2017, 5(1), xx-xx</g><g id=\"2\" type=\"format\">                                             </g><g id=\"3\" type=\"format\">                       </g><g id=\"4\" type=\"format\">.</g><g id=\"5\" type=\"format\">   </g><g id=\"6\" type=\"format\">Artículo </g><g id=\"7\" type=\"format\">.</g>"
+    },
+    {
+      "id": "document-p2",
+      "part": "word/document.xml",
+      "source": "<g id=\"1\" type=\"format\">J</g><g id=\"2\" type=\"format\">ournal of Integrated</g><x id=\"3\" type=\"break\"/><g id=\"4\" type=\"format\">Science</g><g id=\"5\" type=\"format\"> & Technology</g>",
+      "translated": "<g id=\"1\" type=\"format\">J</g><g id=\"2\" type=\"format\">ournal of Integrated</g><x id=\"3\" type=\"break\"/><g id=\"4\" type=\"format\">Science</g><g id=\"5\" type=\"format\"> & Technology</g>"
+    },
+    {
+      "id": "document-p3",
+      "part": "word/document.xml",
+      "source": "Title – type your manuscript title here, capitalize first alphabet and proper nouns only",
+      "translated": "Título: escriba aquí el título de su manuscrito. Use mayúscula inicial solo en la primera palabra y en los nombres propios."
+    },
+    {
+      "id": "document-p4",
+      "part": "word/document.xml",
+      "source": "<g id=\"1\" type=\"format\">Author Name,</g><g id=\"2\" type=\"format\">1</g><g id=\"3\" type=\"format\"> Author Name,</g><g id=\"4\" type=\"format\">2</g><g id=\"5\" type=\"format\"> Author Name</g><g id=\"6\" type=\"format\">3*</g>",
+      "translated": "<g id=\"1\" type=\"format\">Nombre del autor,</g><g id=\"2\" type=\"format\">1</g><g id=\"3\" type=\"format\"> Nombre del autor,</g><g id=\"4\" type=\"format\">2</g><g id=\"5\" type=\"format\"> Nombre del autor</g><g id=\"6\" type=\"format\">3*</g>"
+    },
+    {
+      "id": "document-p5",
+      "part": "word/document.xml",
+      "source": "Author Affiliation/Address",
+      "translated": "Adscripción institucional y dirección del autor"
+    },
+    {
+      "id": "document-p6",
+      "part": "word/document.xml",
+      "source": "Insert your graphic for abstract in this space. To insert abstract graphic, delete this text and paste artwork/object inside the frame (do not delete the paragraph sign). Keep the size of the artwork within the size of this box. Use limited Text to the label artwork and diagrams. You can  resize the artwork to fit in this box.",
+      "translated": "Inserte aquí el resumen gráfico. Para ello, elimine este texto y pegue la ilustración o el objeto dentro del marco. Conserve la marca de párrafo. Ajuste el tamaño de la ilustración para que quepa en el recuadro. Use poco texto en los rótulos de las ilustraciones y los diagramas."
+    },
+    {
+      "id": "document-p7",
+      "part": "word/document.xml",
+      "source": "<x id=\"1\" type=\"drawing\"/><g id=\"2\" type=\"format\">Received on: (add date of submission in DD-Month-YYYY format), Accepted and Published on:</g>",
+      "translated": "<x id=\"1\" type=\"drawing\"/><g id=\"2\" type=\"format\">Fecha de recepción: (indique la fecha de envío en formato DD-mes-AAAA). Fecha de aceptación y publicación:</g>"
+    },
+    {
+      "id": "document-p8",
+      "part": "word/document.xml",
+      "source": "ABSTRACT",
+      "translated": "RESUMEN"
+    },
+    {
+      "id": "document-p9",
+      "part": "word/document.xml",
+      "source": "All manuscripts must be accompanied by an abstract containing no more than 100 words. The abstract should briefly state the reason for the work, the significant results, and the conclusions. A graphical artwork representing the content of paper must be provided for manuscript. ",
+      "translated": "Todo manuscrito debe acompañarse de un resumen de hasta 100 palabras. El resumen debe exponer brevemente la justificación del trabajo, los principales resultados y las conclusiones. También debe incluirse un resumen gráfico que represente el contenido del artículo. "
+    },
+    {
+      "id": "document-p10",
+      "part": "word/document.xml",
+      "source": "Keywords: Keyword_1, Keyword_2, Keyword_3, Keyword_4, Keyword_5",
+      "translated": "Palabras clave: Palabra_clave_1, Palabra_clave_2, Palabra_clave_3, Palabra_clave_4, Palabra_clave_5"
+    },
+    {
+      "id": "document-p11",
+      "part": "word/document.xml",
+      "source": "Introduction",
+      "translated": "Introducción"
+    },
+    {
+      "id": "document-p12",
+      "part": "word/document.xml",
+      "source": "<g id=\"1\" type=\"format\">Corresponding Author name, address</g><g id=\"2\" type=\"format\">Tel</g><x id=\"3\" type=\"break\"/><g id=\"4\" type=\"format\">: </g><g id=\"5\" type=\"format\">Email:</g><x id=\"6\" type=\"break\"/>",
+      "translated": "<g id=\"1\" type=\"format\">Nombre y dirección del autor de correspondencia. </g><g id=\"2\" type=\"format\">Tel.</g><x id=\"3\" type=\"break\"/><g id=\"4\" type=\"format\">: </g><g id=\"5\" type=\"format\">Correo electrónico:</g><x id=\"6\" type=\"break\"/>"
+    },
+    {
+      "id": "document-p13",
+      "part": "word/document.xml",
+      "source": "<g id=\"1\" type=\"format\">Cite as: </g><g id=\"2\" type=\"format\">J. Int. Sci. Technol., 2017, 5(1), xx-xx.</g>",
+      "translated": "<g id=\"1\" type=\"format\">Cítese como: </g><g id=\"2\" type=\"format\">J. Int. Sci. Technol., 2017, 5(1), xx-xx.</g>"
+    },
+    {
+      "id": "document-p14",
+      "part": "word/document.xml",
+      "source": "<g id=\"1\" type=\"format\">©IS Publications      </g><g id=\"2\" type=\"format\">ISSN: 2321-4635</g><g id=\"3\" type=\"format\">             http://pubs.iscience.in/jist </g>",
+      "translated": "<g id=\"1\" type=\"format\">©IS Publications      </g><g id=\"2\" type=\"format\">ISSN: 2321-4635</g><g id=\"3\" type=\"format\">             http://pubs.iscience.in/jist </g>"
+    },
+    {
+      "id": "document-p15",
+      "part": "word/document.xml",
+      "source": "<g id=\"1\" type=\"format\">Text</g><g id=\"2\" type=\"format\">. Please read these instructions carefully. When you use this template, a new document containing the instruction text will be created, which you can save in your hard disk for reference. Use the styles, fonts and point sizes as defined in this template, but do not change or redefine them in any way as this will lead to unpredictable results. This template should direct you step by step guidelines to write manuscript efficiently. It should follow you in how you want to write your paper, not force you to fill in bits and pieces of text. It should allow you to type any text, copy from previous versions, or load an already existing plain text to be formatted. You will therefore find no fill-in screens; you will not need to remember shortcut keys, to use lists of styles, bother about alignment, indents, fonts and point sizes. Just a mouse-click at one of the menu options will give you the style that you want. However, it should be emphasized that the final appearance of your paper may vary to some extent from the presentation achieved in this Word® document. </g>",
+      "translated": "<g id=\"1\" type=\"format\">Texto</g><g id=\"2\" type=\"format\">. Lea atentamente estas instrucciones. Al usar esta plantilla, se creará un documento nuevo con las instrucciones. Puede guardarlo en el disco duro para consultarlo más adelante. Use los estilos, las fuentes y los tamaños en puntos definidos en la plantilla. Modificarlos o redefinirlos puede producir resultados impredecibles. La plantilla le guía paso a paso en la redacción del manuscrito. Puede redactar el artículo en el orden que prefiera, sin tener que completar fragmentos de texto por separado. Puede escribir directamente, copiar texto de versiones anteriores o abrir un archivo de texto sin formato para darle formato. No hay formularios que llenar. Tampoco necesita memorizar métodos abreviados de teclado, consultar listas de estilos ni ajustar la alineación, las sangrías, las fuentes o los tamaños en puntos. Basta con hacer clic en la opción del menú que corresponda al estilo deseado. La presentación final del artículo puede diferir ligeramente de la que se observa en este documento de Word®. </g>"
+    },
+    {
+      "id": "document-p16",
+      "part": "word/document.xml",
+      "source": "A template (with its file name ending on .dot, rather than on .doc) in Word® is a “mold” that formats documents based on it. If you click ‘New’ on the ‘File’ menu, what you see and open are in fact templates. To use the template you should first save it with the other templates. To do this, click on ‘New’ on the ‘File’ menu, choose the ‘General’ tab and paste the template there. To create a new document, select the template, choose the Create New Document option, and double-click on the template icon. Save the document. OR simply click to open the downloaded template and write your text at designated places in this document and save it as new document. You can use the styles for different sections as that will appear in the style area of word. ",
+      "translated": "En Word®, una plantilla es un «molde» que da formato a los documentos creados a partir de ella. Su archivo tiene la extensión .dot en lugar de .doc. Al hacer clic en «Nuevo» en el menú «Archivo», los elementos que se muestran y que puede abrir son plantillas. Para usar esta plantilla, guárdela primero con las demás. Para ello, haga clic en «Nuevo» en el menú «Archivo», seleccione la pestaña «General» y pegue allí la plantilla. Para crear un documento, seleccione la plantilla, elija la opción «Crear nuevo documento» y haga doble clic en el icono de la plantilla. Guarde el documento. También puede abrir la plantilla descargada, escribir el texto en los lugares indicados y guardar el archivo como un documento nuevo. En la galería de estilos de Word encontrará los estilos correspondientes a las distintas secciones. "
+    },
+    {
+      "id": "document-p17",
+      "part": "word/document.xml",
+      "source": "The template formats your text by using a Word feature called ‘Styles’. Styles define the format (or appearance) of the text of the paragraph regarding letter size, indentation, line spacing, etc. Just check the Style column in MS-word program above (Home > Styles ), clicking on respective style formats the text of selection. If you’re not familiar with using styles, do not worry; the template arranges everything for you in a user-friendly way. Just copy paste your text in this paragraph and delete this text. And use the same font size as depicted in template.",
+      "translated": "La plantilla da formato al texto mediante la función «Estilos» de Word. Los estilos definen el aspecto de cada párrafo, incluido el tamaño de la fuente, la sangría y el interlineado. En la pestaña «Inicio», ubique el grupo «Estilos» y haga clic en el estilo que desee aplicar al texto seleccionado. Si es la primera vez que usa estilos, la plantilla facilita su aplicación. Copie su texto, péguelo en este párrafo y elimine estas instrucciones. Use el tamaño de fuente que se muestra en la plantilla."
+    },
+    {
+      "id": "document-p18",
+      "part": "word/document.xml",
+      "source": "This is the body of the manuscript. Section headings such as \"Introduction\" “Results and Discussion” “Experimental Protocols” etc can be used for full length articles. Experimental details should be kept in experimental section (Separate file for Supporting Information having graphics, data supporting the experiments may also be included in pdf format with submission). Short communications should not have such headings. ",
+      "translated": "Este es el cuerpo del manuscrito. En los artículos extensos se pueden usar encabezados de sección como «Introducción», «Resultados y discusión» y «Protocolos experimentales». Describa los detalles de los experimentos en la sección experimental. Al enviar el manuscrito, también puede adjuntar un archivo PDF independiente con información de apoyo, como material gráfico y datos que sustenten los experimentos. Omita estos encabezados en las comunicaciones breves. "
+    },
+    {
+      "id": "document-p19",
+      "part": "word/document.xml",
+      "source": "Table and graphics should be inserted at appropriate places and the font size and spacing should be same as text (Times New Roman, 9.5, single spaced). You can insert double column table/graphics by inserting box (use textbox option of word (Insert > textbox)). The table should be having only horizontal lines/borders (vertical lines for column should be removed). Tables should be provided with table caption with table number above the table.",
+      "translated": "Inserte las tablas y los gráficos donde corresponda. Use la misma fuente, el mismo tamaño y el mismo interlineado que en el texto (Times New Roman, 9.5 puntos, interlineado sencillo). Para insertar una tabla o un gráfico que abarque dos columnas, use un cuadro de texto de Word (Insertar > Cuadro de texto). Conserve únicamente las líneas horizontales de la tabla y elimine los bordes verticales entre columnas. Coloque el número y el título de cada tabla encima de ella."
+    },
+    {
+      "id": "document-p20",
+      "part": "word/document.xml",
+      "source": "To insert a single column graphics/image/figure, use the ‘Normal’ style. For the insertion of graphics, place the cursor where you want to insert the graphics, insert a line break (simply press ‘Enter’), select the ‘Normal’ style for the line and then copy and insert your graphics/image/figure.",
+      "translated": "Para insertar un gráfico, una imagen o una figura del ancho de una columna, use el estilo «Normal». Coloque el cursor en el lugar deseado y presione la tecla Intro para pasar a la línea siguiente. Aplique el estilo «Normal» a esa línea y, a continuación, copie y pegue el gráfico, la imagen o la figura."
+    },
+    {
+      "id": "document-p21",
+      "part": "word/document.xml",
+      "source": "<g id=\"1\" type=\"format\">Figure 1</g><g id=\"2\" type=\"format\">. figure caption here. Times new roman, font size: 9, normal, single line space.</g>",
+      "translated": "<g id=\"1\" type=\"format\">Figura 1</g><g id=\"2\" type=\"format\">. Escriba aquí el pie de figura. Use Times New Roman de 9 puntos, estilo normal e interlineado sencillo.</g>"
+    },
+    {
+      "id": "document-p22",
+      "part": "word/document.xml",
+      "source": " For two column wide graphics/image, use the box of word (Insert > text box).",
+      "translated": " Para los gráficos o las imágenes que abarquen dos columnas, use un cuadro de texto de Word (Insertar > Cuadro de texto)."
+    },
+    {
+      "id": "document-p23",
+      "part": "word/document.xml",
+      "source": "<g id=\"1\" type=\"format\">A detailed step wise instruction is provided for insertion of graphics/figure/graphs/table online at this link </g><g id=\"2\" type=\"hyperlink\">http://pubs.iscience.in/insert-figure</g><g id=\"3\" type=\"format\"> </g>",
+      "translated": "<g id=\"1\" type=\"format\">En el siguiente enlace encontrará instrucciones paso a paso para insertar ilustraciones, figuras, gráficas y tablas: </g><g id=\"2\" type=\"hyperlink\">http://pubs.iscience.in/insert-figure</g><g id=\"3\" type=\"format\"> </g>"
+    },
+    {
+      "id": "document-p24",
+      "part": "word/document.xml",
+      "source": "<g id=\"1\" type=\"format\">Displayed equations</g><g id=\"2\" type=\"format\"> should be assigned “Normal Text”, font size 9, times new roman. Displayed equations should be one column wide. If artwork needs to be two columns wide, it must be relabeled as a Figure or Scheme. </g>",
+      "translated": "<g id=\"1\" type=\"format\">Las ecuaciones en renglón aparte</g><g id=\"2\" type=\"format\"> deben llevar el estilo «Texto normal», con fuente Times New Roman de 9 puntos. Deben ajustarse al ancho de una columna. Si el elemento gráfico requiere el ancho de dos columnas, cambie su rótulo a «Figura» o «Esquema». </g>"
+    },
+    {
+      "id": "document-p25",
+      "part": "word/document.xml",
+      "source": "Results and discussion section should be one and combined. The experimental section should be kept before the results and discussion section. A conclusion section should be after result and discussion section.",
+      "translated": "Presente los resultados y la discusión en una sola sección. Coloque la sección experimental antes de «Resultados y discusión» y la sección de conclusiones después."
+    },
+    {
+      "id": "document-p26",
+      "part": "word/document.xml",
+      "source": "Bibliography",
+      "translated": "Bibliografía"
+    },
+    {
+      "id": "document-p27",
+      "part": "word/document.xml",
+      "source": "<g id=\"1\" type=\"format\">References and notes in the text should be </g><g id=\"2\" type=\"format\">indicated by superscript Arabic numerals that run consecutively through the paper and appear after any punctuation</g><g id=\"3\" type=\"format\"> (i.e. sequential superscript numbers placed after the punctuations, no brackets). Authors should ensure that all references are cited in the text and vice versa. Authors are expected to check the original source reference for accuracy. Journal titles should be abbreviated according to example provided in references section below. Include the page number for references. See examples for journal articles,</g><g id=\"4\" type=\"format\">1</g><g id=\"5\" type=\"format\"> theses,</g><g id=\"6\" type=\"format\">2</g><g id=\"7\" type=\"format\"> books,</g><g id=\"8\" type=\"format\">3,4</g><g id=\"9\" type=\"format\"> and patents,</g><g id=\"10\" type=\"format\">5</g><g id=\"11\" type=\"format\"> shown in the References section. Authors are highly encouraged to use citation manager and if you use citation manager program such as EndNote, Mendelay, Paper 2, or Zotero then you can download respectie style file which is provided on Authors guidelines section of journal site.</g>",
+      "translated": "<g id=\"1\" type=\"format\">Las referencias y las notas en el texto deben </g><g id=\"2\" type=\"format\">indicarse con números arábigos en superíndice, numerados de forma consecutiva a lo largo del artículo y colocados después de los signos de puntuación</g><g id=\"3\" type=\"format\"> (es decir, números consecutivos en superíndice después de la puntuación, sin corchetes). Verifique que todas las referencias se citen en el texto y que cada cita tenga su referencia. Coteje los datos de cada referencia con la fuente original. Abrevie los títulos de las revistas según el ejemplo que aparece más adelante en la sección de referencias. Incluya el número de página en las referencias. Consulte los ejemplos de artículos de revista,</g><g id=\"4\" type=\"format\">1</g><g id=\"5\" type=\"format\"> tesis,</g><g id=\"6\" type=\"format\">2</g><g id=\"7\" type=\"format\"> libros,</g><g id=\"8\" type=\"format\">3,4</g><g id=\"9\" type=\"format\"> y patentes,</g><g id=\"10\" type=\"format\">5</g><g id=\"11\" type=\"format\"> que figuran en la sección de referencias. Se recomienda ampliamente el uso de un gestor de referencias bibliográficas. Si utiliza EndNote, Mendeley, Paper 2 o Zotero, puede descargar el archivo de estilo correspondiente en la sección de directrices para autores del sitio web de la revista.</g>"
+    },
+    {
+      "id": "document-p28",
+      "part": "word/document.xml",
+      "source": "Acknowledgments",
+      "translated": "Agradecimientos"
+    },
+    {
+      "id": "document-p29",
+      "part": "word/document.xml",
+      "source": "Acknowledgments should be inserted at the end of the paper, before the references, not as a footnote to the title. Use the unnumbered style for the Acknowledgments heading.",
+      "translated": "Coloque los agradecimientos al final del artículo, antes de las referencias. Evite incluirlos en una nota al pie vinculada al título. Use el estilo sin numeración para el encabezado «Agradecimientos»."
+    },
+    {
+      "id": "document-p30",
+      "part": "word/document.xml",
+      "source": "References and notes",
+      "translated": "Referencias y notas"
+    },
+    {
+      "id": "document-p31",
+      "part": "word/document.xml",
+      "source": "<g id=\"1\" type=\"format\">1. R. Ping, M. Laura, P.S. Mario. Title of the journal article should be included here. </g><g id=\"2\" type=\"format\">Int. Lett.Org. Chem</g><g id=\"3\" type=\"format\">. </g><g id=\"4\" type=\"format\">1996</g><g id=\"5\" type=\"format\">, 61, 4439–4449. </g>",
+      "translated": "<g id=\"1\" type=\"format\">1. R. Ping, M. Laura, P.S. Mario. Incluya aquí el título del artículo de revista. </g><g id=\"2\" type=\"format\">Int. Lett.Org. Chem</g><g id=\"3\" type=\"format\">. </g><g id=\"4\" type=\"format\">1996</g><g id=\"5\" type=\"format\">, 61, 4439–4449. </g>"
+    },
+    {
+      "id": "document-p32",
+      "part": "word/document.xml",
+      "source": "<g id=\"1\" type=\"format\">2. B.K. Sharma. Ph.D. Dissertation, Thesis Title, Cornell University, </g><g id=\"2\" type=\"format\">1995</g><g id=\"3\" type=\"format\">.</g>",
+      "translated": "<g id=\"1\" type=\"format\">2. B.K. Sharma. Tesis de doctorado, título de la tesis, Universidad de Cornell, </g><g id=\"2\" type=\"format\">1995</g><g id=\"3\" type=\"format\">.</g>"
+    },
+    {
+      "id": "document-p33",
+      "part": "word/document.xml",
+      "source": "<g id=\"1\" type=\"format\">3. R. Hussain, D. Shinkoi. Title of book like Synthesis and application of ionic liquid, John Wiley & Sons: New York, </g><g id=\"2\" type=\"format\">2010</g><g id=\"3\" type=\"format\">.</g>",
+      "translated": "<g id=\"1\" type=\"format\">3. R. Hussain, D. Shinkoi. Título del libro, por ejemplo, Síntesis y aplicación de un líquido iónico, John Wiley & Sons: Nueva York, </g><g id=\"2\" type=\"format\">2010</g><g id=\"3\" type=\"format\">.</g>"
+    },
+    {
+      "id": "document-p34",
+      "part": "word/document.xml",
+      "source": "<g id=\"1\" type=\"format\">4. R.S. Buchanod, D.K. Reddy. In Selective Organic Transformations; T.R. Thyagarajan, Ed.; Integrated science: New York, </g><g id=\"2\" type=\"format\">2002</g><g id=\"3\" type=\"format\">; Vol. 2, pp 1–95.</g>",
+      "translated": "<g id=\"1\" type=\"format\">4. R.S. Buchanod, D.K. Reddy. En Selective Organic Transformations; T.R. Thyagarajan, ed.; Integrated science: Nueva York, </g><g id=\"2\" type=\"format\">2002</g><g id=\"3\" type=\"format\">; vol. 2, pp. 1–95.</g>"
+    },
+    {
+      "id": "document-p35",
+      "part": "word/document.xml",
+      "source": "<g id=\"1\" type=\"format\">5. G.L. Loyale, U.S. Patent 5 934 456, </g><g id=\"2\" type=\"format\">1998</g><g id=\"3\" type=\"format\">; Chem. Abstr. </g><g id=\"4\" type=\"format\">1998</g><g id=\"5\" type=\"format\">, 65, 2870.</g>",
+      "translated": "<g id=\"1\" type=\"format\">5. G.L. Loyale, patente de EE. UU. 5 934 456, </g><g id=\"2\" type=\"format\">1998</g><g id=\"3\" type=\"format\">; Chem. Abstr. </g><g id=\"4\" type=\"format\">1998</g><g id=\"5\" type=\"format\">, 65, 2870.</g>"
+    },
+    {
+      "id": "document-p36",
+      "part": "word/document.xml",
+      "source": "Supplementary Material",
+      "translated": "Material complementario"
+    },
+    {
+      "id": "document-p37",
+      "part": "word/document.xml",
+      "source": "<g id=\"1\" type=\"format\">Authors are required to prepare and submit a graphical abstract. The graphical abstract details are available at </g><g id=\"2\" type=\"hyperlink\">http://pubs.iscience.in/graphical-abstract</g><g id=\"3\" type=\"format\"> . Supplementary material that may be helpful in the review process should be prepared and provided as a separate electronic file. That file can then be transformed into PDF format and submitted along with the manuscript and graphic files to the appropriate editorial office.</g>",
+      "translated": "<g id=\"1\" type=\"format\">Los autores deben preparar y enviar un resumen gráfico. Las indicaciones para elaborarlo se encuentran en </g><g id=\"2\" type=\"hyperlink\">http://pubs.iscience.in/graphical-abstract</g><g id=\"3\" type=\"format\">. Prepare y entregue en un archivo electrónico independiente el material complementario que pueda facilitar la revisión. Puede convertir ese archivo a PDF y enviarlo a la oficina editorial correspondiente junto con el manuscrito y los archivos gráficos.</g>"
+    },
+    {
+      "id": "document-p38",
+      "part": "word/document.xml",
+      "source": "To insert a two column wide Figure, Artwork, Chemical Equation or Two column wide Table, use this box template. Copy the box and paste where you want to insert figure or table and then copy/paste your text/figure inside the box. You can resize box depending upon figure/table size. If you don’t need this two column figure/table box (or when you are done with copy/paste of this box) then delete this box. For table text, use Times Font, 9 text size, single space. If you find problem in using this box, then you can use textbox feature of word to insert the graphics (Insert > Text Box in word main menu)",
+      "translated": "Use este cuadro como plantilla para insertar una figura, una ilustración, una ecuación química o una tabla que abarque dos columnas. Copie el cuadro y péguelo donde desee colocar el elemento. Después, copie el texto o la figura y péguelo dentro del cuadro. Puede ajustar el tamaño del cuadro al de la figura o la tabla. Elimine el cuadro original si no lo necesita o cuando termine de copiarlo y pegarlo. Para el texto de las tablas, use la fuente Times de 9 puntos con interlineado sencillo. Si tiene dificultades para usar el cuadro, puede insertar el material gráfico con la opción «Cuadro de texto» del menú principal de Word (Insertar > Cuadro de texto)."
+    },
+    {
+      "id": "footer1-p39",
+      "part": "word/footer1.xml",
+      "source": "<x id=\"1\" type=\"drawing\"/><g id=\"2\" type=\"format\">Journal of Integrated Science and Technology</g>",
+      "translated": "<x id=\"1\" type=\"drawing\"/><g id=\"2\" type=\"format\">Journal of Integrated Science and Technology</g>"
+    },
+    {
+      "id": "footer1-p40",
+      "part": "word/footer1.xml",
+      "source": "<g id=\"1\" type=\"format\">J. Int. Sci. Technol., 2017, 5(1), xx-xx</g><g id=\"2\" type=\"format\">                </g><x id=\"3\" type=\"field\"/>",
+      "translated": "<g id=\"1\" type=\"format\">J. Int. Sci. Technol., 2017, 5(1), xx-xx</g><g id=\"2\" type=\"format\">                </g><x id=\"3\" type=\"field\"/>"
+    },
+    {
+      "id": "header1-p41",
+      "part": "word/header1.xml",
+      "source": "First author et. al.",
+      "translated": "Primer autor et al."
+    }
+  ]
+}

@@ -1,0 +1,817 @@
+{
+  "updatedAt": "2026-11-27T15:53:44.752Z",
+  "documents": [
+    {
+      "file": "northstar-policy.docx",
+      "format": "docx",
+      "locale": "de",
+      "exists": true,
+      "codexWallS": 42.2,
+      "codexTelemetry": {
+        "modelTurns": 1,
+        "inputTokens": 135780,
+        "cachedInputTokens": 124800,
+        "uncachedInputTokens": 10980,
+        "outputTokens": 1090,
+        "reasoningTokens": 72,
+        "mcpCallsCount": 2,
+        "mcpCallsByTool": {
+          "prepare": 1,
+          "apply": 1
+        },
+        "estApiUsd": 0.0696,
+        "lastMessage": "[Download the German translation](</home/colton/Projects/Wraith MCP/eval/work/pub-audit/docs/docs/northstar-policy.de.docx>)\n\nWraith validated and wrote all 24 segments with `ok: true` and no errors. All inline tags and protected brand names were preserved.",
+        "errors": []
+      },
+      "wraithVerify": {
+        "outcome": "PASS",
+        "format": "docx",
+        "sourceFile": "/home/colton/Projects/Wraith MCP/eval/work/pub-audit/docs/docs/northstar-policy.docx",
+        "targetFile": "/home/colton/Projects/Wraith MCP/eval/work/pub-audit/docs/docs/northstar-policy.de.docx",
+        "libreOfficeAvailable": true,
+        "sourcePages": 1,
+        "targetPages": 1,
+        "findings": []
+      },
+      "deeplDocRes": {
+        "billableChars": null,
+        "error": "Unsupported DeepL targetLocale: undefined"
+      },
+      "deeplVerify": null,
+      "subtitleAudit": null,
+      "renders": {
+        "srcPngs": [
+          "/home/colton/Projects/Wraith MCP/eval/results/pub-audit/doc-renders/northstar-policy-en-1.png"
+        ],
+        "wPngs": [
+          "/home/colton/Projects/Wraith MCP/eval/results/pub-audit/doc-renders/northstar-policy-de-wraith-1.png"
+        ],
+        "deeplPngs": []
+      },
+      "segments": {
+        "source": [
+          {
+            "id": "document-p1",
+            "text": "Northstar Billing and Data Retention Policy"
+          },
+          {
+            "id": "document-p2",
+            "text": "This policy explains how Northstar processes subscription payments through Northstar Pay and archives compliance records in LedgerVault."
+          },
+          {
+            "id": "document-p3",
+            "text": "1. Subscription Invoices and Grace Periods"
+          },
+          {
+            "id": "document-p4",
+            "text": "Every Workspace receives an itemized monthly Invoice on the first business day of the billing cycle."
+          },
+          {
+            "id": "document-p5",
+            "text": "If a payment fails, we retry automatically for fourteen calendar days before pausing non-essential analytics exports."
+          },
+          {
+            "id": "document-p6",
+            "text": "Review full tax documentation on the Northstar Help Center before submitting an exemption certificate."
+          },
+          {
+            "id": "document-p7",
+            "text": "2. Service Tiers and Retention Schedule"
+          },
+          {
+            "id": "document-p8",
+            "text": "Plan Tier"
+          },
+          {
+            "id": "document-p9",
+            "text": "Audit Log Retention"
+          },
+          {
+            "id": "document-p10",
+            "text": "Support Response Target"
+          },
+          {
+            "id": "document-p11",
+            "text": "Starter Workspace"
+          },
+          {
+            "id": "document-p12",
+            "text": "Ninety days of searchable activity"
+          },
+          {
+            "id": "document-p13",
+            "text": "Two business days via email"
+          },
+          {
+            "id": "document-p14",
+            "text": "Enterprise Workspace"
+          },
+          {
+            "id": "document-p15",
+            "text": "Seven years in LedgerVault"
+          },
+          {
+            "id": "document-p16",
+            "text": "Four hours with priority escalation"
+          },
+          {
+            "id": "document-p17",
+            "text": "3. Approved Legal Revisions"
+          },
+          {
+            "id": "document-p18",
+            "text": "The compliance committee formally approved quarterly deletion audits for inactive merchant accounts."
+          },
+          {
+            "id": "document-p19",
+            "text": "Account owners may request immediate deletion of archived exports after settling every open Invoice."
+          },
+          {
+            "id": "document-p20",
+            "text": "Security notifications are delivered to the primary administrator and recorded in PulseGrid."
+          },
+          {
+            "id": "comments-p21",
+            "text": "Confirm whether annual invoices follow the same first-business-day schedule."
+          },
+          {
+            "id": "footer1-p22",
+            "text": "Confidential policy summary — Page"
+          },
+          {
+            "id": "footnotes-p23",
+            "text": "Grace period reminders are sent automatically on day three, day seven, and day twelve."
+          },
+          {
+            "id": "header1-p24",
+            "text": "Northstar Commerce — Customer Billing Policy"
+          }
+        ],
+        "wraith": [
+          {
+            "id": "document-p1",
+            "text": "Northstar-Richtlinie zur Abrechnung und Datenaufbewahrung"
+          },
+          {
+            "id": "document-p2",
+            "text": "Diese Richtlinie erläutert, wie Northstar Abonnementzahlungen über Northstar Pay abwickelt und Compliance-Nachweise in LedgerVault archiviert."
+          },
+          {
+            "id": "document-p3",
+            "text": "1. Rechnungen für Abonnements und Zahlungsnachfristen"
+          },
+          {
+            "id": "document-p4",
+            "text": "Jeder Arbeitsbereich erhält am ersten Geschäftstag jedes Abrechnungszeitraums eine monatliche Rechnung mit allen Einzelposten."
+          },
+          {
+            "id": "document-p5",
+            "text": "Schlägt eine Zahlung fehl, versuchen wir vierzehn Kalendertage lang automatisch erneut, den Betrag einzuziehen, bevor wir nicht zwingend erforderliche Exporte von Analysedaten vorübergehend aussetzen."
+          },
+          {
+            "id": "document-p6",
+            "text": "Lesen Sie die vollständigen Steuerunterlagen im Northstar-Hilfezentrum, bevor Sie eine Bescheinigung über die Steuerbefreiung einreichen."
+          },
+          {
+            "id": "document-p7",
+            "text": "2. Tarifstufen und Aufbewahrungsfristen"
+          },
+          {
+            "id": "document-p8",
+            "text": "Tarifstufe"
+          },
+          {
+            "id": "document-p9",
+            "text": "Aufbewahrungsfrist für Auditprotokolle"
+          },
+          {
+            "id": "document-p10",
+            "text": "Angestrebte Antwortzeit des Supports"
+          },
+          {
+            "id": "document-p11",
+            "text": "Starter-Arbeitsbereich"
+          },
+          {
+            "id": "document-p12",
+            "text": "Aktivitäten der letzten 90 Tage durchsuchbar"
+          },
+          {
+            "id": "document-p13",
+            "text": "Zwei Geschäftstage per E-Mail"
+          },
+          {
+            "id": "document-p14",
+            "text": "Enterprise-Arbeitsbereich"
+          },
+          {
+            "id": "document-p15",
+            "text": "Sieben Jahre in LedgerVault"
+          },
+          {
+            "id": "document-p16",
+            "text": "Vier Stunden bei vorrangiger Eskalation"
+          },
+          {
+            "id": "document-p17",
+            "text": "3. Genehmigte Änderungen an den rechtlichen Bestimmungen"
+          },
+          {
+            "id": "document-p18",
+            "text": "Der Compliance-Ausschuss hat vierteljährliche Prüfungen der Datenlöschung bei inaktiven Händlerkonten förmlich genehmigt."
+          },
+          {
+            "id": "document-p19",
+            "text": "Kontoinhaber können die sofortige Löschung archivierter Exporte beantragen, sobald sie alle offenen Rechnungen beglichen haben."
+          },
+          {
+            "id": "document-p20",
+            "text": "Der Hauptadministrator erhält Sicherheitsbenachrichtigungen. Diese werden in PulseGrid protokolliert."
+          },
+          {
+            "id": "comments-p21",
+            "text": "Bitte bestätigen Sie, ob auch Jahresrechnungen am ersten Geschäftstag des Abrechnungszeitraums ausgestellt werden."
+          },
+          {
+            "id": "footer1-p22",
+            "text": "Vertrauliche Zusammenfassung der Richtlinie – Seite"
+          },
+          {
+            "id": "footnotes-p23",
+            "text": "Am dritten, siebten und zwölften Tag der Zahlungsnachfrist werden automatisch Erinnerungen versandt."
+          },
+          {
+            "id": "header1-p24",
+            "text": "Northstar Commerce – Richtlinie zur Kundenabrechnung"
+          }
+        ],
+        "deepl": []
+      }
+    },
+    {
+      "file": "clinical-patient-letter.docx",
+      "format": "docx",
+      "locale": "es-MX",
+      "exists": true,
+      "codexWallS": 27.5,
+      "codexTelemetry": {
+        "modelTurns": 1,
+        "inputTokens": 109026,
+        "cachedInputTokens": 89472,
+        "uncachedInputTokens": 19554,
+        "outputTokens": 806,
+        "reasoningTokens": 0,
+        "mcpCallsCount": 3,
+        "mcpCallsByTool": {
+          "prepare": 2,
+          "apply": 1
+        },
+        "estApiUsd": 0.0793,
+        "lastMessage": "[Download the patient letter in Mexican Spanish](</home/colton/Projects/Wraith MCP/eval/work/pub-audit/docs/docs/clinical-patient-letter.es-MX.docx>).\n\nWraith accepted all 14 segments with `ok: true`. I reopened the saved DOCX and verified that every segment matched the submitted translation, including inline formatting tags, brand names, and medication doses.",
+        "errors": []
+      },
+      "wraithVerify": {
+        "outcome": "PASS",
+        "format": "docx",
+        "sourceFile": "/home/colton/Projects/Wraith MCP/eval/work/pub-audit/docs/docs/clinical-patient-letter.docx",
+        "targetFile": "/home/colton/Projects/Wraith MCP/eval/work/pub-audit/docs/docs/clinical-patient-letter.es-MX.docx",
+        "libreOfficeAvailable": true,
+        "sourcePages": 1,
+        "targetPages": 1,
+        "findings": []
+      },
+      "deeplDocRes": {
+        "billableChars": null,
+        "error": "Unsupported DeepL targetLocale: undefined"
+      },
+      "deeplVerify": null,
+      "subtitleAudit": null,
+      "renders": {
+        "srcPngs": [
+          "/home/colton/Projects/Wraith MCP/eval/results/pub-audit/doc-renders/clinical-patient-letter-en-1.png"
+        ],
+        "wPngs": [
+          "/home/colton/Projects/Wraith MCP/eval/results/pub-audit/doc-renders/clinical-patient-letter-es-MX-wraith-1.png"
+        ],
+        "deeplPngs": []
+      },
+      "segments": {
+        "source": [
+          {
+            "id": "document-p1",
+            "text": "Northstar Medical Center — Patient Discharge Summary"
+          },
+          {
+            "id": "document-p2",
+            "text": "Dear Patient, thank you for participating in the CardioPulse Phase III Study. Please review your follow-up instructions carefully."
+          },
+          {
+            "id": "document-p3",
+            "text": "Important Safety Warning: Do not stop taking your prescribed blood pressure medication without consulting your attending physician. Seek immediate emergency care if you experience chest pain, shortness of breath, or sudden dizziness."
+          },
+          {
+            "id": "document-p4",
+            "text": "Medication"
+          },
+          {
+            "id": "document-p5",
+            "text": "Dosage & Schedule"
+          },
+          {
+            "id": "document-p6",
+            "text": "Notes"
+          },
+          {
+            "id": "document-p7",
+            "text": "Lisinopril 10 mg"
+          },
+          {
+            "id": "document-p8",
+            "text": "Take one tablet by mouth every morning with water."
+          },
+          {
+            "id": "document-p9",
+            "text": "Monitor blood pressure twice weekly."
+          },
+          {
+            "id": "document-p10",
+            "text": "Atorvastatin 20 mg"
+          },
+          {
+            "id": "document-p11",
+            "text": "Take one tablet in the evening with or without food."
+          },
+          {
+            "id": "document-p12",
+            "text": "Avoid grapefruit juice during treatment."
+          },
+          {
+            "id": "document-p13",
+            "text": "Your follow-up cardiology appointment is scheduled within 14 days of discharge. Bring your symptom log and current medication list to every clinic visit so the research nurse can update your electronic chart accurately."
+          },
+          {
+            "id": "document-p14",
+            "text": "Confidentiality Notice: All clinical study records are protected under applicable health privacy regulations and stored in LedgerVault."
+          }
+        ],
+        "wraith": [
+          {
+            "id": "document-p1",
+            "text": "Centro Médico Northstar — Resumen de alta"
+          },
+          {
+            "id": "document-p2",
+            "text": "Estimado paciente, le agradecemos su participación en el estudio de fase III de CardioPulse. Lea con atención las indicaciones de seguimiento."
+          },
+          {
+            "id": "document-p3",
+            "text": "Advertencia importante de seguridad: No deje de tomar el medicamento que le recetaron para controlar la presión arterial sin antes consultar a su médico tratante. Acuda de inmediato a urgencias si tiene dolor en el pecho, le falta el aire o siente un mareo repentino."
+          },
+          {
+            "id": "document-p4",
+            "text": "Medicamento"
+          },
+          {
+            "id": "document-p5",
+            "text": "Dosis y horario"
+          },
+          {
+            "id": "document-p6",
+            "text": "Observaciones"
+          },
+          {
+            "id": "document-p7",
+            "text": "Lisinopril de 10 mg"
+          },
+          {
+            "id": "document-p8",
+            "text": "Tome una tableta por vía oral con agua cada mañana."
+          },
+          {
+            "id": "document-p9",
+            "text": "Mídase la presión arterial dos veces por semana."
+          },
+          {
+            "id": "document-p10",
+            "text": "Atorvastatina de 20 mg"
+          },
+          {
+            "id": "document-p11",
+            "text": "Tome una tableta por la noche, con o sin alimentos."
+          },
+          {
+            "id": "document-p12",
+            "text": "Evite el jugo de toronja durante el tratamiento."
+          },
+          {
+            "id": "document-p13",
+            "text": "Su cita de seguimiento en cardiología está programada dentro de los 14 días posteriores al alta. En cada visita a la clínica, lleve su registro de síntomas y la lista de los medicamentos que toma actualmente para que el personal de enfermería del estudio pueda actualizar con precisión su expediente clínico electrónico."
+          },
+          {
+            "id": "document-p14",
+            "text": "Aviso de confidencialidad: Todos los registros del estudio clínico están protegidos por la normativa aplicable en materia de privacidad de los datos de salud y se almacenan en LedgerVault."
+          }
+        ],
+        "deepl": []
+      }
+    },
+    {
+      "file": "product-launch-deck.pptx",
+      "format": "pptx",
+      "locale": "de",
+      "exists": true,
+      "codexWallS": 19.5,
+      "codexTelemetry": {
+        "modelTurns": 1,
+        "inputTokens": 81779,
+        "cachedInputTokens": 73728,
+        "uncachedInputTokens": 8051,
+        "outputTokens": 515,
+        "reasoningTokens": 0,
+        "mcpCallsCount": 2,
+        "mcpCallsByTool": {
+          "prepare": 1,
+          "apply": 1
+        },
+        "estApiUsd": 0.0437,
+        "lastMessage": "[Download the German launch deck](< /home/colton/Projects/Wraith MCP/eval/work/pub-audit/docs/docs/product-launch-deck.de.pptx>) \n\nWraith accepted all 9 segments across 3 slides with `ok: true`. All inline tags and brand names were preserved.",
+        "errors": []
+      },
+      "wraithVerify": {
+        "outcome": "PASS",
+        "format": "pptx",
+        "sourceFile": "/home/colton/Projects/Wraith MCP/eval/work/pub-audit/docs/docs/product-launch-deck.pptx",
+        "targetFile": "/home/colton/Projects/Wraith MCP/eval/work/pub-audit/docs/docs/product-launch-deck.de.pptx",
+        "libreOfficeAvailable": true,
+        "sourcePages": 3,
+        "targetPages": 3,
+        "findings": []
+      },
+      "deeplDocRes": null,
+      "deeplVerify": null,
+      "subtitleAudit": null,
+      "renders": {
+        "srcPngs": [
+          "/home/colton/Projects/Wraith MCP/eval/results/pub-audit/doc-renders/product-launch-deck-en-1.png",
+          "/home/colton/Projects/Wraith MCP/eval/results/pub-audit/doc-renders/product-launch-deck-en-2.png",
+          "/home/colton/Projects/Wraith MCP/eval/results/pub-audit/doc-renders/product-launch-deck-en-3.png"
+        ],
+        "wPngs": [
+          "/home/colton/Projects/Wraith MCP/eval/results/pub-audit/doc-renders/product-launch-deck-de-wraith-1.png",
+          "/home/colton/Projects/Wraith MCP/eval/results/pub-audit/doc-renders/product-launch-deck-de-wraith-2.png",
+          "/home/colton/Projects/Wraith MCP/eval/results/pub-audit/doc-renders/product-launch-deck-de-wraith-3.png"
+        ],
+        "deeplPngs": []
+      },
+      "segments": {
+        "source": [
+          {
+            "id": "slides/slide1:p1",
+            "text": "Northstar Commerce Q4 Launch"
+          },
+          {
+            "id": "slides/slide1:p2",
+            "text": "Global checkout expansion powered by Northstar Pay"
+          },
+          {
+            "id": "slides/slide1:p3",
+            "text": "Zero-downtime settlement & real-time fraud scoring."
+          },
+          {
+            "id": "slides/slide2:p1",
+            "text": "Enterprise Security & Compliance"
+          },
+          {
+            "id": "slides/slide2:p2",
+            "text": "Immutable audit logs archived in LedgerVault"
+          },
+          {
+            "id": "slides/slide2:p3",
+            "text": "Automated regional tax reporting across 28 markets."
+          },
+          {
+            "id": "slides/slide3:p1",
+            "text": "Next Steps & Rollout Timeline"
+          },
+          {
+            "id": "slides/slide3:p2",
+            "text": "Pilot launch in Germany and Spain starting next Monday."
+          },
+          {
+            "id": "slides/slide3:p3",
+            "text": "Contact your account manager to enable PulseGrid analytics."
+          }
+        ],
+        "wraith": [
+          {
+            "id": "slides/slide1:p1",
+            "text": "Northstar Commerce – Marktstart im 4. Quartal"
+          },
+          {
+            "id": "slides/slide1:p2",
+            "text": "Weltweiter Ausbau des Checkouts mit Northstar Pay"
+          },
+          {
+            "id": "slides/slide1:p3",
+            "text": "Zahlungsabwicklung ohne Ausfallzeiten und Bewertung des Betrugsrisikos in Echtzeit."
+          },
+          {
+            "id": "slides/slide2:p1",
+            "text": "Sicherheit und Compliance für Unternehmen"
+          },
+          {
+            "id": "slides/slide2:p2",
+            "text": "Unveränderliche Auditprotokolle, archiviert in LedgerVault"
+          },
+          {
+            "id": "slides/slide2:p3",
+            "text": "Automatisierte regionale Steuermeldungen in 28 Märkten."
+          },
+          {
+            "id": "slides/slide3:p1",
+            "text": "Nächste Schritte und Zeitplan für die Einführung"
+          },
+          {
+            "id": "slides/slide3:p2",
+            "text": "Die Pilotphase startet nächsten Montag in Deutschland und Spanien."
+          },
+          {
+            "id": "slides/slide3:p3",
+            "text": "Wenden Sie sich an Ihren Account-Manager, um die Analysefunktionen von PulseGrid freizuschalten."
+          }
+        ],
+        "deepl": []
+      }
+    },
+    {
+      "file": "q4-financial-model.xlsx",
+      "format": "xlsx",
+      "locale": "de",
+      "exists": true,
+      "codexWallS": 25.9,
+      "codexTelemetry": {
+        "modelTurns": 1,
+        "inputTokens": 102991,
+        "cachedInputTokens": 87040,
+        "uncachedInputTokens": 15951,
+        "outputTokens": 627,
+        "reasoningTokens": 8,
+        "mcpCallsCount": 2,
+        "mcpCallsByTool": {
+          "prepare": 1,
+          "apply": 1
+        },
+        "estApiUsd": 0.0679,
+        "lastMessage": "[Download the German Q4 financial model](</home/colton/Projects/Wraith MCP/eval/work/pub-audit/docs/docs/q4-financial-model.de.xlsx>)\n\nWraith returned `ok: true`. I verified all 8 segments in the saved workbook. Seven changed, and “Region” has the same spelling in German. The LedgerVault brand name and both inline formatting tags were preserved.",
+        "errors": []
+      },
+      "wraithVerify": {
+        "outcome": "PASS",
+        "format": "xlsx",
+        "sourceFile": "/home/colton/Projects/Wraith MCP/eval/work/pub-audit/docs/docs/q4-financial-model.xlsx",
+        "targetFile": "/home/colton/Projects/Wraith MCP/eval/work/pub-audit/docs/docs/q4-financial-model.de.xlsx",
+        "libreOfficeAvailable": true,
+        "sourcePages": 1,
+        "targetPages": 1,
+        "findings": []
+      },
+      "deeplDocRes": null,
+      "deeplVerify": null,
+      "subtitleAudit": null,
+      "renders": {
+        "srcPngs": [
+          "/home/colton/Projects/Wraith MCP/eval/results/pub-audit/doc-renders/q4-financial-model-en-1.png"
+        ],
+        "wPngs": [
+          "/home/colton/Projects/Wraith MCP/eval/results/pub-audit/doc-renders/q4-financial-model-de-wraith-1.png"
+        ],
+        "deeplPngs": []
+      },
+      "segments": {
+        "source": [
+          {
+            "id": "sharedStrings:si0",
+            "text": "Region"
+          },
+          {
+            "id": "sharedStrings:si1",
+            "text": "Quarterly Revenue"
+          },
+          {
+            "id": "sharedStrings:si2",
+            "text": "Operating Cost"
+          },
+          {
+            "id": "sharedStrings:si3",
+            "text": "Net Margin"
+          },
+          {
+            "id": "sharedStrings:si4",
+            "text": "North America"
+          },
+          {
+            "id": "sharedStrings:si5",
+            "text": "Central Europe"
+          },
+          {
+            "id": "sharedStrings:si6",
+            "text": "Grand Total (USD)"
+          },
+          {
+            "id": "sheet1:is1",
+            "text": "Audited via LedgerVault automated reconciliation."
+          }
+        ],
+        "wraith": [
+          {
+            "id": "sharedStrings:si0",
+            "text": "Region"
+          },
+          {
+            "id": "sharedStrings:si1",
+            "text": "Quartalsumsatz"
+          },
+          {
+            "id": "sharedStrings:si2",
+            "text": "Betriebskosten"
+          },
+          {
+            "id": "sharedStrings:si3",
+            "text": "Nettomarge"
+          },
+          {
+            "id": "sharedStrings:si4",
+            "text": "Nordamerika"
+          },
+          {
+            "id": "sharedStrings:si5",
+            "text": "Mitteleuropa"
+          },
+          {
+            "id": "sharedStrings:si6",
+            "text": "Gesamtsumme (USD)"
+          },
+          {
+            "id": "sheet1:is1",
+            "text": "Durch automatischen Abgleich mit LedgerVault geprüft."
+          }
+        ],
+        "deepl": []
+      }
+    },
+    {
+      "file": "product-demo.vtt",
+      "format": "vtt",
+      "locale": "de",
+      "exists": true,
+      "codexWallS": 37.3,
+      "codexTelemetry": {
+        "modelTurns": 1,
+        "inputTokens": 126317,
+        "cachedInputTokens": 121344,
+        "uncachedInputTokens": 4973,
+        "outputTokens": 965,
+        "reasoningTokens": 401,
+        "mcpCallsCount": 2,
+        "mcpCallsByTool": {
+          "prepare": 1,
+          "apply": 1
+        },
+        "estApiUsd": 0.0524,
+        "lastMessage": "Translated all 5 subtitle cues into German and saved [product-demo.de.vtt](</home/colton/Projects/Wraith MCP/eval/work/pub-audit/docs/docs/product-demo.de.vtt>). Wraith returned `ok: true`. All cues preserve the inline tags and brand names and fit within their character and line limits.",
+        "errors": []
+      },
+      "wraithVerify": null,
+      "deeplDocRes": null,
+      "deeplVerify": null,
+      "subtitleAudit": {
+        "cuesPreserved": true,
+        "cueCount": 5,
+        "maxCpsObserved": 20,
+        "maxLinesObserved": 2,
+        "timestampsIdentical": true
+      },
+      "renders": {
+        "srcPngs": [],
+        "wPngs": [],
+        "deeplPngs": []
+      },
+      "segments": {
+        "source": [
+          {
+            "id": "cue:1",
+            "text": "Welcome to Northstar Commerce."
+          },
+          {
+            "id": "cue:2",
+            "text": "Today we'll issue a refund in one click."
+          },
+          {
+            "id": "cue:3",
+            "text": "Open the Billing tab and select an invoice."
+          },
+          {
+            "id": "cue:4",
+            "text": "Every change is logged in LedgerVault automatically."
+          },
+          {
+            "id": "cue:5",
+            "text": "Click Save to publish your settings."
+          }
+        ],
+        "wraith": [
+          {
+            "id": "cue:1",
+            "text": "Willkommen bei Northstar Commerce."
+          },
+          {
+            "id": "cue:2",
+            "text": "Heute lösen wir per Klick\neine Erstattung aus."
+          },
+          {
+            "id": "cue:3",
+            "text": "Tab Abrechnung öffnen\nund eine Rechnung auswählen."
+          },
+          {
+            "id": "cue:4",
+            "text": "LedgerVault erfasst automatisch\njede Änderung."
+          },
+          {
+            "id": "cue:5",
+            "text": "Mit Speichern publizieren Sie\nIhre Einstellungen."
+          }
+        ],
+        "deepl": []
+      }
+    },
+    {
+      "file": "webinar-clip.srt",
+      "format": "srt",
+      "locale": "es-MX",
+      "exists": true,
+      "codexWallS": 21.8,
+      "codexTelemetry": {
+        "modelTurns": 1,
+        "inputTokens": 101816,
+        "cachedInputTokens": 94208,
+        "uncachedInputTokens": 7608,
+        "outputTokens": 468,
+        "reasoningTokens": 53,
+        "mcpCallsCount": 2,
+        "mcpCallsByTool": {
+          "prepare": 1,
+          "apply": 1
+        },
+        "estApiUsd": 0.0473,
+        "lastMessage": "Translated all 3 subtitle cues into Mexican Spanish and saved [webinar-clip.es-MX.srt](</home/colton/Projects/Wraith MCP/eval/work/pub-audit/docs/docs/webinar-clip.es-MX.srt>). Wraith returned `ok: true`. Each cue fits on one line within its character limit, and PulseGrid retains its spelling and italics.",
+        "errors": []
+      },
+      "wraithVerify": null,
+      "deeplDocRes": null,
+      "deeplVerify": null,
+      "subtitleAudit": {
+        "cuesPreserved": true,
+        "cueCount": 3,
+        "maxCpsObserved": 16,
+        "maxLinesObserved": 1,
+        "timestampsIdentical": true
+      },
+      "renders": {
+        "srcPngs": [],
+        "wPngs": [],
+        "deeplPngs": []
+      },
+      "segments": {
+        "source": [
+          {
+            "id": "cue:1",
+            "text": "Good morning everyone."
+          },
+          {
+            "id": "cue:2",
+            "text": "PulseGrid tracks conversion without cookies."
+          },
+          {
+            "id": "cue:3",
+            "text": "Questions? Drop them in the chat below."
+          }
+        ],
+        "wraith": [
+          {
+            "id": "cue:1",
+            "text": "Buenos días a todos."
+          },
+          {
+            "id": "cue:2",
+            "text": "PulseGrid mide conversiones sin cookies."
+          },
+          {
+            "id": "cue:3",
+            "text": "¿Preguntas? Déjenlas en el chat de abajo."
+          }
+        ],
+        "deepl": []
+      }
+    }
+  ]
+}

@@ -74,6 +74,7 @@ export const LIST_PRICING_PER_1M = {
 export const DEEPL_LANG_MAP = {
   "es-MX": { targetLang: "ES", formality: "prefer_less", glossaryTarget: "es" },
   de: { targetLang: "DE", formality: "prefer_more", glossaryTarget: "de" },
+  "zh-Hans": { targetLang: "ZH-HANS", formality: null, glossaryTarget: "zh" },
   ja: { targetLang: "JA", formality: "prefer_more", glossaryTarget: "ja" },
   ar: { targetLang: "AR", formality: null, glossaryTarget: null },
   pl: { targetLang: "PL", formality: "prefer_more", glossaryTarget: "pl" },
@@ -83,6 +84,8 @@ export const LOCALE_CONVENTIONS_TEXT = {
   "es-MX":
     "Mexican Spanish (es-MX): use natural Mexican phrasing (e.g. 'computadora', 'celular', 'iniciar sesión', 'guardar'), informal 'tú' for consumer/dev apps, opening ¿/¡ punctuation, and avoid Spain-only 'vosotros'.",
   de: "German (de): capitalize all nouns, polite 'Sie' consistently for SaaS/commerce UIs, natural German word order, watch compound noun length in tight buttons.",
+  "zh-Hans":
+    "Simplified Chinese (zh-Hans): natural Mainland China UI phrasing, full-width Chinese punctuation (，。！？：), concise button/tab labels, preserve spaces around Latin brand names/numbers where natural.",
   ja: "Japanese (ja): polite desu/masu (です/ます) for UI copy, full-width Japanese punctuation (、。！？), natural katakana loanwords where standard.",
   ar: "Modern Standard Arabic (ar): RTL direction, natural Arabic phrasing, proper Arabic plural forms (zero/one/two/few/many/other), Arabic comma (،) and question mark (؟).",
   pl: "Polish (pl): natural Polish phrasing, proper grammatical cases and 4 CLDR plural forms (one/few/many/other), imperative or polite UI tone consistently.",

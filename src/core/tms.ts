@@ -462,7 +462,15 @@ export function runTmsExport(options: TmsExportOptions): TmsExportResult {
         if (q.answer) notes.push({ category: "answer", text: `${q.question} → ${q.answer}` });
       }
       if (qeStatus === "flagged" && verdict?.reason) {
-        notes.push({ category: "qe", text: `Flagged in review: ${verdict.reason}${verdict.suggestedFix ? ` — suggested: ${verdict.suggestedFix}` : ""}` });
+        const tagParts = [verdict.severity, verdict.category].filter(Boolean);
+        const tagPrefix = tagParts.length > 0 ? `[${tagParts.join("/")}] ` : "";
+        const evidencePart = verdict.evidence ? ` | Evidence: ${verdict.evidence}` : "";
+        const visualPart = verdict.visualEvidence ? ` | Visual: ${verdict.visualEvidence}` : "";
+        const fixPart = verdict.suggestedFix ? ` — suggested: ${verdict.suggestedFix}` : "";
+        notes.push({
+          category: "qe",
+          text: `Flagged in review: ${tagPrefix}${verdict.reason}${evidencePart}${visualPart}${fixPart}`,
+        });
       }
       if (tm) notes.push({ category: "tm", text: `TM ${Math.round(tm.similarity * 100)}% (${tm.provenance}): ${tm.source} → ${tm.target}` });
       if (item.layout?.constraint) notes.push({ category: "layout", text: `Layout constraint: ${item.layout.constraint}` });
@@ -490,6 +498,8 @@ export function runTmsExport(options: TmsExportOptions): TmsExportResult {
           component: site?.component,
           element: site?.element,
           qe_status: item.currentTarget ? qeStatus : undefined,
+          qe_severity: qeStatus === "flagged" ? verdict?.severity : undefined,
+          qe_category: qeStatus === "flagged" ? verdict?.category : undefined,
           max_chars: item.charLimit?.maxChars ?? budget?.budgetChars ?? item.layout?.budgetChars,
           max_width_px: budget?.maxWidthPx ?? item.layout?.maxWidthPx,
           tm_similarity: tm ? Number(tm.similarity.toFixed(3)) : undefined,

@@ -2,14 +2,14 @@
 
 Wraith exports strings and translator context to standard localization formats (XLIFF 2.0, XLIFF 1.2 for Crowdin, TMX 1.4b, TBX-Basic) and re-imports reviewed translations into your catalogs and Translation Memory.
 
-## TMS export (`wraith export` / MCP `tms_export`)
+## TMS export (`wraith export` / MCP `export`)
 
 ```bash
 wraith export [--format xliff2|xliff12] [--out .wraith/exports/tms] [--locales de,ja] \
   [--only-flagged] [--include-tm] [--include-glossary] [--bundle-screenshots] [--json]
 ```
 
-`tms_export` is `readOnlyHint: true`; it writes only to the explicit export directory.
+MCP `export` (`format: "xliff2" | "xliff12" | "human"`) has `destructiveHint: false` and writes only to the explicit export directory.
 
 Every unit carries the translator context Wraith has:
 - the **Context Note** (`Meaning:`)
@@ -103,7 +103,7 @@ Every unit carries the translator context Wraith has:
 
 ---
 
-## TMS import (`wraith import` / MCP `tms_import`)
+## TMS import (`wraith import` / MCP `import`)
 
 ```bash
 wraith import reviewed/de.xliff        # or a directory of .xliff/.xlf files
@@ -117,7 +117,7 @@ wraith import reviewed/ --format xliff
 3. For units the TMS marks as reviewed (XLIFF 2.0 `state="reviewed"`/`"final"`, XLIFF 1.2 `approved="yes"` or `state="final"`): upserts `.wraith/tm.json` with `provenance: "human-reviewed"` and `verifiedAt`, and records the string as `human-verified` in `qe-verdicts.json`. Any other state (e.g. `translated`, `needs-review-translation`) is still validated and written if the text changed, but is counted as `notReviewed` and never becomes human-verified. Re-importing Wraith's own export therefore verifies nothing.
 4. Runs `check` (and `visual-qa` when `layout.baseUrl` is configured) and prints a diff summary.
 
-`tms_import` is `destructiveHint: true`. CSV / TBX / TMX / locale-file asset import is unchanged (`--format auto|csv|tbx|tmx|locales`).
+MCP `import` is `destructiveHint: true` and handles XLIFF 2.0/1.2, reviewer corrections (`format: "corrections"`), and CSV / TBX / TMX / locale-file asset imports (`format: "auto" | "xliff" | "corrections" | "csv" | "tbx" | "tmx" | "locales"`).
 
 ## TM benchmark status
 

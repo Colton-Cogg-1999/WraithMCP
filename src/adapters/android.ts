@@ -14,8 +14,24 @@ import { isLikelyUserFacingText, normalizeWhitespace, walkFiles } from "./utils.
 
 const ANDROID_EXTS = new Set([".kt", ".java", ".xml"]);
 
+function formatBcp47Subtag(subtag: string, index: number): string {
+  if (index === 0) return subtag.toLowerCase();
+  if (subtag.length === 4 && /^[a-zA-Z]{4}$/.test(subtag)) {
+    return subtag[0].toUpperCase() + subtag.slice(1).toLowerCase();
+  }
+  if (subtag.length === 2 && /^[a-zA-Z]{2}$/.test(subtag)) {
+    return subtag.toUpperCase();
+  }
+  return subtag;
+}
+
 function androidValuesDirToLocale(dirName: string): string | null {
   if (dirName === "values") return "en";
+  if (dirName.startsWith("values-b+")) {
+    const rawParts = dirName.slice("values-b+".length).split("+").filter(Boolean);
+    if (rawParts.length === 0 || !/^[a-zA-Z]{2,3}$/.test(rawParts[0])) return null;
+    return rawParts.map((p, i) => formatBcp47Subtag(p, i)).join("-");
+  }
   const m = dirName.match(/^values-([a-z]{2,3})(?:-r([A-Z]{2}))?$/);
   if (!m) return null;
   return m[2] ? `${m[1]}-${m[2]}` : m[1];
@@ -24,10 +40,15 @@ function androidValuesDirToLocale(dirName: string): string | null {
 function localeToAndroidValuesDir(locale: string, sourceLocale: string): string {
   if (locale === sourceLocale) return "values";
   const parts = locale.split("-");
-  if (parts.length === 2 && parts[1].length === 2) {
+  if (parts.length === 1) {
+    return `values-${parts[0].toLowerCase()}`;
+  }
+  if (parts.length === 2 && /^[a-zA-Z]{2}$/.test(parts[1])) {
     return `values-${parts[0].toLowerCase()}-r${parts[1].toUpperCase()}`;
   }
-  return `values-${locale.toLowerCase()}`;
+  // Android BCP-47 qualifier format (API 24+): values-b+zh+Hans, values-b+es+419, values-b+sr+Latn
+  const formatted = parts.map((p, i) => formatBcp47Subtag(p, i));
+  return `values-b+${formatted.join("+")}`;
 }
 
 function discoverAndroidResDirs(
