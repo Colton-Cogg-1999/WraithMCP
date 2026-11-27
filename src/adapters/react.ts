@@ -291,6 +291,9 @@ export function scanJsTsFile(
   // e.g. const { t } = useTranslation('common', { keyPrefix: 'nav' }) -> { namespace: 'common', keyPrefix: 'nav' }
   const translatorNamespaces = new Map<string, string>();
   const translatorKeyPrefixes = new Map<string, string>();
+  // Track react-intl defineMessages({ foo: { id: 'a.b', ... } }) and defineMessage({ id: 'a.b' })
+  const definedMessageMaps = new Map<string, Map<string, string>>();
+  const definedSingleMessages = new Map<string, string>();
   // Track useState setter -> state variable name (e.g. setErr -> err)
   const useStateSetters = new Map<string, string>();
   // Track variables whose values flow into JSX children or user-facing JSX props
@@ -298,7 +301,21 @@ export function scanJsTsFile(
   const lines = sourceCode.split(/\r?\n/);
   const getSnippet = (line: number) => (lines[line - 1] ?? "").trim().slice(0, 120);
 
-  // First pass: find translator bindings, useState pairs, and identifiers flowing into JSX
+  const readDescriptorId = (obj: t.ObjectExpression): string | null => {
+    for (const prop of obj.properties) {
+      if (
+        t.isObjectProperty(prop) &&
+        ((t.isIdentifier(prop.key) && prop.key.name === "id") ||
+          (t.isStringLiteral(prop.key) && prop.key.value === "id")) &&
+        t.isStringLiteral(prop.value)
+      ) {
+        return prop.value.value;
+      }
+    }
+    return null;
+  };
+
+  // First pass: find translator bindings, react-intl message maps, useState pairs, and identifiers flowing into JSX
   traverse(ast, {
     VariableDeclarator(p) {
       const init = p.node.init;
@@ -325,6 +342,32 @@ export function scanJsTsFile(
       if (!t.isCallExpression(call)) return;
 
       const calleeName = t.isIdentifier(call.callee) ? call.callee.name : "";
+      if (calleeName === "defineMessages" && t.isIdentifier(p.node.id)) {
+        const arg0 = call.arguments[0];
+        if (arg0 && t.isObjectExpression(arg0)) {
+          const map = new Map<string, string>();
+          for (const prop of arg0.properties) {
+            if (!t.isObjectProperty(prop) || !t.isObjectExpression(prop.value)) continue;
+            const keyName = t.isIdentifier(prop.key)
+              ? prop.key.name
+              : t.isStringLiteral(prop.key)
+                ? prop.key.value
+                : null;
+            const msgId = readDescriptorId(prop.value);
+            if (keyName && msgId) map.set(keyName, msgId);
+          }
+          if (map.size > 0) definedMessageMaps.set(p.node.id.name, map);
+        }
+        return;
+      }
+      if (calleeName === "defineMessage" && t.isIdentifier(p.node.id)) {
+        const arg0 = call.arguments[0];
+        if (arg0 && t.isObjectExpression(arg0)) {
+          const msgId = readDescriptorId(arg0);
+          if (msgId) definedSingleMessages.set(p.node.id.name, msgId);
+        }
+        return;
+      }
       if (calleeName === "useTranslations" || calleeName === "getTranslations") {
         let ns = "";
         const arg0 = call.arguments[0];
@@ -460,6 +503,51 @@ export function scanJsTsFile(
             line,
             component: findEnclosingComponent(p),
             element: "Trans",
+            surrounding: extractSurroundingLabels(p),
+          });
+        }
+        return;
+      }
+
+      // Detect react-intl <FormattedMessage id="..." /> / <FormattedMessage {...messages.foo} />
+      if (tagName === "FormattedMessage" || tagName === "FormattedHTMLMessage") {
+        let resolvedId: string | null = null;
+        for (const attr of p.node.openingElement.attributes) {
+          if (t.isJSXAttribute(attr) && t.isJSXIdentifier(attr.name, { name: "id" })) {
+            if (t.isStringLiteral(attr.value)) {
+              resolvedId = attr.value.value;
+            } else if (t.isJSXExpressionContainer(attr.value)) {
+              const expr = attr.value.expression;
+              if (t.isStringLiteral(expr)) {
+                resolvedId = expr.value;
+              } else if (
+                t.isMemberExpression(expr) &&
+                t.isIdentifier(expr.property, { name: "id" }) &&
+                t.isMemberExpression(expr.object) &&
+                t.isIdentifier(expr.object.object) &&
+                t.isIdentifier(expr.object.property)
+              ) {
+                resolvedId =
+                  definedMessageMaps.get(expr.object.object.name)?.get(expr.object.property.name) ?? null;
+              }
+            }
+          } else if (t.isJSXSpreadAttribute(attr)) {
+            const arg = attr.argument;
+            if (t.isMemberExpression(arg) && t.isIdentifier(arg.object) && t.isIdentifier(arg.property)) {
+              resolvedId = definedMessageMaps.get(arg.object.name)?.get(arg.property.name) ?? null;
+            } else if (t.isIdentifier(arg)) {
+              resolvedId = definedSingleMessages.get(arg.name) ?? null;
+            }
+          }
+        }
+        if (resolvedId) {
+          const line = (p.node.loc?.start.line ?? 1) + lineOffset;
+          usageByKey[resolvedId] = usageByKey[resolvedId] ?? [];
+          usageByKey[resolvedId].push({
+            file: relFile,
+            line,
+            component: findEnclosingComponent(p),
+            element: findEnclosingJsxElement(p) ?? tagName,
             surrounding: extractSurroundingLabels(p),
           });
         }
@@ -733,6 +821,17 @@ export function scanJsTsFile(
 
       if (!isUserFacingPropName(attrName)) return;
 
+      // Skip react-intl <FormattedMessage defaultMessage="..." description="..." />
+      if (t.isJSXOpeningElement(p.parent)) {
+        const parentTag = getJsxTagName(p.parent);
+        if (
+          (parentTag === "FormattedMessage" || parentTag === "FormattedHTMLMessage") &&
+          (attrName === "defaultMessage" || attrName === "description")
+        ) {
+          return;
+        }
+      }
+
       let literalText: string | null = null;
       if (t.isStringLiteral(p.node.value)) {
         literalText = p.node.value.value;
@@ -761,6 +860,69 @@ export function scanJsTsFile(
     CallExpression(p) {
       const callee = p.node.callee;
       const line = (p.node.loc?.start.line ?? 1) + lineOffset;
+
+      // 0a. react-intl defineMessages({ k: { id: "foo.bar", defaultMessage: "..." } }) / defineMessage({ id: "..." })
+      if (t.isIdentifier(callee) && (callee.name === "defineMessages" || callee.name === "defineMessage")) {
+        const arg0 = p.node.arguments[0];
+        if (arg0 && t.isObjectExpression(arg0)) {
+          if (callee.name === "defineMessage") {
+            const msgId = readDescriptorId(arg0);
+            if (msgId) {
+              usageByKey[msgId] = usageByKey[msgId] ?? [];
+              usageByKey[msgId].push({
+                file: relFile,
+                line: (arg0.loc?.start.line ?? line) + lineOffset,
+                component: findEnclosingComponent(p),
+                element: "defineMessage",
+                surrounding: [],
+              });
+            }
+          } else {
+            for (const prop of arg0.properties) {
+              if (!t.isObjectProperty(prop) || !t.isObjectExpression(prop.value)) continue;
+              const msgId = readDescriptorId(prop.value);
+              if (msgId) {
+                usageByKey[msgId] = usageByKey[msgId] ?? [];
+                usageByKey[msgId].push({
+                  file: relFile,
+                  line: (prop.loc?.start.line ?? line) + lineOffset,
+                  component: findEnclosingComponent(p),
+                  element: "defineMessages",
+                  surrounding: [],
+                });
+              }
+            }
+          }
+        }
+        return;
+      }
+
+      // 0b. react-intl intl.formatMessage(descriptor, values) / formatMessage(descriptor, values)
+      const isFormatMessage =
+        (t.isIdentifier(callee) && callee.name === "formatMessage") ||
+        (t.isMemberExpression(callee) && t.isIdentifier(callee.property, { name: "formatMessage" }));
+      if (isFormatMessage && p.node.arguments[0]) {
+        const arg0 = p.node.arguments[0];
+        let resolvedId: string | null = null;
+        if (t.isObjectExpression(arg0)) {
+          resolvedId = readDescriptorId(arg0);
+        } else if (t.isMemberExpression(arg0) && t.isIdentifier(arg0.object) && t.isIdentifier(arg0.property)) {
+          resolvedId = definedMessageMaps.get(arg0.object.name)?.get(arg0.property.name) ?? null;
+        } else if (t.isIdentifier(arg0)) {
+          resolvedId = definedSingleMessages.get(arg0.name) ?? null;
+        }
+        if (resolvedId) {
+          usageByKey[resolvedId] = usageByKey[resolvedId] ?? [];
+          usageByKey[resolvedId].push({
+            file: relFile,
+            line,
+            component: findEnclosingComponent(p),
+            element: findEnclosingJsxElement(p),
+            surrounding: extractSurroundingLabels(p),
+          });
+        }
+        return;
+      }
 
       // 1. i18n key usage: t("key"), i18n.t("key"), or custom translator variable
       let matchedTranslator: string | null = null;
@@ -1127,6 +1289,9 @@ export class ReactNextAdapter implements ScannerAdapter {
     if (deps["next-intl"]) {
       i18nLibrary = "next-intl";
       placeholderSyntaxes = ["icu"];
+    } else if (deps["react-intl"] || deps["@formatjs/intl"]) {
+      i18nLibrary = "react-intl";
+      placeholderSyntaxes = ["icu"];
     } else if (deps["react-i18next"] || deps["i18next"]) {
       i18nLibrary = "react-i18next";
       placeholderSyntaxes = ["double-mustache", "icu"];
@@ -1141,6 +1306,9 @@ export class ReactNextAdapter implements ScannerAdapter {
       "public/locales",
       "i18n",
       "src/i18n",
+      "app/javascript/mastodon/locales",
+      "app/javascript/locales",
+      "app/frontend/locales",
     ];
     const { localesDir, localeFiles } = discoverJsonLocaleFiles(rootDir, candidates);
 

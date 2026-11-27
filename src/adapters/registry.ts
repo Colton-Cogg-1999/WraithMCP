@@ -14,6 +14,7 @@ import { SvelteKitAdapter } from "./svelte.js";
 import { FrameworkDetection, ScannerAdapter } from "./types.js";
 import { VueNuxtAdapter } from "./vue.js";
 import { GettextPoFormatAdapter } from "../formats/po.js";
+import { discoverJsonLocaleFiles } from "./utils.js";
 
 const adapters: ScannerAdapter[] = [
   new ReactNextAdapter(),
@@ -101,14 +102,21 @@ export function detectProjectAdapter(
     if (forced) {
       const det = forced.detect(absRoot, localesPathOverride);
       if (det) return { adapter: forced, detection: det };
+      let fallbackLocalesDir: string | null = localesPathOverride ?? null;
+      let fallbackLocaleFiles: Record<string, string[]> = {};
+      if (localesPathOverride && forced.format.extensions.includes(".json")) {
+        const discovered = discoverJsonLocaleFiles(absRoot, [localesPathOverride]);
+        fallbackLocalesDir = discovered.localesDir ?? localesPathOverride;
+        fallbackLocaleFiles = discovered.localeFiles;
+      }
       return {
         adapter: forced,
         detection: {
           framework: frameworkOverride as FrameworkName,
           i18nLibrary: null,
           confidence: 1,
-          localesDir: localesPathOverride ?? null,
-          localeFiles: {},
+          localesDir: fallbackLocalesDir,
+          localeFiles: fallbackLocaleFiles,
           placeholderSyntaxes: [...forced.format.placeholderSyntaxes],
           notes: [],
         },
