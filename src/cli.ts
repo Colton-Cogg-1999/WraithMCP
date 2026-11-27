@@ -170,6 +170,7 @@ export function createCli(): Command {
     .option("--severity <level>", "Filter by severity (error|warning|info)")
     .option("--code <code>", "Filter by check issue code")
     .option("--skip-scan", "Skip source hardcoded-string scanning", false)
+    .option("--scope <scope>", "Verification scope: all | translations", "all")
     .option("--limit <n>", "Max issues to display", "25")
     .option("--json", "Output JSON", false)
     .action((opts) => {
@@ -180,6 +181,7 @@ export function createCli(): Command {
         severity: opts.severity as CheckSeverity | undefined,
         code: opts.code as CheckIssueCode | undefined,
         skipScan: opts.skipScan,
+        scope: opts.scope === "translations" ? "translations" : "all",
         limit: Number.parseInt(opts.limit, 10) || 25,
       });
 
@@ -388,20 +390,26 @@ export function createCli(): Command {
 
   program
     .command("qe")
-    .description("Quality review: your coding agent gives each translated string an ok/flag verdict in a fresh context, reading the code where it is used. Wraith calls no model.")
+    .description("Diagnostic-only quality audit: inspect translations in a fresh context with evidence, severity, and optional suggested fixes (never auto-edits catalogs).")
     .option("--locales <csv>", "Comma-separated target locales (default: config targetLocales)")
     .option("--prepare", "Write review tasks for strings without a current verdict to .wraith/qe-tasks.json", false)
+    .option("--scope <scope>", "With --prepare: all | risk (prioritize ambiguous, glossary, ICU, constrained, and visual-defect keys)", "all")
     .option("--all", "With --prepare: include agent-reviewed strings (human-verified strings stay excluded)", false)
-    .option("--submit <file>", "Store verdicts from a JSON file ([{locale,key,fingerprint|target,verdict,reason?,suggestedFix?}])")
+    .option("--submit <file>", "Store diagnostic verdicts from a JSON file ([{locale,key,fingerprint|target,verdict,severity?,category?,reason?,evidence?,visualEvidence?,suggestedFix?}])")
     .option("--json", "Output JSON", false)
     .action(async (opts) => {
       const rootDir = program.opts().cwd;
       const locales = parseCsvList(opts.locales);
       if (opts.prepare) {
-        const prep = prepareQeReview({ rootDir, locales, includeReviewed: Boolean(opts.all) });
+        const prep = prepareQeReview({
+          rootDir,
+          locales,
+          scope: opts.scope === "risk" ? "risk" : "all",
+          includeReviewed: Boolean(opts.all),
+        });
         if (opts.json) console.log(JSON.stringify(prep, null, 2));
         else {
-          console.log(`${prep.toReview} string(s) to review in ${prep.tasks.length} file task(s) · ${prep.alreadyReviewed} already reviewed · ${prep.blockedByCheck.length} blocked by check errors`);
+          console.log(`${prep.toReview} string(s) to review in ${prep.tasks.length} file task(s) (scope=${prep.scope}) · ${prep.alreadyReviewed} already reviewed · ${prep.blockedByCheck.length} blocked by check errors`);
           console.log(`Tasks: ${prep.tasksPath}`);
         }
         return;
@@ -422,7 +430,10 @@ export function createCli(): Command {
       else {
         const s = res.summary;
         console.log(`${res.outcome} · ${s.total} string(s): ${s.ok} ok · ${s.flagged} flagged · ${s.humanVerified} human-verified · ${s.unreviewed} unreviewed`);
-        for (const f of res.flagged.slice(0, 20)) console.log(`  [flag] ${f.locale} ${f.key}: ${f.reason ?? ""}${f.suggestedFix ? ` → ${f.suggestedFix}` : ""}`);
+        for (const f of res.flagged.slice(0, 20)) {
+          const badge = [f.severity, f.category].filter(Boolean).join("/");
+          console.log(`  [flag${badge ? `:${badge}` : ""}] ${f.locale} ${f.key}: ${f.reason ?? ""}${f.evidence ? ` (${f.evidence})` : ""}${f.suggestedFix ? ` → ${f.suggestedFix}` : ""}`);
+        }
         for (const n of res.nextSteps) console.log(`  - ${n}`);
       }
       if (res.outcome === "FAIL") process.exitCode = 1;

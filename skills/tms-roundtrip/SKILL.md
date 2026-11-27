@@ -13,7 +13,7 @@ MCP tool names below are the Wraith server's tools (in Claude Code: `mcp__wraith
 
 1. `check` (CLI `wraith check`) — must not be `FAIL` on structural errors; fix those first (human reviewers should not be fixing placeholders).
 2. Optional: review first with **qe-review** so units carry `qe_status` and flag reasons, and `--only-flagged` has something to select.
-3. `tms_export` (CLI):
+3. `export` (CLI):
    ```bash
    wraith export --format xliff2 --only-flagged --include-tm --include-glossary --bundle-screenshots \
      --out .wraith/exports/tms [--locales de,ja]
@@ -23,7 +23,7 @@ MCP tool names below are the Wraith server's tools (in Claude Code: `mcp__wraith
 
 ## Import
 
-1. `tms_import` with `input: "<file-or-dir>"` (keep `runVerification: true`) (CLI `wraith import <file-or-dir>`; `--format xliff` forces detection).
+1. `import` with `file: "<file-or-dir>"` (keep `runVerification: true`) (CLI `wraith import <file-or-dir>`; `--format xliff` forces detection).
 2. Wraith validates each target (placeholders, ICU, plurals, glossary/DNT), writes catalogs preserving key order, upserts `.wraith/tm.json` entries as `provenance: "human-reviewed"` with `verifiedAt`, records those strings as `human-verified` in QE, then runs `check` (and `visual-qa` if `layout.baseUrl` is configured) and prints a diff summary.
 3. For any rejected unit: report key, locale, and validation error back to the user for the linguist. Do not "fix" the human's text silently.
 4. Final: `check` (CLI `wraith check`) `PASS`; `report` for the summary.
@@ -36,6 +36,6 @@ MCP tool names below are the Wraith server's tools (in Claude Code: `mcp__wraith
 ## Never
 
 - Never hand-edit exported XLIFF/TMX/TBX before sending, or the returned XLIFF before importing, except to restore a TMS-corrupted `<ph>` with the user's approval.
-- Never import by copying target strings into locale files manually; always go through `tms_import` / `wraith import`.
+- Never import by copying target strings into locale files manually; always go through `import` / `wraith import`.
 - Never overwrite a `human-reviewed` TM entry or `human-verified` segment with an LLM translation.
 - Never export outside the workspace or include files other than the export bundle.

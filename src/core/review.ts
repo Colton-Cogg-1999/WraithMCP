@@ -5,6 +5,7 @@ import { GlossaryHit, matchGlossaryTerms } from "./glossary.js";
 import { getLocaleConventions } from "./locales.js";
 import { atomicWriteFileSync, resolveConfinedPath, validateLocaleTag, withWorkspaceLock } from "./security.js";
 import { WraithStore, sha256Short } from "./store.js";
+import { composeQeGuidance, ResolvedStyleGuide, resolveStyleGuide } from "./style-guide.js";
 import { ReviewCategory, ReviewFinding, ReviewSeverity, UsageSite } from "./types.js";
 
 export const MQM_TAXONOMY = {
@@ -34,10 +35,12 @@ export interface ReviewJobItem {
 
 export interface ReviewJobPackage {
   version: 1;
+  diagnosticOnly: true;
   createdAt: string;
   sourceLocale: string;
   targetLocale: string;
   conventions: ReturnType<typeof getLocaleConventions>;
+  styleGuide?: ResolvedStyleGuide;
   instructions: string;
   taxonomy: typeof MQM_TAXONOMY;
   outputSchema: Record<string, unknown>;
@@ -103,13 +106,15 @@ export function packageReviewJob(
   const limit = Math.max(1, Math.min(options.limit ?? 40, 200));
   const slice = items.slice(offset, offset + limit);
 
-  const instructions = `You are an independent localization quality reviewer evaluating ${config.sourceLocale} -> ${options.targetLocale} translations.
+  const resolvedStyle = resolveStyleGuide(store.rootDir, config, [options.targetLocale]);
+  const baseInstructions = `You are an independent, DIAGNOSTIC-ONLY localization quality reviewer evaluating ${config.sourceLocale} -> ${options.targetLocale} translations. Never automatically edit target files without authorization.
 
 Perform TWO passes to eliminate false positives:
-- Pass 1 (MQM Annotation): Compare each translation against its source, UI usage context, glossary, and locale conventions. Annotate genuine defects with category, severity, error span, concise explanation, and corrected suggestion.
+- Pass 1 (MQM Annotation): Compare each translation against its source, UI usage context, glossary, style guide, and locale conventions. Annotate genuine defects with category, severity, error span, concise explanation/evidence, and optional suggestion.
 - Pass 2 (Verification Filter): Re-read every candidate finding critically. Drop stylistic preferences where the current translation is already natural and accurate. Only set "verified": true for issues a native speaker would genuinely want fixed.
 
-Return ONLY valid JSON matching outputSchema, then ingest via \`wraith review --ingest <file>\` or the \`review\` MCP tool.`;
+Return ONLY valid JSON matching outputSchema, then ingest via \`wraith review --ingest <file>\` or \`qe_audit\` (\`mode: "ingest_mqm"\`).`;
+  const instructions = composeQeGuidance(baseInstructions, resolvedStyle);
 
   const outputSchema = {
     type: "object",
@@ -138,10 +143,12 @@ Return ONLY valid JSON matching outputSchema, then ingest via \`wraith review --
 
   const pkg: ReviewJobPackage = {
     version: 1,
+    diagnosticOnly: true,
     createdAt: new Date().toISOString(),
     sourceLocale: config.sourceLocale,
     targetLocale: options.targetLocale,
     conventions: getLocaleConventions(options.targetLocale),
+    ...(resolvedStyle.hasAny ? { styleGuide: resolvedStyle } : {}),
     instructions,
     taxonomy: MQM_TAXONOMY,
     outputSchema,

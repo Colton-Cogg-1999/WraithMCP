@@ -333,17 +333,49 @@ export function exportEscalation(
     }
   }
 
-  let rows: EscalationRow[] = report.reviewList.map((item) => ({
-    locale: item.locale,
-    key: item.key,
-    source: item.source,
-    translation: item.translation,
-    context: item.context ?? "",
-    reason: item.reason,
-    suggestion: suggestionMap.get(`${item.locale}|${item.key}`) ?? "",
-    corrected_translation: "",
-    reviewer_notes: "",
-  }));
+  const seen = new Set<string>();
+  let rows: EscalationRow[] = [];
+  for (const f of report.flagged) {
+    if (f.by !== "qe") continue;
+    const id = `${f.locale}|${f.key}`;
+    seen.add(id);
+    const badge = [f.severity, f.category].filter(Boolean).join("/");
+    const reasonText = [
+      badge ? `[${badge}]` : "",
+      f.why,
+      f.evidence ? `Evidence: ${f.evidence}` : "",
+      f.visualEvidence ? `Visual: ${f.visualEvidence}` : "",
+    ]
+      .filter(Boolean)
+      .join(" ");
+    rows.push({
+      locale: f.locale,
+      key: f.key,
+      source: f.source,
+      translation: f.translation,
+      context: "",
+      reason: reasonText,
+      suggestion: f.suggestedFix ?? suggestionMap.get(id) ?? "",
+      corrected_translation: "",
+      reviewer_notes: "",
+    });
+  }
+  for (const item of report.reviewList) {
+    const id = `${item.locale}|${item.key}`;
+    if (seen.has(id)) continue;
+    seen.add(id);
+    rows.push({
+      locale: item.locale,
+      key: item.key,
+      source: item.source,
+      translation: item.translation,
+      context: item.context ?? "",
+      reason: item.reason,
+      suggestion: suggestionMap.get(id) ?? "",
+      corrected_translation: "",
+      reviewer_notes: "",
+    });
+  }
 
   if (options?.locale) {
     validateLocaleTag(options.locale, "locale");

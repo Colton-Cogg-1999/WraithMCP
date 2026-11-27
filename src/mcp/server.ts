@@ -1,9 +1,20 @@
+import fs from "node:fs";
+import path from "node:path";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { z } from "zod";
 import { applyTranslations } from "../core/apply.js";
 import { ensureBootstrapped } from "../core/bootstrap.js";
 import { runCheck } from "../core/check.js";
+import {
+  answerQuestion,
+  applyAssumptionOverride,
+  askQuestion,
+  listQuestions,
+  overrideAssumption,
+  resolveQuestion,
+  setContextNoteForKey,
+} from "../core/context.js";
 import { exportEscalation, importEscalationCorrections } from "../core/escalate.js";
 import { importAsset } from "../core/importers.js";
 import { runLayoutFix } from "../core/layout-codemods.js";
@@ -14,46 +25,34 @@ import {
   recordGlossaryTerm,
   recordMemoryPair,
 } from "../core/memory-ops.js";
-import { prepareBatch } from "../core/prepare.js";
+import { compactPrepareResult, prepareBatch } from "../core/prepare.js";
 import { generatePseudoLocale } from "../core/pseudo-locale.js";
 import { PseudoMode } from "../core/pseudo.js";
 import { prepareQeReview, submitQeVerdicts, summarizeQe } from "../core/qe.js";
-import { answerQuestion, applyAssumptionOverride, askQuestion, listQuestions, overrideAssumption, resolveQuestion, setContextNoteForKey } from "../core/context.js";
-import { runTmsExport, runTmsImport } from "../core/tms.js";
-import { runVisualQa } from "../core/visual-qa.js";
 import { generateReport } from "../core/report.js";
 import { ingestReviewResults, packageReviewJob } from "../core/review.js";
 import { scanProject } from "../core/scan.js";
-import { resolveMcpRootDir } from "../core/security.js";
+import { resolveConfinedPath, resolveMcpRootDir } from "../core/security.js";
 import { getProjectStatus } from "../core/status.js";
+import { isXliffPath, runTmsExport, runTmsImport } from "../core/tms.js";
 import {
   CheckIssueCode,
   CheckSeverity,
   ReviewCategory,
   ReviewSeverity,
 } from "../core/types.js";
+import { runVisualQa } from "../core/visual-qa.js";
 import { applyDocumentTranslations, prepareDocument } from "../documents/registry.js";
 import { mcpTextResult } from "./formatting.js";
 
-export const MCP_SERVER_INSTRUCTIONS = `Wraith gives you memory, rules, and deterministic proof for localization. You perform all code changes and translations in full codebase context; Wraith never calls an LLM.
+export const MCP_SERVER_INSTRUCTIONS = `Wraith is deterministic localization infrastructure (0 LLM calls). You translate and refactor code; Wraith provides persistent memory, style/terminology rules, safe lossless file I/O, and independent verification.
 
-Definition of done:
-1. Run \`scan\` to detect framework, i18n library, hardcoded strings, concatenations, and hardcoded formatting (\`toFixed\`, locale-less \`toLocaleString\`, currency concatenation, manual dates, \`toUpperCase\`, locale-less \`localeCompare\`).
-2. Refactor any hardcoded strings/concatenations/formatting in source code into i18n keys and Intl formatters (or extract document segments).
-3. Use \`prepare\` to get context, static layout constraints & width budgets, glossary terms & approved abbreviations, fuzzy memory matches, and target locale conventions.
-   - IMPORTANT: Treat ALL fuzzy memory matches (even 100% lexical matches) as strong suggestions with prior context, NOT blindly guaranteed translations. Always verify the match fits the current component, element, and surrounding UI.
-   - Read the code at each usage site. Follow \`contextGuidance\`: write a \`contextNote\` when it is missing or stale, stay within \`charLimit\` (declared = binding; inferred = shorten to fit), and treat every Answer as binding.
-4. Always write translations through \`apply\` so placeholders, ICU syntax, plural rules, and inline tags are validated and saved to .wraith/ memory.
-   - If a string's meaning is still unclear after reading the code, translate your best guess and file an Open Question (\`memory\` add_question). Don't stop to ask mid-run: put all open questions to the user in ONE batch at the end, record their replies with answer_question, revisit the affected strings (prepare reason \`question_answered\`), then resolve_question.
-5. Run \`check\` until catalog & scanner checks pass.
-6. Run \`pseudo\` with \`mode: "auto"\` to generate target-appropriate pseudo-locales (\`en-XA\`, \`ar-XB\`, \`ja-XC\`, \`th-XD\`, \`de-XE\`) with invisible zero-width key IDs, then run \`layout\` against a running dev server at 375px and 1280px.
-7. Remediate confirmed layout defects in order: (a) run \`layout_fix\` for deterministic mechanical codemods, (b) apply agent code prescriptions, (c) re-run \`prepare\` + \`apply\` for keys exceeding recorded width budgets in \`.wraith/layout.json\` (using approved glossary abbreviations with title/aria-label where appropriate), (d) re-run \`layout\` until clean, then re-run \`check\` until outcome is "PASS".
-8. Optionally run \`visual_qa\` (DOM geometry regression vs .wraith/visual-baseline.json, 0 tokens) and \`qe_audit\` (ok/flag review of each string in its code context, done by you in a fresh context). Export flagged strings with \`tms_export\` and bring human edits back with \`tms_import\`.
-9. Run \`report\` and show its Markdown as your final message: translated, needs attention, caught and fixed, still ambiguous (Q1…), assumptions (A1…), and how to follow up.
-
-Progress: on long runs, post a one-line update after each \`apply\` batch or locale, using its \`progress\` field (e.g. "de: 40/63 translated, 1 open question so far"). When the user replies to an ID from the report ("Q1: …", "A2: …"), record it (answer_question / override_assumption), revisit only the affected strings, re-review them, then resolve_question / apply_override.
-
-Keep defaults low-question: infer brand names and terminology, record assumptions via \`memory\`, and report them at the end unless config.review is "confirm". Ask only what the code cannot tell you, as Open Questions batched at the end.`;
+Use only the tools needed for the task:
+- I18n prep: \`scan\` finds hardcoded strings, concatenations, and locale-unsafe formatting; refactor code and verify with \`check\`.
+- Translate apps or documents (.docx/.pptx/.xlsx/.md/.mdx/.vtt/.srt): \`prepare\` fetches pending items, usage sites, glossary, style guide, conventions, and advisory TM (verify matches fit context). Always write deliverables through \`apply\` to enforce placeholders, ICU, plurals, tags, glossary DNT, and post-write key survival.
+- Verify: \`check\` runs deterministic gates (\`scope: "translations"\` skips source re-scan). For rendered apps, use \`pseudo\` + \`layout\` (\`check\`|\`visual_qa\`|\`fix\`).
+- Memory & decisions: \`memory\` manages glossary, TM, assumptions, Open Questions (ask only when code cannot settle meaning), and optional context notes for ambiguous keys.
+- Diagnostic QE & handoff: \`qe_audit\` is diagnostic-only by default (flags defects with evidence, severity, and optional suggestedFix in a fresh context — never auto-edits without authorization). Use \`export\`/\`import\` for TMS/human review and \`report\` for a summary.`;
 
 const READ_ONLY_ANNOTATIONS = {
   readOnlyHint: true,
@@ -75,60 +74,6 @@ const DESTRUCTIVE_MUTATING_ANNOTATIONS = {
   idempotentHint: false,
   openWorldHint: false,
 } as const;
-
-const StatusOutputSchema = z
-  .object({
-    initialized: z.boolean(),
-    rootDir: z.string(),
-    framework: z.string(),
-    i18nLibrary: z.string().nullable(),
-    sourceLocale: z.string(),
-    targetLocales: z.array(z.string()),
-    totalSourceKeys: z.number(),
-    orphanedKeys: z.number(),
-    checkOutcome: z.enum(["PASS", "FAIL", "INCONCLUSIVE"]).optional(),
-    checkPassed: z.boolean(),
-    errorCount: z.number(),
-    warningCount: z.number(),
-    pendingReviews: z.number(),
-  })
-  .passthrough();
-
-const ScanOutputSchema = z
-  .object({
-    framework: z.string(),
-    i18nLibrary: z.string().nullable(),
-    sourceLocale: z.string(),
-    sourceKeys: z.number(),
-    filesScanned: z.number(),
-    counts: z
-      .object({
-        hardcodedStrings: z.number(),
-        concatenations: z.number(),
-        hardcodedFormatting: z.number().optional(),
-        trackedKeys: z.number(),
-        parseFailures: z.number(),
-        documents: z.number(),
-      })
-      .passthrough(),
-  })
-  .passthrough();
-
-const CheckOutputSchema = z
-  .object({
-    outcome: z.enum(["PASS", "FAIL", "INCONCLUSIVE"]),
-    passed: z.boolean(),
-    inconclusiveReasons: z.array(z.string()),
-    disclaimer: z.string(),
-    framework: z.string(),
-    sourceLocale: z.string(),
-    targetLocales: z.array(z.string()),
-    totalSourceKeys: z.number(),
-    errorCount: z.number(),
-    warningCount: z.number(),
-    infoCount: z.number(),
-  })
-  .passthrough();
 
 const GenericObjectOutputSchema = z.object({}).passthrough();
 
@@ -156,49 +101,41 @@ export function createWraithMcpServer(options: McpServerOptions = {}): McpServer
   server.registerTool(
     "status",
     {
-      title: "Project Localization Status",
-      description:
-        "Read-only summary of project localization state: detected framework, locales, coverage, untranslated/stale/context-changed/orphaned counts, verification outcome, and pending reviews.",
+      title: "Project Status",
+      description: "Read-only summary of detected framework, locales, coverage, staleness, verification outcome, and pending reviews.",
       inputSchema: {
-        rootDir: z
-          .string()
-          .optional()
-          .describe("Project directory inside the authorized workspace (defaults to launch root)."),
+        rootDir: z.string().optional(),
       },
-      outputSchema: StatusOutputSchema,
+      outputSchema: GenericObjectOutputSchema,
       annotations: READ_ONLY_ANNOTATIONS,
     },
-    async ({ rootDir }) => {
-      const status = getProjectStatus(safeRoot(rootDir));
-      return mcpTextResult(status);
-    }
+    async ({ rootDir }) => mcpTextResult(getProjectStatus(safeRoot(rootDir)))
   );
 
   server.registerTool(
     "scan",
     {
       title: "Scan Source & Documents",
-      description:
-        "Read-only scan: detect framework & i18n setup; find hardcoded strings, concatenations, sentence fragments, parse failures, glossary candidates, and documents. Returns compact paginated summary.",
+      description: "Read-only scan for framework/i18n setup, hardcoded strings, concatenations, hardcoded formatting, usage sites, and documents.",
       inputSchema: {
         rootDir: z.string().optional(),
-        fileFilter: z.string().optional().describe("Optional substring filter on relative file paths."),
+        fileFilter: z.string().optional(),
         offset: z.number().int().nonnegative().optional().default(0),
         limit: z.number().int().min(1).max(100).optional().default(25),
       },
-      outputSchema: ScanOutputSchema,
+      outputSchema: GenericObjectOutputSchema,
       annotations: READ_ONLY_ANNOTATIONS,
     },
-    async ({ rootDir, fileFilter, offset, limit }) => {
-      const result = scanProject({
-        rootDir: safeRoot(rootDir),
-        fileFilter,
-        saveUsage: false,
-        offset,
-        limit,
-      });
-      return mcpTextResult(result);
-    }
+    async ({ rootDir, fileFilter, offset, limit }) =>
+      mcpTextResult(
+        scanProject({
+          rootDir: safeRoot(rootDir),
+          fileFilter,
+          saveUsage: false,
+          offset,
+          limit,
+        })
+      )
   );
 
   server.registerTool(
@@ -206,29 +143,28 @@ export function createWraithMcpServer(options: McpServerOptions = {}): McpServer
     {
       title: "Prepare Translation Batch",
       description:
-        "Read-only batch preparation for a target locale (software keys or a document) with source text, usage context, glossary hits, advisory fuzzy memory matches, and locale conventions.",
+        "Prepare pending software keys or document segments for a target locale with usage context, glossary, style guide, conventions, and advisory TM matches.",
       inputSchema: {
         rootDir: z.string().optional(),
-        targetLocale: z.string().describe("Target BCP-47 locale (e.g. 'es-MX', 'fr', 'zh-Hans')."),
-        document: z
-          .string()
-          .optional()
-          .describe("Optional path to a .docx, .md, or .mdx document to prepare with document-level context."),
-        keys: z.array(z.string()).optional().describe("Optional specific keys to prepare."),
+        targetLocale: z.string().describe("Target BCP-47 locale (e.g. 'es-MX', 'ar', 'de')."),
+        document: z.string().optional().describe("Optional document path (.docx/.pptx/.xlsx/.md/.mdx/.vtt/.srt)."),
+        keys: z.array(z.string()).optional(),
         includeTranslated: z.boolean().optional().default(false),
+        detail: z.enum(["compact", "full"]).optional().default("compact"),
         offset: z.number().int().nonnegative().optional().default(0),
-        limit: z.number().int().min(1).max(200).optional().default(50),
+        limit: z.number().int().min(1).max(300).optional().default(100),
       },
       outputSchema: GenericObjectOutputSchema,
       annotations: READ_ONLY_ANNOTATIONS,
     },
-    async ({ rootDir, targetLocale, document, keys, includeTranslated, offset, limit }) => {
+    async ({ rootDir, targetLocale, document, keys, includeTranslated, detail, offset, limit }) => {
       const root = safeRoot(rootDir);
       if (document) {
         return mcpTextResult(
           prepareDocument(root, {
             documentPath: document,
             targetLocale,
+            detail,
             offset,
             limit,
           })
@@ -239,10 +175,11 @@ export function createWraithMcpServer(options: McpServerOptions = {}): McpServer
         targetLocale,
         keys,
         includeTranslated,
+        detail,
         offset,
         limit,
       });
-      return mcpTextResult(result);
+      return mcpTextResult(detail === "compact" ? compactPrepareResult(result) : result);
     }
   );
 
@@ -251,18 +188,12 @@ export function createWraithMcpServer(options: McpServerOptions = {}): McpServer
     {
       title: "Validate & Apply Translations",
       description:
-        "Validate and write translations losslessly to target locale files or documents (.docx/.md/.mdx), and record provenance & translation memory in .wraith/. Returns isError=true if any item is rejected.",
+        "Validate placeholders, ICU, plurals, tags, glossary DNT, and post-write key survival; write losslessly to locale files or documents and update .wraith/ memory.",
       inputSchema: {
         rootDir: z.string().optional(),
-        targetLocale: z.string().describe("Target BCP-47 locale."),
-        document: z
-          .string()
-          .optional()
-          .describe("Optional source document path (.docx/.md/.mdx) when applying document translations."),
-        targetFile: z
-          .string()
-          .optional()
-          .describe("Destination file path (must differ from source document and stay inside workspace)."),
+        targetLocale: z.string(),
+        document: z.string().optional().describe("Source document path when translating a document."),
+        targetFile: z.string().optional().describe("Destination document path (must differ from source)."),
         translations: z
           .array(
             z.object({
@@ -273,7 +204,7 @@ export function createWraithMcpServer(options: McpServerOptions = {}): McpServer
               contextNote: z
                 .string()
                 .optional()
-                .describe("Plain-language meaning of the source string for translators; send it when prepare reports contextNoteStatus missing or stale."),
+                .describe("Optional plain-language disambiguation note for ambiguous keys only."),
             })
           )
           .min(1),
@@ -314,23 +245,19 @@ export function createWraithMcpServer(options: McpServerOptions = {}): McpServer
     {
       title: "Deterministic Verification Gate",
       description:
-        "Read-only verification returning PASS, FAIL, or INCONCLUSIVE plus coverage details: catalog parity, placeholders, framework-specific plurals, inline tags, glossary rules, untranslated/fuzzy entries, hardcoded strings, concatenations, layout/RTL risks, staleness, and configured documents.",
+        "Read-only deterministic verification returning PASS, FAIL, or INCONCLUSIVE (catalog parity, placeholders, plurals, tags, glossary, layout/char limits, staleness, source scan).",
       inputSchema: {
         rootDir: z.string().optional(),
-        locale: z.string().optional().describe("Filter issues by target locale."),
+        locale: z.string().optional(),
         severity: z.enum(["error", "warning", "info"]).optional(),
-        code: z.string().optional().describe("Filter by issue code."),
-        file: z.string().optional().describe("Filter by relative file path substring."),
+        code: z.string().optional(),
+        file: z.string().optional(),
         skipScan: z.boolean().optional().default(false),
-        scope: z
-          .enum(["all", "translations"])
-          .optional()
-          .default("all")
-          .describe('Verification scope: "all" runs full source scan + catalog checks; "translations" validates catalogs, placeholders, plurals, glossary, layout budgets, and staleness without re-scanning source files.'),
+        scope: z.enum(["all", "translations"]).optional().default("all"),
         offset: z.number().int().nonnegative().optional().default(0),
         limit: z.number().int().min(1).max(100).optional().default(25),
       },
-      outputSchema: CheckOutputSchema,
+      outputSchema: GenericObjectOutputSchema,
       annotations: READ_ONLY_ANNOTATIONS,
     },
     async ({ rootDir, locale, severity, code, file, skipScan, scope, offset, limit }) => {
@@ -350,144 +277,140 @@ export function createWraithMcpServer(options: McpServerOptions = {}): McpServer
     }
   );
 
-  const MemoryOperationSchema = z.discriminatedUnion("action", [
-    z.object({
-      action: z.literal("lookup"),
-      query: z.string().min(1).describe("Source text or term to look up."),
-      targetLocale: z.string().optional(),
-      minScore: z.number().int().min(0).max(100).optional().default(50),
-      limit: z.number().int().min(1).max(50).optional().default(10),
-    }),
-    z.object({
-      action: z.literal("set_glossary"),
-      term: z.string().min(1),
-      doNotTranslate: z.boolean().optional(),
-      caseSensitive: z.boolean().optional(),
-      translations: z.record(z.string(), z.string()).optional(),
-      abbreviations: z.record(z.string(), z.string()).optional(),
-      notes: z.string().optional(),
-      origin: z.enum(["inferred", "user", "imported"]).optional(),
-    }),
-    z.object({
-      action: z.literal("add_assumption"),
-      category: z
-        .enum(["terminology", "brand", "tone", "disambiguation", "formatting", "scope", "other"])
-        .optional(),
-      targetLocale: z.string().optional(),
-      summary: z.string().min(1),
-      rationale: z.string().optional(),
-    }),
-    z.object({
-      action: z.literal("add_question"),
-      keys: z.array(z.string()).min(1).describe("Keys whose meaning is unclear (one question may cover several)."),
-      targetLocale: z.string().optional().describe("Only when the question is specific to one locale."),
-      question: z.string().min(1).describe("What a human must clarify, phrased so they can answer without opening the code."),
-    }),
-    z.object({
-      action: z.literal("answer_question"),
-      id: z.string().describe("Question id, e.g. Q2."),
-      answer: z.string().min(1).describe("The human's answer, verbatim. Only record answers the user actually gave."),
-    }),
-    z.object({
-      action: z.literal("resolve_question"),
-      id: z.string().describe("Answered question whose strings now reflect the answer."),
-    }),
-    z.object({
-      action: z.literal("list_questions"),
-      status: z.enum(["open", "answered", "resolved", "all"]).optional().default("open"),
-    }),
-    z.object({
-      action: z.literal("override_assumption"),
-      id: z.string().describe("Assumption label from the report, e.g. A3."),
-      decision: z.string().min(1).describe("The human's decision, verbatim. Only record overrides the user actually gave."),
-    }),
-    z.object({
-      action: z.literal("apply_override"),
-      id: z.string().describe("Overridden assumption whose strings now follow the override."),
-    }),
-    z.object({
-      action: z.literal("set_context_note"),
-      key: z.string(),
-      note: z.string().min(1),
-    }),
-    z.object({
-      action: z.literal("add_pair"),
-      source: z.string().min(1),
-      target: z.string().min(1),
-      targetLocale: z.string().min(1),
-      context: z.string().optional(),
-    }),
-  ]);
-
   server.registerTool(
     "memory",
     {
-      title: "Glossary, Assumptions & Translation Memory",
+      title: "Glossary, TM, Decisions & Questions",
       description:
-        "Look up lexical fuzzy matches and glossary entries, or record a glossary decision (propagating changes to affected keys), assumption, translation pair, or Context Note. Open Questions: add_question when a string's meaning is unclear even after reading the code (translate your best guess meanwhile); ask the user the open questions in one batch at the end of your run; answer_question records their reply; resolve_question once the affected strings reflect it. When the user overrides an assumption from the report (\"A3: use du\"), record it with override_assumption, revisit the affected strings, then apply_override.",
+        "Manage persistent localization knowledge: TM/glossary lookup, set_glossary, add_pair, add_assumption / override_assumption / apply_override, add_question / answer_question / resolve_question / list_questions, and optional set_context_note.",
       inputSchema: {
         rootDir: z.string().optional(),
-        operation: MemoryOperationSchema.describe(
-          "Discriminated memory operation: lookup | set_glossary | add_assumption | add_question | answer_question | resolve_question | list_questions | override_assumption | apply_override | set_context_note | add_pair."
-        ),
+        action: z.enum([
+          "lookup",
+          "set_glossary",
+          "add_assumption",
+          "add_question",
+          "answer_question",
+          "resolve_question",
+          "list_questions",
+          "override_assumption",
+          "apply_override",
+          "set_context_note",
+          "add_pair",
+        ]),
+        targetLocale: z.string().optional(),
+        query: z.string().optional(),
+        minScore: z.number().int().min(0).max(100).optional(),
+        limit: z.number().int().min(1).max(50).optional(),
+        term: z.string().optional(),
+        doNotTranslate: z.boolean().optional(),
+        caseSensitive: z.boolean().optional(),
+        translations: z.record(z.string(), z.string()).optional(),
+        abbreviations: z.record(z.string(), z.string()).optional(),
+        notes: z.string().optional(),
+        origin: z.enum(["inferred", "user", "imported"]).optional(),
+        category: z
+          .enum(["terminology", "brand", "tone", "disambiguation", "formatting", "scope", "other"])
+          .optional(),
+        summary: z.string().optional(),
+        rationale: z.string().optional(),
+        id: z.string().optional(),
+        keys: z.array(z.string()).optional(),
+        question: z.string().optional(),
+        answer: z.string().optional(),
+        decision: z.string().optional(),
+        status: z.enum(["open", "answered", "resolved", "all"]).optional(),
+        key: z.string().optional(),
+        note: z.string().optional(),
+        source: z.string().optional(),
+        target: z.string().optional(),
+        context: z.string().optional(),
       },
       outputSchema: GenericObjectOutputSchema,
       annotations: MUTATING_ANNOTATIONS,
     },
-    async ({ rootDir, operation }) => {
-      const root = safeRoot(rootDir);
-      switch (operation.action) {
+    async (args) => {
+      const root = safeRoot(args.rootDir);
+      const req = (val: string | undefined, name: string): string => {
+        if (!val || !val.trim()) throw new Error(`${name} is required for memory action "${args.action}"`);
+        return val;
+      };
+      switch (args.action) {
         case "lookup":
           return mcpTextResult(
             lookupMemory(root, {
-              query: operation.query,
-              targetLocale: operation.targetLocale,
-              minScore: operation.minScore,
-              limit: operation.limit,
+              query: req(args.query, "query"),
+              targetLocale: args.targetLocale,
+              minScore: args.minScore ?? 50,
+              limit: args.limit ?? 10,
             })
           );
         case "set_glossary":
           return mcpTextResult(
             recordGlossaryTerm(root, {
-              term: operation.term,
-              doNotTranslate: operation.doNotTranslate,
-              caseSensitive: operation.caseSensitive,
-              translations: operation.translations,
-              abbreviations: operation.abbreviations,
-              notes: operation.notes,
-              origin: operation.origin,
+              term: req(args.term, "term"),
+              doNotTranslate: args.doNotTranslate,
+              caseSensitive: args.caseSensitive,
+              translations: args.translations,
+              abbreviations: args.abbreviations,
+              notes: args.notes,
+              origin: args.origin,
             })
           );
         case "add_assumption":
           return mcpTextResult(
             recordAssumption(root, {
-              category: operation.category ?? "other",
-              locale: operation.targetLocale,
-              summary: operation.summary,
-              rationale: operation.rationale,
+              category: args.category ?? "other",
+              locale: args.targetLocale,
+              summary: req(args.summary, "summary"),
+              rationale: args.rationale,
             })
           );
         case "add_question":
-          return mcpTextResult(askQuestion(root, { keys: operation.keys, locale: operation.targetLocale, question: operation.question }));
+          if (!args.keys || args.keys.length === 0) {
+            return mcpTextResult({ error: "keys is required for add_question" }, true);
+          }
+          return mcpTextResult(
+            askQuestion(root, {
+              keys: args.keys,
+              locale: args.targetLocale,
+              question: req(args.question, "question"),
+            })
+          );
         case "answer_question":
-          return mcpTextResult({ question: answerQuestion(root, { id: operation.id, answer: operation.answer, via: "agent" }) });
+          return mcpTextResult({
+            question: answerQuestion(root, {
+              id: req(args.id, "id"),
+              answer: req(args.answer, "answer"),
+              via: "agent",
+            }),
+          });
         case "resolve_question":
-          return mcpTextResult({ question: resolveQuestion(root, operation.id) });
+          return mcpTextResult({ question: resolveQuestion(root, req(args.id, "id")) });
         case "list_questions":
-          return mcpTextResult({ questions: listQuestions(root, operation.status) });
+          return mcpTextResult({ questions: listQuestions(root, args.status ?? "open") });
         case "override_assumption":
-          return mcpTextResult({ assumption: overrideAssumption(root, { label: operation.id, decision: operation.decision, via: "agent" }) });
+          return mcpTextResult({
+            assumption: overrideAssumption(root, {
+              label: req(args.id, "id"),
+              decision: req(args.decision, "decision"),
+              via: "agent",
+            }),
+          });
         case "apply_override":
-          return mcpTextResult({ assumption: applyAssumptionOverride(root, operation.id) });
+          return mcpTextResult({ assumption: applyAssumptionOverride(root, req(args.id, "id")) });
         case "set_context_note":
-          return mcpTextResult({ ok: true, ...setContextNoteForKey(root, operation.key, operation.note) });
+          return mcpTextResult({
+            ok: true,
+            ...setContextNoteForKey(root, req(args.key, "key"), req(args.note, "note")),
+          });
         case "add_pair":
           return mcpTextResult(
             recordMemoryPair(root, {
-              source: operation.source,
-              target: operation.target,
-              targetLocale: operation.targetLocale,
-              context: operation.context,
+              source: req(args.source, "source"),
+              target: req(args.target, "target"),
+              targetLocale: req(args.targetLocale, "targetLocale"),
+              context: args.context,
             })
           );
       }
@@ -495,34 +418,14 @@ export function createWraithMcpServer(options: McpServerOptions = {}): McpServer
   );
 
   server.registerTool(
-    "import",
-    {
-      title: "Import Localization Assets",
-      description:
-        "Import optional localization assets into .wraith/: glossary (CSV, TBX), translation memory (TMX), or existing repository locale files.",
-      inputSchema: {
-        rootDir: z.string().optional(),
-        file: z.string().optional().describe("Workspace-relative path to .csv, .tbx, or .tmx file."),
-        format: z.enum(["auto", "csv", "tbx", "tmx", "locales"]).optional().default("auto"),
-      },
-      outputSchema: GenericObjectOutputSchema,
-      annotations: DESTRUCTIVE_MUTATING_ANNOTATIONS,
-    },
-    async ({ rootDir, file, format }) => {
-      const res = importAsset(safeRoot(rootDir), { file, format });
-      return mcpTextResult(res);
-    }
-  );
-
-  server.registerTool(
     "pseudo",
     {
-      title: "Generate Pseudo-Locale(s) & Layout Hotspots",
+      title: "Generate Pseudo-Locales",
       description:
-        "Generate target-aware pseudo-locale(s) (mode: auto|expand|rtl|cjk|tall|long-word|format) with IBM length-scaled expansion, invisible zero-width key IDs, and placeholder/ICU/tag preservation, plus layout/RTL hotspots.",
+        "Generate target-aware pseudo-locales (auto|expand|rtl|cjk|tall|long-word|format) with zero-width key IDs and layout/RTL hotspots.",
       inputSchema: {
         rootDir: z.string().optional(),
-        pseudoLocale: z.string().optional().describe("Explicit pseudo-locale tag (defaults to en-x-pseudo or mode tag like en-XA, ar-XB, ja-XC, th-XD, de-XE)."),
+        pseudoLocale: z.string().optional(),
         mode: z.enum(["auto", "expand", "rtl", "cjk", "tall", "long-word", "format"]).optional(),
         embedKeyIds: z.boolean().optional().default(true),
         formatOverlay: z.boolean().optional(),
@@ -530,214 +433,131 @@ export function createWraithMcpServer(options: McpServerOptions = {}): McpServer
       outputSchema: GenericObjectOutputSchema,
       annotations: DESTRUCTIVE_MUTATING_ANNOTATIONS,
     },
-    async ({ rootDir, pseudoLocale, mode, embedKeyIds, formatOverlay }) => {
-      const res = generatePseudoLocale(safeRoot(rootDir), {
-        pseudoLocale,
-        mode: mode as PseudoMode | "auto" | undefined,
-        embedKeyIds,
-        formatOverlay,
-      });
-      return mcpTextResult(res);
-    }
+    async ({ rootDir, pseudoLocale, mode, embedKeyIds, formatOverlay }) =>
+      mcpTextResult(
+        generatePseudoLocale(safeRoot(rootDir), {
+          pseudoLocale,
+          mode: mode as PseudoMode | "auto" | undefined,
+          embedKeyIds,
+          formatOverlay,
+        })
+      )
   );
 
   server.registerTool(
     "layout",
     {
-      title: "Rendered Layout & Formatting Check",
+      title: "Rendered Layout, Visual QA & Codemods",
       description:
-        "Render routes with Playwright (optional peer dep) at 375px and 1280px across pseudo and target locales to detect overflow, clipping, overlap, tofu glyphs, dir/lang mismatches, and surviving hardcoded formats; maps findings back to keys and file:line and records width budgets in .wraith/layout.json. Returns INCONCLUSIVE (never PASS) without Playwright or baseUrl.",
+        "UI layout & visual QA: mode=check (Playwright overflow/clipping/RTL/width budgets), mode=visual_qa (DOM geometry regression vs baseline, 0 tokens), mode=fix (deterministic Tailwind/RTL mechanical codemods). Returns INCONCLUSIVE without Playwright/baseUrl.",
       inputSchema: {
         rootDir: z.string().optional(),
-        baseUrl: z.string().optional().describe("Running dev server URL (e.g. http://localhost:3000)."),
+        mode: z.enum(["check", "visual_qa", "fix"]).optional().default("check"),
+        baseUrl: z.string().optional(),
         routes: z.array(z.string()).optional(),
         locales: z.array(z.string()).optional(),
         localeUrlPattern: z.enum(["query", "prefix", "cookie"]).optional(),
         saveBudgets: z.boolean().optional().default(true),
-      },
-      outputSchema: GenericObjectOutputSchema,
-      annotations: READ_ONLY_ANNOTATIONS,
-    },
-    async ({ rootDir, baseUrl, routes, locales, localeUrlPattern, saveBudgets }) => {
-      const res = await runLayoutCheck({
-        rootDir: safeRoot(rootDir),
-        baseUrl,
-        routes,
-        locales,
-        localeUrlPattern,
-        saveBudgets,
-      });
-      return mcpTextResult(res);
-    }
-  );
-
-  server.registerTool(
-    "layout_fix",
-    {
-      title: "Apply Mechanical Layout Codemods",
-      description:
-        "Deterministically apply mechanical layout codemods only (Tailwind physical->logical spacing/alignment/borders/radius, fixed w-* -> min-w-* on constrained text, root <html> dir/lang, and hyphens-auto on flagged lines) and return unified diffs.",
-      inputSchema: {
-        rootDir: z.string().optional(),
+        captureBaseline: z.boolean().optional().default(false),
+        basePath: z.string().optional(),
         dryRun: z.boolean().optional().default(false),
         files: z.array(z.string()).optional(),
         flaggedWidthLines: z.array(z.object({ file: z.string(), line: z.number().int().positive() })).optional(),
         flaggedLongWordLines: z.array(z.object({ file: z.string(), line: z.number().int().positive() })).optional(),
       },
       outputSchema: GenericObjectOutputSchema,
-      annotations: DESTRUCTIVE_MUTATING_ANNOTATIONS,
+      annotations: MUTATING_ANNOTATIONS,
     },
-    async ({ rootDir, dryRun, files, flaggedWidthLines, flaggedLongWordLines }) => {
-      const res = runLayoutFix({
-        rootDir: safeRoot(rootDir),
-        dryRun,
-        files,
-        flaggedWidthLines,
-        flaggedLongWordLines,
-      });
-      return mcpTextResult(res);
-    }
-  );
-
-  server.registerTool(
-    "visual_qa",
-    {
-      title: "Token-Free Visual QA (DOM Geometry Regression)",
-      description:
-        "Render routes with Playwright and fingerprint every zero-width-traced element (lineCount, size, overflow, clipping, occlusion, font/tofu, WCAG contrast). captureBaseline writes .wraith/visual-baseline.json; otherwise diffs against it and flags line_wrap_regression, container_blowout, text_truncation, element_occlusion, missing_glyph_tofu, contrast_regression with failure-only element crops. 0 LLM tokens. INCONCLUSIVE without Playwright/baseUrl/baseline.",
-      inputSchema: {
-        rootDir: z.string().optional(),
-        baseUrl: z.string().optional(),
-        routes: z.array(z.string()).optional(),
-        locales: z.array(z.string()).optional(),
-        captureBaseline: z.boolean().optional().default(false),
-        basePath: z.string().optional().describe("Baseline path (default .wraith/visual-baseline.json)."),
-        localeUrlPattern: z.enum(["query", "prefix", "cookie"]).optional(),
-      },
-      outputSchema: GenericObjectOutputSchema,
-      annotations: READ_ONLY_ANNOTATIONS,
-    },
-    async ({ rootDir, baseUrl, routes, locales, captureBaseline, basePath, localeUrlPattern }) => {
-      const res = await runVisualQa({
-        rootDir: safeRoot(rootDir),
-        baseUrl,
-        routes,
-        locales,
-        captureBaseline,
-        basePath,
-        localeUrlPattern,
-      });
-      return mcpTextResult({ ...res, defects: res.defects.slice(0, 25), defectsTruncated: res.defects.length > 25 });
+    async (args) => {
+      const root = safeRoot(args.rootDir);
+      if (args.mode === "fix") {
+        return mcpTextResult(
+          runLayoutFix({
+            rootDir: root,
+            dryRun: args.dryRun,
+            files: args.files,
+            flaggedWidthLines: args.flaggedWidthLines,
+            flaggedLongWordLines: args.flaggedLongWordLines,
+          })
+        );
+      }
+      if (args.mode === "visual_qa") {
+        const res = await runVisualQa({
+          rootDir: root,
+          baseUrl: args.baseUrl,
+          routes: args.routes,
+          locales: args.locales,
+          captureBaseline: args.captureBaseline,
+          basePath: args.basePath,
+          localeUrlPattern: args.localeUrlPattern,
+        });
+        return mcpTextResult({
+          ...res,
+          defects: res.defects.slice(0, 25),
+          defectsTruncated: res.defects.length > 25,
+        });
+      }
+      return mcpTextResult(
+        await runLayoutCheck({
+          rootDir: root,
+          baseUrl: args.baseUrl,
+          routes: args.routes,
+          locales: args.locales,
+          localeUrlPattern: args.localeUrlPattern,
+          saveBudgets: args.saveBudgets,
+        })
+      );
     }
   );
 
   server.registerTool(
     "qe_audit",
     {
-      title: "Quality Review (ok/flag verdicts in context)",
+      title: "Diagnostic Quality Audit",
       description:
-        "Binary quality review done by YOU, in a fresh context (use a subagent if you can; do not review your own translations in the context that produced them). mode=prepare returns review tasks, one per file: open each file, read how every key is used, and judge each translation ok or flag. Each string includes a fingerprint of source+target; echo fingerprint (or target) when submitting so verdicts stay pinned to the exact text reviewed. mode=submit with verdicts[] stores them (rejecting edits since prepare or attempts to overwrite human-verified strings). mode=status (default) returns ok/flagged/unreviewed counts and the flagged list. Strings with check errors are not sent for review. Wraith calls no model and never edits catalogs here: fix flagged strings with apply.",
+        "Diagnostic-only linguistic & visual review in a fresh context (never auto-edits catalogs). mode=prepare builds file-scoped tasks with full style/glossary/locale/visual context (scope=all|risk); mode=submit stores pinned verdicts with severity, category, evidence, and optional suggestedFix; mode=status summarizes findings; mode=package_mqm/ingest_mqm supports cross-model MQM packages.",
       inputSchema: {
         rootDir: z.string().optional(),
+        mode: z
+          .enum(["status", "prepare", "submit", "package_mqm", "ingest_mqm"])
+          .optional()
+          .default("status"),
         locales: z.array(z.string()).optional(),
+        targetLocale: z.string().optional().describe("Required for package_mqm / ingest_mqm."),
         keys: z.array(z.string()).optional(),
-        mode: z.enum(["status", "prepare", "submit"]).optional().default("status"),
-        includeReviewed: z.boolean().optional().describe("prepare: also include agent-reviewed strings (human-verified strings remain excluded)"),
+        scope: z.enum(["all", "risk"]).optional().default("all"),
+        includeReviewed: z.boolean().optional(),
         verdicts: z
           .array(
             z.object({
               locale: z.string(),
               key: z.string(),
               verdict: z.enum(["ok", "flag"]),
-              fingerprint: z.string().optional().describe("Fingerprint from mode=prepare (provide fingerprint or target)"),
-              target: z.string().optional().describe("Reviewed target text (provide fingerprint or target)"),
+              fingerprint: z.string().optional(),
+              target: z.string().optional(),
+              severity: z.enum(["critical", "major", "minor"]).optional(),
+              category: z
+                .enum([
+                  "accuracy",
+                  "fluency",
+                  "terminology",
+                  "style",
+                  "locale-conventions",
+                  "placeholders",
+                  "visual",
+                  "ambiguity",
+                  "other",
+                ])
+                .optional(),
               reason: z.string().optional(),
+              evidence: z.string().optional(),
+              visualEvidence: z.string().optional(),
               suggestedFix: z.string().optional(),
+              reviewer: z.string().optional(),
             })
           )
           .optional(),
-      },
-      outputSchema: GenericObjectOutputSchema,
-      annotations: MUTATING_ANNOTATIONS,
-    },
-    async ({ rootDir, locales, keys, mode, includeReviewed, verdicts }) => {
-      const root = safeRoot(rootDir);
-      if (mode === "prepare") {
-        const prep = prepareQeReview({ rootDir: root, locales, keys, includeReviewed });
-        return mcpTextResult({ ...prep, tasks: prep.tasks.slice(0, 40), tasksTruncated: prep.tasks.length > 40 });
-      }
-      if (mode === "submit") return mcpTextResult(submitQeVerdicts({ rootDir: root, verdicts: verdicts ?? [] }));
-      const res = summarizeQe({ rootDir: root, locales, keys });
-      return mcpTextResult({ ...res, flagged: res.flagged.slice(0, 25), flaggedTruncated: res.flagged.length > 25 });
-    }
-  );
-
-  server.registerTool(
-    "tms_export",
-    {
-      title: "Export for TMS Post-Editing (XLIFF 2.0 / TMX / TBX)",
-      description:
-        "Export segments as XLIFF 2.0 (<unit> per key with mda metadata: file, line, component, qe_status, max_chars, max_width_px, tm_similarity; <notes> with review flags and top fuzzy TM; placeholders as <ph disp/>), optionally TMX 1.4b (tm.tmx), TBX-Basic (glossary.tbx), and visual-qa failure crops. Writes only inside the explicit output directory. 0 LLM tokens.",
-      inputSchema: {
-        rootDir: z.string().optional(),
-        outDir: z.string().optional().describe("Workspace-relative output dir (default .wraith/exports/tms)."),
-        format: z.enum(["xliff2", "xliff12"]).optional().default("xliff2").describe("xliff12 for Crowdin: source.xlf + <locale>.xlf with <note> context and maxwidth limits."),
-        locales: z.array(z.string()).optional(),
-        onlyFlagged: z.boolean().optional().default(false),
-        includeTm: z.boolean().optional().default(false),
-        includeGlossary: z.boolean().optional().default(false),
-        bundleScreenshots: z.boolean().optional().default(false),
-      },
-      outputSchema: GenericObjectOutputSchema,
-      annotations: { ...READ_ONLY_ANNOTATIONS, idempotentHint: true },
-    },
-    async ({ rootDir, outDir, format, locales, onlyFlagged, includeTm, includeGlossary, bundleScreenshots }) => {
-      const res = runTmsExport({
-        rootDir: safeRoot(rootDir),
-        format,
-        outDir,
-        locales,
-        onlyFlagged,
-        includeTm,
-        includeGlossary,
-        bundleScreenshots,
-      });
-      return mcpTextResult(res);
-    }
-  );
-
-  server.registerTool(
-    "tms_import",
-    {
-      title: "Import Reviewed XLIFF 2.0 from a TMS",
-      description:
-        "Import human post-edited XLIFF 2.0 (file or directory): validates every target through the apply pipeline (placeholders, ICU, tags, glossary), writes locale catalogs preserving key order, upserts .wraith/tm.json with provenance human-reviewed + verifiedAt, records those strings as human-verified in QE, then runs check (and visual_qa when layout.baseUrl is configured). Returns a compact diff.",
-      inputSchema: {
-        rootDir: z.string().optional(),
-        input: z.string().describe("Workspace-relative .xliff/.xlf file or directory."),
-        runVerification: z.boolean().optional().default(true),
-      },
-      outputSchema: GenericObjectOutputSchema,
-      annotations: DESTRUCTIVE_MUTATING_ANNOTATIONS,
-    },
-    async ({ rootDir, input, runVerification }) => {
-      const res = await runTmsImport({ rootDir: safeRoot(rootDir), input, runVerification });
-      return mcpTextResult({ ...res, diff: res.diff.slice(0, 50) }, !res.ok);
-    }
-  );
-
-  server.registerTool(
-    "review",
-    {
-      title: "Cross-Model MQM Review",
-      description:
-        "Package an MQM-style cross-model review job (with two-pass false-positive filtering instructions and output schema) for a different agent/model, or ingest review findings into .wraith/reviews.json.",
-      inputSchema: {
-        rootDir: z.string().optional(),
-        action: z.enum(["package", "ingest"]),
-        targetLocale: z.string().describe("Target BCP-47 locale."),
-        keys: z.array(z.string()).optional(),
-        outputPath: z.string().optional().describe("Optional workspace-relative path to write the review job JSON."),
+        outputPath: z.string().optional(),
         offset: z.number().int().nonnegative().optional().default(0),
         limit: z.number().int().min(1).max(200).optional().default(40),
         reviewer: z.string().optional(),
@@ -769,65 +589,163 @@ export function createWraithMcpServer(options: McpServerOptions = {}): McpServer
     },
     async (args) => {
       const root = safeRoot(args.rootDir);
-      if (args.action === "package") {
-        const pkg = packageReviewJob(root, {
-          targetLocale: args.targetLocale,
+      if (args.mode === "prepare") {
+        const prep = prepareQeReview({
+          rootDir: root,
+          locales: args.locales,
           keys: args.keys,
-          offset: args.offset,
-          limit: args.limit,
-          outputPath: args.outputPath,
+          scope: args.scope,
+          includeReviewed: args.includeReviewed,
         });
-        return mcpTextResult(pkg);
+        return mcpTextResult({
+          ...prep,
+          tasks: prep.tasks.slice(0, 40),
+          tasksTruncated: prep.tasks.length > 40,
+        });
       }
-      const res = ingestReviewResults(root, {
-        reviewer: args.reviewer,
-        targetLocale: args.targetLocale,
-        findings: (args.findings ?? []).map((f) => ({
-          ...f,
-          category: f.category as ReviewCategory,
-          severity: f.severity as ReviewSeverity,
-        })),
+      if (args.mode === "submit") {
+        return mcpTextResult(submitQeVerdicts({ rootDir: root, verdicts: args.verdicts ?? [] }));
+      }
+      if (args.mode === "package_mqm") {
+        const loc = args.targetLocale ?? args.locales?.[0];
+        if (!loc) return mcpTextResult({ error: "targetLocale is required for mode=package_mqm" }, true);
+        return mcpTextResult(
+          packageReviewJob(root, {
+            targetLocale: loc,
+            keys: args.keys,
+            offset: args.offset,
+            limit: args.limit,
+            outputPath: args.outputPath,
+          })
+        );
+      }
+      if (args.mode === "ingest_mqm") {
+        const loc = args.targetLocale ?? args.locales?.[0];
+        if (!loc) return mcpTextResult({ error: "targetLocale is required for mode=ingest_mqm" }, true);
+        return mcpTextResult(
+          ingestReviewResults(root, {
+            reviewer: args.reviewer,
+            targetLocale: loc,
+            findings: (args.findings ?? []).map((f) => ({
+              ...f,
+              category: f.category as ReviewCategory,
+              severity: f.severity as ReviewSeverity,
+            })),
+          })
+        );
+      }
+      const res = summarizeQe({ rootDir: root, locales: args.locales, keys: args.keys });
+      return mcpTextResult({
+        ...res,
+        flagged: res.flagged.slice(0, 25),
+        flaggedTruncated: res.flagged.length > 25,
       });
-      return mcpTextResult(res);
     }
   );
 
   server.registerTool(
-    "escalate",
+    "export",
     {
-      title: "Human Review Escalation",
+      title: "Export for TMS or Human Review",
       description:
-        "Export flagged strings for a human reviewer (CSV, XLSX, self-contained HTML), or import reviewer corrections back into locale files and memory.",
+        "Export translations & diagnostic QE context for Crowdin/Phrase (format=xliff2|xliff12 + optional TMX/TBX/screenshots) or standalone human review (format=human -> CSV/XLSX/HTML). Writes only inside outDir.",
       inputSchema: {
         rootDir: z.string().optional(),
-        action: z.enum(["export", "import"]),
-        locale: z.string().optional(),
-        outputDir: z.string().optional(),
-        formats: z.array(z.enum(["csv", "xlsx", "html"])).optional(),
-        file: z.string().optional().describe("Workspace-relative path to reviewer corrections (.csv, .xlsx, or .json)."),
+        format: z.enum(["xliff2", "xliff12", "human"]).optional().default("xliff2"),
+        outDir: z.string().optional(),
+        locales: z.array(z.string()).optional(),
+        onlyFlagged: z.boolean().optional().default(false),
+        includeTm: z.boolean().optional().default(false),
+        includeGlossary: z.boolean().optional().default(false),
+        bundleScreenshots: z.boolean().optional().default(false),
+        humanFormats: z.array(z.enum(["csv", "xlsx", "html"])).optional(),
       },
       outputSchema: GenericObjectOutputSchema,
-      annotations: DESTRUCTIVE_MUTATING_ANNOTATIONS,
+      annotations: READ_ONLY_ANNOTATIONS,
     },
     async (args) => {
       const root = safeRoot(args.rootDir);
-      if (args.action === "export") {
+      if (args.format === "human") {
         const res = exportEscalation(root, {
-          outputDir: args.outputDir,
-          locale: args.locale,
-          formats: args.formats,
+          outputDir: args.outDir,
+          locale: args.locales?.[0],
+          formats: args.humanFormats,
         });
         return mcpTextResult({
+          format: "human",
           flaggedCount: res.flaggedCount,
           filesWritten: res.filesWritten,
           sample: res.rows.slice(0, 10),
         });
       }
-      if (!args.file) {
-        return mcpTextResult({ error: "file is required for escalate import" }, true);
+      return mcpTextResult(
+        runTmsExport({
+          rootDir: root,
+          format: args.format,
+          outDir: args.outDir,
+          locales: args.locales,
+          onlyFlagged: args.onlyFlagged,
+          includeTm: args.includeTm,
+          includeGlossary: args.includeGlossary,
+          bundleScreenshots: args.bundleScreenshots,
+        })
+      );
+    }
+  );
+
+  server.registerTool(
+    "import",
+    {
+      title: "Import TMS, Human Edits & Assets",
+      description:
+        "Import reviewed XLIFF 2.0/1.2 from a TMS (validated & recorded as human-verified), human reviewer corrections (CSV/XLSX/JSON), or glossary/TM/locale assets (CSV/TBX/TMX/locales).",
+      inputSchema: {
+        rootDir: z.string().optional(),
+        file: z.string().optional().describe("Workspace-relative file or directory path."),
+        format: z
+          .enum(["auto", "xliff", "corrections", "csv", "tbx", "tmx", "locales"])
+          .optional()
+          .default("auto"),
+        runVerification: z.boolean().optional().default(true),
+      },
+      outputSchema: GenericObjectOutputSchema,
+      annotations: DESTRUCTIVE_MUTATING_ANNOTATIONS,
+    },
+    async ({ rootDir, file, format, runVerification }) => {
+      const root = safeRoot(rootDir);
+      let isXliff = format === "xliff";
+      if (!isXliff && format === "auto" && file) {
+        if (isXliffPath(file)) {
+          isXliff = true;
+        } else {
+          try {
+            const abs = resolveConfinedPath(root, file, { label: "import path" });
+            if (
+              fs.existsSync(abs) &&
+              fs.statSync(abs).isDirectory() &&
+              fs.readdirSync(abs).some((f) => isXliffPath(f))
+            ) {
+              isXliff = true;
+            }
+          } catch {
+            // Let downstream path confinement report the boundary error cleanly
+          }
+        }
       }
-      const res = importEscalationCorrections(root, args.file);
-      return mcpTextResult(res);
+
+      if (isXliff) {
+        if (!file) return mcpTextResult({ error: "file is required when importing XLIFF" }, true);
+        const res = await runTmsImport({ rootDir: root, input: file, runVerification });
+        return mcpTextResult({ ...res, diff: res.diff.slice(0, 50) }, !res.ok);
+      }
+
+      if (format === "corrections" || (format === "auto" && file && /\.(xlsx|json)$/i.test(file))) {
+        if (!file) return mcpTextResult({ error: "file is required when importing corrections" }, true);
+        const res = importEscalationCorrections(root, file);
+        return mcpTextResult(res, res.rejectedCount > 0 && res.appliedCount === 0);
+      }
+
+      return mcpTextResult(importAsset(root, { file, format: format as "auto" | "csv" | "tbx" | "tmx" | "locales" }));
     }
   );
 
@@ -836,11 +754,11 @@ export function createWraithMcpServer(options: McpServerOptions = {}): McpServer
     {
       title: "Localization Report",
       description:
-        "Read-only end-of-run report as JSON and PR-ready Markdown: translated per locale, strings that need attention, errors caught and fixed this run, open questions (Q1…), assumptions (A1…) with any human overrides, same-English-different-meaning groups with their Context Notes, and how to follow up. Show the Markdown to the user as your final message.",
+        "Read-only JSON and Markdown summary: coverage, diagnostic findings, caught-and-fixed issues, open questions (Q1…), assumptions (A1…), and follow-up commands.",
       inputSchema: {
         rootDir: z.string().optional(),
         format: z.enum(["both", "json", "markdown"]).optional().default("both"),
-        since: z.string().optional().describe("ISO time to count 'this run' from (default: start of the latest burst of activity)."),
+        since: z.string().optional(),
       },
       outputSchema: GenericObjectOutputSchema,
       annotations: READ_ONLY_ANNOTATIONS,
@@ -858,30 +776,28 @@ export function createWraithMcpServer(options: McpServerOptions = {}): McpServer
 
   server.prompt(
     "localize",
-    "Guided workflow to internationalize, translate, verify, and report localization for a project or document.",
+    "Task-driven localization workflow using Wraith infrastructure.",
     {
-      locales: z.string().optional().describe("Comma-separated target BCP-47 locales (e.g. 'es-MX,fr,zh-Hans')."),
+      locales: z.string().optional().describe("Comma-separated target BCP-47 locales (e.g. 'es-MX,ar,de')."),
     },
     async ({ locales }) => {
       const targetNote = locales
-        ? `Target locales requested: ${locales}.`
-        : "Use the target locales from .wraith/config.json or ask only if none were specified by the user.";
+        ? `Target locales: ${locales}.`
+        : "Use configured targetLocales from .wraith/config.json (ask only if unconfigured).";
       return {
         messages: [
           {
             role: "user",
             content: {
               type: "text",
-              text: `Localize this project using Wraith. ${targetNote}
+              text: `Localize this project or document using Wraith. ${targetNote}
 
-Follow these steps:
-1. Call \`status\` and \`scan\` to understand the framework, i18n setup, hardcoded strings, concatenations, hardcoded formatting, and documents.
-2. If the project has hardcoded strings, concatenations, or hardcoded formatting, set up the framework's standard i18n library, extract strings into source locale files, and replace locale-unsafe formatting with Intl formatters.
-3. Infer brand/do-not-translate terms and key UI terminology (and approved abbreviations for tight UI slots); record assumptions via \`memory\`. If config.review === "confirm", pause briefly to confirm key glossary terms first; otherwise proceed without interrupting.
-4. Use \`prepare\` in batches per target locale (pay attention to \`layout\` constraints and width budgets). Treat all fuzzy memory matches (even 100% matches) as strong suggestions to verify against component context — never blindly trust them. Write translations exclusively through \`apply\`.
-5. Run \`check\` to verify catalog parity, placeholders, plurals, tags, glossary, and scanner rules.
-6. Run \`pseudo\` with \`mode: "auto"\` and then \`layout\` against the running app at 375px and 1280px. Run \`layout_fix\` for deterministic codemods, apply agent code prescriptions, and retranslate any keys over their recorded width budget via \`prepare\` + \`apply\`. Repeat \`layout\` until clean, then re-run \`check\` until outcome is "PASS".
-7. Call \`report\` and present the summary: issues caught, assumptions made, and any strings worth a native speaker's review.`,
+Use only the capabilities needed for this repository:
+1. Inspect with \`status\` (and \`scan\` if preparing an un-internationalized codebase or discovering documents).
+2. If source code has hardcoded strings, concatenations, or hardcoded formatting, extract them into i18n keys and Intl formatters.
+3. Translate pending software keys or document segments using \`prepare\` + \`apply\` (never bypass \`apply\` for deliverables). Verify advisory TM matches against context, respect glossary/style guide/character limits, and add optional context notes only for genuinely ambiguous keys.
+4. Run \`check\` until PASS. For rendered web apps with a dev server, optionally verify layout/RTL with \`pseudo\` and \`layout\`.
+5. Optionally run a fresh-context diagnostic \`qe_audit\` (never auto-edit without authorization) and summarize results with \`report\`.`,
             },
           },
         ],

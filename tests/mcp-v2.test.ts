@@ -6,8 +6,9 @@ import { StdioClientTransport } from "@modelcontextprotocol/sdk/client/stdio.js"
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
 /**
- * MCP stdio schema coverage for every registered tool (v2: 17 tools incl. visual_qa, qe_audit,
- * tms_export, tms_import). Spawns the real server over stdio like Claude Code / Codex do.
+ * MCP stdio schema coverage for every registered tool (12 consolidated tools covering status,
+ * scan, prepare, apply, check, memory, pseudo, layout/visual_qa/fix, diagnostic qe_audit/MQM,
+ * export, import, and report). Spawns the real server over stdio like Claude Code / Codex do.
  */
 const REPO = path.resolve(__dirname, "..");
 let client: Client;
@@ -21,16 +22,11 @@ const EXPECTED: Record<string, { readOnlyHint: boolean; destructiveHint: boolean
   apply: { readOnlyHint: false, destructiveHint: true },
   check: { readOnlyHint: true, destructiveHint: false },
   memory: { readOnlyHint: false, destructiveHint: false },
-  import: { readOnlyHint: false, destructiveHint: true },
   pseudo: { readOnlyHint: false, destructiveHint: true },
-  layout: { readOnlyHint: true, destructiveHint: false },
-  layout_fix: { readOnlyHint: false, destructiveHint: true },
-  visual_qa: { readOnlyHint: true, destructiveHint: false },
+  layout: { readOnlyHint: false, destructiveHint: false },
   qe_audit: { readOnlyHint: false, destructiveHint: false },
-  tms_export: { readOnlyHint: true, destructiveHint: false },
-  tms_import: { readOnlyHint: false, destructiveHint: true },
-  review: { readOnlyHint: false, destructiveHint: false },
-  escalate: { readOnlyHint: false, destructiveHint: true },
+  export: { readOnlyHint: true, destructiveHint: false },
+  import: { readOnlyHint: false, destructiveHint: true },
   report: { readOnlyHint: true, destructiveHint: false },
 };
 
@@ -72,7 +68,7 @@ afterAll(async () => {
 });
 
 describe("MCP v2 stdio schema coverage", () => {
-  it("lists all 17 tools with object input schemas, output schemas, and explicit read-only/destructive hints", async () => {
+  it("lists all 12 consolidated tools with object input schemas, output schemas, and explicit read-only/destructive hints", async () => {
     const { tools } = await client.listTools();
     expect(tools.map((t) => t.name).sort()).toEqual(Object.keys(EXPECTED).sort());
     for (const t of tools) {
@@ -83,8 +79,8 @@ describe("MCP v2 stdio schema coverage", () => {
     }
   });
 
-  it("visual_qa fails closed (INCONCLUSIVE) without baseUrl and returns compact structured JSON", async () => {
-    const res: any = await client.callTool({ name: "visual_qa", arguments: {} });
+  it("layout mode=visual_qa fails closed (INCONCLUSIVE) without baseUrl and returns compact structured JSON", async () => {
+    const res: any = await client.callTool({ name: "layout", arguments: { mode: "visual_qa" } });
     expect(res.isError).toBeFalsy();
     const body = JSON.parse(text(res));
     expect(body.outcome).toBe("INCONCLUSIVE");
@@ -93,11 +89,13 @@ describe("MCP v2 stdio schema coverage", () => {
     expect(text(res).length).toBeLessThan(25000);
   });
 
-  it("qe_audit prepares file-scoped review tasks, stores verdicts, and never calls a model", async () => {
+  it("qe_audit prepares file-scoped diagnostic tasks, stores verdicts, and never calls a model", async () => {
     const status: any = JSON.parse(text(await client.callTool({ name: "qe_audit", arguments: { locales: ["de"] } })));
+    expect(status.diagnosticOnly).toBe(true);
     expect(status.outcome).toBe("INCONCLUSIVE");
     expect(status.summary.unreviewed).toBe(2);
     const prep: any = JSON.parse(text(await client.callTool({ name: "qe_audit", arguments: { locales: ["de"], mode: "prepare" } })));
+    expect(prep.diagnosticOnly).toBe(true);
     expect(prep.toReview).toBe(2);
     const strings = prep.tasks.flatMap((t: any) => t.strings);
     const verdicts = strings.map((s: any) => ({ locale: "de", key: s.key, fingerprint: s.fingerprint, verdict: "ok" }));
@@ -107,15 +105,15 @@ describe("MCP v2 stdio schema coverage", () => {
     expect(fs.existsSync(path.join(dir, ".wraith/qe-verdicts.json"))).toBe(true);
   });
 
-  it("tms_export writes XLIFF only inside the export dir and tms_import round-trips it", async () => {
-    const exp: any = await client.callTool({ name: "tms_export", arguments: { outDir: "exports", includeTm: true, includeGlossary: true } });
+  it("export writes XLIFF only inside the export dir and import auto-detects and round-trips it", async () => {
+    const exp: any = await client.callTool({ name: "export", arguments: { outDir: "exports", includeTm: true, includeGlossary: true } });
     const body = JSON.parse(text(exp));
     expect(body.unitsByLocale.de).toBe(2);
     const xliffPath = path.join(dir, "exports/de.xliff");
     expect(fs.existsSync(xliffPath)).toBe(true);
     const edited = fs.readFileSync(xliffPath, "utf8").replace(">Speichern<", ">Sichern<");
     fs.writeFileSync(xliffPath, edited);
-    const imp: any = await client.callTool({ name: "tms_import", arguments: { input: "exports/de.xliff" } });
+    const imp: any = await client.callTool({ name: "import", arguments: { file: "exports/de.xliff" } });
     const ib = JSON.parse(text(imp));
     expect(imp.isError).toBeFalsy();
     expect(ib.applied).toBe(1);
@@ -126,7 +124,7 @@ describe("MCP v2 stdio schema coverage", () => {
     let protocolError = "";
     let res: any;
     try {
-      res = await client.callTool({ name: "tms_export", arguments: { outDir: "../../escape" } });
+      res = await client.callTool({ name: "export", arguments: { outDir: "../../escape" } });
     } catch (e: any) {
       protocolError = e.message;
     }
@@ -134,7 +132,7 @@ describe("MCP v2 stdio schema coverage", () => {
     let res2: any;
     let err2 = "";
     try {
-      res2 = await client.callTool({ name: "tms_import", arguments: {} });
+      res2 = await client.callTool({ name: "import", arguments: { format: "xliff" } });
     } catch (e: any) {
       err2 = e.message;
     }

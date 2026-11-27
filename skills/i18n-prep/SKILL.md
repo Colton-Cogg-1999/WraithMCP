@@ -16,15 +16,15 @@ MCP tool names below are the Wraith server's tools (in Claude Code they appear a
    - For each hardcoded string: move it into the source catalog under a semantic key (`feature.element.purpose`) and replace it with the project's i18n call (`t()`, `$t()`, `m.key()`, `{% trans %}`, `t(".key")`).
    - For each concatenation: replace with a single ICU message with named placeholders (`{count, plural, one {# item} other {# items}}`, `Hello, {name}`). Never split a sentence across keys.
    - Re-run `wraith extract --fail-on-unextracted` until exit 0.
-3. **Mechanical layout codemods** — `layout_fix` with `dryRun: true` (CLI `wraith layout --fix --dry-run`), review the diff, then `layout_fix` (CLI `wraith layout --fix`). This converts Tailwind physical → logical (`ml-`→`ms-`, `text-left`→`text-start`, …), `w-*`→`min-w-*` on constrained text, and injects root `<html dir lang>`.
+3. **Mechanical layout codemods** — `layout` with `mode: "fix", dryRun: true` (CLI `wraith layout --fix --dry-run`), review the diff, then `layout` with `mode: "fix"` (CLI `wraith layout --fix`). This converts Tailwind physical → logical (`ml-`→`ms-`, `text-left`→`text-start`, …), `w-*`→`min-w-*` on constrained text, and injects root `<html dir lang>`.
 4. **Remaining static findings** — `check` filtered by code (CLI `wraith check --code <code> --json`):
    - `hardcoded_formatting` → `Intl.NumberFormat(locale, …)`, `Intl.DateTimeFormat(locale, …)`, `Intl.RelativeTimeFormat`, `Intl.ListFormat`, `Intl.Collator(locale).compare`, or ICU `{n, number}` / `{d, date, medium}` arguments. Pass the active locale explicitly; never rely on the runtime default. Remove `.toUpperCase()` on visible text (use CSS `text-transform`) and `.toFixed()` for display.
    - `directional_asset` (only reported when `ar`, `he`, `fa`, or `ur` is a target) → add `rtl:rotate-180` / `rtl:-scale-x-100`, use a `dir`-aware mirror, or swap to the logical icon (`ChevronLeft` ⇄ `ChevronRight` by `dir`). Do not mirror non-directional icons (play, checkmarks, logos, clocks).
    - `rtl_layout_risk` left in non-Tailwind CSS → `margin-inline-start`, `padding-inline-end`, `inset-inline-start`, `text-align: start`, `border-inline-start`.
 5. **Pseudo-locales** — `pseudo` with `mode: "auto"` (CLI `wraith pseudo --mode auto`). Confirm at least `en-XA` (expansion) and `ar-XB` (RTL) were generated; key IDs stay embedded (`embedKeyIds: true`).
 6. **Rendered verification** (needs a running dev server):
-   - `layout` with `baseUrl`, `locales: ["en-XA","ar-XB"]` (CLI `wraith layout --url <url> -l en-XA,ar-XB`).
-   - `visual_qa` against the committed baseline (CLI `wraith visual-qa --url <url> --locales en-XA,ar-XB`).
+   - `layout` with `mode: "check"`, `baseUrl`, `locales: ["en-XA","ar-XB"]` (CLI `wraith layout --url <url> -l en-XA,ar-XB`).
+   - `layout` with `mode: "visual_qa"` against the committed baseline (CLI `wraith visual-qa --url <url> --locales en-XA,ar-XB`).
    - Fix residual defects with the **layout-remediation** skill.
 7. **Final gate** — `check` (CLI `wraith check`) must return `PASS`; `wraith extract --fail-on-unextracted` must exit 0.
 

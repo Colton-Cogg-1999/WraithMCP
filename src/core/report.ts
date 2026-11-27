@@ -28,6 +28,10 @@ export interface FlaggedString {
   translation: string;
   by: "check" | "qe";
   why: string;
+  severity?: "critical" | "major" | "minor";
+  category?: string;
+  evidence?: string;
+  visualEvidence?: string;
   suggestedFix?: string;
 }
 
@@ -145,7 +149,19 @@ export function generateReport(rootDir: string, options: { since?: string } = {}
     }
     for (const [id, rec] of verdicts) {
       if (!id.startsWith(`${locale}\0`) || qeOf(rec.key) !== "flagged") continue;
-      flagged.push({ locale, key: rec.key, source: rec.source, translation: rec.target, by: "qe", why: rec.reason ?? "", ...(rec.suggestedFix ? { suggestedFix: rec.suggestedFix } : {}) });
+      flagged.push({
+        locale,
+        key: rec.key,
+        source: rec.source,
+        translation: rec.target,
+        by: "qe",
+        why: rec.reason ?? "",
+        ...(rec.severity ? { severity: rec.severity } : {}),
+        ...(rec.category ? { category: rec.category } : {}),
+        ...(rec.evidence ? { evidence: rec.evidence } : {}),
+        ...(rec.visualEvidence ? { visualEvidence: rec.visualEvidence } : {}),
+        ...(rec.suggestedFix ? { suggestedFix: rec.suggestedFix } : {}),
+      });
     }
     const flaggedKeys = new Set(flagged.filter((f) => f.locale === locale).map((f) => f.key));
 
@@ -222,7 +238,9 @@ export function generateReport(rootDir: string, options: { since?: string } = {}
   if (flagged.length > 0) {
     L.push(`### Needs attention (${flagged.length})`, "", "| Locale | Key | Source | Translation | Why |", "|---|---|---|---|---|");
     for (const f of flagged.slice(0, 40)) {
-      L.push(`| \`${f.locale}\` | \`${f.key}\` | ${esc(f.source)} | ${esc(f.translation)} | ${esc(f.why)}${f.suggestedFix ? ` → _${esc(f.suggestedFix)}_` : ""} |`);
+      const badge = [f.severity, f.category].filter(Boolean).join("/");
+      const detail = `${badge ? `[${badge}] ` : ""}${f.why}${f.evidence ? ` (Evidence: ${f.evidence})` : ""}${f.visualEvidence ? ` [Visual: ${f.visualEvidence}]` : ""}`;
+      L.push(`| \`${f.locale}\` | \`${f.key}\` | ${esc(f.source)} | ${esc(f.translation)} | ${esc(detail)}${f.suggestedFix ? ` → _${esc(f.suggestedFix)}_` : ""} |`);
     }
     if (flagged.length > 40) L.push("", `…and ${flagged.length - 40} more.`);
     L.push("");

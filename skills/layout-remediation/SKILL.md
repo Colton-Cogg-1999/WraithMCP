@@ -11,8 +11,8 @@ MCP tool names below are the Wraith server's tools (in Claude Code: `mcp__wraith
 
 ## Sequence
 
-0. **Reproduce** — `layout` (CLI `wraith layout --url <url> [--routes …] [-l …]`) and/or `visual_qa` (CLI `wraith visual-qa --url <url> --json`). Record each finding: rule, key, `file:line`, viewport, locale, measured px. If either returns `INCONCLUSIVE`, stop and report why (no Playwright, no server, no baseline).
-1. **Mechanical codemods** — `layout_fix` with `dryRun: true`, inspect, then `layout_fix` (CLI `wraith layout --fix [--dry-run]`). Pass `flaggedWidthLines` / `flaggedLongWordLines` from step 0 so `w-*`→`min-w-*` and `hyphens-auto` target only measured lines. Re-run step 0.
+0. **Reproduce** — `layout` (`mode: "check"` / CLI `wraith layout --url <url>`) and/or `layout` (`mode: "visual_qa"` / CLI `wraith visual-qa --url <url> --json`). Record each finding: rule, key, `file:line`, viewport, locale, measured px. If either returns `INCONCLUSIVE`, stop and report why (no Playwright, no server, no baseline).
+1. **Mechanical codemods** — `layout` with `mode: "fix", dryRun: true`, inspect, then `layout` with `mode: "fix"` (CLI `wraith layout --fix [--dry-run]`). Pass `flaggedWidthLines` / `flaggedLongWordLines` from step 0 so `w-*`→`min-w-*` and `hyphens-auto` target only measured lines. Re-run step 0.
 2. **Prescribed code edits** — for remaining findings, edit the exact `file:line`:
    | Rule | Typical fix |
    |---|---|
