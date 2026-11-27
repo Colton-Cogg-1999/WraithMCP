@@ -322,6 +322,17 @@ function applyTranslationsUnlocked(options: ApplyOptions): ApplyResult {
     ]);
     const fresh = detectProjectAdapter(store.rootDir, config.framework, config.paths.locales).detection;
     const tgt = loadLocaleCatalog(adapter, fresh.localeFiles[options.targetLocale] ?? [], options.targetLocale);
+    // Post-write integrity verification: ensure every applied key actually survived serialization on disk
+    for (const v of validItems) {
+      const writtenEntry = tgt.entries.get(v.input.key);
+      if (!writtenEntry || (v.input.value.trim() !== "" && writtenEntry.value.trim() === "")) {
+        errors.push({
+          key: v.input.key,
+          code: "write_integrity_error",
+          message: `Key "${v.input.key}" did not survive serialization to target locale "${options.targetLocale}". Check for flat/nested key collisions or format serialization issues.`,
+        });
+      }
+    }
     let translated = 0;
     for (const key of srcCatalog.entries.keys()) {
       const e = tgt.entries.get(key);

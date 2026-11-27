@@ -222,6 +222,11 @@ function spliceJsonUpdate(
 
     if (existingProp) {
       if (isLast) {
+        if (existingProp.value.kind === "object") {
+          throw new Error(
+            `Cannot write string value at "${keyParts.join(".")}" because an object subtree already exists at that key path (possible flat vs. nested key collision).`
+          );
+        }
         // Splice ONLY this property's value span!
         return (
           rawJson.slice(0, existingProp.value.start) +
@@ -234,14 +239,8 @@ function spliceJsonUpdate(
         depth++;
         continue;
       }
-      // Replacing a non-object value with a nested object
-      const remaining = keyParts.slice(idx + 1);
-      const inner = buildNestedJsonSnippet(remaining, value, indent, depth + 2).replace(/\n/g, eol);
-      const pad = indent.repeat(depth + 1);
-      return (
-        rawJson.slice(0, existingProp.value.start) +
-        `{${eol}${inner}${eol}${pad}}` +
-        rawJson.slice(existingProp.value.end)
+      throw new Error(
+        `Cannot create nested key "${keyParts.join(".")}" because a non-object value already exists at "${keyParts.slice(0, idx + 1).join(".")}" (possible flat vs. nested key collision).`
       );
     }
 
@@ -370,9 +369,10 @@ export class JsonFormatAdapter implements FormatAdapter {
       ? (JSON.parse(sourceBody) as Record<string, unknown>)
       : null;
 
+    const existingHasNestedObjects = Object.values(existingObj).some((v) => isPlainObject(v));
     const flat =
       (existed && isFlatJson(existingObj)) ||
-      (!existed && sourceObj !== null && isFlatJson(sourceObj));
+      (!existingHasNestedObjects && sourceObj !== null && isFlatJson(sourceObj));
 
     // When target already exists, map each object path + key to its exact source CST sibling order
     // so newly inserted keys land next to their source-order neighbors instead of after integer keys
