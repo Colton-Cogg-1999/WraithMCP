@@ -5,27 +5,35 @@ import path from "node:path";
 import { strFromU8 } from "fflate";
 import { safeUnzipSync } from "../core/security.js";
 import { CheckOutcome } from "../core/types.js";
+import { extractDocument } from "./registry.js";
 
 /**
- * Nuanced LibreOffice formatting-integrity verifier for OOXML documents (.docx, .pptx, .xlsx).
+ * Nuanced LibreOffice + structural content-integrity verifier for OOXML documents (.docx, .pptx, .xlsx).
  *
  * Design principles:
- * 1. DOCX (reflowing prose — patient letters, clinical studies, legal contracts, manuals):
+ * 1. Structural content completeness (always runs, even without LibreOffice): verifies XML part
+ *    parity (`doc_missing_parts`), segment-count parity (`doc_missing_segments`), non-empty target
+ *    segments (`doc_empty_segments`), and surfaces untranslated prose (`doc_untranslated_segments`)
+ *    distinct from non-translatable numerals/codes/URLs so `doc-verify` can never conceal dropped content.
+ * 2. DOCX (reflowing prose — patient letters, clinical studies, legal contracts, manuals):
  *    Natural page-count growth (e.g., 3 -> 4 pages in German) is NORMAL and reported purely as
  *    informational (`doc_reflow_info`), NEVER as an error. What fails a DOCX is XML/render
- *    corruption (`doc_render_failed`) or exceeding an explicit opt-in `maxPages` budget
- *    (e.g., for a fixed 1-page flyer or form).
- * 2. PPTX (fixed-canvas slides): Slide/page count mismatches (`pptx_slide_count_mismatch`) or
+ *    corruption (`doc_render_failed`), missing content, or exceeding an explicit opt-in `maxPages` budget.
+ * 3. PPTX (fixed-canvas slides): Slide/page count mismatches (`pptx_slide_count_mismatch`) or
  *    render failures fail loudly because slides have fixed visual canvases.
- * 3. XLSX (spreadsheets): Verifies clean LibreOffice PDF rendering AND checks that every `<f>`
+ * 4. XLSX (spreadsheets): Verifies clean LibreOffice PDF rendering AND checks that every `<f>`
  *    formula in the source workbook is preserved identically in the translated workbook
  *    (`xlsx_formula_mismatch`).
- * 4. Returns `INCONCLUSIVE` (never fake `PASS`) when `soffice` is not installed.
+ * 5. Returns `INCONCLUSIVE` (never fake `PASS`) when `soffice` is not installed (unless structural errors FAIL).
  */
 
 export interface DocumentVerifyFinding {
   code:
     | "doc_render_failed"
+    | "doc_missing_segments"
+    | "doc_missing_parts"
+    | "doc_empty_segments"
+    | "doc_untranslated_segments"
     | "pptx_slide_count_mismatch"
     | "doc_page_budget_exceeded"
     | "xlsx_formula_mismatch"
@@ -33,6 +41,15 @@ export interface DocumentVerifyFinding {
     | "libreoffice_unavailable";
   severity: "error" | "warning" | "info";
   message: string;
+}
+
+export interface DocumentSegmentStats {
+  sourceSegments: number;
+  targetSegments: number;
+  translatedSegments: number;
+  unchangedNonTranslatable: number;
+  unchangedTranslatable: number;
+  missingParts: string[];
 }
 
 export interface DocumentVerifyResult {
@@ -43,7 +60,19 @@ export interface DocumentVerifyResult {
   libreOfficeAvailable: boolean;
   sourcePages: number | null;
   targetPages: number | null;
+  segmentStats?: DocumentSegmentStats;
   findings: DocumentVerifyFinding[];
+}
+
+/** Heuristic for pure non-translatable literals (numbers, codes, URLs, emails, ISSN/citations). */
+function isLikelyNonTranslatable(text: string): boolean {
+  const t = text.trim();
+  if (!t) return true;
+  if (/^[\d\s.,:%$€£¥+\-–—/()[\]#*•]+$/.test(t)) return true;
+  if (/^https?:\/\/\S+$/i.test(t) || /^[\w.+-]+@[\w.-]+\.[a-z]{2,}$/i.test(t)) return true;
+  if (/\b(?:ISSN|ISBN|DOI|RMS-[A-Z0-9-]+|\d{2,}-[A-Z]{2,}-\d+[A-Z]?)\b/i.test(t) && t.length <= 90) return true;
+  if (!/[A-Za-z]{2,}/.test(t)) return true;
+  return false;
 }
 
 function findSoffice(): string | null {
@@ -138,7 +167,90 @@ export function verifyDocumentFormatting(options: {
   const format = ext.slice(1) as "docx" | "pptx" | "xlsx";
   const findings: DocumentVerifyFinding[] = [];
 
-  // 1. Structural XLSX formula check (runs even without LibreOffice!)
+  // 1. Structural content-completeness check (always runs, even without LibreOffice!)
+  let segmentStats: DocumentSegmentStats | undefined;
+  try {
+    const srcEx = extractDocument(options.sourceFile);
+    const tgtEx = extractDocument(options.targetFile);
+    const srcParts = new Set(srcEx.stats.parts);
+    const tgtParts = new Set(tgtEx.stats.parts);
+    const missingParts = [...srcParts].filter((p) => !tgtParts.has(p)).sort();
+
+    if (missingParts.length > 0) {
+      findings.push({
+        code: "doc_missing_parts",
+        severity: "error",
+        message: `Translated ${format.toUpperCase()} is missing ${missingParts.length} XML part(s) present in source: ${missingParts.join(", ")}.`,
+      });
+    }
+
+    if (tgtEx.segments.length < srcEx.segments.length) {
+      findings.push({
+        code: "doc_missing_segments",
+        severity: "error",
+        message: `Translated ${format.toUpperCase()} has fewer content segments than source (${tgtEx.segments.length} vs ${srcEx.segments.length}); ${srcEx.segments.length - tgtEx.segments.length} segment(s) may have been dropped.`,
+      });
+    }
+
+    const tgtById = new Map(tgtEx.segments.map((s) => [s.id, s]));
+    let translatedSegments = 0;
+    let unchangedNonTranslatable = 0;
+    let unchangedTranslatable = 0;
+    let emptySegments = 0;
+    const sameFile = path.resolve(options.sourceFile) === path.resolve(options.targetFile);
+
+    for (const srcSeg of srcEx.segments) {
+      const tgtSeg = tgtById.get(srcSeg.id);
+      if (!tgtSeg) continue;
+      if (srcSeg.plainText.trim().length > 0 && tgtSeg.plainText.trim().length === 0) {
+        emptySegments++;
+        continue;
+      }
+      if (tgtSeg.plainText.trim() !== srcSeg.plainText.trim()) {
+        translatedSegments++;
+      } else if (isLikelyNonTranslatable(srcSeg.plainText)) {
+        unchangedNonTranslatable++;
+      } else {
+        unchangedTranslatable++;
+      }
+    }
+
+    if (emptySegments > 0) {
+      findings.push({
+        code: "doc_empty_segments",
+        severity: "error",
+        message: `Translated ${format.toUpperCase()} has ${emptySegments} non-empty source segment(s) wiped to empty text.`,
+      });
+    }
+
+    if (!sameFile && unchangedTranslatable > 0 && srcEx.segments.length > 0) {
+      const translatableTotal = translatedSegments + unchangedTranslatable;
+      if (translatableTotal > 0 && unchangedTranslatable / translatableTotal >= 0.25) {
+        findings.push({
+          code: "doc_untranslated_segments",
+          severity: "warning",
+          message: `${unchangedTranslatable}/${translatableTotal} translatable prose segment(s) remain identical to source (${unchangedNonTranslatable} non-translatable numeric/code segment(s) preserved).`,
+        });
+      }
+    }
+
+    segmentStats = {
+      sourceSegments: srcEx.segments.length,
+      targetSegments: tgtEx.segments.length,
+      translatedSegments,
+      unchangedNonTranslatable,
+      unchangedTranslatable,
+      missingParts,
+    };
+  } catch (err) {
+    findings.push({
+      code: "doc_render_failed",
+      severity: "error",
+      message: `Failed to inspect document segments: ${err instanceof Error ? err.message : String(err)}`,
+    });
+  }
+
+  // 2. Structural XLSX formula check (runs even without LibreOffice!)
   if (format === "xlsx") {
     const srcFormulas = extractXlsxFormulas(options.sourceFile);
     const tgtFormulas = extractXlsxFormulas(options.targetFile);
@@ -151,7 +263,7 @@ export function verifyDocumentFormatting(options: {
     }
   }
 
-  // 2. Headless LibreOffice render check
+  // 3. Headless LibreOffice render check
   const soffice = findSoffice();
   if (!soffice) {
     findings.push({
@@ -167,6 +279,7 @@ export function verifyDocumentFormatting(options: {
       libreOfficeAvailable: false,
       sourcePages: null,
       targetPages: null,
+      ...(segmentStats ? { segmentStats } : {}),
       findings,
     };
   }
@@ -231,6 +344,7 @@ export function verifyDocumentFormatting(options: {
       libreOfficeAvailable: true,
       sourcePages,
       targetPages,
+      ...(segmentStats ? { segmentStats } : {}),
       findings,
     };
   } finally {

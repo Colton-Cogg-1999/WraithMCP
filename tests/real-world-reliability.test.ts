@@ -14,6 +14,7 @@ import { WraithStore } from "../src/core/store.js";
 import { runTmsExport, runTmsImport } from "../src/core/tms.js";
 import { DocxDocumentAdapter } from "../src/documents/docx.js";
 import { applyDocumentTranslations, extractDocument, prepareDocument } from "../src/documents/registry.js";
+import { verifyDocumentFormatting } from "../src/documents/verify.js";
 import { JsonFormatAdapter } from "../src/formats/json.js";
 
 function makeTmp(prefix: string): string {
@@ -310,4 +311,39 @@ Text("profile.posts \\(count)")`
     expect(finalTgt.segments.some((s) => s.plainText === "Trabajo con fuego (humano)")).toBe(true);
     fs.rmSync(dir, { recursive: true, force: true });
   });
+
+  it("REL-013: verifyDocumentFormatting fails loudly on dropped segments or missing XML parts and cannot conceal missing content", () => {
+    const dir = makeTmp("wraith-rel-docverify-");
+    const wNs = 'xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"';
+    const fullDoc = zipSync({
+      "[Content_Types].xml": strToU8(`<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"/>`),
+      "word/document.xml": strToU8(
+        `<?xml version="1.0" encoding="UTF-8"?><w:document ${wNs}><w:body><w:p><w:r><w:t>Heading One</w:t></w:r></w:p><w:p><w:r><w:t>Body paragraph two.</w:t></w:r></w:p><w:p><w:r><w:t>1</w:t></w:r></w:p></w:body></w:document>`
+      ),
+      "word/footnotes.xml": strToU8(
+        `<?xml version="1.0" encoding="UTF-8"?><w:footnotes ${wNs}><w:footnote w:id="1"><w:p><w:r><w:t>Important legal footnote.</w:t></w:r></w:p></w:footnote></w:footnotes>`
+      ),
+    });
+    // Broken target drops paragraph two AND drops word/footnotes.xml completely!
+    const brokenDoc = zipSync({
+      "[Content_Types].xml": strToU8(`<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"/>`),
+      "word/document.xml": strToU8(
+        `<?xml version="1.0" encoding="UTF-8"?><w:document ${wNs}><w:body><w:p><w:r><w:t>Encabezado Uno</w:t></w:r></w:p><w:p><w:r><w:t>1</w:t></w:r></w:p></w:body></w:document>`
+      ),
+    });
+    const srcPath = path.join(dir, "src.docx");
+    const badPath = path.join(dir, "bad.docx");
+    fs.writeFileSync(srcPath, fullDoc);
+    fs.writeFileSync(badPath, brokenDoc);
+
+    const res = verifyDocumentFormatting({ sourceFile: srcPath, targetFile: badPath });
+    expect(res.outcome).toBe("FAIL");
+    expect(res.findings.some((f) => f.code === "doc_missing_parts" && f.severity === "error")).toBe(true);
+    expect(res.findings.some((f) => f.code === "doc_missing_segments" && f.severity === "error")).toBe(true);
+    expect(res.segmentStats?.missingParts).toContain("word/footnotes.xml");
+    expect(res.segmentStats?.sourceSegments).toBe(4);
+    expect(res.segmentStats?.targetSegments).toBe(2);
+
+    fs.rmSync(dir, { recursive: true, force: true });
+  }, 60_000);
 });
