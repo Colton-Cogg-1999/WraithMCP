@@ -9,7 +9,7 @@ wraith export [--format xliff2|xliff12] [--out .wraith/exports/tms] [--locales d
   [--only-flagged] [--include-tm] [--include-glossary] [--bundle-screenshots] [--json]
 ```
 
-MCP `export` (`format: "xliff2" | "xliff12" | "human"`) is `readOnlyHint: true`; it writes only to the explicit export directory.
+MCP `export` (`format: "xliff2" | "xliff12" | "human"`) has `destructiveHint: false` and writes only to the explicit export directory.
 
 Every unit carries the translator context Wraith has:
 - the **Context Note** (`Meaning:`)

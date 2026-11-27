@@ -58,8 +58,8 @@ const calls: Array<[string, Record<string, unknown>]> = [
   ["memory", { operation: { action: "lookup", query: "Hello", targetLocale: "de" } }],
   ["apply", { targetLocale: "de", translations: [{ key: "a", value: "Servus" }] }],
   ["pseudo", {}],
-  ["review", { action: "package", targetLocale: "de" }],
-  ["escalate", { action: "export" }],
+  ["qe_audit", { mode: "package_mqm", targetLocale: "de" }],
+  ["export", { format: "human" }],
 ];
 
 describe("ANN. MCP annotations vs observed side effects", () => {

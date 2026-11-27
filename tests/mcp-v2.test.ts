@@ -25,7 +25,7 @@ const EXPECTED: Record<string, { readOnlyHint: boolean; destructiveHint: boolean
   pseudo: { readOnlyHint: false, destructiveHint: true },
   layout: { readOnlyHint: false, destructiveHint: false },
   qe_audit: { readOnlyHint: false, destructiveHint: false },
-  export: { readOnlyHint: true, destructiveHint: false },
+  export: { readOnlyHint: false, destructiveHint: false },
   import: { readOnlyHint: false, destructiveHint: true },
   report: { readOnlyHint: true, destructiveHint: false },
 };

@@ -629,7 +629,7 @@ export function createWraithMcpServer(options: McpServerOptions = {}): McpServer
         humanFormats: z.array(z.enum(["csv", "xlsx", "html"])).optional(),
       },
       outputSchema: GenericObjectOutputSchema,
-      annotations: READ_ONLY_ANNOTATIONS,
+      annotations: MUTATING_ANNOTATIONS,
     },
     async (args) => {
       const root = safeRoot(args.rootDir);
