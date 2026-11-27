@@ -231,7 +231,7 @@ describe("Milestone 4: Cross-Model Review, Human Escalation, Advisory Memory, La
     expect(parsed.issues.hasMore).toBe(true);
     expect(text.length).toBeLessThan(12_000);
 
-    // Call prepare -> default pagination caps returned items at 100 and strips empty arrays!
+    // Call prepare -> default pagination caps returned items at 75 and strips empty arrays!
     const prepRes = await client.callTool({
       name: "prepare",
       arguments: { rootDir: dir, targetLocale: "es-MX" },
@@ -239,7 +239,7 @@ describe("Milestone 4: Cross-Model Review, Human Escalation, Advisory Memory, La
     const prepText = (prepRes.content as Array<{ type: string; text: string }>)[0].text;
     const prepParsed = JSON.parse(prepText);
     expect(prepParsed.totalPending).toBe(150);
-    expect(prepParsed.items).toHaveLength(100);
+    expect(prepParsed.items).toHaveLength(75);
     expect(prepParsed.hasMore).toBe(true);
     expect(prepParsed.items[0].placeholders).toBeUndefined();
     expect(prepParsed.items[0].contextNoteStatus).toBeUndefined();

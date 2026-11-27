@@ -152,7 +152,7 @@ export function createWraithMcpServer(options: McpServerOptions = {}): McpServer
         includeTranslated: z.boolean().optional().default(false),
         detail: z.enum(["compact", "full"]).optional().default("compact"),
         offset: z.number().int().nonnegative().optional().default(0),
-        limit: z.number().int().min(1).max(300).optional().default(100),
+        limit: z.number().int().min(1).max(300).optional().default(75),
       },
       outputSchema: GenericObjectOutputSchema,
       annotations: READ_ONLY_ANNOTATIONS,
@@ -277,140 +277,108 @@ export function createWraithMcpServer(options: McpServerOptions = {}): McpServer
     }
   );
 
+  const MemoryOperationSchema = z.discriminatedUnion("action", [
+    z.object({ action: z.literal("lookup"), query: z.string().min(1), targetLocale: z.string().optional(), minScore: z.number().int().min(0).max(100).optional().default(50), limit: z.number().int().min(1).max(50).optional().default(10) }),
+    z.object({ action: z.literal("set_glossary"), term: z.string().min(1), doNotTranslate: z.boolean().optional(), caseSensitive: z.boolean().optional(), translations: z.record(z.string(), z.string()).optional(), abbreviations: z.record(z.string(), z.string()).optional(), notes: z.string().optional(), origin: z.enum(["inferred", "user", "imported"]).optional() }),
+    z.object({ action: z.literal("add_assumption"), summary: z.string().min(1), category: z.enum(["terminology", "brand", "tone", "disambiguation", "formatting", "scope", "other"]).optional(), targetLocale: z.string().optional(), rationale: z.string().optional() }),
+    z.object({ action: z.literal("add_question"), keys: z.array(z.string()).min(1), question: z.string().min(1), targetLocale: z.string().optional() }),
+    z.object({ action: z.literal("answer_question"), id: z.string(), answer: z.string().min(1) }),
+    z.object({ action: z.literal("resolve_question"), id: z.string() }),
+    z.object({ action: z.literal("list_questions"), status: z.enum(["open", "answered", "resolved", "all"]).optional().default("open") }),
+    z.object({ action: z.literal("override_assumption"), id: z.string(), decision: z.string().min(1) }),
+    z.object({ action: z.literal("apply_override"), id: z.string() }),
+    z.object({ action: z.literal("set_context_note"), key: z.string(), note: z.string().min(1) }),
+    z.object({ action: z.literal("add_pair"), source: z.string().min(1), target: z.string().min(1), targetLocale: z.string().min(1), context: z.string().optional() }),
+  ]);
+
   server.registerTool(
     "memory",
     {
       title: "Glossary, TM, Decisions & Questions",
       description:
-        "Manage persistent localization knowledge: TM/glossary lookup, set_glossary, add_pair, add_assumption / override_assumption / apply_override, add_question / answer_question / resolve_question / list_questions, and optional set_context_note.",
+        "Manage persistent localization knowledge: lookup, set_glossary, add_pair, add_assumption/override_assumption/apply_override, add_question/answer_question/resolve_question/list_questions, and optional set_context_note.",
       inputSchema: {
         rootDir: z.string().optional(),
-        action: z.enum([
-          "lookup",
-          "set_glossary",
-          "add_assumption",
-          "add_question",
-          "answer_question",
-          "resolve_question",
-          "list_questions",
-          "override_assumption",
-          "apply_override",
-          "set_context_note",
-          "add_pair",
-        ]),
-        targetLocale: z.string().optional(),
-        query: z.string().optional(),
-        minScore: z.number().int().min(0).max(100).optional(),
-        limit: z.number().int().min(1).max(50).optional(),
-        term: z.string().optional(),
-        doNotTranslate: z.boolean().optional(),
-        caseSensitive: z.boolean().optional(),
-        translations: z.record(z.string(), z.string()).optional(),
-        abbreviations: z.record(z.string(), z.string()).optional(),
-        notes: z.string().optional(),
-        origin: z.enum(["inferred", "user", "imported"]).optional(),
-        category: z
-          .enum(["terminology", "brand", "tone", "disambiguation", "formatting", "scope", "other"])
-          .optional(),
-        summary: z.string().optional(),
-        rationale: z.string().optional(),
-        id: z.string().optional(),
-        keys: z.array(z.string()).optional(),
-        question: z.string().optional(),
-        answer: z.string().optional(),
-        decision: z.string().optional(),
-        status: z.enum(["open", "answered", "resolved", "all"]).optional(),
-        key: z.string().optional(),
-        note: z.string().optional(),
-        source: z.string().optional(),
-        target: z.string().optional(),
-        context: z.string().optional(),
+        operation: MemoryOperationSchema,
       },
       outputSchema: GenericObjectOutputSchema,
       annotations: MUTATING_ANNOTATIONS,
     },
-    async (args) => {
-      const root = safeRoot(args.rootDir);
-      const req = (val: string | undefined, name: string): string => {
-        if (!val || !val.trim()) throw new Error(`${name} is required for memory action "${args.action}"`);
-        return val;
-      };
-      switch (args.action) {
+    async ({ rootDir, operation }) => {
+      const root = safeRoot(rootDir);
+      switch (operation.action) {
         case "lookup":
           return mcpTextResult(
             lookupMemory(root, {
-              query: req(args.query, "query"),
-              targetLocale: args.targetLocale,
-              minScore: args.minScore ?? 50,
-              limit: args.limit ?? 10,
+              query: operation.query,
+              targetLocale: operation.targetLocale,
+              minScore: operation.minScore,
+              limit: operation.limit,
             })
           );
         case "set_glossary":
           return mcpTextResult(
             recordGlossaryTerm(root, {
-              term: req(args.term, "term"),
-              doNotTranslate: args.doNotTranslate,
-              caseSensitive: args.caseSensitive,
-              translations: args.translations,
-              abbreviations: args.abbreviations,
-              notes: args.notes,
-              origin: args.origin,
+              term: operation.term,
+              doNotTranslate: operation.doNotTranslate,
+              caseSensitive: operation.caseSensitive,
+              translations: operation.translations,
+              abbreviations: operation.abbreviations,
+              notes: operation.notes,
+              origin: operation.origin,
             })
           );
         case "add_assumption":
           return mcpTextResult(
             recordAssumption(root, {
-              category: args.category ?? "other",
-              locale: args.targetLocale,
-              summary: req(args.summary, "summary"),
-              rationale: args.rationale,
+              category: operation.category ?? "other",
+              locale: operation.targetLocale,
+              summary: operation.summary,
+              rationale: operation.rationale,
             })
           );
         case "add_question":
-          if (!args.keys || args.keys.length === 0) {
-            return mcpTextResult({ error: "keys is required for add_question" }, true);
-          }
           return mcpTextResult(
             askQuestion(root, {
-              keys: args.keys,
-              locale: args.targetLocale,
-              question: req(args.question, "question"),
+              keys: operation.keys,
+              locale: operation.targetLocale,
+              question: operation.question,
             })
           );
         case "answer_question":
           return mcpTextResult({
             question: answerQuestion(root, {
-              id: req(args.id, "id"),
-              answer: req(args.answer, "answer"),
+              id: operation.id,
+              answer: operation.answer,
               via: "agent",
             }),
           });
         case "resolve_question":
-          return mcpTextResult({ question: resolveQuestion(root, req(args.id, "id")) });
+          return mcpTextResult({ question: resolveQuestion(root, operation.id) });
         case "list_questions":
-          return mcpTextResult({ questions: listQuestions(root, args.status ?? "open") });
+          return mcpTextResult({ questions: listQuestions(root, operation.status) });
         case "override_assumption":
           return mcpTextResult({
             assumption: overrideAssumption(root, {
-              label: req(args.id, "id"),
-              decision: req(args.decision, "decision"),
+              label: operation.id,
+              decision: operation.decision,
               via: "agent",
             }),
           });
         case "apply_override":
-          return mcpTextResult({ assumption: applyAssumptionOverride(root, req(args.id, "id")) });
+          return mcpTextResult({ assumption: applyAssumptionOverride(root, operation.id) });
         case "set_context_note":
           return mcpTextResult({
             ok: true,
-            ...setContextNoteForKey(root, req(args.key, "key"), req(args.note, "note")),
+            ...setContextNoteForKey(root, operation.key, operation.note),
           });
         case "add_pair":
           return mcpTextResult(
             recordMemoryPair(root, {
-              source: req(args.source, "source"),
-              target: req(args.target, "target"),
-              targetLocale: req(args.targetLocale, "targetLocale"),
-              context: args.context,
+              source: operation.source,
+              target: operation.target,
+              targetLocale: operation.targetLocale,
+              context: operation.context,
             })
           );
       }

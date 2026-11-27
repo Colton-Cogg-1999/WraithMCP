@@ -255,12 +255,12 @@ describe("report", () => {
     try {
       await client.callTool({
         name: "memory",
-        arguments: { action: "override_assumption", id: "A1", decision: "Use informal ihr" },
+        arguments: { operation: { action: "override_assumption", id: "A1", decision: "Use informal ihr" } },
       });
       expect(listAssumptions(dir)[0]).toMatchObject({ status: "overridden", override: "Use informal ihr" });
       await client.callTool({
         name: "memory",
-        arguments: { action: "apply_override", id: "A1" },
+        arguments: { operation: { action: "apply_override", id: "A1" } },
       });
       expect(listAssumptions(dir)[0]).toMatchObject({ status: "applied", override: "Use informal ihr" });
     } finally {

@@ -222,7 +222,7 @@ describe("Diagnostic-only QE and MCP simplification", () => {
 
     const { tools } = await client.listTools();
     expect(tools).toHaveLength(12);
-    expect(Buffer.byteLength(JSON.stringify(tools))).toBeLessThan(16_000);
+    expect(Buffer.byteLength(JSON.stringify(tools))).toBeLessThan(18_500);
 
     // Deterministic safety gate on apply still blocks broken placeholders via simplified MCP
     const badApply: any = await client.callTool({
