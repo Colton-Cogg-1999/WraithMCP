@@ -1,0 +1,17 @@
+{
+  "version": 1,
+  "sourceLocale": "en",
+  "targetLocales": [
+    "es-MX",
+    "ar"
+  ],
+  "review": "auto",
+  "framework": "react",
+  "paths": {
+    "locales": "src/locales",
+    "source": [
+      "src"
+    ],
+    "documents": []
+  }
+}
