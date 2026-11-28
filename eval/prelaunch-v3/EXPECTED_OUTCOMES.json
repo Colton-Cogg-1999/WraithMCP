@@ -1,0 +1,351 @@
+{
+  "version": "prelaunch-v3-frozen",
+  "frozenAt": "2026-11-27",
+  "baselineWraithSha": "d9a8e34260672b81d8af13ad969b697e763bce93",
+  "model": "gpt-6.2-astra",
+  "reasoningEffort": "high",
+  "locales": ["es-MX", "ar"],
+  "controlledProject": {
+    "name": "PulseDesk",
+    "surfaces": [
+      "src/locales/en/nav.json",
+      "src/locales/en/settings.json",
+      "src/locales/en/forms.json",
+      "src/locales/en/notifications.json",
+      "src/locales/en/legal.json",
+      "src/locales/en/sync.json",
+      "src/locales/en/help.json",
+      "docs/guide.md",
+      "docs/workspace-admin-manual.docx"
+    ]
+  },
+  "promptRules": {
+    "es-MX": {
+      "prohibitedWords": ["checar", "chequea", "cliquear", "clickear", "cliquea", "link", "links", "ordenador", "ordenadores", "fichero", "ficheros"],
+      "preferredButtonInfinitiveKeys": ["forms.save_button", "nav.export_report", "settings.delete_token", "forms.archive_button", "forms.open_document"],
+      "noEnglishParentheticalGlosses": true,
+      "preserveTokens": ["{{count}}", "{{workspace}}", "{{user}}", "Ctrl+K", "<code>", "</code>", "WraithCloud", "PulseKey", "OAuth 2.0", "ISO-27001"]
+    },
+    "ar": {
+      "prohibitedWords": ["أكاونت", "لينك", "داشبورد", "فولدر"],
+      "requireArabicPunctuation": {
+        "questionKeys": ["forms.confirm_delete_prompt", "help.need_more_help"],
+        "expectedQuestionMark": "؟",
+        "forbiddenQuestionMark": "?",
+        "commaKeys": ["notifications.export_ready", "legal.privacy_notice"],
+        "forbiddenAsciiComma": ","
+      },
+      "requireSixFormIcuPluralKeys": ["notifications.pending_invites", "forms.post_count"],
+      "preserveTokens": ["{{count}}", "{{workspace}}", "{{user}}", "Ctrl+K", "<code>", "</code>", "WraithCloud", "PulseKey", "OAuth 2.0", "ISO-27001"]
+    }
+  },
+  "styleRules": {
+    "es-MX": {
+      "informalTuKeys": [
+        "settings.account_intro",
+        "notifications.backup_disabled",
+        "forms.confirm_delete_prompt",
+        "help.shortcut_tip"
+      ],
+      "formalUstedOverrideKeys": [
+        "legal.privacy_notice",
+        "legal.data_request",
+        "legal.audit_retention"
+      ],
+      "mexicanVocab": {
+        "computer": { "approved": ["computadora"], "prohibited": ["ordenador"] },
+        "file": { "approved": ["archivo"], "prohibited": ["fichero"] },
+        "email": { "approved": ["correo electrónico", "correo"], "prohibited": ["e-mail"] }
+      },
+      "invertedPunctuationKeys": ["forms.confirm_delete_prompt", "help.need_more_help"],
+      "sentenceCaseHeadingKeys": ["nav.audit_log", "settings.billing_cycle_heading", "settings.security_heading"]
+    },
+    "ar": {
+      "msaRegister": true,
+      "arabicQuestionKeys": ["forms.confirm_delete_prompt", "help.need_more_help"],
+      "sixFormPluralKeys": ["notifications.pending_invites", "forms.post_count"],
+      "accessibleAriaKeys": ["nav.search_aria", "forms.close_dialog_aria"]
+    }
+  },
+  "terminology": {
+    "v1Approved": {
+      "Workspace": {
+        "es-MX": { "approved": ["espacio de trabajo", "espacios de trabajo"], "prohibited": ["área de trabajo", "áreas de trabajo", "workspace"] },
+        "ar": { "approved": ["مساحة العمل", "مساحات العمل"], "prohibited": ["بيئة العمل", "منطقة العمل", "workspace"] }
+      },
+      "Billing cycle": {
+        "es-MX": { "approved": ["ciclo de facturación", "ciclos de facturación"], "prohibited": ["periodo de cobro", "período de cobro", "ciclo de cobro"] },
+        "ar": { "approved": ["دورة الفوترة", "دورات الفوترة"], "prohibited": ["فترة الدفع", "مدة السداد"] }
+      },
+      "Audit log": {
+        "es-MX": { "approved": ["registro de auditoría", "registros de auditoría"], "prohibited": ["bitácora de cambios", "historial de auditoría"] },
+        "ar": { "approved": ["سجل التدقيق", "سجلات التدقيق"], "prohibited": ["سجل التغييرات", "دفتر المراجعة"] }
+      },
+      "Snapshot": {
+        "es-MX": { "approved": ["instantánea", "instantáneas"], "prohibited": ["captura de respaldo"] },
+        "ar": { "approved": ["لقطة النظام", "لقطات النظام", "لقطة", "لقطات"], "prohibited": ["صورة احتياطية"] }
+      }
+    },
+    "doNotTranslate": ["WraithCloud", "PulseKey", "OAuth 2.0", "ISO-27001"],
+    "polysemyDisambiguation": [
+      {
+        "id": "poly-post-verb",
+        "key": "forms.post_button",
+        "source": "Post",
+        "context": "<button type='submit'>Post</button> in MessageComposer",
+        "es-MX": { "expectedAny": ["publicar"], "forbiddenAny": ["publicación", "correo", "puesto"] },
+        "ar": { "expectedAny": ["نشر", "انشر"], "forbiddenAny": ["منشور", "بريد"] }
+      },
+      {
+        "id": "poly-post-noun",
+        "key": "forms.post_count",
+        "source": "{count, plural, one {# saved post} other {# saved posts}}",
+        "context": "Feed counter showing saved posts",
+        "es-MX": { "expectedAny": ["publicación", "publicaciones"], "forbiddenAny": ["publicar"] },
+        "ar": { "expectedAny": ["منشور", "منشوران", "منشورات", "منشورًا", "منشوراً"], "forbiddenAny": ["انشر"] }
+      },
+      {
+        "id": "poly-charge-billing",
+        "key": "settings.monthly_charge",
+        "source": "Monthly charge",
+        "context": "Billing invoice summary row",
+        "es-MX": { "expectedAny": ["cargo"], "forbiddenAny": ["carga"] },
+        "ar": { "expectedAny": ["رسوم", "رسم", "تكلفة"], "forbiddenAny": ["شحن", "شحنة"] }
+      },
+      {
+        "id": "poly-charge-battery",
+        "key": "settings.battery_charge",
+        "source": "Battery charge",
+        "context": "Hardware device status panel",
+        "es-MX": { "expectedAny": ["carga"], "forbiddenAny": ["cargo"] },
+        "ar": { "expectedAny": ["شحن", "شحنة"], "forbiddenAny": ["رسوم"] }
+      },
+      {
+        "id": "poly-key-api",
+        "key": "settings.api_key_label",
+        "source": "API key",
+        "context": "Developer credentials input",
+        "es-MX": { "expectedAny": ["clave de api", "llave de api"], "forbiddenAny": ["tecla"] },
+        "ar": { "expectedAny": ["مفتاح api", "مفتاح واجهة"], "forbiddenAny": ["زر"] }
+      },
+      {
+        "id": "poly-key-keyboard",
+        "key": "help.press_any_key",
+        "source": "Press any key to continue",
+        "context": "Keyboard shortcut modal",
+        "es-MX": { "expectedAny": ["tecla"], "forbiddenAny": ["clave", "llave"] },
+        "ar": { "expectedAny": ["مفتاح", "زر"], "forbiddenAny": ["كلمة مرور"] }
+      },
+      {
+        "id": "poly-open-verb",
+        "key": "forms.open_document",
+        "source": "Open",
+        "context": "<button>Open</button> in DocumentRow actions",
+        "es-MX": { "expectedAny": ["abrir"], "forbiddenAny": ["abierto", "abierta"] },
+        "ar": { "expectedAny": ["فتح", "افتح"], "forbiddenAny": ["مفتوح", "مفتوحة"] }
+      },
+      {
+        "id": "poly-open-status",
+        "key": "notifications.ticket_status_open",
+        "source": "Open",
+        "context": "<span className='badge'>Open</span> support ticket status",
+        "es-MX": { "expectedAny": ["abierto", "abierta"], "forbiddenAny": ["abrir"] },
+        "ar": { "expectedAny": ["مفتوح", "مفتوحة"], "forbiddenAny": ["افتح"] }
+      }
+    ]
+  },
+  "translationMemory": {
+    "appropriateExact": [
+      {
+        "key": "notifications.session_expired",
+        "source": "Your session timed out for security reasons.",
+        "es-MX": "Tu sesión venció por motivos de seguridad.",
+        "ar": "انتهت صلاحية جلستك لأسباب أمنية."
+      },
+      {
+        "key": "settings.two_factor_active",
+        "source": "Two-factor protection is active on this account.",
+        "es-MX": "La protección en dos pasos está activa en esta cuenta.",
+        "ar": "الحماية الثنائية مفعّلة على هذا الحساب."
+      },
+      {
+        "key": "notifications.export_queued",
+        "source": "Your compliance bundle is queued for generation.",
+        "es-MX": "Tu paquete de cumplimiento está en fila para generarse.",
+        "ar": "حزمة الامتثال الخاصة بك في قائمة الانتظار للإنشاء."
+      },
+      {
+        "key": "help.contact_admin",
+        "source": "Reach out to your organization administrator for access.",
+        "es-MX": "Comunícate con el administrador de tu organización para solicitar acceso.",
+        "ar": "تواصل مع مسؤول مؤسستك لطلب صلاحية الوصول."
+      }
+    ],
+    "appropriateFuzzy": [
+      {
+        "key": "notifications.export_ready",
+        "source": "Your Audit log export for {{workspace}} is ready, and will expire in 24 hours.",
+        "tmSource": "Your Audit log export for {{workspace}} is ready, and will expire in 48 hours.",
+        "es-MX": { "expectedCore": ["registro de auditoría", "{{workspace}}", "24"], "mustNotCopy": ["48"] },
+        "ar": { "expectedCore": ["سجل التدقيق", "{{workspace}}", "24"], "mustNotCopy": ["48"] }
+      },
+      {
+        "key": "settings.sso_connected",
+        "source": "Connected to WraithCloud using OAuth 2.0 credentials.",
+        "tmSource": "Connected to WraithCloud using SAML credentials.",
+        "es-MX": { "expectedCore": ["WraithCloud", "OAuth 2.0"], "mustNotCopy": ["SAML"] },
+        "ar": { "expectedCore": ["WraithCloud", "OAuth 2.0"], "mustNotCopy": ["SAML"] }
+      },
+      {
+        "key": "forms.invite_limit_notice",
+        "source": "You can invite up to 25 teammates per Billing cycle.",
+        "tmSource": "You can invite up to 10 teammates per Billing cycle.",
+        "es-MX": { "expectedCore": ["25", "ciclo de facturación"], "mustNotCopy": ["10"] },
+        "ar": { "expectedCore": ["25", "دورة الفوترة"], "mustNotCopy": ["10"] }
+      },
+      {
+        "key": "sync.snapshot_scheduled",
+        "source": "Nightly Snapshot replication is scheduled for 02:00 UTC.",
+        "tmSource": "Weekly Snapshot replication is scheduled for 03:00 UTC.",
+        "es-MX": { "expectedCore": ["instantánea", "02:00 UTC"], "mustNotCopy": ["03:00", "semanal"] },
+        "ar": { "expectedCore": ["02:00 UTC"], "mustNotCopy": ["03:00", "أسبوعي", "الأسبوعي"] }
+      }
+    ],
+    "misleadingFuzzyTraps": [
+      {
+        "key": "notifications.backup_disabled",
+        "source": "Disable automatic backups for your Workspace.",
+        "tmSource": "Enable automatic backups for your Workspace.",
+        "es-MX": { "mustContainAny": ["desactiv", "deshabilit"], "mustNotContainAny": ["activa las copias", "habilita las copias", "activar las copias"] },
+        "ar": { "mustContainAny": ["تعطيل", "إيقاف", "أوقف", "عطّل"], "mustNotContainAny": ["تفعيل النسخ", "تمكين النسخ"] }
+      },
+      {
+        "key": "settings.delete_permanent_archive",
+        "source": "Delete permanent archive files from this Workspace.",
+        "tmSource": "Delete temporary cache files from this Workspace.",
+        "es-MX": { "mustContainAny": ["permanente"], "mustNotContainAny": ["caché", "temporal"] },
+        "ar": { "mustContainAny": ["دائم", "الدائم", "الأرشيف"], "mustNotContainAny": ["مؤقت", "التخزين المؤقت"] }
+      },
+      {
+        "key": "settings.revoke_access_warning",
+        "source": "Revoking PulseKey will immediately block API traffic.",
+        "tmSource": "Rotating PulseKey will seamlessly preserve API traffic.",
+        "es-MX": { "mustContainAny": ["revocar", "bloquear"], "mustNotContainAny": ["rotar", "mantendrá sin interrupciones", "conservará"] },
+        "ar": { "mustContainAny": ["إلغاء", "سحب", "حظر", "إيقاف"], "mustNotContainAny": ["تدوير", "الحفاظ على", "بسلاسة"] }
+      }
+    ],
+    "inappropriateExactTraps": [
+      {
+        "key": "forms.save_button",
+        "source": "Save",
+        "tmTarget_es-MX": "Ahorra",
+        "tmTarget_ar": "وفّر",
+        "context": "<button type='submit'>Save</button> in ProfileForm",
+        "es-MX": { "expectedAny": ["guardar"], "forbiddenAny": ["ahorra", "ahorrar"] },
+        "ar": { "expectedAny": ["حفظ", "احفظ"], "forbiddenAny": ["وفّر", "وفر"] }
+      },
+      {
+        "key": "nav.home_link",
+        "source": "Home",
+        "tmTarget_es-MX": "Domicilio",
+        "tmTarget_ar": "المنزل",
+        "context": "<nav><a href='/'>Home</a></nav>",
+        "es-MX": { "expectedAny": ["inicio"], "forbiddenAny": ["domicilio", "hogar", "casa"] },
+        "ar": { "expectedAny": ["الرئيسية", "الصفحة الرئيسية"], "forbiddenAny": ["المنزل", "السكن"] }
+      },
+      {
+        "key": "forms.archive_button",
+        "source": "Archive",
+        "tmTarget_es-MX": "Archivo",
+        "tmTarget_ar": "الأرشيف",
+        "context": "<button onClick={onArchive}>Archive</button> in ProjectActions",
+        "es-MX": { "expectedAny": ["archivar"], "forbiddenExact": ["archivo"] },
+        "ar": { "expectedAny": ["أرشفة", "أرشف"], "forbiddenExact": ["الأرشيف"] }
+      }
+    ]
+  },
+  "conflicts": {
+    "projectVsLocaleOverride": {
+      "legalKeysMustUseUsted_esMX": ["legal.privacy_notice", "legal.data_request", "legal.audit_retention"],
+      "productKeysMustUseTu_esMX": ["settings.account_intro", "notifications.backup_disabled", "help.shortcut_tip"]
+    },
+    "tmVsGlossaryConflict": {
+      "key": "settings.workspace_banner",
+      "source": "Manage members and security policies for your Workspace.",
+      "staleTm_esMX": "Administra los miembros y políticas de seguridad de tu Área de trabajo.",
+      "staleTm_ar": "أدر الأعضاء وسياسات الأمان لبيئة العمل الخاصة بك.",
+      "expected_esMX": "espacio de trabajo",
+      "forbidden_esMX": "área de trabajo",
+      "expected_ar": "مساحة العمل",
+      "forbidden_ar": "بيئة العمل"
+    },
+    "genuineAmbiguityKeys": ["forms.set_limit_ambiguous", "settings.reset_credits_ambiguous"]
+  },
+  "v2Maintenance": {
+    "newKeysCount": 15,
+    "editedSourceKeys": ["notifications.session_expired", "settings.two_factor_active", "help.shortcut_tip"],
+    "humanEditedKeysToPreserve": {
+      "es-MX": {
+        "nav.audit_log": "Registro de auditoría (verificado por equipo MX)",
+        "settings.security_heading": "Seguridad y llaves de acceso",
+        "help.contact_admin": "Escribe a tu persona administradora de organización para pedir acceso."
+      },
+      "ar": {
+        "nav.audit_log": "سجل التدقيق المعتمد",
+        "settings.security_heading": "الأمان ومفاتيح الوصول",
+        "help.contact_admin": "يُرجى مراسلة مدير المؤسسة للحصول على الصلاحية."
+      }
+    }
+  },
+  "v3AssetPropagation": {
+    "glossaryUpdate": {
+      "term": "Workspace",
+      "old_esMX": "Espacio de trabajo",
+      "new_esMX": "Entorno de trabajo",
+      "old_ar": "مساحة العمل",
+      "new_ar": "بيئة العمل"
+    },
+    "styleUpdate_esMX": "In help.* keys, switch from informal 'tú' to formal 'usted' (keep general UI nav/settings/forms/notifications on 'tú').",
+    "promptUpdate_esMX": "In sync.* keys, never use 'descargar' for cloud snapshots; use 'obtener' instead.",
+    "humanLockedWorkspaceKeys": ["settings.workspace_banner", "notifications.backup_disabled"],
+    "expectedUpdatedKeys_esMX": [
+      "nav.workspace_title",
+      "settings.delete_permanent_archive",
+      "forms.create_workspace_title",
+      "notifications.workspace_created_v2",
+      "help.shortcut_tip",
+      "help.need_more_help",
+      "help.workspace_guide_v2",
+      "sync.fetch_snapshot",
+      "sync.snapshot_pull_v2"
+    ],
+    "expectedUpdatedKeys_ar": [
+      "nav.workspace_title",
+      "settings.delete_permanent_archive",
+      "forms.create_workspace_title",
+      "notifications.workspace_created_v2",
+      "help.workspace_guide_v2"
+    ],
+    "mustNotModifyHumanLockedKeys": ["settings.workspace_banner", "notifications.backup_disabled", "nav.audit_log", "settings.security_heading", "help.contact_admin"]
+  },
+  "controlledQeGroundTruth": {
+    "totalPerLocale": 24,
+    "trueDefects": 12,
+    "cleanControls": 12,
+    "defectCategories": [
+      "custom_prompt_prohibited_word",
+      "style_guide_register_violation",
+      "locale_override_violation",
+      "approved_terminology_violation",
+      "prohibited_terminology_usage",
+      "dnt_alteration",
+      "polysemy_wrong_sense",
+      "misleading_fuzzy_tm_copy",
+      "placeholder_or_icu_defect",
+      "cross_component_term_drift",
+      "visual_clipping_defect",
+      "factual_omission"
+    ],
+    "zeroUnauthorizedFileEditsRequired": true
+  }
+}
