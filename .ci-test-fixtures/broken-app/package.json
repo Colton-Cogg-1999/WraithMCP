@@ -1,0 +1,10 @@
+{
+  "name": "broken-ci-fixture",
+  "version": "1.0.0",
+  "private": true,
+  "dependencies": {
+    "react": "^19.0.0",
+    "react-i18next": "^15.0.0",
+    "i18next": "^24.0.0"
+  }
+}
